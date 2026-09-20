@@ -1,0 +1,17 @@
+{
+  "name": "neckbeard",
+  "version": "1.11.2",
+  "description": "Reads the plugin. Writes the verdict. Edits nothing. Before you install someone else's plugin or skill pack, neckbeard inventories what it injects and when, whether it reaches your subagents, and what state it persists, then diffs every rule it carries against the rules you already run and sorts each one into duplicate, conflict, or genuinely new. Zero hooks and zero agents; ~266 tokens always-on, which is just its own description.",
+  "author": {
+    "name": "Jerry Boonstra",
+    "url": "https://github.com/jerrydboonstra"
+  },
+  "license": "MIT",
+  "keywords": [
+    "plugin-vetting",
+    "audit",
+    "rules",
+    "code-review",
+    "context-budget"
+  ]
+}

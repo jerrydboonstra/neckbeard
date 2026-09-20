@@ -1,0 +1,18 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# A dossier embeds the FULL TEXT of every rule file it discovers: your global
+# CLAUDE.md, your project CLAUDE.md, your personal skills, and the skills of
+# every plugin you have enabled. A run from inside this repo produced 90,533
+# bytes of exactly that, including a Tailscale hostname, a NAS host and two
+# private marketplace names.
+#
+# So: ignore every JSON except the two manifests this plugin actually ships.
+# If a future file genuinely needs tracking, un-ignore it by name, deliberately.
+*.json
+!.claude-plugin/plugin.json
+!.claude-plugin/marketplace.json
+
+# Evaluations quote the rules they compared against, for the same reason.
+evaluations/

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "neckbeard",
+  "description": "Ponytail ships it. Neckbeard reads it first.",
+  "owner": {
+    "name": "Jerry Boonstra",
+    "url": "https://github.com/jerrydboonstra"
+  },
+  "plugins": [
+    {
+      "name": "neckbeard",
+      "description": "Reads a Claude Code plugin before you install it: what it injects, what it costs, which rules clash with yours.",
+      "source": "./",
+      "category": "productivity",
+      "version": "1.11.2"
+    }
+  ]
+}
