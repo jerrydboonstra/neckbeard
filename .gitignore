@@ -16,3 +16,6 @@ __pycache__/
 
 # Evaluations quote the rules they compared against, for the same reason.
 evaluations/
+
+# Full-size logo sources (about 2 MB each). The README uses assets/logo.webp.
+assets/source/

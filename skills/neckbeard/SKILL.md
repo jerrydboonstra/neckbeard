@@ -151,38 +151,89 @@ path from the user. **Before writing, check that the path is ignored by git**
 (`git check-ignore <path>`). The evaluation quotes the user's own rules, and
 the project you are sitting in is usually not this plugin's repo, so this
 plugin's `.gitignore` protects nothing there. If the path is not ignored, say
-so and ask before writing. Follow this exact section shape (it is what
-proved out by hand on ponytail — see that file for a worked example if one
-exists in the corpus you can reach):
+so and ask before writing.
+
+**Write it in this shape.** The reader wants the answer first and a grid they can
+scan, not an essay. Rules:
+
+- **Answer first.** The banner holds the verdict and at most three sentences.
+- **Grids over prose.** One row per item; a cell is a phrase, not a paragraph.
+  No section opens with a paragraph.
+- **Every rule gets a symbol and lands in exactly one grid.** The counts in "How
+  its rules sorted" must equal the rows in the grids below it.
+- **Cite, don't gesture.** A conflict names the rule it collides with and the
+  file or skill that holds it. A duplicate names what covers it.
+- **Bars:** one block per item, up to 10; above 10, write `▰ ×N`.
+- Plain Markdown only (tables, one blockquote, emoji), so it renders the same in
+  a terminal viewer, on GitHub and in an editor. No HTML, no `[ ]` checkboxes.
+- If a section would be empty, keep its heading and say so in one line.
+
+**Verdict** (one, in the banner): 🟥 DON'T INSTALL / UNINSTALL · 🟧 INSTALL WITH
+CHANGES · 🟨 COPY RULES, SKIP PLUGIN · 🟩 INSTALL. Step 2's carrying-cost line
+decides between 🟨 and 🟩: a target whose only value is one or two rules is
+cheaper copied as text than carried as an injection.
 
 ```
-# Evaluation: <target> against <user>'s rules
+# 🔍 <target> <version> · vetted against your rules
 
-Date, method (this skill), link/source of the target.
+> ## <verdict emoji> <VERDICT> · <one-phrase action>
+> <Two or three sentences: what it costs, what it fights, what is worth keeping.>
 
-## What is installed / what the target is
-Where it lives, what enables it, what it bundles.
+`<YYYY-MM-DD>` · neckbeard <version> · <target path or URL>
 
-## What it says
-One-paragraph summary of its actual behavior, in its own terms.
+## ⚡ At a glance
 
-## Overlap with what is already in force
-Table or list: target rule -> what already covers it.
+| | | |
+|:--:|---|---|
+| 🟥/🟧/🟨/🟩 | **Cost** | <bytes injected, and when> |
+| .. | **Reach** | <main session only / + subagents (certain / likely)> |
+| .. | **Leaves state** | <files written outside the project, or none found> |
+| .. | **Live surface** | <MCP servers, network, commands it runs; or none> |
+| .. | **Refused reads** | <count of `refused` items, or none>; any refusal is 🟥 |
+| .. | **Worth keeping** | <N rules or skills> |
 
-## Conflicts
-Numbered. Each one names the exact contradicting rule and its file.
+## 🧮 How its rules sorted
 
-## Keep
-The rules and skills that are genuinely new. For each: rule text, or
-skill name + one-line description. Say which are standing rules
-vs. on-demand skills.
+| | verdict | count | |
+|:--:|---|:--:|---|
+| ⛔ | **conflicts** with a rule you run | **n** | 🟥 per item |
+| 🔁 | **already covered** | **n** | ⬜ per item |
+| 🆕 | **new, standing rule** | **n** | 🟩 per item |
+| 🆕 | **new, on-demand skill** | **n** | 🟩 per item |
+| 🗑️ | **dropped** (persona, extras, no value) | **n** | ⬛ per item |
 
-## Drop
-Everything else, briefly, with the one-line reason.
+## ⛔ Conflicts: n
+| # | it says | collides with | held in | |
+|:--:|---|---|---|:--:|
 
-## Recommendation
-Keep as installed / adopt rules only and uninstall / adopt nothing.
+## 🔁 Already covered: n
+| its rule | covered by | held in |
+|---|---|---|
+
+## 🟩 Keep: n
+| # | rule or skill | kind | |
+|:--:|---|:--:|:--:|
+
+## 🗑️ Dropped
+`<item>` · `<item> (⛔n)` · ...
+
+## 🧩 What it installs
+| surface | when | reaches subagents | size |
+|---|---|:--:|--:|
+
+## ✅ Do this
+- ⬜ 1. <first action>
+<One line: which of Step 2's three carrying-cost cases applies.>
+
+## 📋 Proposed rules patch
+<Step 4's patch, or "nothing to add".>
+
+**Key:** 🟥 high · 🟧 medium · 🟨 partly · 🟩 keep · ⬜ covered · ⬛ dropped ·
+⛔ conflict · 🔁 duplicate · 🆕 new · ⭐ standout · ✅ done · ❓ unknown
 ```
+
+`examples/` in this plugin's repository holds real reports in this shape, run
+against a published sample reader.
 
 ## Step 4 — Propose the rules patch
 
