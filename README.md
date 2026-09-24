@@ -12,7 +12,7 @@ it writes outside your project. Then it checks each rule against what you alread
 run and tells you what is duplicate, what conflicts, and what is new. It changes
 nothing.
 
-A tool that asks you to trust its measurements should show its own. Thirteen
+A tool that asks you to trust its measurements should show its own. Fourteen
 rounds of adversarial testing, what each one cost this tool, and the published
 claims that turned out false: **[CASE-STUDIES.md](./CASE-STUDIES.md)**.
 
@@ -22,8 +22,8 @@ I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the
 lazy-senior-dev persona plugin, then read it instead: 1,300 tokens injected into
 every session and every subagent, permanently, with half its rules restating my
 own config, five contradicting hard stops I rely on (never act on something risky
-without my approval), and one worth keeping. I copied five of its rules into my
-config as plain text, deleted the plugin, and wrote neckbeard so the next read
+without my approval), and five worth keeping. I copied those into my config as
+plain text, deleted the plugin, and wrote neckbeard so the next read
 takes minutes instead of an afternoon. The method is
 [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same
 audit by hand and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
@@ -84,6 +84,8 @@ for precisely this reason.
   whole repo. A plugin built for several agents also ships copies under
   `.openclaw/`, `.opencode/` and `.cursor/`, and Claude Code never loads those,
   so counting them would double the plugin's apparent size.
+- Every command and agent definition, in full, since each is an instruction to
+  a model, and a `CLAUDE.md` at its root.
 - Every hook event it registers, and whether `SubagentStart` is one of them.
 - What each hook injects, where a static read can work that out. It follows one
   hop of local `require()` and rebuilds `path.join(__dirname, ...)` literals.
@@ -94,11 +96,13 @@ for precisely this reason.
 
 No manifest means a plain pack of rules: neckbeard searches wider for skills,
 and still checks for hooks, because a directory can carry `hooks/hooks.json`
-with no manifest at all.
+with no manifest at all. A single file works too: point it at someone's
+`CLAUDE.md` and it compares that file's rules against yours.
 
 **Your rules.** It finds these itself: your global `CLAUDE.md`, the nearest
-project `CLAUDE.md` above you, your project and personal skills, and the skills
-of every plugin that project already enables.
+project `CLAUDE.md` above you, every file either one imports with `@path`, your project and personal skills, and the skills
+of every plugin that project already enables, whether enabled for you, for the
+project, locally or by managed settings.
 
 It then sorts every rule the target carries into one bucket:
 
@@ -132,11 +136,12 @@ guessed at.
 
 ## Where it has run, and what each run cost it
 
-Thirteen rounds so far. The ninth was an independent audit by a reviewer who
+Fourteen rounds so far. The ninth was an independent audit by a reviewer who
 did not build this, and it found eleven problems and proved four published
 claims false, including one where an evaluation could have leaked 90,533 bytes
 of private rules into a public repo. Eight of the first nine rounds cost this
-tool a bug or a named limit. The twelfth was the first to come back clean.
+tool a bug or a named limit. The first clean result was the re-audit that closed
+round twelve.
 
 The mechanical half is checked against the filesystem. The judgment half, which
 no filesystem can contradict, is checked against a held-out fixture built by

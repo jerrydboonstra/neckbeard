@@ -42,9 +42,10 @@ lookup finds it, the plugin is checked out somewhere else entirely, and
 ```
 
 `<target>` is an installed plugin (`name@marketplace`, e.g. `ponytail@ponytail`
-— check `.claude/settings.json`'s `enabledPlugins` for the exact key), a local
-directory (an already-cloned repo or skill pack), or a git URL (cloned
-read-only into a temp dir, depth 1). `--project-dir` defaults to the cwd and
+— check `enabledPlugins` in your settings for the exact key), a local
+directory (an already-cloned repo or skill pack), a single rule file (a
+`CLAUDE.md` or any markdown of rules), or a git URL (cloned read-only into a
+temp dir, depth 1). `--project-dir` defaults to the cwd and
 controls where current-rules discovery starts; pass it explicitly when vetting
 a plugin for a project other than the one you're sitting in. `--extra-rules`
 adds a file or directory to the current-rules corpus when the auto-discovery
@@ -52,16 +53,25 @@ below would miss something (a rules file with a name Claude Code doesn't look
 for on its own).
 
 The script prints one JSON dossier: `target` (what the thing actually does —
-its manifest, every skill it bundles, every hook it registers and what each
-one injects where that's staticly resolvable, whether `SubagentStart` is among
-its hooked events, and any file-write patterns found in its scripts) and
+its manifest, every skill, command and agent it bundles with their full text,
+any `CLAUDE.md` at its root under `rule_files`, every hook it registers and
+what each one injects where that's staticly resolvable, whether
+`SubagentStart` is among its hooked events, and any file-write patterns found
+in its scripts) and
 `current_rules` (every rule already in force, auto-discovered from):
 
 - `~/.claude/CLAUDE.md`
 - the nearest `CLAUDE.md` walking up from `--project-dir`
+- every file either of those imports with `@path`, followed the way Claude Code
+  follows it (up to five hops, never inside code). Each import is its own item,
+  with `imported_from` naming the file that pulled it in
 - `.claude/skills/*/SKILL.md` in that project, and `~/.claude/skills/*/SKILL.md`
-- every plugin enabled for that project (`.claude/settings.json`'s
-  `enabledPlugins`), each one's bundled skills
+- every plugin enabled for that project, each one's bundled skills.
+  `enabledPlugins` is merged the way Claude Code layers settings: the user's
+  `~/.claude/settings.json`, then the project's `.claude/settings.json`, then
+  `.claude/settings.local.json`, then managed settings, each overriding the one
+  before. A settings file that does not parse is skipped with a warning on
+  stderr, and the plugins it enables are then missing from the comparison.
 
 The script makes no judgment calls: it only reads and counts. If it reports
 `injected_content_note`, read the hook scripts it names before concluding
@@ -81,6 +91,11 @@ which was false for any command shape the resolver did not recognise, and a
 real plugin injecting 3,192 bytes at every session start hit exactly that
 (found 2026-09-19).
 
+**An item marked `refused` resolved outside the target, usually through a
+symlink or a `../` path, and was not read.** A plugin has no honest reason to
+reach outside its own tree, so report every refusal in the evaluation as a
+finding in its own right, never skip it as noise.
+
 **The dossier embeds those rule files verbatim, and that makes it sensitive.**
 The comparison needs the text, so `current_rules` carries the full contents of
 the user's global `CLAUDE.md`, their project rules, their personal skills and
@@ -91,9 +106,12 @@ files. Never commit a dossier, never paste one anywhere public, and check the
 
 ## Step 2 — Classify every rule the target carries
 
-For each item under `target.skills` (and, for a plugin, the text any resolved
+For each item under `target.skills`, `target.rule_files`, `target.commands`
+and `target.agents` (and, for a plugin, the text any resolved
 `injected_content` file carries), compare it against every item in
-`current_rules.items` and sort it into exactly one bucket:
+`current_rules.items` and sort it into exactly one bucket. A command or an
+agent is an instruction to a model like any skill; do not skip it because it
+only runs when invoked.
 
 - **duplicate** — functionally the same as something already in force. Drop
   it. Cite the exact existing source (`current_rules` item's `source` and
@@ -129,7 +147,11 @@ keep anyway is a bad trade even if that one rule is new.
 Default output: `evaluations/<slug>.md` if that directory exists under the
 current project (or its root), where `<slug>` is the target's plugin or repo
 name in kebab-case. Otherwise ask where it should go, or accept an explicit
-path from the user. Follow this exact section shape (it is what
+path from the user. **Before writing, check that the path is ignored by git**
+(`git check-ignore <path>`). The evaluation quotes the user's own rules, and
+the project you are sitting in is usually not this plugin's repo, so this
+plugin's `.gitignore` protects nothing there. If the path is not ignored, say
+so and ask before writing. Follow this exact section shape (it is what
 proved out by hand on ponytail — see that file for a worked example if one
 exists in the corpus you can reach):
 
@@ -194,7 +216,6 @@ them rather than inventing a path.
 **Show the proposed patch as a diff or a fenced block in the evaluation
 document. Do not write it into `CLAUDE.md`, a rules file, or
 `settings.json` yourself, and do not uninstall or disable the target.**
-Applying any of it is a separate, explicitly-approved step — the same posture
-`list-item` takes before publishing a listing. This skill's whole point is to
+Applying any of it is a separate, explicitly-approved step. This skill's whole point is to
 add a rule only when it earns its keep; auto-applying its own output would
 skip the one review step that makes that true.

@@ -28,14 +28,25 @@ JSON by default and allows only the two manifests, and every write prints a
 warning to stderr saying what the file contains.
 
 **If you run this in a repo you publish, check that your ignore rules cover
-wherever you send `--out`.** The tool cannot know where you point it.
+wherever you send `--out`, and the `evaluations/` directory the skill writes
+into.** Neckbeard's own `.gitignore` protects neckbeard's repo and nothing else.
+You will usually run it from inside some other project, and that project's
+ignore rules are the ones that count. The tool cannot know where you point it.
 
 ## Known boundary
 
-Symlinks inside a plugin are resolved and checked for containment before a file
-is read. A skill file symlinked to something outside the plugin root is refused.
-This was added after an audit demonstrated the escape, so it is a guard that has
-been seen to fail rather than one that has only been written.
+Every file the tool reads from a target is resolved, symlinks included, and
+checked for containment first: skills, commands, agents, the hooks file, hook
+scripts and what they inject, `plugin.json`, `.mcp.json`, a root `CLAUDE.md` and
+every file it imports with `@path`, and the README. A
+file that resolves outside the target is refused and the dossier says so. So is
+a path the target names for itself, such as `"hooks": "../../elsewhere.json"`
+in `plugin.json`.
+
+This paragraph used to make the same claim when only three of those paths
+checked. An audit on 2026-09-24 found the other five open. `selfcheck.py` now
+plants a marker outside the target for each path and fails if it reaches the
+dossier, and each check has been seen to fail with its guard removed.
 
 ## Reporting
 

@@ -8,6 +8,7 @@ Usage:
 <target> is one of:
   - an installed plugin, "name@marketplace" (e.g. "ponytail@ponytail")
   - a local directory path (a cloned repo, a skill pack, a plugin source tree)
+  - a single rule file (a CLAUDE.md or any markdown of rules)
   - a git URL (cloned read-only into a temp dir, depth 1)
 
 Stdlib only. Read-only: never writes inside the target, never touches the
@@ -24,6 +25,13 @@ import tempfile
 
 HOME = os.path.expanduser("~")
 CLAUDE_HOME = os.environ.get("CLAUDE_CONFIG_DIR", os.path.join(HOME, ".claude"))
+
+# Where Claude Code reads file-based managed (enterprise) settings, per platform.
+# A module-level list so selfcheck.py can point it at a fixture.
+MANAGED_SETTINGS = {
+    "darwin": ["/Library/Application Support/ClaudeCode/managed-settings.json"],
+    "win32": [r"C:\Program Files\ClaudeCode\managed-settings.json"],
+}.get(sys.platform, ["/etc/claude-code/managed-settings.json"])
 
 # Events whose hooks fire on the subagent lifecycle itself.
 SUBAGENT_EVENTS = {"SubagentStart", "SubagentStop"}
@@ -250,6 +258,10 @@ def resolve_target(target, tmp_root):
     if os.path.isdir(os.path.expanduser(target)):
         path = os.path.realpath(os.path.expanduser(target))
         return path, "local-path"
+    # A single rule file (someone's CLAUDE.md, a pasted rules.md). The skill has
+    # always said it vets one; until 2026-09-24 this exited "not a directory".
+    if os.path.isfile(os.path.expanduser(target)):
+        return os.path.realpath(os.path.expanduser(target)), "local-file"
     if re.match(r"^(https?://|git@|ssh://).*|.*\.git$", target):
         dest = os.path.join(tmp_root, "clone")
         subprocess.run(["git", "clone", "--depth", "1", target, dest],
@@ -388,17 +400,36 @@ def _identify_hook_script(cmd, plugin_root):
 def inventory_hooks(plugin_root, plugin_json):
     hooks_ref = plugin_json.get("hooks")
     hooks_path = None
-    if hooks_ref:
-        hooks_path = os.path.normpath(os.path.join(plugin_root, hooks_ref))
+    # plugin.json may carry its hooks inline as an object rather than naming a
+    # file. That shape went straight into os.path.join and killed the run with a
+    # TypeError and no dossier at all (found 2026-09-24 by a falsify pass).
+    if isinstance(hooks_ref, dict) and hooks_ref:
+        rel, hooks_json = "plugin.json (inline hooks)", hooks_ref
+    elif hooks_ref and not isinstance(hooks_ref, (str, dict)):
+        return {"has_hooks": "unknown", "hooks_file": "plugin.json", "events": {},
+                "hook_scripts": None, "hook_registrations": None,
+                "hooks_reach_subagents": None,
+                "parse_error": f"plugin.json's \"hooks\" is a {type(hooks_ref).__name__}, "
+                               "neither a path nor an object of events; read it by hand"}
     else:
-        default = os.path.join(plugin_root, "hooks", "hooks.json")
-        if os.path.isfile(default):
-            hooks_path = default
-    if not hooks_path or not os.path.isfile(hooks_path):
-        return {"has_hooks": False}
-
-    rel = os.path.relpath(hooks_path, plugin_root)
-    hooks_json = read_json(hooks_path)
+        if hooks_ref:
+            hooks_path = os.path.normpath(os.path.join(plugin_root, hooks_ref))
+        else:
+            default = os.path.join(plugin_root, "hooks", "hooks.json")
+            if os.path.isfile(default):
+                hooks_path = default
+        if not hooks_path or not os.path.isfile(hooks_path):
+            return {"has_hooks": False}
+        rel = os.path.relpath(hooks_path, plugin_root)
+        # plugin.json names this path and plugin.json is untrusted: "../../x.json"
+        # or a symlinked hooks/ read a file from anywhere, no symlink privileges
+        # needed for the first. Unguarded until 2026-09-24.
+        if not _within(hooks_path, plugin_root):
+            return {"has_hooks": "unknown", "hooks_file": rel, "events": {},
+                    "hook_scripts": None, "hook_registrations": None,
+                    "hooks_reach_subagents": None,
+                    "refused": "hooks file resolves outside the target tree; not read"}
+        hooks_json = read_json(hooks_path)
 
     # A hooks file that exists but cannot be read is NOT "no hooks", and it is
     # not "hooks with no events" either. Both readings are false and the second
@@ -552,6 +583,9 @@ def mcp_servers(plugin_json, plugin_root=None):
     # this tool swept and declared free of MCP servers (found 2026-09-19).
     if not servers and plugin_root:
         dot = os.path.join(plugin_root, ".mcp.json")
+        if os.path.lexists(dot) and not _within(dot, plugin_root):
+            return {"source": ".mcp.json", "servers": None,
+                    "refused": ".mcp.json resolves outside the target tree; not read"}
         raw = read_json(dot)
         if isinstance(raw, dict) and raw:
             source = ".mcp.json"
@@ -597,6 +631,8 @@ def inventory_persistence(plugin_root):
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor", "benchmarks", "tests", "test")]
         for fn in filenames:
             fp = os.path.join(dirpath, fn)
+            if not _within(fp, plugin_root):
+                continue
             if not fn.endswith(SCRIPT_EXTS):
                 # Keep extension-less files (hooks/session-start and friends),
                 # skip obvious non-scripts and anything large.
@@ -615,14 +651,23 @@ def inventory_persistence(plugin_root):
     return sorted(set(hits))
 
 
+def contained_skill(sm, root):
+    """One SKILL.md from the target, or a refusal if it resolves outside it.
+
+    Both skill paths go through here. Until 2026-09-24 only the plugin path
+    checked containment, so a pack with no manifest (the "plain pack of rules"
+    case) read skills/x/SKILL.md straight through a symlink to anywhere."""
+    if not _within(sm, root):
+        return {"source": os.path.relpath(sm, root), "path": sm,
+                "name": os.path.basename(os.path.dirname(sm)),
+                "description": None, "bytes": None, "text": None,
+                "refused": "resolves outside the target tree; not read"}
+    return rule_item(os.path.relpath(sm, root), sm)
+
+
 def inventory_skills(root):
     """Broad, recursive search — for a generic pack with no canonical layout."""
-    items = []
-    for sm in find_files(root, {"SKILL.md"}):
-        it = rule_item(os.path.relpath(sm, root), sm)
-        if it:
-            items.append(it)
-    return items
+    return [it for it in (contained_skill(sm, root) for sm in find_files(root, {"SKILL.md"})) if it]
 
 
 def plugin_skills(root):
@@ -633,34 +678,127 @@ def plugin_skills(root):
     (.openclaw/skills/, .opencode/command/, .cursor/rules/, etc.) — those are
     invisible to Claude Code and would otherwise double-count and inflate the
     target's apparent size."""
-    items = []
-    for sm in sorted(glob.glob(os.path.join(root, "skills", "*", "SKILL.md"))):
-        if not _within(sm, root):
-            items.append({"source": os.path.relpath(sm, root), "path": sm,
-                          "name": os.path.basename(os.path.dirname(sm)),
-                          "description": None, "bytes": None, "text": None,
-                          "refused": "resolves outside the target tree; not read"})
-            continue
-        it = rule_item(os.path.relpath(sm, root), sm)
-        if it:
-            items.append(it)
-    return items
+    return [it for it in (contained_skill(sm, root)
+                          for sm in sorted(glob.glob(os.path.join(root, "skills", "*", "SKILL.md"))))
+            if it]
 
 
 def inventory_commands_agents(root):
-    commands = sorted(
-        os.path.relpath(p, root)
-        for pat in ("*.md", "*.toml")
-        for p in glob.glob(os.path.join(root, "commands", pat))
-    )
-    agents_dir = os.path.join(root, "agents")
-    agents = sorted(os.listdir(agents_dir)) if os.path.isdir(agents_dir) else []
+    """Slash commands and agent definitions, read in full like skills.
+
+    Both are instructions to a model, so the classification step needs their
+    text. They used to be listed by filename only, which left nothing to read
+    for a git-URL target once its temp clone was gone (found 2026-09-24)."""
+    def read(paths, source):
+        out = []
+        for p in sorted(paths):
+            if not os.path.isfile(p):
+                continue
+            if not _within(p, root):
+                out.append({"source": source, "path": os.path.relpath(p, root),
+                            "name": os.path.basename(p), "text": None,
+                            "refused": "resolves outside the target tree; not read"})
+                continue
+            it = rule_item(source, p)
+            if it:
+                it["path"] = os.path.relpath(p, root)
+                out.append(it)
+        return out
+    commands = read([p for pat in ("*.md", "*.toml")
+                     for p in glob.glob(os.path.join(root, "commands", pat))], "command")
+    agents = read(glob.glob(os.path.join(root, "agents", "*.md")), "agent")
     return commands, agents
 
 
+# ------------------------------------------------------------------ CLAUDE.md imports
+# Claude Code lets a CLAUDE.md pull in other files with `@path`: relative to the
+# importing file, `~` allowed, up to five hops, never inside code. A global
+# CLAUDE.md that is only `@~/.claude/roles/me.md` is the documented way to split
+# rules, and until 2026-09-24 this tool read exactly that one line and compared
+# every target against it. Found by an evaluation that noticed its dossier held
+# 26 bytes of global rules.
+IMPORT_MAX_HOPS = 5
+_CODE_RE = re.compile(r"```.*?```|~~~.*?~~~|`[^`\n]*`", re.S)
+_IMPORT_RE = re.compile(r"(?:^|(?<=\s))@(\S+)")
+
+
+def claude_md_imports(path, root=None, _hop=1, _seen=None):
+    """Files `path` imports, depth first, in the order Claude Code would read
+    them. Each is (resolved_path, imported_from, refused). With `root`, an import
+    that resolves outside it is refused rather than read: a target's CLAUDE.md
+    is untrusted, and `@../../anything` is a read like any other."""
+    seen = _seen if _seen is not None else {os.path.realpath(path)}
+    text = _CODE_RE.sub(" ", read_text(path) or "")
+    out = []
+    for m in _IMPORT_RE.finditer(text):
+        ref = m.group(1).rstrip(".,;:)]}\"'")
+        cand = os.path.expanduser(ref)
+        if not os.path.isabs(cand):
+            cand = os.path.join(os.path.dirname(path), cand)
+        cand = os.path.normpath(cand)
+        if not os.path.isfile(cand):
+            continue  # "@someone" in prose, or a dead import: Claude Code skips it too
+        real = os.path.realpath(cand)
+        if real in seen:
+            continue
+        seen.add(real)
+        if root is not None and not _within(cand, root):
+            out.append((cand, path, True))
+            continue
+        out.append((cand, path, False))
+        if _hop < IMPORT_MAX_HOPS:
+            out.extend(claude_md_imports(cand, root, _hop + 1, seen))
+    return out
+
+
+def with_imports(source, path, root=None):
+    """rule_item for a CLAUDE.md plus one item per file it imports."""
+    items = []
+    it = rule_item(source, path)
+    if it:
+        items.append(it)
+    for p, parent, refused in claude_md_imports(path, root):
+        if refused:
+            items.append({"source": f"{source} import", "path": p, "imported_from": parent,
+                          "text": None, "refused": "import resolves outside the target tree; not read"})
+            continue
+        imp = rule_item(f"{source} import", p)
+        if imp:
+            imp["imported_from"] = parent
+            items.append(imp)
+    return items
+
+
+def target_rule_files(root):
+    """A CLAUDE.md at the target's root is a rule file the target carries, and
+    was read by nothing until 2026-09-24: a CLAUDE.md-only rule pack produced an
+    empty dossier and skipped the reader's rules as having nothing to compare."""
+    p = os.path.join(root, "CLAUDE.md")
+    if not os.path.isfile(p):
+        return []
+    if not _within(p, root):
+        return [{"source": "target-CLAUDE.md", "path": "CLAUDE.md", "text": None,
+                 "refused": "resolves outside the target tree; not read"}]
+    return with_imports("target-CLAUDE.md", p, root=root)
+
+
 def inventory_target(path):
-    plugin_json_path = None
+    if os.path.isfile(path):
+        rule_files = with_imports("rule-file", path, root=os.path.dirname(path))
+        return {
+            "kind": "rule-file",
+            "path": path,
+            "is_plugin": False,
+            "skills": [],
+            "rule_files": rule_files,
+            "hooks": {"has_hooks": False},
+        }
+    plugin_json_path, manifest_refused = None, None
     for cand in (os.path.join(path, ".claude-plugin", "plugin.json"), os.path.join(path, "plugin.json")):
+        if os.path.isfile(cand) and not _within(cand, path):
+            manifest_refused = (f"{os.path.relpath(cand, path)} resolves outside the target "
+                                "tree; not read, so this was inventoried as a plain pack")
+            continue
         if os.path.isfile(cand):
             plugin_json_path = cand
             break
@@ -677,7 +815,7 @@ def inventory_target(path):
         skills = inventory_skills(path)
         readme = None
         for r in ("README.md", "readme.md"):
-            if os.path.isfile(os.path.join(path, r)):
+            if os.path.isfile(os.path.join(path, r)) and _within(os.path.join(path, r), path):
                 readme = read_text(os.path.join(path, r), limit=4000)
                 break
         return {
@@ -688,7 +826,10 @@ def inventory_target(path):
             "hooks": inventory_hooks(path, {}),
             "mcp_servers": mcp_servers({}, path),
             "persistence_candidates": inventory_persistence(path),
+            "rule_files": target_rule_files(path),
+            **dict(zip(("commands", "agents"), inventory_commands_agents(path))),
             "readme_excerpt": readme,
+            **({"manifest_refused": manifest_refused} if manifest_refused else {}),
         }
     skills = plugin_skills(path)
     plugin_json = read_json(plugin_json_path) or {}
@@ -703,8 +844,71 @@ def inventory_target(path):
         "skills": skills,
         "hooks": inventory_hooks(path, plugin_json),
         "persistence_candidates": inventory_persistence(path),
+        "rule_files": target_rule_files(path),
         **dict(zip(("commands", "agents"), inventory_commands_agents(path))),
+        **({"manifest_refused": manifest_refused} if manifest_refused else {}),
     }
+
+
+# ------------------------------------------------------------------ settings layering
+def merge_enabled_plugins(project_root):
+    """Which plugins are enabled, merged the way Claude Code layers its settings.
+
+    WHICH PLUGINS ARE ENABLED IS NOT ONE FILE. Claude Code reads the user's
+    ~/.claude/settings.json, then the project's .claude/settings.json, then
+    .claude/settings.local.json, each overriding the one before. Reading only the
+    project file, which this tool did until 2026-09-20, misses every plugin enabled
+    globally -- which is the normal way to enable one.
+
+    Measured the day it was found: vetting a target from ~/proj/neckbeard, a repo with
+    no .claude/ directory at all, discovered **8** rule sources where the corrected path
+    discovers **23**. The 15 it missed were the installed skills of all six enabled
+    plugins, `delegation` and `delegation-lab` among them, which were exactly the rules
+    that target conflicted with. The evaluation would have reported NO CONFLICTS because
+    the conflicting rules were invisible.
+
+    A first attempt to size this said 59, obtained by passing `--extra-rules` over a
+    whole worktree. That path recursively counts every markdown file it meets, so 40 of
+    those 51 "missing rules" were agent definitions, READMEs, docs and two briefs
+    written the same afternoon. **The measurement used to size a bug about under-broad
+    rule discovery was itself produced by an over-broad one, and it was not re-derived
+    once the correct path existed.** Worth keeping: a number can read correctly, survive
+    review and be wrong, which is the same shape as the defect it was describing.
+
+    That is this tool's whole purpose failing quietly: "compare the target against the
+    rules already in force" had been comparing against about a third of them and
+    saying nothing. Personal SKILLS were already read from CLAUDE_HOME, which is why
+    this reads as an oversight rather than a decision.
+
+    Later layers override earlier ones, including overriding true with false, so a
+    project may legitimately disable a globally-enabled plugin and that is honoured
+    rather than unioned away.
+    """
+    merged = {}
+    for settings_path in (
+        os.path.join(CLAUDE_HOME, "settings.json"),
+        os.path.join(project_root, ".claude", "settings.json"),
+        os.path.join(project_root, ".claude", "settings.local.json"),
+        # Managed settings sit above every other layer and nothing overrides
+        # them, so an organisation that force-disables a plugin there must win.
+        # Missing until 2026-09-24. MDM- and console-delivered policy is not
+        # readable from disk and stays out of reach; see MANAGED_SETTINGS.
+        *MANAGED_SETTINGS,
+    ):
+        if not os.path.isfile(settings_path):
+            continue
+        layer = read_json(settings_path)
+        if layer is None:
+            # Skipping a broken layer is right; skipping it in silence is not.
+            # A corrupt settings.json read exactly like "no plugins enabled".
+            print(f"warning: {settings_path} is not valid JSON; its enabledPlugins "
+                  "were not read, so the rules of any plugin it enables are missing "
+                  "from current_rules", file=sys.stderr)
+            continue
+        got = layer.get("enabledPlugins") if isinstance(layer, dict) else None
+        if isinstance(got, dict):
+            merged.update(got)
+    return merged
 
 
 # ------------------------------------------------------------------ current-rules discovery
@@ -712,16 +916,12 @@ def discover_current_rules(project_dir, extra_paths):
     items = []
     global_claude_md = os.path.join(CLAUDE_HOME, "CLAUDE.md")
     if os.path.isfile(global_claude_md):
-        it = rule_item("global-CLAUDE.md", global_claude_md)
-        if it:
-            items.append(it)
+        items.extend(with_imports("global-CLAUDE.md", global_claude_md))
 
     project_root = find_project_root(project_dir)
     proj_claude_md = find_up(project_dir, "CLAUDE.md")
     if proj_claude_md and proj_claude_md != global_claude_md:
-        it = rule_item("project-CLAUDE.md", proj_claude_md)
-        if it:
-            items.append(it)
+        items.extend(with_imports("project-CLAUDE.md", proj_claude_md))
 
     for label, base in (("project-skill", os.path.join(project_root, ".claude", "skills")),
                          ("personal-skill", os.path.join(CLAUDE_HOME, "skills"))):
@@ -730,8 +930,8 @@ def discover_current_rules(project_dir, extra_paths):
             if it:
                 items.append(it)
 
-    settings = read_json(os.path.join(project_root, ".claude", "settings.json")) or {}
-    for key, enabled in (settings.get("enabledPlugins") or {}).items():
+    # Layered across user, project and project-local settings; see the function.
+    for key, enabled in merge_enabled_plugins(project_root).items():
         if not enabled or "@" not in key:
             continue
         name, marketplace = key.split("@", 1)
@@ -806,6 +1006,46 @@ def warn_about_embedded_rules(out_path, current_items):
           "check your .gitignore before you do anything else with it.\n", file=sys.stderr)
 
 
+def classifiable_items(target_dossier):
+    """How many things in the target the classification step can actually sort.
+
+    Step 2 compares each item the target carries against the user's rules, so a
+    target that carries none gives it nothing to do -- and `current_rules` is the
+    expensive, sensitive half of the dossier: the verbatim text of the global
+    CLAUDE.md, the project rules, every personal skill and every enabled plugin's
+    skills. Measured 2026-09-20: a 102,899-byte dossier for a target with zero
+    classifiable items, of which about 100KB was the reader's own rules, read off
+    disk and embedded to be compared against nothing.
+
+    Counts skills, and ANY hook at all -- not only the ones whose payload
+    resolved.
+
+    The first version of this counted `injected_content` and nothing else, which
+    walked straight into the rule this tool exists to enforce: *never read a
+    hook's absence from `injected_content` as "it injects nothing."* A fixture
+    with one SessionStart hook injecting two rules, whose shell payload the
+    resolver could not trace, landed in `unresolved_hooks` -- and this function
+    scored it zero and skipped the reader's rules, for a target that injects at
+    every session start. Caught 2026-09-20 by the fixture written to check the
+    other direction. An unresolved hook is the case where the reader most needs
+    their own rules in hand, because they are about to go read that script.
+
+    Deliberately fails toward INCLUDING the rules. Skipping them when there IS
+    something to classify breaks the tool; carrying them when there is not only
+    wastes bytes. So this returns a count and the caller skips on a hard zero,
+    rather than judging whether the items found are worth comparing."""
+    # Commands, agents and rule files carry instructions too. Counting only
+    # skills and hooks skipped the reader's rules for a pack of nothing but
+    # commands/ and agents/, which is the failure this function exists to avoid
+    # (found 2026-09-24 by a falsify pass).
+    n = sum(len(target_dossier.get(k) or [])
+            for k in ("skills", "rule_files", "commands", "agents"))
+    hooks = target_dossier.get("hooks") or {}
+    if isinstance(hooks, dict) and hooks.get("has_hooks"):
+        n += max(1, len(hooks.get("injected_content") or []))
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("target")
@@ -819,13 +1059,26 @@ def main():
         target_dossier = inventory_target(path)
         target_dossier["resolved_via"] = resolution
         target_dossier["requested_target"] = args.target
-        current_items, project_root = discover_current_rules(args.project_dir, args.extra_rules)
+        if classifiable_items(target_dossier):
+            current_items, project_root = discover_current_rules(args.project_dir, args.extra_rules)
+            current = {"project_root": project_root, "items": current_items}
+        else:
+            # Nothing to compare against, so do not read -- let alone embed -- the
+            # reader's private rule files. See classifiable_items().
+            current_items, current = [], {
+                "project_root": None,
+                "items": [],
+                "skipped": "The target carries no classifiable item (no skill, "
+                           "hook, command, agent or rule file), so there is nothing for the "
+                           "classification step to compare against and your rule "
+                           "files were not read. Anything the target still needs "
+                           "looked at -- unresolved hooks, an MCP server, "
+                           "persistence -- is reported above, and reading it does "
+                           "not need your rules.",
+            }
         dossier = {
             "target": target_dossier,
-            "current_rules": {
-                "project_root": project_root,
-                "items": current_items,
-            },
+            "current_rules": current,
         }
         out = json.dumps(dossier, indent=2, ensure_ascii=False)
         if args.out:

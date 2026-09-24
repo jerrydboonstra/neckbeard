@@ -12,7 +12,7 @@
       "description": "Reads a Claude Code plugin before you install it: what it injects, what it costs, which rules clash with yours.",
       "source": "./",
       "category": "productivity",
-      "version": "1.11.2"
+      "version": "1.11.7"
     }
   ]
 }

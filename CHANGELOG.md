@@ -9,6 +9,116 @@ to version and 1.0.0 already refers to different content.
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is
 the short version.
 
+## 1.11.7 (2026-09-24)
+
+Follows `@path` imports in `CLAUDE.md`. A global rules file that only says
+`@~/.claude/roles/me.md` is Claude Code's documented way to split rules, and
+discovery read that one line and none of the files it imported. On the author's
+own setup that was 26 bytes of global rules instead of about 16 KB. Imports are
+followed as Claude Code follows them: relative to the importing file, `~`
+allowed, up to five hops, never inside code. Each becomes its own item with
+`imported_from`. On the target side an import that leaves the target is refused,
+like any other read. Self-check: 45 cases, each new one seen to fail under
+sabotage.
+
+## 1.11.6 (2026-09-24)
+
+`SKILL.md` brought into line with the code. 1.11.5 had left it alone because the
+sealed fixture graded that text; the cost of that is recorded in round 14.
+
+- Step 1 names every `enabledPlugins` layer, single rule files as targets, and
+  the `refused` marker, which the evaluation must report rather than skip.
+- Step 2 classifies `rule_files`, `commands` and `agents` as well as skills.
+- Step 3 checks that the evaluation path is ignored by git before writing it.
+- Step 4 no longer cites `list-item`, a skill that exists only on the author's
+  machine.
+- Commands and agents are read into the dossier in full, behind the
+  containment guard, instead of listed by filename. Self-check: 40 cases.
+- README: the "Why" paragraph said "one worth keeping" and then "copied five";
+  it was five.
+
+## 1.11.5 (2026-09-24)
+
+An adversarial pass before the repo went public. Written up as round 14 in
+`CASE-STUDIES.md`.
+
+- **The self-check tested helpers, not decisions.** All 15 cases called
+  `classifiable_items()` or `merge_enabled_plugins()` directly. Inverting the
+  skip in `main()`, or reverting discovery to the single-file read 1.11.4 fixed,
+  left it at 15/15. It now has 37 cases, 21 of them through the real CLI or the
+  real discovery path, and every fix below has been broken on purpose and seen
+  to turn a case red.
+- **Containment covers every read from the target.** Skills in a pack with no
+  manifest, the hooks file (including a `../` path named in `plugin.json`),
+  `.mcp.json`, `plugin.json` and the README excerpt were read without the check
+  that `SECURITY.md` said applied to everything.
+- **More of what a target carries counts as something to compare.** Commands,
+  agents and a root `CLAUDE.md` now count, so a pack of only those no longer
+  skips the reader's rules. A root `CLAUDE.md` is read into `rule_files`.
+- **A single rule file is a valid target**, as the skill has always said. It
+  used to exit "not a directory".
+- **Hooks inline in `plugin.json`** are read. They crashed the run before.
+- **Managed settings are read** as the top layer of `enabledPlugins`, so a
+  plugin an organisation disables there no longer counts as in force.
+- **A corrupt settings file says so** on stderr instead of reading as "no
+  plugins enabled".
+
+Correction to 1.11.4 below: it said discovery found "one eighth" of the rules
+in force. 8 of 23 is about a third.
+
+## 1.11.4 (2026-09-20)
+
+Discovered the rules that were actually in force, instead of about a third of them.
+
+`enabledPlugins` was read from the project's `.claude/settings.json` alone. Claude
+Code layers user, project and project-local settings, and enabling a plugin
+globally is the normal way to do it, so a project with no `.claude/` directory saw
+none of them. Personal *skills* were already read from `CLAUDE_HOME`, which is why
+this reads as an oversight rather than a decision.
+
+Found by pointing the tool at `github/spec-kit` from a repo with no `.claude/`
+directory. It discovered **8** rule sources where the corrected path discovers **23**.
+The **15** it missed were the installed skills of all six enabled plugins, `delegation`
+and `delegation-lab` among them, and those were exactly the rules that target
+conflicted with. The evaluation would have reported **no conflicts**, because the
+conflicting rules were invisible.
+
+The first attempt to size this said 59, and that number was wrong in a way worth
+keeping. It came from passing `--extra-rules` over a whole worktree as a workaround,
+and that path recursively counts every markdown file it meets: 40 of those 51 "missing
+rules" were agent definitions, READMEs, docs and two briefs written the same afternoon.
+**The measurement used to size a bug about under-broad rule discovery was itself
+produced by an over-broad one, and nobody re-derived it once the correct path existed.**
+A number can read correctly, survive review and be wrong, which is the same shape as the
+defect it was describing. Caught by the session that reviewed the fix, not by its author.
+
+That is the failure this tool exists to catch, in its own discovery half: the
+comparison ran, reported success, and had nothing like the corpus it claimed. The
+merge now honours precedence as well as presence, so a project that deliberately
+disables a globally-enabled plugin is not silently re-enabled.
+
+`skills/neckbeard/selfcheck.py` covers both paths that fail silently now, not one.
+
+## 1.11.3 (2026-09-20)
+
+Stopped reading the reader's private rule files for a target that cannot be
+compared against them.
+
+A dossier embeds the verbatim text of the global `CLAUDE.md`, the project rules,
+every personal skill and every enabled plugin's skills. That is load-bearing for
+the classification step and a hazard everywhere else, which 1.11.2 already said
+in a warning. What it did not do was ask whether the comparison was possible at
+all: pointed at a repository carrying no skill and no hook, it read and embedded
+102,899 bytes, about 100KB of it the reader's own rules, to compare against
+nothing. The same run now writes 4,983 bytes and says why it read nothing.
+
+The first fix counted only hooks whose payload resolved, which walked into this
+tool's own hardest rule -- *never read a hook's absence from `injected_content`
+as "it injects nothing"* -- and skipped the rules for a fixture that injects at
+every session start through a shell payload the resolver cannot trace. Any hook
+at all now counts, resolved or not. `skills/neckbeard/selfcheck.py` holds both
+directions, including that one.
+
 ## 1.11.2 (2026-09-19)
 
 First public release.

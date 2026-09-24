@@ -18,6 +18,8 @@ half is the part that improves it.
 | 10 | the skill's judgment half | the last untested surface | three instruction defects, one machine-specific |
 | 11 | the judgment half, hard case | overlapping sources, hooks that reach subagents | a silence that looked like an all-clear |
 | 12 | re-audit of the previous fix | the fix itself was the regression | the same bug, reintroduced narrower |
+| 13 | a sealed, held-out fixture | the judgment half, graded by someone who did not build it | its last self-graded claim |
+| 14 | an adversarial pass before going public | the two newest versions had no outside scrutiny | a self-check that stayed green with the bug back in, five unguarded reads |
 
 ---
 
@@ -532,8 +534,122 @@ document you are reading grew steadily more confident. Nobody decided to skip
 it. It simply never came up, because the available tools did not reach it and
 nothing forces you to notice the question your tools cannot ask.
 
+**Re-run on 1.11.6 (2026-09-24).** A fresh session on another machine re-ran the
+fixture against the rewritten instructions and reported only a score. The full
+instructions scored 12/12 on both evaluations, matching the original. The
+weakened controls also scored 12/12, up from 10.5 and 10, so by the fixture's own
+pre-registered rule the run is inconclusive: the current model no longer needs
+the instructions to pass it. A held-out set wears out as models improve, and the
+controls are what showed it. A second fixture, aimed at what only the
+instructions produce, is being built.
 
-## What the thirteen add up to
+
+## 14. Before going public: the tests that tested the wrong thing
+
+1.11.3 and 1.11.4 landed the day after the last round, and only the session
+that wrote each fix had reviewed it. They were the newest code with the least
+scrutiny, in the repo about to be made public, so on 2026-09-24 they got an
+adversarial pass first: three reviewers, run through `falsify` (the
+adversarial-audit skill from the `delegation` plugin), one on the code, one on
+the guards, one on the claims in these documents. None of them built this
+tool. The method is still the author's own, so this is not independent in the
+sense §9 and §13 are.
+
+**The self-check passed for the wrong reason.** `selfcheck.py` shipped with 15
+cases covering the two paths that fail silently. Every one of them called a
+helper directly. None ran the code that decides. A reviewer inverted the line
+in `main()` that chooses whether to read the reader's rules, and the suite
+stayed at 15 of 15. It then reverted discovery to reading one settings file,
+the exact bug 1.11.4 fixed, and the suite stayed at 15 of 15. The commit's
+claim, "15 checks, all passing", would have stayed true with the bug back in.
+A test of the helper is not a test of the decision.
+
+**1.11.3's skip reached further than 1.11.3 knew.** It skips the reader's
+rules when the target carries nothing to compare. "Nothing" meant no skill and
+no hook. A pack of `commands/` and `agents/` telling the model to skip the
+tests and log nothing counted as nothing, and so did a directory holding only
+a `CLAUDE.md`. A single rule file could not be a target at all: the tool
+exited with "not a directory", though the skill's own description says it
+vets one. Each is the failure 1.11.3 set out to fix, in a shape it did not
+consider.
+
+**SECURITY.md said every symlink was checked. Five reads were not.** The
+containment guard sat on the three paths where earlier audits had found an
+escape: a plugin's skills, a hook's script, and the files an injection pulls
+in. It was missing from skills in a pack with no manifest, from the hooks
+file, from `.mcp.json`, from `plugin.json`, and from the README excerpt. The
+hooks file was the worst of them. `plugin.json` names it, and
+`"hooks": "../../elsewhere.json"` read a file from outside the target with no
+symlink needed. All of it now goes through one guard, and ten fixtures
+plant a marker outside the target and fail if it reaches the dossier.
+
+**Smaller things, each a silence or a crash.** Hooks written inline in
+`plugin.json` as an object, a shape Claude Code accepts, crashed the run with
+no dossier. Managed settings, the layer an organisation uses and nothing
+overrides, were not read, so a plugin it had disabled still counted. A corrupt
+`settings.json` read exactly like "no plugins enabled", with no warning.
+
+**These documents had drifted too.** The table at the top of this file
+stopped at round 12. The 1.11.4 changelog said discovery had found "one
+eighth" of the rules in force; 8 of 23 is about a third. The README and the
+close of this file both said the twelfth round came back clean, when §12 is
+the round that found a regression, and it was the re-audit of that round's fix
+that came back with nothing.
+
+**What held.** The reviewer on the claims re-cloned ponytail, superpowers,
+agent-skills and claude-security and re-ran the published counts. Every byte
+count, skill count and hook event matched. Superpowers has grown since
+(261 files where §3 says 231), which is the repo moving, not the tool.
+
+**How the fixes were checked.** Every fix was broken on purpose, one at a
+time, in a scratch copy, including the two mutations that had left the old
+suite green. One mutation first appeared to pass, and only because it had
+broken the script's syntax, which proves nothing; a mutation that ran showed
+the case does fail. Then a fourth reviewer attacked the fixes themselves and
+found four more gaps in them. No check would have noticed a containment test
+that forgot the path separator, so `/x/pack` would have accepted
+`/x/packEVIL`. No check covered a rule file named `notes.git`, which would have
+gone to `git clone`. An empty inline hooks object counted as a hook. And a
+refused manifest went unreported when a second one was used. All four are
+closed. The self-check ends at 37 cases, 21 of them through the real CLI or
+the real discovery path, and eighteen mutations have each turned at least one
+of them red.
+
+**The instructions had drifted from the code.** 1.11.5 left `SKILL.md`
+alone, because the sealed fixture of §13 graded that text. It was stale in four
+places. Step 1 described plugin discovery as the project's settings file alone.
+Step 2 did not name the new `rule_files`, `commands` and `agents` fields, and
+commands and agents reached the dossier as filenames only, which left nothing
+to read once a git-URL target's temp clone was gone. Step 3 wrote evaluations
+into whatever project the reader sat in, with no check that anything ignored
+them. And Step 4 cited `list-item`, a skill that exists only on the author's
+machine: the same defect §10 found in a section heading. 1.11.6 fixes all four
+and embeds the text of commands and agents, with two more containment
+fixtures and one that fails if an agent's text is missing. The self-check
+stands at 40 cases.
+
+That costs something real. The §13 score now describes instructions that no
+longer ship. The fixture is not spoiled, since nobody has read it, but its
+result is a statement about 1.11.5, not about this version, until it is run
+again.
+
+**And one more, found by using it.** The first reports run on 1.11.6 compared
+targets against a global `CLAUDE.md` of 26 bytes. That file held one line,
+`@~/.claude/roles/...`, because Claude Code lets a rules file import others and
+the author had split his rules that way two days earlier. The tool read the
+line and not the five files it pointed at, which held every rule a target could
+conflict with. It is 1.11.4's failure again, one layer down: discovery ran,
+reported success, and compared against almost nothing. The evaluator noticed
+only because its dossier looked too small. 1.11.7 follows imports the way Claude
+Code does, and the self-check proves each rule of that (nesting, the five-hop
+limit, nothing inside code, no escape from a target) by breaking it. One of
+those checks passed with its guard removed on the first try, because the
+fixture could not reach the code it named. That is round 14's lesson, repeated
+by the round's own author the same afternoon.
+
+---
+
+## What the fourteen add up to
 
 - **"Could not resolve" is honest, not a dead end.** Ponytail and superpowers
   both hit it. In both cases, five minutes reading the named file closed the
@@ -547,7 +663,9 @@ nothing forces you to notice the question your tools cannot ask.
 - **Nearly every run has cost the tool something.** Eight of the first nine
   found a bug or a limit. The ninth, run by someone who did not build it, found
   more than the previous eight combined and proved four published claims false.
-  Only the twelfth came back clean, and it took eleven rounds to earn that.
+  The first clean result was the re-audit that closed round twelve, and it
+  took eleven rounds to earn that. That is the argument for running it on
+  things rather than trusting that it works.
 - **The builder cannot audit the builder.** Eight self-directed rounds attacked
   branches the builder thought of, and never asked what the tool's own output
   contained. That question took an outsider about an hour.
@@ -578,8 +696,7 @@ nothing forces you to notice the question your tools cannot ask.
 - **"I could not read that" is a distinct answer from yes and no.** The last
   two bugs were both a broken hooks file collapsing into a confident wrong
   answer, once as a crash and once as a quiet falsehood. A vetting tool needs
-  three states, and the third is the one that keeps the other two honest. That is the argument for running it on things rather than trusting
-  that it works.
+  three states, and the third is the one that keeps the other two honest.
 - **The claim that the heuristics fail toward false positives was false.** It
   rested on one false positive and one true negative, neither of which is
   evidence about false negatives. An audit constructed five real writes, two of
@@ -607,3 +724,12 @@ nothing forces you to notice the question your tools cannot ask.
   defects in the instructions, which is why they read as tests. What they could
   not do is fail in a way the author had not already imagined, which is the
   only thing a held-out set is for.
+- **A test of the helper is not a test of the decision.** Fifteen passing
+  cases pinned two functions and left the lines that call them free to do the
+  opposite. Sabotage found it in minutes; reading the tests never would have,
+  because every one of them was correct.
+- **A guard added where the bug was found protects that spot, not the class.**
+  Containment went onto each read path as an audit found it open, three times,
+  and five paths nobody had attacked stayed open. A guard belongs where every
+  read passes through, so the next read path is covered before anyone thinks
+  of it.
