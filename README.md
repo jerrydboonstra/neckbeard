@@ -4,7 +4,7 @@
 
 [![self-check](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml)
 
-> **Ponytail ships it. Neckbeard reads it first.**
+> **I read the whole thing. You’re welcome.**
 >
 > Reads the plugin. Writes the verdict. Edits nothing.
 
@@ -69,7 +69,7 @@ The full report goes on to list every conflict with the rule it breaks, everythi
 
 ## Why
 
-I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin, then read it instead: 1,300 tokens injected into every session and every subagent, permanently, with half its rules restating my own config, five contradicting hard stops I rely on (never act on something risky without my approval), and five worth keeping. Those numbers are against my own rules; the report above uses a sample reader, so its counts differ. I copied those into my config as plain text, deleted the plugin, and wrote neckbeard so the next read takes minutes instead of an afternoon. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
+I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin. It injects about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and it told me half of them restated my own config and five contradicted hard stops I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
 
 ## Point it at the next plugin before you install it
 

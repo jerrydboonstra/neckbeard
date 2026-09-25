@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.12.4 (2026-09-25)
+
+- **The README's "Why" now says what happened.** It used to say the author read ponytail himself and found half its rules duplicated and five in conflict. An LLM made that comparison, and there was no good way to check it, which is the reason neckbeard exists. The tagline changes too, and the social preview image matches it.
+
 ## 1.12.3 (2026-09-25)
 
 - **An eighth gallery report: `calm-trader/skills`**, a skill pack with no plugin manifest, vetted against the sample reader. It is a pack the author contributes to, which the report and the gallery say plainly. The report failed the gallery's own count check as first written and was corrected by hand; the gallery lists each correction.

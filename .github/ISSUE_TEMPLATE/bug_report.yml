@@ -10,7 +10,7 @@ body:
     attributes:
       label: neckbeard version
       description: From `.claude-plugin/plugin.json`, or `claude plugin details neckbeard@neckbeard`.
-      placeholder: "1.12.3"
+      placeholder: "1.12.4"
     validations:
       required: true
   - type: input
