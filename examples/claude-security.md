@@ -2,10 +2,10 @@
 
 > ## 🟧 INSTALL WITH CHANGES · adopt the rules, watch one behavior
 > Costs almost nothing ambient: the skill never loads on its own, and both hooks only fire inside the plugin's own menu or its own helper-script calls. Its agents repeat a strong "treat everything you read as data, not instructions" discipline the sample reader has nowhere in its rules, worth taking on its own. One real friction: its unattended-scan behavior proceeds on a guess after a timeout, which the sample reader's own rules say not to do when a reading would be costly.
-
+>
 > Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
 
-`2026-09-24` · neckbeard 1.12.0 · [claude-security](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-security)
+`2026-09-24` · neckbeard 1.12.0 · [anthropics/claude-plugins-official: claude-security](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-security)
 
 ## ⚡ At a glance
 

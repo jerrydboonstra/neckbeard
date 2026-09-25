@@ -1,11 +1,11 @@
 # 🔍 agent-skills 0.6.10 · vetted against the sample reader
 
-> Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
-
 > ## 🟩 INSTALL · install as published, nothing to strip first
 > No hooks are wired in the manifest, so nothing runs until a skill, command, or agent is explicitly invoked; the only standing cost is the native skill router seeing each item's description every session. Nothing in the 39 bundled skills, commands, agents, and rule files collides with the sample reader's hard stops on destructive operations, pushing to `main`, deploys, or secrets. 37 of those 39 add coverage the sample reader has none of; only one repeats a rule it already runs, and one doesn't apply outside the target's own repo.
+>
+> Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
 
-`2026-09-24` · neckbeard 1.12.0 · https://github.com/addyosmani/agent-skills
+`2026-09-24` · neckbeard 1.12.0 · [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
 
 ## ⚡ At a glance
 

@@ -45,11 +45,11 @@ SUBAGENT_EVENTS = {"SubagentStart", "SubagentStop"}
 # and guessing a confident list is the failure this tool exists to prevent.
 SUBAGENT_TOOL_EVENTS = {"PreToolUse", "PostToolUse"}
 SUBAGENT_TOOL_EVENTS_LIKELY = {"PostToolUseFailure", "Stop", "PermissionRequest"}
-# Widened 2026-09-19. The previous set matched writeFileSync and little else,
-# and missed five constructed writes including two into $HOME: shell append
-# redirection, cp into a home cache, pathlib write_text, appendFileSync and
-# createWriteStream. The published claim that this heuristic "fails toward
-# false positives" had never been tested against a write it should catch.
+# Deliberately broad. Matches constructed writes as well as direct calls --
+# shell append redirection, a copy into a home-directory cache, pathlib
+# write_text, appendFileSync, createWriteStream -- because a persistence scan
+# that only catches the obvious calls gives false confidence. Treat any match
+# as a candidate to verify by hand, not a verdict. See CASE-STUDIES.md, round 9.
 PERSIST_PATTERNS = [
     # node/js
     re.compile(r"\b(writeFileSync|appendFileSync|createWriteStream|copyFileSync|mkdirSync|rmSync)\b"),
@@ -95,11 +95,10 @@ def read_text(path, limit=READ_LIMIT):
 def measure(path, text):
     """Real size on disk, characters read, and whether the read was cut short.
 
-    `bytes` used to be len() of a decoded string, which is a character count
-    wearing the wrong unit: 10,000 em dashes reported 10,000 against 30,000 on
-    disk. It was also silently capped at the read limit, so a one-megabyte
-    skill reported exactly 200,000 with nothing saying so. A plugin that wants
-    to look small only has to be large. Both found 2026-09-19."""
+    `bytes` is measured on disk, not derived from a decoded string's length --
+    that undercounts any non-ASCII content. Also flags when the read hit the
+    size limit, so a large file cannot silently report a truncated size as if
+    it were the whole thing."""
     try:
         size = os.path.getsize(path)
     except OSError:
@@ -118,9 +117,9 @@ def split_frontmatter(text):
     good enough for name/description, which is all current_items needs."""
     if not text or not text.startswith("---"):
         return None, text or ""
-    # Split on lines that are exactly a fence, not on the first "---" anywhere.
-    # "description: uses a --- separator" used to truncate the description at
-    # "uses a" and misparse the body with it (found 2026-09-19).
+    # Split on lines that are exactly a fence, not on the first "---" anywhere:
+    # a description containing "---" would otherwise truncate the frontmatter
+    # early and misparse the body.
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         return None, text
@@ -178,8 +177,7 @@ def find_project_root(start):
 
 def _name_from_path(path):
     """A skill with no frontmatter still has an identity: its directory.
-    skills/<name>/SKILL.md is named <name>, not "SKILL". Found 2026-09-19,
-    where every frontmatter-less skill reported the same useless name."""
+    skills/<name>/SKILL.md is named <name>, not "SKILL"."""
     base = os.path.basename(path)
     if base.upper().startswith("SKILL."):
         parent = os.path.basename(os.path.dirname(path))
@@ -191,8 +189,7 @@ def _name_from_path(path):
 def _within(path, root):
     """True when path really sits under root, following symlinks. The target is
     untrusted by definition, so a skills/x/SKILL.md symlinked to /etc/passwd
-    must not be read and embedded in a dossier. This guard existed on the
-    injection resolver only until 2026-09-19."""
+    must not be read and embedded in a dossier. See CASE-STUDIES.md, round 9."""
     try:
         rp = os.path.realpath(path)
         rr = os.path.realpath(root)
@@ -228,11 +225,10 @@ def resolve_installed_plugin(name, marketplace):
     # installed_plugins.json's installPath is usually absent for a directory-
     # source marketplace, but not always: if that directory is itself a git
     # repo, Claude Code may cache it anyway, keyed to plugin.json's version,
-    # and the cache can go stale silently (confirmed on this plugin itself,
-    # 2026-09-19 — a fixed description sat uncorrected in the cache until an
-    # uninstall/reinstall, because the version number never changed). Verify
-    # a found installPath actually has the manifest before trusting it, and
-    # fall back to the marketplace's own listing when it does not.
+    # and the cache can go stale silently if the version number never moves.
+    # Verify a found installPath actually has the manifest before trusting it,
+    # and fall back to the marketplace's own listing when it does not. See
+    # CASE-STUDIES.md, round 2.
     markets = read_json(os.path.join(CLAUDE_HOME, "plugins", "known_marketplaces.json")) or {}
     m = markets.get(marketplace)
     if not m:
@@ -253,13 +249,13 @@ def resolve_installed_plugin(name, marketplace):
 
 def resolve_target(target, tmp_root):
     # An existing local directory is a local directory, whatever it is called.
-    # Testing the .git suffix first sent ./repo.git to git clone and crashed
-    # with an uncaught CalledProcessError (found 2026-09-19).
+    # Check that before testing for a git-URL pattern, or a local directory
+    # named repo.git gets sent to git clone and crashes.
     if os.path.isdir(os.path.expanduser(target)):
         path = os.path.realpath(os.path.expanduser(target))
         return path, "local-path"
-    # A single rule file (someone's CLAUDE.md, a pasted rules.md). The skill has
-    # always said it vets one; until 2026-09-24 this exited "not a directory".
+    # A single rule file (someone's CLAUDE.md, a pasted rules.md). The skill
+    # vets one of these just as it vets a plugin or a directory.
     if os.path.isfile(os.path.expanduser(target)):
         return os.path.realpath(os.path.expanduser(target)), "local-file"
     if re.match(r"^(https?://|git@|ssh://).*|.*\.git$", target):
@@ -300,16 +296,16 @@ PATH_JOIN_RE = re.compile(r"""path\.join\(\s*([^)]+?)\s*\)""")
 
 
 def _literal_path_candidates(src):
-    """Ordered most-trustworthy first. A path.join(...) reconstruction is
-    evidence the file is actually being built as a path; a bare quoted string
-    is not. Returning bare literals first, then taking the first that exists on
-    disk, made the resolver confidently name an unrelated CHANGELOG.md quoted
-    two lines above the real payload, with no note telling the reader to doubt
-    it (found 2026-09-19). Returns (candidate, confident) pairs."""
-    """Single-literal paths ('../skills/x/SKILL.md') and path.join(...) calls
-    whose arguments are all string literals or __dirname/__filename (ponytail's
-    actual pattern: path.join(__dirname, '..', 'skills', 'ponytail', 'SKILL.md')),
-    reconstructed as a plain relative path."""
+    """Ordered most-trustworthy first: a path.join(...) reconstruction is
+    evidence the file is actually being built as a path, while a bare quoted
+    string is not, and treating a bare literal as equally confident risks
+    naming an unrelated file quoted nearby over the real payload, with no note
+    telling the reader to doubt it. Handles single-literal paths
+    ('../skills/x/SKILL.md') and path.join(...) calls whose arguments are all
+    string literals or __dirname/__filename (ponytail's actual pattern:
+    path.join(__dirname, '..', 'skills', 'ponytail', 'SKILL.md')),
+    reconstructed as a plain relative path. Returns (candidate, confident)
+    pairs."""
     joined, bare = [], list(re.findall(r"""['"]([\w./-]+\.(?:md|txt))['"]""", src))
     out = []
     for args_raw in PATH_JOIN_RE.findall(src):
@@ -401,8 +397,9 @@ def inventory_hooks(plugin_root, plugin_json):
     hooks_ref = plugin_json.get("hooks")
     hooks_path = None
     # plugin.json may carry its hooks inline as an object rather than naming a
-    # file. That shape went straight into os.path.join and killed the run with a
-    # TypeError and no dossier at all (found 2026-09-24 by a falsify pass).
+    # file. That shape must be handled before it reaches os.path.join, which
+    # expects a path string, or the run crashes with no dossier at all. See
+    # CASE-STUDIES.md, round 14.
     if isinstance(hooks_ref, dict) and hooks_ref:
         rel, hooks_json = "plugin.json (inline hooks)", hooks_ref
     elif hooks_ref and not isinstance(hooks_ref, (str, dict)):
@@ -421,9 +418,9 @@ def inventory_hooks(plugin_root, plugin_json):
         if not hooks_path or not os.path.isfile(hooks_path):
             return {"has_hooks": False}
         rel = os.path.relpath(hooks_path, plugin_root)
-        # plugin.json names this path and plugin.json is untrusted: "../../x.json"
-        # or a symlinked hooks/ read a file from anywhere, no symlink privileges
-        # needed for the first. Unguarded until 2026-09-24.
+        # plugin.json names this path, and plugin.json is untrusted: "../../x.json"
+        # or a symlinked hooks/ can read a file from anywhere, no symlink
+        # privileges needed for the traversal case. See CASE-STUDIES.md, round 14.
         if not _within(hooks_path, plugin_root):
             return {"has_hooks": "unknown", "hooks_file": rel, "events": {},
                     "hook_scripts": None, "hook_registrations": None,
@@ -432,10 +429,9 @@ def inventory_hooks(plugin_root, plugin_json):
         hooks_json = read_json(hooks_path)
 
     # A hooks file that exists but cannot be read is NOT "no hooks", and it is
-    # not "hooks with no events" either. Both readings are false and the second
-    # is the one this used to report: has_hooks true, events empty. Say what is
-    # actually known, which is that there is a hooks file and it did not parse.
-    # Found 2026-09-19 with a deliberately corrupt hooks.json.
+    # not "hooks with no events" either. Say what is actually known, which is
+    # that there is a hooks file and it did not parse. See CASE-STUDIES.md,
+    # round 8.
     if hooks_json is None:
         return {"has_hooks": "unknown", "hooks_file": rel, "events": {},
                 "hook_scripts": None, "hook_registrations": None,
@@ -444,7 +440,8 @@ def inventory_hooks(plugin_root, plugin_json):
 
     # Claude Code nests events under a "hooks" key; some plugins write them at
     # the top level. Anything else (a list, a string, a number) is neither, and
-    # crashed on .get() until 2026-09-19.
+    # must be handled explicitly rather than assumed. See CASE-STUDIES.md,
+    # round 8.
     events = hooks_json.get("hooks", hooks_json) if isinstance(hooks_json, dict) else None
     if not isinstance(events, dict):
         # Name the value that is actually wrong. Reporting type(hooks_json)
@@ -469,8 +466,8 @@ def inventory_hooks(plugin_root, plugin_json):
     for event, entries in (events.items() if isinstance(events, dict) else []):
         cmds = []
         # An event's value should be a list of groups, each a dict with a
-        # "hooks" list of dicts. Every one of those three levels was assumed
-        # rather than checked, and each shape below crashed until 2026-09-19.
+        # "hooks" list of dicts. Every one of those three levels needs checking
+        # explicitly; each malformed shape below is reported, not assumed away.
         if not isinstance(entries, list):
             malformed.append(f"{event}: value is {type(entries).__name__}, expected a list")
             result["events"][event] = []
@@ -494,18 +491,16 @@ def inventory_hooks(plugin_root, plugin_json):
                     scripts_seen.add(base)
                 # Three outcomes, not two. A hook whose script cannot even be
                 # IDENTIFIED is a larger unknown than one that was identified
-                # and whose payload could not be traced, and the previous
-                # version ranked it below "nothing to inject" by saying
-                # nothing at all.
-                #
-                # That regression shipped in 1.10.0 and was caught against
-                # obra/superpowers, whose command is
+                # and whose payload could not be traced, and ranking it below
+                # "nothing to inject" by saying nothing turns an unknown into a
+                # false all-clear. An extension allowlist is not enough to
+                # identify a script: obra/superpowers runs its hook via
                 #   "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" session-start
-                # A five-extension allowlist never matched .cmd, so a hook
-                # injecting 3,192 bytes every session reported silence, while
-                # the instructions told the reader that silence meant nothing
-                # was injected. Identify first, resolve second, and never let a
-                # failure to identify pass as an all-clear.
+                # a wrapper with no recognizable script extension, and would
+                # otherwise report silence while injecting content every
+                # session. Identify first, resolve second, and never let a
+                # failure to identify pass as an all-clear. See
+                # CASE-STUDIES.md, round 12.
                 script = _identify_hook_script(cmd, plugin_root)
                 if script is None:
                     unidentifiable.add(f"{event}: {cmd.strip()[:90]}")
@@ -530,9 +525,8 @@ def inventory_hooks(plugin_root, plugin_json):
         if reaches_subagents_likely else "no event known to fire in a subagent")
     # Report both counts. A plugin's own docs usually count distinct scripts,
     # while the registration count is higher whenever one script is wired to
-    # more than one event. Reporting only the latter reads as drift against a
-    # correct doc (found 2026-09-19 against a plugin with 8 scripts and 9
-    # registrations, because one script was wired to two different events).
+    # more than one event. Reporting only the latter can read as drift against
+    # a correct doc. See CHANGELOG.md 1.1.0.
     result["hook_registrations"] = sum(len(v) for v in result["events"].values())
     result["hook_scripts"] = len(scripts_seen)
     result["injected_content"] = [{"file": f, "bytes": b} for f, b in injected_seen.items()] or None
@@ -540,12 +534,10 @@ def inventory_hooks(plugin_root, plugin_json):
     if malformed:
         result["malformed_entries"] = malformed
         result["has_hooks"] = "partial"
-    # Report unresolved hooks per script, not only when the whole set failed.
-    # The old condition fired only if NOTHING resolved, so one hook that did
-    # resolve silenced the warning for every hook that did not: an unresolved
-    # PreToolUse gate looked exactly like a hook with nothing to inject. Found
-    # 2026-09-19 by an evaluation of the judgment half, which flagged the
-    # silence as indistinguishable from an all-clear.
+    # Report unresolved hooks per script, not only when the whole set failed:
+    # one hook that resolves must not silence the warning for one that does
+    # not, or an unresolved PreToolUse gate looks exactly like a hook with
+    # nothing to inject. See CASE-STUDIES.md, round 11.
     if unresolved_scripts:
         result["unresolved_hooks"] = sorted(unresolved_scripts)
     if unidentifiable:
@@ -568,8 +560,7 @@ def inventory_hooks(plugin_root, plugin_json):
 def mcp_servers(plugin_json, plugin_root=None):
     """MCP servers a plugin bundles. Reported because an MCP server is a live
     tool surface with network reach and real side effects, which makes it the
-    single highest-consequence thing a plugin can ship. Invisible until
-    2026-09-19, when a target declaring two of them reported nothing at all.
+    single highest-consequence thing a plugin can ship.
 
     This tool inspects the declaration only. What the server actually exposes
     is knowable only by speaking MCP to it, which is out of scope here."""
@@ -578,9 +569,9 @@ def mcp_servers(plugin_json, plugin_root=None):
     ambiguity = None
 
     # A plugin may instead ship .mcp.json at its root, which Claude Code loads.
-    # Reading only the inline manifest key missed it entirely, including in
-    # Anthropic's own example-plugin, which sits inside the 39-plugin catalog
-    # this tool swept and declared free of MCP servers (found 2026-09-19).
+    # Reading only the inline manifest key misses this path entirely --
+    # including Anthropic's own example-plugin, which ships exactly this
+    # shape. See CASE-STUDIES.md, round 9.
     if not servers and plugin_root:
         dot = os.path.join(plugin_root, ".mcp.json")
         if os.path.lexists(dot) and not _within(dot, plugin_root):
@@ -654,9 +645,9 @@ def inventory_persistence(plugin_root):
 def contained_skill(sm, root):
     """One SKILL.md from the target, or a refusal if it resolves outside it.
 
-    Both skill paths go through here. Until 2026-09-24 only the plugin path
-    checked containment, so a pack with no manifest (the "plain pack of rules"
-    case) read skills/x/SKILL.md straight through a symlink to anywhere."""
+    Both skill paths (a plugin's and a plain pack's) go through here, so
+    containment is checked the same way for each. See CASE-STUDIES.md,
+    round 14."""
     if not _within(sm, root):
         return {"source": os.path.relpath(sm, root), "path": sm,
                 "name": os.path.basename(os.path.dirname(sm)),
@@ -687,8 +678,8 @@ def inventory_commands_agents(root):
     """Slash commands and agent definitions, read in full like skills.
 
     Both are instructions to a model, so the classification step needs their
-    text. They used to be listed by filename only, which left nothing to read
-    for a git-URL target once its temp clone was gone (found 2026-09-24)."""
+    text, not just their names -- a git-URL target's temp clone is gone by the
+    time anyone reads the dossier. See CASE-STUDIES.md, round 14."""
     def read(paths, source):
         out = []
         for p in sorted(paths):
@@ -713,10 +704,9 @@ def inventory_commands_agents(root):
 # ------------------------------------------------------------------ CLAUDE.md imports
 # Claude Code lets a CLAUDE.md pull in other files with `@path`: relative to the
 # importing file, `~` allowed, up to five hops, never inside code. A global
-# CLAUDE.md that is only `@~/.claude/roles/me.md` is the documented way to split
-# rules, and until 2026-09-24 this tool read exactly that one line and compared
-# every target against it. Found by an evaluation that noticed its dossier held
-# 26 bytes of global rules.
+# CLAUDE.md that is only `@~/.claude/roles/me.md` is the documented way to
+# split rules, and reading only that one line compares every target against a
+# near-empty corpus while reporting success. See CASE-STUDIES.md, round 14.
 IMPORT_MAX_HOPS = 5
 _CODE_RE = re.compile(r"```.*?```|~~~.*?~~~|`[^`\n]*`", re.S)
 _IMPORT_RE = re.compile(r"(?:^|(?<=\s))@(\S+)")
@@ -770,9 +760,10 @@ def with_imports(source, path, root=None):
 
 
 def target_rule_files(root):
-    """A CLAUDE.md at the target's root is a rule file the target carries, and
-    was read by nothing until 2026-09-24: a CLAUDE.md-only rule pack produced an
-    empty dossier and skipped the reader's rules as having nothing to compare."""
+    """A CLAUDE.md at the target's root is a rule file the target carries.
+    Without this, a CLAUDE.md-only rule pack produces an empty dossier and
+    skips the reader's rules as having nothing to compare. See
+    CASE-STUDIES.md, round 14."""
     p = os.path.join(root, "CLAUDE.md")
     if not os.path.isfile(p):
         return []
@@ -807,11 +798,10 @@ def inventory_target(path):
         # broadly for skills.
         #
         # STILL CHECK FOR HOOKS. A directory can carry hooks/hooks.json with no
-        # manifest at all, and an earlier version of this branch asserted "no
-        # hooks, no carrying cost by construction" without ever looking. Found
-        # 2026-09-19: a test directory with a live SubagentStart hook reported
-        # no hooks field whatsoever. Silently under-reporting a hook that
-        # reaches subagents is the worst direction for this tool to be wrong in.
+        # manifest at all, so asserting "no manifest means no hooks" without
+        # looking would under-report a hook that reaches every subagent, which
+        # is the worst direction for this tool to be wrong in. See
+        # CASE-STUDIES.md, round 6.
         skills = inventory_skills(path)
         readme = None
         for r in ("README.md", "readme.md"):
@@ -856,34 +846,20 @@ def merge_enabled_plugins(project_root):
 
     WHICH PLUGINS ARE ENABLED IS NOT ONE FILE. Claude Code reads the user's
     ~/.claude/settings.json, then the project's .claude/settings.json, then
-    .claude/settings.local.json, each overriding the one before. Reading only the
-    project file, which this tool did until 2026-09-20, misses every plugin enabled
-    globally -- which is the normal way to enable one.
+    .claude/settings.local.json, each overriding the one before. Reading only
+    the project file misses every plugin enabled globally, which is the normal
+    way to enable one -- a project with no .claude/ directory at all can then
+    see only a fraction of the rules actually in force, and the comparison
+    reports no conflicts because the conflicting rules were invisible.
 
-    Measured the day it was found: vetting a target from ~/proj/neckbeard, a repo with
-    no .claude/ directory at all, discovered **8** rule sources where the corrected path
-    discovers **23**. The 15 it missed were the installed skills of all six enabled
-    plugins, `delegation` and `delegation-lab` among them, which were exactly the rules
-    that target conflicted with. The evaluation would have reported NO CONFLICTS because
-    the conflicting rules were invisible.
+    Personal SKILLS were already read from CLAUDE_HOME, which is why under-
+    reading enabled plugins here reads as an oversight rather than a decision.
 
-    A first attempt to size this said 59, obtained by passing `--extra-rules` over a
-    whole worktree. That path recursively counts every markdown file it meets, so 40 of
-    those 51 "missing rules" were agent definitions, READMEs, docs and two briefs
-    written the same afternoon. **The measurement used to size a bug about under-broad
-    rule discovery was itself produced by an over-broad one, and it was not re-derived
-    once the correct path existed.** Worth keeping: a number can read correctly, survive
-    review and be wrong, which is the same shape as the defect it was describing.
+    Later layers override earlier ones, including overriding true with false,
+    so a project may legitimately disable a globally-enabled plugin and that
+    is honoured rather than unioned away.
 
-    That is this tool's whole purpose failing quietly: "compare the target against the
-    rules already in force" had been comparing against about a third of them and
-    saying nothing. Personal SKILLS were already read from CLAUDE_HOME, which is why
-    this reads as an oversight rather than a decision.
-
-    Later layers override earlier ones, including overriding true with false, so a
-    project may legitimately disable a globally-enabled plugin and that is honoured
-    rather than unioned away.
-    """
+    See CHANGELOG.md 1.11.4."""
     merged = {}
     for settings_path in (
         os.path.join(CLAUDE_HOME, "settings.json"),
@@ -891,8 +867,9 @@ def merge_enabled_plugins(project_root):
         os.path.join(project_root, ".claude", "settings.local.json"),
         # Managed settings sit above every other layer and nothing overrides
         # them, so an organisation that force-disables a plugin there must win.
-        # Missing until 2026-09-24. MDM- and console-delivered policy is not
-        # readable from disk and stays out of reach; see MANAGED_SETTINGS.
+        # MDM- and console-delivered policy is not readable from disk and
+        # stays out of reach; see MANAGED_SETTINGS. See CASE-STUDIES.md,
+        # round 14.
         *MANAGED_SETTINGS,
     ):
         if not os.path.isfile(settings_path):
@@ -953,10 +930,10 @@ def discover_current_rules(project_dir, extra_paths):
                 items.append(it)
         elif os.path.isdir(extra):
             # The user pointed here explicitly, so take every markdown file
-            # rather than only the two canonical names. Filtering an explicit
-            # path by filename made `--extra-rules <dir>` silently contribute
-            # nothing unless the files happened to be SKILL.md or CLAUDE.md,
-            # which defeats the flag's entire purpose (found 2026-09-19).
+            # rather than only the two canonical names: filtering by filename
+            # would silently contribute nothing unless a file happened to be
+            # named SKILL.md or CLAUDE.md, defeating the flag's purpose. See
+            # CASE-STUDIES.md, round 7.
             found = 0
             for dirpath, dirnames, filenames in os.walk(extra):
                 dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules")]
@@ -984,12 +961,8 @@ def warn_about_embedded_rules(out_path, current_items):
     the point (the classification needs it) and also a hazard: those files are
     the user's global CLAUDE.md, their project rules, their personal skills and
     the skills of every plugin they have enabled. Writing that to disk is one
-    `git add` away from publishing it.
-
-    Found 2026-09-19 by an independent audit of this tool: a run from inside
-    this plugin's own repo produced 90,533 bytes of private rules including a
-    Tailscale hostname, a NAS host and two private marketplace names, in a repo
-    with no gitignore rule that would have caught it.
+    `git add` away from publishing private configuration and identifiers. See
+    CASE-STUDIES.md, round 9.
 
     A warning rather than redaction, because the text is load-bearing for the
     comparison. Say what is in the file and let the reader decide."""
@@ -1013,31 +986,22 @@ def classifiable_items(target_dossier):
     target that carries none gives it nothing to do -- and `current_rules` is the
     expensive, sensitive half of the dossier: the verbatim text of the global
     CLAUDE.md, the project rules, every personal skill and every enabled plugin's
-    skills. Measured 2026-09-20: a 102,899-byte dossier for a target with zero
-    classifiable items, of which about 100KB was the reader's own rules, read off
-    disk and embedded to be compared against nothing.
+    skills. Reading and embedding all of that for a target with nothing
+    classifiable wastes bytes and exposes those rules for no reason.
 
-    Counts skills, and ANY hook at all -- not only the ones whose payload
-    resolved.
-
-    The first version of this counted `injected_content` and nothing else, which
-    walked straight into the rule this tool exists to enforce: *never read a
-    hook's absence from `injected_content` as "it injects nothing."* A fixture
-    with one SessionStart hook injecting two rules, whose shell payload the
-    resolver could not trace, landed in `unresolved_hooks` -- and this function
-    scored it zero and skipped the reader's rules, for a target that injects at
-    every session start. Caught 2026-09-20 by the fixture written to check the
-    other direction. An unresolved hook is the case where the reader most needs
-    their own rules in hand, because they are about to go read that script.
+    Counts skills, rule files, commands, agents, and ANY hook at all -- not
+    only the ones whose payload resolved. An unresolved hook is not "nothing to
+    inject"; it is the case where the reader most needs their own rules in
+    hand, because they are about to go read that script by hand. See
+    CASE-STUDIES.md, round 11 and round 14.
 
     Deliberately fails toward INCLUDING the rules. Skipping them when there IS
     something to classify breaks the tool; carrying them when there is not only
     wastes bytes. So this returns a count and the caller skips on a hard zero,
     rather than judging whether the items found are worth comparing."""
-    # Commands, agents and rule files carry instructions too. Counting only
-    # skills and hooks skipped the reader's rules for a pack of nothing but
-    # commands/ and agents/, which is the failure this function exists to avoid
-    # (found 2026-09-24 by a falsify pass).
+    # Commands, agents and rule files carry instructions too; counting only
+    # skills and hooks would skip the reader's rules for a pack of nothing but
+    # commands/ and agents/. See CASE-STUDIES.md, round 14.
     n = sum(len(target_dossier.get(k) or [])
             for k in ("skills", "rule_files", "commands", "agents"))
     hooks = target_dossier.get("hooks") or {}

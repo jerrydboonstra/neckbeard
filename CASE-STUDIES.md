@@ -2,6 +2,8 @@
 
 Every time this tool has been pointed at something real, in order. Each entry says what was found, and where the tool itself fell short, because the second half is the part that improves it.
 
+**Who did the reviewing.** Every reviewer here was an AI agent: a Claude session, run on the author's machine. "Independent" below means a separate session that had not written the code it was reviewing and had no stake in the result; it does not mean a human auditor. Both sealed fixtures were built and graded by such sessions, and the author has never seen their answers. The only outside human user so far ran an early version once and hit bugs that later rounds fixed.
+
 | # | Target | Why it was picked | What it cost the tool |
 |---|---|---|---|
 | 1 | `ponytail` | the plugin that prompted this one | two resolver bugs |
@@ -12,11 +14,11 @@ Every time this tool has been pointed at something real, in order. Each entry sa
 | 6 | all 39 Anthropic first-party plugins | a sweep, to find where it breaks at scale | a hook blind spot it had asserted away |
 | 7 | purpose-built directories | attacking the branches no real plugin exercises | three bugs, one of them the biggest omission it could make |
 | 8 | the last unexercised branches | closing the list out | a crash and a lie, both in hook parsing |
-| 9 | an independent audit | someone who did not build it | eleven findings, four published claims proved false |
+| 9 | an independent audit | a separate session that did not build it | eleven findings, four published claims proved false |
 | 10 | the skill's judgment half | the last untested surface | three instruction defects, one machine-specific |
 | 11 | the judgment half, hard case | overlapping sources, hooks that reach subagents | a silence that looked like an all-clear |
 | 12 | re-audit of the previous fix | the fix itself was the regression | the same bug, reintroduced narrower |
-| 13 | a sealed, held-out fixture | the judgment half, graded by someone who did not build it | its last self-graded claim |
+| 13 | a sealed, held-out fixture | the judgment half, graded by a session that did not build it | its last self-graded claim |
 | 14 | an adversarial pass before going public | the two newest versions had no outside scrutiny | a self-check that stayed green with the bug back in, five unguarded reads |
 
 ---
@@ -39,7 +41,7 @@ It also flagged its own `inventory.py` as a persistence risk, for calling `os.pa
 
 ## 3. `obra/superpowers`: the large one
 
-288,751 stars, 231 files across 67 directories, 15 skills, one hook. Picked by checking real file, hook and skill counts across four candidates via GitHub's tree API, not by reading descriptions.
+231 files across 67 directories as of 2026-09-19 (it has grown since; see §14), 15 skills, one hook. Picked by checking real file, hook and skill counts across four candidates via GitHub's tree API, not by reading descriptions.
 
 ```
 has_hooks: true, events: [SessionStart]
@@ -237,22 +239,22 @@ Re-audited afterwards and confirmed closed, with all eleven earlier findings re-
 
 ## 13. The last claim resting on the builder's word
 
-Rounds 10 and 11 tested the judgment half and both passed. Neither pass was worth what it looked like, for a reason that took an outsider to name: **the builder designed those fixtures, planted the rules, knew the correct bucket for each one, and graded the result.** Every other claim in this repo had by then been re-derived by someone with no stake in it. That one had not, and it was the only one left.
+Rounds 10 and 11 tested the judgment half and both passed. Neither pass was worth what it looked like, for a reason that took a session outside the build to name: **the builder designed those fixtures, planted the rules, knew the correct bucket for each one, and graded the result.** Every other claim in this repo had by then been re-derived by someone with no stake in it. That one had not, and it was the only one left.
 
 It is also the claim that mattered most. The mechanical half can be checked against a filesystem. The judgment half is a set of instructions to a model about sorting rules into duplicate, conflict and new, and there is no disk to compare it to. "Not mechanically testable" had quietly become "not tested by anyone but the author," and those are very different sentences.
 
-The close was to hand the whole problem out. An outside auditor built its own fixture corpus, sealed the ground truth before a single evaluation ran, pre-registered the rubric it would grade against, ran six evaluations, and scored them itself. The builder specified none of it and saw none of it.
+The close was to hand the whole problem out. A separate auditing session built its own fixture corpus, sealed the ground truth before a single evaluation ran, pre-registered the rubric it would grade against, ran six evaluations, and scored them itself. The builder specified none of it and saw none of it.
 
 **The fixture is now sealed and lives outside this repo, and this file is not going to tell you what is in it.** That is not coyness. A held-out set is worth something for exactly one reason, that the thing being graded has not seen the answers, and a model that reads the ground truth will score well on it while the score means nothing. Nothing afterwards can distinguish that from a real pass. There is no undo and no second copy, so the only safe place to keep it is somewhere the author of the instructions does not look.
 
 **The lesson is about the shape of the gap, not the score.** Twelve rounds of increasingly adversarial testing all pointed at the half that was easy to test, and the half that was hard to test went twelve rounds untouched while the document you are reading grew steadily more confident. Nobody decided to skip it. It simply never came up, because the available tools did not reach it and nothing forces you to notice the question your tools cannot ask.
 
-**Re-run on 1.11.6 (2026-09-24).** A fresh session on another machine re-ran the fixture against the rewritten instructions and reported only a score. The full instructions scored 12/12 on both evaluations, matching the original. The weakened controls also scored 12/12, up from 10.5 and 10, so by the fixture's own pre-registered rule the run is inconclusive: the current model no longer needs the instructions to pass it. A held-out set wears out as models improve, and the controls are what showed it. A second fixture, aimed at what only the instructions produce, is being built.
+**Re-run on 1.11.6 (2026-09-24).** A fresh session on another machine re-ran the fixture against the rewritten instructions and reported only a score. The full instructions scored 12/12 on both evaluations, matching the original. The weakened controls also scored 12/12, up from 10.5 and 10, so by the fixture's own pre-registered rule the run is inconclusive: the current model no longer needs the instructions to pass it. A held-out set wears out as models improve, and the controls are what showed it. A second fixture, aimed at what only the instructions produce, was built next; see §14.
 
 
 ## 14. Before going public: the tests that tested the wrong thing
 
-1.11.3 and 1.11.4 landed the day after the last round, and only the session that wrote each fix had reviewed it. They were the newest code with the least scrutiny, in the repo about to be made public, so on 2026-09-24 they got an adversarial pass first: three reviewers, run through `falsify` (the adversarial-audit skill from the `delegation` plugin), one on the code, one on the guards, one on the claims in these documents. None of them built this tool. The method is still the author's own, so this is not independent in the sense §9 and §13 are.
+1.11.3 and 1.11.4 landed the day after the last round, and only the session that wrote each fix had reviewed it. They were the newest code with the least scrutiny, in the repo about to be made public, so on 2026-09-24 they got an adversarial pass first: three reviewers, each a separate session running an adversarial-review brief, one on the code, one on the guards, one on the claims in these documents. None of them built this tool. The method is still the author's own, so this is not independent in the sense §9 and §13 are.
 
 **The self-check passed for the wrong reason.** `selfcheck.py` shipped with 15 cases covering the two paths that fail silently. Every one of them called a helper directly. None ran the code that decides. A reviewer inverted the line in `main()` that chooses whether to read the reader's rules, and the suite stayed at 15 of 15. It then reverted discovery to reading one settings file, the exact bug 1.11.4 fixed, and the suite stayed at 15 of 15. The commit's claim, "15 checks, all passing", would have stayed true with the bug back in. A test of the helper is not a test of the decision.
 
@@ -274,7 +276,7 @@ That costs something real. The §13 score now describes instructions that no lon
 
 **And one more, found by using it.** The first reports run on 1.11.6 compared targets against a global `CLAUDE.md` of 26 bytes. That file held one line, `@~/.claude/roles/...`, because Claude Code lets a rules file import others and the author had split his rules that way two days earlier. The tool read the line and not the five files it pointed at, which held every rule a target could conflict with. It is 1.11.4's failure again, one layer down: discovery ran, reported success, and compared against almost nothing. The evaluator noticed only because its dossier looked too small. 1.11.7 follows imports the way Claude Code does, and the self-check proves each rule of that (nesting, the five-hop limit, nothing inside code, no escape from a target) by breaking it. One of those checks passed with its guard removed on the first try, because the fixture could not reach the code it named. That is round 14's lesson, repeated by the round's own author the same afternoon.
 
-**The second fixture.** An outside session built and sealed a harder one, aimed at what only the instructions produce, and 1.11.7 scored 82 of 93 (88%), with 4 points of difference between two runs on the same target. The first controls did not work: their prompt named the plugin's folder, so they read the instructions they were meant to lack. The brief allowed that, and the grader reported it rather than scoring around it. Repaired and re-run with the instructions out of reach, the controls scored 16 of 31 on the same targets where the full runs scored 30. That is the first evidence in this repo that the judgment half does work the model does not do alone. The repair found one more hole on the way: a control searched the disk and listed a path inside the sealed fixture, and was stopped before it opened anything.
+**The second fixture.** A separate session built and sealed a harder one, aimed at what only the instructions produce, and 1.11.7 scored 82 of 93 (88%), with 4 points of difference between two runs on the same target. The first controls did not work: their prompt named the plugin's folder, so they read the instructions they were meant to lack. The brief allowed that, and the grader reported it rather than scoring around it. Repaired and re-run with the instructions out of reach, the controls scored 16 of 31 on the same targets where the full runs scored 30. That is the first evidence in this repo that the judgment half does work the model does not do alone. The repair found one more hole on the way: a control searched the disk and listed a path inside the sealed fixture, and was stopped before it opened anything.
 
 ---
 
@@ -282,9 +284,9 @@ That costs something real. The §13 score now describes instructions that no lon
 
 - **"Could not resolve" is honest, not a dead end.** Ponytail and superpowers both hit it. In both cases, five minutes reading the named file closed the gap. The note earns its keep by saying exactly which file to open.
 - **Zero hooks and zero agents is not the same claim as "does nothing unattended."** Viral-launch-pipeline proves it: one skill's prose drove 21 real subagent dispatches, invisible to a files-only count.
-- **Total size and always-on cost are different numbers.** Superpowers: 231 files, ~3.2KB injected. Viral: 34 files, 0 bytes injected, 21 dispatches once invoked. Neither number predicts the other.
-- **Nearly every run has cost the tool something.** Eight of the first nine found a bug or a limit. The ninth, run by someone who did not build it, found more than the previous eight combined and proved four published claims false. The first clean result was the re-audit that closed round twelve, and it took eleven rounds to earn that. That is the argument for running it on things rather than trusting that it works.
-- **The builder cannot audit the builder.** Eight self-directed rounds attacked branches the builder thought of, and never asked what the tool's own output contained. That question took an outsider about an hour.
+- **Total size and always-on cost are different numbers.** Superpowers: 231 files when measured, ~3.2KB injected. Viral: 34 files, 0 bytes injected, 21 dispatches once invoked. Neither number predicts the other.
+- **Nearly every run has cost the tool something.** Eight of the first nine found a bug or a limit. The ninth, run by a session that did not build it, found more than the previous eight combined and proved four published claims false. The first clean result was the re-audit that closed round twelve, and it took eleven rounds to earn that. That is the argument for running it on things rather than trusting that it works.
+- **The builder cannot audit the builder.** Eight self-directed rounds attacked branches the builder thought of, and never asked what the tool's own output contained. That question took a session outside the build about an hour.
 - **Instructions are testable, and were not being tested.** Nine rounds went at the code while half the tool sat unexamined. Handing the instructions to something with no idea of the intended answer found three defects in one pass, including a heading that existed only on the author's machine.
 - **A guard that has never fired is not known to work.** The carrying-cost criterion sat in the instructions for a full round before any fixture had hooks to trigger it. Writing a rule is not testing it, and the gap between those two is where this tool kept failing.
 - **A real plugin with an awkward shape caught what a constructed corpus could not.** Thirty-nine catalog plugins and thirteen purpose-built fixtures were all clean while a live defect sat in the open, and one third-party plugin found it. This is the inverse of the lesson above and both are true: build the awkward case *and* keep a real, awkward, unowned target in the suite, because you cannot construct the shape you failed to imagine.

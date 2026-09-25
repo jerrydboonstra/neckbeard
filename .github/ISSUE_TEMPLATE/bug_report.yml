@@ -1,0 +1,34 @@
+name: Bug report
+description: neckbeard misread a target, crashed, or reported something wrong.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste a dossier or an evaluation here.** Both contain your own rules, verbatim: your global `CLAUDE.md`, project rules, personal skills and the skills of every plugin you have enabled. Describe what went wrong instead, and quote only the lines that matter, with anything private removed.
+  - type: input
+    id: version
+    attributes:
+      label: neckbeard version
+      description: From `.claude-plugin/plugin.json`, or `claude plugin details neckbeard@neckbeard`.
+      placeholder: "1.12.2"
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: Target
+      description: What you pointed it at. A public repo URL or plugin name is ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output (redacted)
+      description: The error, or the lines of the report that are wrong. Remove anything private.
+      render: text

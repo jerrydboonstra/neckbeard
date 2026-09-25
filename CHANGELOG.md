@@ -1,8 +1,18 @@
 # Changelog
 
-**Everything below 1.11.2 was pre-release and never published.** The version number is high for a first release because the tool was rewritten fifteen times in thirty-one hours, each time because something found a defect in it. Those numbers are kept rather than collapsed to 1.0.0, since the plugin cache is keyed to version and 1.0.0 already refers to different content.
+**Everything before 1.12.2 was developed in private; 1.12.2 is the first public release.** The version number is high for a first release because the tool was rewritten fifteen times in thirty-one hours, each time because something found a defect in it. Those numbers are kept rather than collapsed to 1.0.0, since the plugin cache is keyed to version and 1.0.0 already refers to different content.
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
+
+## 1.12.2 (2026-09-24)
+
+First public release. Polish from an independent release review: a separate Claude session, given only a fresh clone and the GitHub settings, and none of the history.
+
+- **Who reviewed this tool, stated plainly.** Every reviewer in `CASE-STUDIES.md` was an AI agent, a separate Claude session that had not written the code. The README and the case studies used to say "an independent audit" and "an outside reviewer" without saying so.
+- **The README leads with install**, then requirements (Python 3.11+, standard library only), then what it costs: about 270 tokens always-on and about 4.7k per use, measured with `claude plugin details`.
+- **The code's comments explain the code.** Dated accounts of how each bug was found now live only here and in `CASE-STUDIES.md`.
+- **Consistent gallery pages**, a `--out` flag that the usage line now shows, no references to tools that are not published, and placeholder names in the self-check's fixtures.
+- **Contributor files:** `CONTRIBUTING.md`, a bug-report form that warns against pasting a dossier, and Dependabot for the CI's actions.
 
 ## 1.12.1 (2026-09-24)
 
@@ -31,7 +41,7 @@ Follows `@path` imports in `CLAUDE.md`. A global rules file that only says `@~/.
 
 ## 1.11.5 (2026-09-24)
 
-An adversarial pass before the repo went public. Written up as round 14 in `CASE-STUDIES.md`.
+An adversarial pass before the repo was made public. Written up as round 14 in `CASE-STUDIES.md`.
 
 - **The self-check tested helpers, not decisions.** All 15 cases called `classifiable_items()` or `merge_enabled_plugins()` directly. Inverting the skip in `main()`, or reverting discovery to the single-file read 1.11.4 fixed, left it at 15/15. It now has 37 cases, 21 of them through the real CLI or the real discovery path, and every fix below has been broken on purpose and seen to turn a case red.
 - **Containment covers every read from the target.** Skills in a pack with no manifest, the hooks file (including a `../` path named in `plugin.json`), `.mcp.json`, `plugin.json` and the README excerpt were read without the check that `SECURITY.md` said applied to everything.
@@ -49,7 +59,7 @@ Discovered the rules that were actually in force, instead of about a third of th
 
 `enabledPlugins` was read from the project's `.claude/settings.json` alone. Claude Code layers user, project and project-local settings, and enabling a plugin globally is the normal way to do it, so a project with no `.claude/` directory saw none of them. Personal *skills* were already read from `CLAUDE_HOME`, which is why this reads as an oversight rather than a decision.
 
-Found by pointing the tool at `github/spec-kit` from a repo with no `.claude/` directory. It discovered **8** rule sources where the corrected path discovers **23**. The **15** it missed were the installed skills of all six enabled plugins, `delegation` and `delegation-lab` among them, and those were exactly the rules that target conflicted with. The evaluation would have reported **no conflicts**, because the conflicting rules were invisible.
+Found by pointing the tool at `github/spec-kit` from a repo with no `.claude/` directory. It discovered **8** rule sources where the corrected path discovers **23**. The **15** it missed were the installed skills of all six enabled plugins, and those were exactly the rules that target conflicted with. The evaluation would have reported **no conflicts**, because the conflicting rules were invisible.
 
 The first attempt to size this said 59, and that number was wrong in a way worth keeping. It came from passing `--extra-rules` over a whole worktree as a workaround, and that path recursively counts every markdown file it meets: 40 of those 51 "missing rules" were agent definitions, READMEs, docs and two briefs written the same afternoon. **The measurement used to size a bug about under-broad rule discovery was itself produced by an over-broad one, and nobody re-derived it once the correct path existed.** A number can read correctly, survive review and be wrong, which is the same shape as the defect it was describing. Caught by the session that reviewed the fix, not by its author.
 
@@ -67,7 +77,7 @@ The first fix counted only hooks whose payload resolved, which walked into this 
 
 ## 1.11.2 (2026-09-19)
 
-First public release.
+First tagged release.
 
 Recorded how the last claim resting on the author's own account was closed. The judgment half, the instructions that sort a plugin's rules into duplicate, conflict and new, has no filesystem to check it against. An outside auditor built a held-out fixture, sealed the ground truth before running anything, pre-registered a rubric, and graded its own six evaluations. The author has never seen it.
 

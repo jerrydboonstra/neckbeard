@@ -1,16 +1,17 @@
 # 🔍 ponytail 4.10.0 · vetted against the sample reader
 
 > ## 🟨 COPY RULES, SKIP PLUGIN · take the rule and three skills, skip the always-on injection
-> Injects its main skill into every session and every subagent, about 6.6 KB each time, and writes mode state to files outside the project. Two of its instructions tell the model to proceed on its own where the sample reader's rules say ask first. One new safety rule and three on-demand skills are worth having, and both are cheaper to copy as text than to carry as a permanent injection.
+> Injects its main skill into every session and every subagent, about 1,300 tokens each time (its 6.6 KB skill file, frontmatter stripped), and writes mode state to files outside the project. Two of its instructions tell the model to proceed on its own where the sample reader's rules say ask first. One new safety rule and three on-demand skills are worth having, and both are cheaper to copy as text than to carry as a permanent injection.
+>
 > Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
 
-`2026-09-24` · neckbeard 1.12.0 · https://github.com/DietrichGebert/ponytail
+`2026-09-24` · neckbeard 1.12.0 · [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
 
 ## ⚡ At a glance
 
 | | | |
 |:--:|---|---|
-| 🟧 | **Cost** | ~6.6 KB injected at every session start, and again at every subagent start |
+| 🟧 | **Cost** | ~1,300 tokens (its 6.6 KB skill file, frontmatter stripped) at every session start, and again at every subagent start |
 | 🟧 | **Reach** | main session + subagents (certain, a `SubagentStart` hook, documented) |
 | 🟧 | **Leaves state** | flag/config files outside the project: home config dir and host-specific dirs |
 | 🟩 | **Live surface** | no MCP servers, no network calls in its hooks; one nudge asks the model to offer editing settings.json |

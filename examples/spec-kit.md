@@ -5,7 +5,7 @@
 >
 > Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
 
-`2026-09-24` · neckbeard 1.12.0 · github/spec-kit · https://github.com/github/spec-kit
+`2026-09-24` · neckbeard 1.12.0 · [github/spec-kit](https://github.com/github/spec-kit)
 
 ## ⚡ At a glance
 

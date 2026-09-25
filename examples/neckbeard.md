@@ -1,19 +1,19 @@
 # 🔍 neckbeard 1.12.0 · vetted against the sample reader
 
 > ## 🟧 INSTALL WITH CHANGES · keep the skill, fix the report's own jargon
-> Costs about 266 tokens a session and nothing more: no hooks, no agents, so it never runs uninvited. Two of its habits already match the sample reader's rules, and one collides with them. The one-shot vetting skill itself is worth keeping.
+> Costs about 270 tokens a session and nothing more: no hooks, no agents, so it never runs uninvited. Two of its habits already match the sample reader's rules, and one collides with them. The one-shot vetting skill itself is worth keeping.
+>
+> Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
 
-`2026-09-24` · neckbeard 1.12.0 · [neckbeard](https://github.com/jerrydboonstra/neckbeard)
+`2026-09-24` · neckbeard 1.12.0 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard)
 
 This target is neckbeard vetting itself, against the sample reader, not the setup that built it.
-
-> Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
 
 ## ⚡ At a glance
 
 | | | |
 |:--:|---|---|
-| 🟩 | **Cost** | ~266 tokens (the skill's description), every session; the full skill body loads only when invoked |
+| 🟩 | **Cost** | ~270 tokens (the skill's description), every session; the full skill body loads only when invoked |
 | 🟩 | **Reach** | none automatic. Zero hooks, so nothing fires until a person asks for it |
 | 🟩 | **Leaves state** | the JSON dossier, only when `--out` is passed, only at that path (embeds the reader's rule files verbatim; never commit it) |
 | 🟩 | **Live surface** | `git clone --depth 1`, only when the target is a git URL, into a temp dir removed after; no MCP servers |
@@ -57,7 +57,7 @@ This target is neckbeard vetting itself, against the sample reader, not the setu
 
 | surface | when | reaches subagents | size |
 |---|---|:--:|--:|
-| skill: `skills/neckbeard/SKILL.md` | on demand, invoked by name | no (no hooks) | ~14 KB body · ~266 tokens description, always-on |
+| skill: `skills/neckbeard/SKILL.md` | on demand, invoked by name | no (no hooks) | ~14 KB body · ~270 tokens description, always-on |
 
 ## ✅ Do this
 

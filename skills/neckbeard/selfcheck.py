@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
-"""Runnable checks for the two paths in this tool that fail SILENTLY when wrong.
+"""Runnable checks for the paths in this tool that fail SILENTLY when wrong.
 
     python3 skills/neckbeard/selfcheck.py
 
-Both are load-bearing and neither announces a mistake. A tool that reads the wrong
-corpus and then reports a clean comparison is the decorative-guard shape this repo
-exists to catch, so the standard applies to its own code first.
+Each is load-bearing and none announces a mistake on its own. A tool that reads the
+wrong corpus and then reports a clean comparison is the decorative-guard shape this
+repo exists to catch, so the standard applies to its own code first.
 
 1. WHETHER TO READ THE READER'S PRIVATE RULE FILES. A security path: wrong in one
    direction it embeds the global CLAUDE.md in a dossier for a target that cannot use
    it, and in the other it silently drops the comparison the tool is for.
 
 2. WHICH PLUGINS ARE ENABLED. Wrong here and the comparison runs against a fraction of
-   the rules actually in force, and says nothing. Found 2026-09-20; see below.
+   the rules actually in force, and says nothing. See CHANGELOG.md 1.11.4.
 
-3. THE WIRING. Sections 1 and 2 test the helpers. Until 2026-09-24 nothing tested the
-   call sites that use them, and a falsify pass proved it: inverting main()'s skip
-   decision, or reverting discover_current_rules() to read one settings file, left
-   this script at 15/15. Section 3 runs the real CLI end to end.
+3. THE WIRING. Sections 1 and 2 test the helpers in isolation. Section 3 runs the real
+   CLI end to end, so the call sites that use those helpers are exercised too, not just
+   the helpers themselves.
 
 4. CONTAINMENT. The target is untrusted, so nothing it names may be read from outside
-   it. SECURITY.md said so unconditionally; on 2026-09-24 five read paths turned out
-   not to check. Each case plants a marker outside the target and fails if the marker
-   reaches the dossier.
+   it. Each case plants a marker outside the target and fails if the marker reaches
+   the dossier.
+
+5. CLAUDE.md @-IMPORTS. A rules file can pull in others; discovery must follow those
+   imports the way Claude Code does, and must still refuse one that points outside
+   the target.
 """
 import sys, os, json, subprocess, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -66,17 +68,12 @@ for name, dossier, want in CASES:
 
 
 # ------------------------------------------------------------- 2. which plugins count
-# THE BUG THIS PINS. Until 2026-09-20 `enabledPlugins` was read from the project's
-# .claude/settings.json alone. Claude Code layers user, project and project-local
-# settings, and enabling a plugin globally is the normal way to do it, so a project
-# with no .claude/ directory saw NONE of them.
-#
-# Measured the day it was found: vetting one target from a repo with no .claude/
-# discovered 8 rule sources where the corrected path discovers 23. The 15 missing were
-# the installed skills of all six enabled plugins -- exactly the rules that target
-# conflicted with. The evaluation would have reported NO CONFLICTS, because the
-# conflicting rules were invisible. (A first attempt said 59; that came from an
-# --extra-rules walk of a whole worktree which counts every markdown file it meets.)
+# THE BUG THIS PINS. `enabledPlugins` must be merged across all three layers, not read
+# from the project's .claude/settings.json alone. Claude Code layers user, project and
+# project-local settings, and enabling a plugin globally is the normal way to do it, so
+# a project with no .claude/ directory would otherwise see none of them -- and the
+# comparison would report no conflicts because the conflicting rules were invisible.
+# See CHANGELOG.md 1.11.4.
 def write(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
@@ -90,26 +87,26 @@ inventory.CLAUDE_HOME = home          # set directly: the module read it at impo
 merge = inventory.merge_enabled_plugins
 
 print("\n-- which plugins are enabled (layered the way Claude Code layers settings) --")
-write(os.path.join(home, "settings.json"), {"enabledPlugins": {"delegation@calm-trader": True}})
+write(os.path.join(home, "settings.json"), {"enabledPlugins": {"alpha@example-market": True}})
 chk("a project with NO .claude/ still sees a global enable",
-    merge(proj), {"delegation@calm-trader": True})
+    merge(proj), {"alpha@example-market": True})
 
-write(os.path.join(proj, ".claude", "settings.json"), {"enabledPlugins": {"pine@calm-trader": True}})
+write(os.path.join(proj, ".claude", "settings.json"), {"enabledPlugins": {"beta@example-market": True}})
 chk("global and project merge rather than replace",
-    sorted(merge(proj)), ["delegation@calm-trader", "pine@calm-trader"])
+    sorted(merge(proj)), ["alpha@example-market", "beta@example-market"])
 
-write(os.path.join(proj, ".claude", "settings.local.json"), {"enabledPlugins": {"eli5@cc": True}})
+write(os.path.join(proj, ".claude", "settings.local.json"), {"enabledPlugins": {"gamma@other-market": True}})
 chk("settings.local.json is read too",
-    sorted(merge(proj)), ["delegation@calm-trader", "eli5@cc", "pine@calm-trader"])
+    sorted(merge(proj)), ["alpha@example-market", "beta@example-market", "gamma@other-market"])
 
 # A project must be able to DISABLE a globally-enabled plugin. Unioning the keys would
 # silently re-enable it and put rules in the corpus that are not in force.
 write(os.path.join(proj, ".claude", "settings.json"),
-      {"enabledPlugins": {"delegation@calm-trader": False, "pine@calm-trader": True}})
-chk("project false overrides global true", merge(proj)["delegation@calm-trader"], False)
+      {"enabledPlugins": {"alpha@example-market": False, "beta@example-market": True}})
+chk("project false overrides global true", merge(proj)["alpha@example-market"], False)
 write(os.path.join(proj, ".claude", "settings.local.json"),
-      {"enabledPlugins": {"delegation@calm-trader": True}})
-chk("local true overrides project false", merge(proj)["delegation@calm-trader"], True)
+      {"enabledPlugins": {"alpha@example-market": True}})
+chk("local true overrides project false", merge(proj)["alpha@example-market"], True)
 
 # Rules discovery must never crash: a malformed settings file is common and is not a
 # reason to abandon the comparison.
@@ -119,21 +116,21 @@ inventory.CLAUDE_HOME = home
 
 bad = os.path.join(tmp, "bad")
 write(os.path.join(bad, ".claude", "settings.json"), {"enabledPlugins": "not-a-dict"})
-chk("enabledPlugins of the wrong type is ignored", merge(bad), {"delegation@calm-trader": True})
+chk("enabledPlugins of the wrong type is ignored", merge(bad), {"alpha@example-market": True})
 with open(os.path.join(bad, ".claude", "settings.local.json"), "w") as f:
     f.write("{ not json at all")
 import contextlib, io
 err = io.StringIO()
 with contextlib.redirect_stderr(err):
     got = merge(bad)
-chk("unparseable JSON is ignored", got, {"delegation@calm-trader": True})
-# Ignored, but never in silence: a corrupt settings file read exactly like "no
-# plugins enabled" until 2026-09-24.
+chk("unparseable JSON is ignored", got, {"alpha@example-market": True})
+# Ignored, but never in silence: a corrupt settings file must not read as "no
+# plugins enabled".
 chk("...and says so on stderr", "settings.local.json is not valid JSON" in err.getvalue(), True)
 
 nokey = os.path.join(tmp, "nokey")
 write(os.path.join(nokey, ".claude", "settings.json"), {"model": "opus"})
-chk("settings with no enabledPlugins key", merge(nokey), {"delegation@calm-trader": True})
+chk("settings with no enabledPlugins key", merge(nokey), {"alpha@example-market": True})
 
 # ------------------------------------------------------------------- 3. the wiring
 # Every case here goes through a real call site: discover_current_rules(), or the CLI
@@ -142,12 +139,12 @@ w = tempfile.mkdtemp()
 wh, wp = os.path.join(w, "home"), os.path.join(w, "proj")
 os.makedirs(wp)
 mkt = os.path.join(w, "mkt")
-write(os.path.join(mkt, ".claude-plugin", "plugin.json"), {"name": "widget"})
+write(os.path.join(mkt, ".claude-plugin", "plugin.json"), {"name": "delta"})
 os.makedirs(os.path.join(mkt, "skills", "s"))
 with open(os.path.join(mkt, "skills", "s", "SKILL.md"), "w") as f:
     f.write("---\nname: s\n---\nAlways use --force.\n")
-write(os.path.join(wh, "plugins", "known_marketplaces.json"), {"wm": {"installLocation": mkt}})
-write(os.path.join(wh, "settings.json"), {"enabledPlugins": {"widget@wm": True}})
+write(os.path.join(wh, "plugins", "known_marketplaces.json"), {"other-market": {"installLocation": mkt}})
+write(os.path.join(wh, "settings.json"), {"enabledPlugins": {"delta@other-market": True}})
 with open(os.path.join(wh, "CLAUDE.md"), "w") as f:
     f.write("Never force anything.\n")
 
@@ -157,10 +154,10 @@ saved_managed = inventory.MANAGED_SETTINGS
 inventory.MANAGED_SETTINGS = [os.path.join(w, "managed-settings.json")]
 sources = lambda: sorted({i["source"] for i in inventory.discover_current_rules(wp, [])[0]})
 chk("a globally enabled plugin's skills reach current_rules",
-    "enabled-plugin:widget@wm" in sources(), True)
-write(inventory.MANAGED_SETTINGS[0], {"enabledPlugins": {"widget@wm": False}})
+    "enabled-plugin:delta@other-market" in sources(), True)
+write(inventory.MANAGED_SETTINGS[0], {"enabledPlugins": {"delta@other-market": False}})
 chk("managed settings disabling it win over the user's enable",
-    "enabled-plugin:widget@wm" in sources(), False)
+    "enabled-plugin:delta@other-market" in sources(), False)
 os.remove(inventory.MANAGED_SETTINGS[0])
 inventory.MANAGED_SETTINGS = saved_managed
 inventory.CLAUDE_HOME = home
@@ -224,8 +221,9 @@ code, d = run_cli(pack("empty-inline-hooks", {".claude-plugin/plugin.json": '{"n
 chk("an empty inline hooks object is no hooks, and reads no rules",
     (code, d and d["target"]["hooks"]["has_hooks"], read_rules(d)), (0, False, False))
 
-# A file named like a git URL is still a file. Testing the URL pattern first sent
-# it to `git clone`, the crash the directory case already hit on 2026-09-19.
+# A file named like a git URL is still a file. Testing the URL pattern before
+# checking whether the path is an existing file would send it to `git clone`
+# and crash.
 gitnamed = os.path.join(w, "notes.git")
 with open(gitnamed, "w") as f:
     f.write("Never push.\n")
@@ -297,8 +295,9 @@ chk("plugin.json naming a hooks file by ../ traversal",
     (code, MARK in json.dumps(d["target"]) if d else None), (0, False))
 
 # ------------------------------------------------------------------ 5. imports
-# A CLAUDE.md that only says `@~/.claude/roles/me.md` is the documented way to split
-# rules. Until 2026-09-24 discovery read that one line and nothing it pointed at.
+# A CLAUDE.md that only says `@~/.claude/roles/me.md` is the documented way to
+# split rules, so discovery must follow that import rather than stopping at
+# the one line. See CASE-STUDIES.md, round 14.
 print("\n-- CLAUDE.md @-imports --")
 ih = os.path.join(w, "import-home")
 def put(rel, text, base=ih):

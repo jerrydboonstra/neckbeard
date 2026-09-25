@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Self-locating wrapper: finds inventory.py relative to itself so it works
-# wherever this plugin is installed. A directory-source marketplace resolves in
-# place, so there is no guaranteed ~/.claude cache copy.
+# Runs the inventory from a clone: finds inventory.py relative to itself.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exec python3 "$HERE/../skills/neckbeard/inventory.py" "$@"

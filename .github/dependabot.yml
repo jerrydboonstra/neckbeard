@@ -1,0 +1,9 @@
+# The workflow's actions are this repo's only dependencies (the code is
+# standard library only). Keep them current so CI does not drift onto
+# deprecated runtimes.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

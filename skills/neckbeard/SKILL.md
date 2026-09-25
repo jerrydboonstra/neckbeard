@@ -52,7 +52,7 @@ for on its own).
 The script prints one JSON dossier: `target` (what the thing actually does —
 its manifest, every skill, command and agent it bundles with their full text,
 any `CLAUDE.md` at its root under `rule_files`, every hook it registers and
-what each one injects where that's staticly resolvable, whether
+what each one injects where that's statically resolvable, whether
 `SubagentStart` is among its hooked events, and any file-write patterns found
 in its scripts) and
 `current_rules` (every rule already in force, auto-discovered from):

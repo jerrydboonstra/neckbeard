@@ -4,13 +4,15 @@ Real neckbeard 1.12.0 reports on seven public plugins, all run against the same 
 
 | plugin | verdict | ⛔ conflicts | 🔁 covered | 🆕 new | 🗑️ dropped |
 |---|---|:--:|:--:|:--:|:--:|
-| [ponytail](ponytail.md) 4.10.0 | 🟨 copy rules, skip plugin | 2 | 5 | 4 | 5 |
+| [DietrichGebert/ponytail](ponytail.md) 4.10.0 | 🟨 copy rules, skip plugin | 2 | 5 | 4 | 5 |
 | [obra/superpowers](superpowers.md) 6.4.1 | 🟧 install with changes | 2 | 2 | 10 | 2 |
-| [claude-security](claude-security.md) 0.11.0 | 🟧 install with changes | 1 | 3 | 6 | 6 |
+| [anthropics/claude-plugins-official: claude-security](claude-security.md) 0.11.0 | 🟧 install with changes | 1 | 3 | 6 | 6 |
 | [addyosmani/agent-skills](agent-skills.md) 0.6.10 | 🟩 install | 0 | 1 | 37 | 1 |
 | [github/spec-kit](spec-kit.md) 1.0.12.dev0 | 🟨 copy rules, skip plugin | 1 | 1 | 2 | 0 |
-| [viral-launch-pipeline](viral-launch-pipeline.md) 1.0.0 | 🟩 install | 0 | 2 | 4 | 4 |
-| [neckbeard](neckbeard.md) 1.12.0, vetting itself | 🟧 install with changes | 1 | 2 | 1 | 1 |
+| [Koz-TV/viral-launch-pipeline](viral-launch-pipeline.md) 1.0.0 | 🟩 install | 0 | 2 | 4 | 4 |
+| [jerrydboonstra/neckbeard](neckbeard.md) 1.12.0, vetting itself | 🟧 install with changes | 1 | 2 | 1 | 1 |
+
+neckbeard's report on itself marks it down for its own report format: a page that needs a nine-symbol key runs against the sample reader's "plain language over jargon". That finding is left standing on purpose. The grid format is the product, and the key is the price of reading a report in one screen; a tool that hid its own conflicts would be the wrong tool for this job.
 
 ## The verdicts are about fit, not quality
 
