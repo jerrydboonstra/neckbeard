@@ -1,6 +1,6 @@
 {
   "name": "neckbeard",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "description": "Reads the plugin. Writes the verdict. Edits nothing. Before you install someone else's plugin or skill pack, neckbeard inventories what it injects and when, whether it reaches your subagents, and what state it persists, then diffs every rule it carries against the rules you already run and sorts each one into duplicate, conflict, or genuinely new. Zero hooks and zero agents; ~270 tokens always-on (the skill description) and ~4.7k when invoked.",
   "author": {
     "name": "Jerry Boonstra",

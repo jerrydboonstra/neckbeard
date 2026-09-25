@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.12.3 (2026-09-25)
+
+- **An eighth gallery report: `calm-trader/skills`**, a skill pack with no plugin manifest, vetted against the sample reader. It is a pack the author contributes to, which the report and the gallery say plainly. The report failed the gallery's own count check as first written and was corrected by hand; the gallery lists each correction.
+
 ## 1.12.2 (2026-09-24)
 
 First public release. Polish from an independent release review: a separate Claude session, given only a fresh clone and the GitHub settings, and none of the history.
