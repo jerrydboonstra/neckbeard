@@ -23,23 +23,20 @@ practicing the opposite would be the whole method failing on itself.
 
 ## Step 1 — Run the inventory
 
-```bash
-find "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins}" "$HOME/.claude/plugins/cache" \
-     -path "*/neckbeard/bin/neckbeard" 2>/dev/null | head -1
-```
-
-Two paths because a **directory** marketplace usually resolves in place with
-no cache copy, while a **GitHub** install lives only in the cache. "Usually":
-if the directory is itself a git repo, Claude Code may cache it anyway, keyed
-to `plugin.json`'s version, and that cache does not refresh on its own when
-the version number does not change (see "Ran on itself" in the README).
-`CLAUDE_PLUGIN_ROOT` covers the in-place case when it is set. If neither
-lookup finds it, the plugin is checked out somewhere else entirely, and
-`find <that directory> -path "*/bin/neckbeard"` gets you there. Then:
+The inventory script sits in this skill's own directory, next to this file,
+so it runs the same way whether neckbeard arrived as a plugin or as a plain
+skill folder. Claude Code shows the skill's base directory when the skill
+loads; use it:
 
 ```bash
-<path-to>/bin/neckbeard <target> [--project-dir DIR] [--extra-rules PATH]
+python3 <this skill's directory>/inventory.py <target> [--project-dir DIR] [--extra-rules PATH]
 ```
+
+If the base directory was not shown, find the script rather than guess:
+`find ~/.claude -path "*/neckbeard/inventory.py" 2>/dev/null`. More than one
+hit means more than one copy is installed (a plugin cache and a skill folder,
+or two cached versions); prefer the one whose `SKILL.md` you are reading, and
+say which you used.
 
 `<target>` is an installed plugin (`name@marketplace`, e.g. `ponytail@ponytail`
 — check `enabledPlugins` in your settings for the exact key), a local

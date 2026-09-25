@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.12.1 (2026-09-24)
+
+Works as a plain skill as well as a plugin. Step 1 used to search three possible plugin locations for `bin/neckbeard`; it now runs `inventory.py` from the skill's own directory, which is the same place whichever way neckbeard was installed. The README gives the second install path: clone the repo and link `skills/neckbeard` into `~/.claude/skills/`. Both paths were tested before release, the plugin through `--plugin-dir` and the skill through a symlink, each running Step 1 against ponytail.
+
 ## 1.12.0 (2026-09-24)
 
 The report is visual. Step 3 of `SKILL.md` now writes an answer-first page: a verdict banner, an at-a-glance grid, a count of how the target's rules sorted, one grid per verdict with one line per item, and a colour key. The counts must match the grids. The old shape was prose sections, and a reader had to get through several screens to learn whether to install.

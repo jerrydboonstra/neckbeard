@@ -2,6 +2,8 @@
 
 # neckbeard
 
+[![self-check](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml)
+
 > **Ponytail ships it. Neckbeard reads it first.**
 >
 > Reads the plugin. Writes the verdict. Edits nothing.
@@ -53,6 +55,15 @@ I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the l
 claude plugin marketplace add jerrydboonstra/neckbeard
 claude plugin install neckbeard@neckbeard
 ```
+
+Or as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update:
+
+```bash
+git clone https://github.com/jerrydboonstra/neckbeard.git ~/src/neckbeard
+ln -s ~/src/neckbeard/skills/neckbeard ~/.claude/skills/neckbeard
+```
+
+Use one or the other, not both: two copies means two skills with the same name.
 
 One skill, zero hooks, zero agents, and **~266 tokens always-on**: its manifest description plus the skill's frontmatter, the two strings Claude Code shows its router so it knows the tool is there. It injects nothing at session start and reaches none of your subagents. The plugin that prompted this one injects about 1,300 tokens into every session *and* every subagent, forever.
 
