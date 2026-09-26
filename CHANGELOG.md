@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **`make release` also publishes the GitHub Release**, with that version's changelog entry as its notes, and refuses to push anything if the entry is missing. A pushed tag alone left the repo page showing the previous version as Latest. `make release-notes` prints what the notes will say.
+
 ## 1.12.5 (2026-09-25)
 
 - **The case studies read in half the time.** They open with a short link list in two groups: runs against real plugins, and rounds against neckbeard itself. Each run against a gallery plugin (§1 to §5) leads with that plugin's report today, then the first run's output. Every round then lists what it showed, the version that fixed it, and the self-check that guards it, and says so where none does. Lists longer than four show three and fold the rest; §9 and §12 keep their full stories in a fold; the closing lessons are five, with twelve more folded and numbered on from them.
