@@ -1,0 +1,24 @@
+name: Idea or feature request
+description: Something neckbeard should check, report, or do differently.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome, especially a kind of plugin or rule file it gets wrong or cannot see at all. **Never paste a dossier or an evaluation here**: both contain your own rules, verbatim.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What should it catch or do?
+      description: The gap you hit, or what you wish a report told you.
+    validations:
+      required: true
+  - type: input
+    id: example
+    attributes:
+      label: An example target
+      description: A public plugin, skill pack or repo that shows it, if you have one.
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: What goes wrong for a user when neckbeard misses this.
