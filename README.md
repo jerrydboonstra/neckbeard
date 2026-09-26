@@ -10,28 +10,7 @@
 
 Before you install a plugin into Claude Code, neckbeard reads it for you. Every hook, every string it injects, every session and subagent it reaches, every file it writes outside your project. Then it checks each rule against what you already run and tells you what is duplicate, what conflicts, and what is new. It changes nothing.
 
-## Install it. It adds one skill and nothing else.
-
-Requires Claude Code and Python 3.11 or later (standard library only), plus `git` if you point it at a git URL. Tested on macOS and, in CI, Linux.
-
-```bash
-claude plugin marketplace add jerrydboonstra/neckbeard
-claude plugin install neckbeard@neckbeard
-```
-
-Or as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update:
-
-```bash
-git clone https://github.com/jerrydboonstra/neckbeard.git ~/src/neckbeard
-mkdir -p ~/.claude/skills
-ln -s ~/src/neckbeard/skills/neckbeard ~/.claude/skills/neckbeard
-```
-
-Use one or the other, not both: two copies means two skills with the same name.
-
-One skill, zero hooks, zero agents. **About 270 tokens always-on**, the skill's description, which is all Claude Code shows its router so it knows the tool is there; **about 4.7k tokens each time you use it**. Both figures are from `claude plugin details` on 1.12.1 and are the same for either install. It injects nothing at session start and reaches none of your subagents. The plugin that prompted this one injects about 1,300 tokens into every session *and* every subagent, for as long as it is installed.
-
-That gap is the point. A tool that catches plugins for running in the background cannot run in the background. It works when you ask, reports, and stops.
+**Tested by trying to break it, fourteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
 ## What you get
 
@@ -65,11 +44,30 @@ One page per plugin, answer first. This is the top of a real report, [ponytail](
 | 🆕 | **new, on-demand skill** | **3** | 🟩🟩🟩 |
 | 🗑️ | **dropped** (persona, extras, no value) | **5** | ⬛⬛⬛⬛⬛ |
 
-The full report goes on to list every conflict with the rule it breaks, everything already covered, what is worth keeping, what the plugin installs, and a patch to copy. **[See the gallery](examples/README.md)**: seven public plugins, including this one, all against the same sample reader.
+The full report goes on to list every conflict with the rule it breaks, everything already covered, what is worth keeping, what the plugin installs, and a patch to copy. **[See the gallery](examples/README.md)**: eight public plugins and skill packs, including this one, all against the same sample reader.
 
-## Why
+## Install it. It adds one skill and nothing else.
 
-I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin. It injects about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and it told me half of them restated my own config and five contradicted hard stops I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
+Requires Claude Code and Python 3.11 or later (standard library only), plus `git` if you point it at a git URL. Tested on macOS and, in CI, Linux.
+
+```bash
+claude plugin marketplace add jerrydboonstra/neckbeard
+claude plugin install neckbeard@neckbeard
+```
+
+Or as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update:
+
+```bash
+git clone https://github.com/jerrydboonstra/neckbeard.git ~/src/neckbeard
+mkdir -p ~/.claude/skills
+ln -s ~/src/neckbeard/skills/neckbeard ~/.claude/skills/neckbeard
+```
+
+Use one or the other, not both: two copies means two skills with the same name.
+
+One skill, zero hooks, zero agents. **About 270 tokens always-on**, the skill's description, which is all Claude Code shows its router so it knows the tool is there; **about 4.7k tokens each time you use it**. Both figures are from `claude plugin details` on 1.12.1 and are the same for either install. It injects nothing at session start and reaches none of your subagents. The plugin that prompted this one injects about 1,300 tokens into every session *and* every subagent, for as long as it is installed.
+
+That gap is the point. A tool that catches plugins for running in the background cannot run in the background. It works when you ask, reports, and stops.
 
 ## Point it at the next plugin before you install it
 
@@ -90,6 +88,17 @@ bin/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
 It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. It writes nothing else.
 
 **A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo ignores every `.json` except its two manifests, for precisely this reason.
+
+## How it was tested
+
+Fourteen rounds, each one pointed at something real. **[CASE-STUDIES.md](./CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
+
+Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itself](CASE-STUDIES.md#2-neckbeard-itself-before-publishing) · [superpowers](CASE-STUDIES.md#3-obrasuperpowers-the-large-one) · [a random pick](CASE-STUDIES.md#4-koz-tvviral-launch-pipeline-the-random-one) · [claude-security](CASE-STUDIES.md#5-claude-security-anthropics-own-security-plugin) · [all 39 Anthropic plugins](CASE-STUDIES.md#6-all-39-anthropic-first-party-plugins-the-sweep) · [built to break](CASE-STUDIES.md#7-purpose-built-directories-attacking-the-unexercised-branches) · [a crash and a lie](CASE-STUDIES.md#8-the-last-unexercised-branches-a-crash-and-a-lie) · [independent audit](CASE-STUDIES.md#9-an-independent-audit-the-one-that-found-the-most) · [judgment](CASE-STUDIES.md#10-the-judgment-half-the-first-thing-that-passed) · [judgment, hard case](CASE-STUDIES.md#11-the-judgment-half-again-on-the-hard-case) · [the fix that regressed](CASE-STUDIES.md#12-the-fix-that-was-the-regression) · [sealed fixture](CASE-STUDIES.md#13-the-last-claim-resting-on-the-builders-word) · [before going public](CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing)
+
+- **Who reviewed it:** AI agents only. Each was a separate Claude session that had not written the code. The only outside user ran an early version and hit bugs that later rounds fixed.
+- **Hardest round:** the ninth, the first by a session outside the build. Eleven problems, four published claims proved false, one of them a path that could leak 90,533 bytes of private rules into a public repo.
+- **The code:** checked against the filesystem. Every self-check case has been seen to fail with the code it guards broken.
+- **The judgment:** graded blind against two sealed fixtures, built by separate sessions; the author has never seen the answers. On the second, the instructions scored 30 of 31 where the same model without them scored 16.
 
 ## What it reads, and what it refuses to touch
 
@@ -125,14 +134,9 @@ It does not see a subagent dispatch **described in a skill's prose**. A plugin c
 
 It resolves hook injection **statically, or says it could not**. A hook that builds its path at runtime from state gets flagged for a human to read, not guessed at.
 
-## How it was tested
+## Why
 
-Fourteen rounds, each one pointed at something real. **[CASE-STUDIES.md](./CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
-
-- **Who reviewed it:** AI agents only. Each was a separate Claude session that had not written the code. The only outside user ran an early version and hit bugs that later rounds fixed.
-- **Hardest round:** the ninth, the first by a session outside the build. Eleven problems, four published claims proved false, one of them a path that could leak 90,533 bytes of private rules into a public repo.
-- **The code:** checked against the filesystem. Every self-check case has been seen to fail with the code it guards broken.
-- **The judgment:** graded blind against two sealed fixtures, built by separate sessions; the author has never seen the answers. On the second, the instructions scored 30 of 31 where the same model without them scored 16.
+I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin. It injects about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and it told me half of them restated my own config and five contradicted hard stops I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
 
 ## The name
 

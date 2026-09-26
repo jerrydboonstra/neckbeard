@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Keep the report excerpts in CASE-STUDIES.md in step with the gallery.
+
+Each case study that ran against a gallery plugin opens with that report's
+verdict and "At a glance" table, between two markers:
+
+    <!-- report:superpowers -->
+    ...
+    <!-- /report -->
+
+The text between them is copied from examples/superpowers.md, never typed by
+hand, so re-running the gallery cannot leave a case study quoting an old report.
+
+    bin/excerpts           rewrite every excerpt from its report
+    bin/excerpts --check   exit 1, naming each excerpt that has drifted
+"""
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DOC = ROOT / "CASE-STUDIES.md"
+BLOCK = re.compile(r"(<!-- report:([\w.-]+) -->\n)(.*?)(\n<!-- /report -->)", re.S)
+
+
+def excerpt(name):
+    """The verdict and the At-a-glance table from examples/<name>.md."""
+    report = (ROOT / "examples" / f"{name}.md").read_text()
+    # The verdict box: its headline and summary, without the closing
+    # "Verdict is relative..." note, which the case study does not need.
+    verdict = re.search(r"^> ## (.+\n(?:>.*\n)*?)>\n> Verdict is relative", report, re.M)
+    glance = re.search(r"^\| \| \| \|\n(?:\|.*\n?)+", report, re.M)
+    if not verdict or not glance:
+        sys.exit(f"excerpts: examples/{name}.md has no verdict box or At-a-glance table")
+    return f"> {verdict.group(1).rstrip()}\n\n{glance.group(0).rstrip()}"
+
+
+def main():
+    check = "--check" in sys.argv[1:]
+    text = DOC.read_text()
+    stale = []
+
+    def fill(m):
+        want = excerpt(m.group(2))
+        if m.group(3) != want:
+            stale.append(m.group(2))
+        return m.group(1) + want + m.group(4)
+
+    new = BLOCK.sub(fill, text)
+    if not BLOCK.search(text):
+        sys.exit("excerpts: no <!-- report:... --> blocks in CASE-STUDIES.md")
+    if check:
+        if stale:
+            sys.exit("excerpts: out of step with the gallery: " + ", ".join(stale) + ". Run bin/excerpts.")
+        print(f"excerpts: {len(BLOCK.findall(text))} in step with the gallery")
+        return
+    DOC.write_text(new)
+    print(f"excerpts: rewrote {', '.join(stale) or 'nothing, all in step'}")
+
+
+if __name__ == "__main__":
+    main()

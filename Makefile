@@ -5,13 +5,17 @@ REMOTES ?= $(shell git remote)
 VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
 
 .DEFAULT_GOAL := check
-.PHONY: check release help
+.PHONY: check excerpts release help
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
 
-check: ## run the self-check (every case has been seen to fail)
+check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
 	$(PYTHON) skills/neckbeard/selfcheck.py
+	$(PYTHON) bin/excerpts --check
+
+excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
+	$(PYTHON) bin/excerpts
 
 release: check ## push main and the version tag to every remote, fast-forward only
 	@test -z "$$(git status --porcelain --untracked-files=no)" || { echo "release: tracked files are modified; commit first"; exit 1; }

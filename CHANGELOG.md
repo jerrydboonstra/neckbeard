@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.12.5 (2026-09-25)
+
+- **The case studies read in half the time.** They open with a short link list in two groups: runs against real plugins, and rounds against neckbeard itself. Each run against a gallery plugin (§1 to §5) leads with that plugin's report today, then the first run's output. Every round then lists what it showed, the version that fixed it, and the self-check that guards it, and says so where none does. Lists longer than four show three and fold the rest; §9 and §12 keep their full stories in a fold; the closing lessons are five, with twelve more folded and numbered on from them.
+- **The report excerpts are copied, never typed.** `bin/excerpts` fills them from `examples/`, and `make check` fails if a case study quotes a report that has since changed.
+- **The README reads in the order an evaluator asks.** What it produces, then how to install and use it, then how it was tested and what it will and will not touch, then the story behind it. A line under the intro says every round is published, and "How it was tested" links each round. It also said the gallery has seven plugins; it has eight.
+
 ## 1.12.4 (2026-09-25)
 
 - **The README's "Why" now says what happened.** It used to say the author read ponytail himself and found half its rules duplicated and five in conflict. An LLM made that comparison, and there was no good way to check it, which is the reason neckbeard exists. The tagline changes too, and the social preview image matches it.

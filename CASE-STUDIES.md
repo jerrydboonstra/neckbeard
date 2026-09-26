@@ -1,47 +1,110 @@
 # Case studies
 
-Every time this tool has been pointed at something real, in order. Each entry says what was found, and where the tool itself fell short, because the second half is the part that improves it.
+Every time this tool has been pointed at something real, in order, with what it found and where the tool itself fell short.
 
-**Who did the reviewing.** Every reviewer here was an AI agent: a Claude session, run on the author's machine. "Independent" below means a separate session that had not written the code it was reviewing and had no stake in the result; it does not mean a human auditor. Both sealed fixtures were built and graded by such sessions, and the author has never seen their answers. The only outside human user so far ran an early version once and hit bugs that later rounds fixed.
+**Pointed at real plugins**
 
-| # | Target | Why it was picked | What it cost the tool |
-|---|---|---|---|
-| 1 | `ponytail` | the plugin that prompted this one | two resolver bugs |
-| 2 | `neckbeard` | itself, before publishing | a false claim in its own README |
-| 3 | `obra/superpowers` | the large one, picked by measurement | nothing, it held up |
-| 4 | `Koz-TV/viral-launch-pipeline` | picked at random from 183 candidates | a blind spot on dispatch-by-prose |
-| 5 | `claude-security` | Anthropic's own, two hook events never seen before | dead code and a misleading field name |
-| 6 | all 39 Anthropic first-party plugins | a sweep, to find where it breaks at scale | a hook blind spot it had asserted away |
-| 7 | purpose-built directories | attacking the branches no real plugin exercises | three bugs, one of them the biggest omission it could make |
-| 8 | the last unexercised branches | closing the list out | a crash and a lie, both in hook parsing |
-| 9 | an independent audit | a separate session that did not build it | eleven findings, four published claims proved false |
-| 10 | the skill's judgment half | the last untested surface | three instruction defects, one machine-specific |
-| 11 | the judgment half, hard case | overlapping sources, hooks that reach subagents | a silence that looked like an all-clear |
-| 12 | re-audit of the previous fix | the fix itself was the regression | the same bug, reintroduced narrower |
-| 13 | a sealed, held-out fixture | the judgment half, graded by a session that did not build it | its last self-graded claim |
-| 14 | an adversarial pass before going public | the two newest versions had no outside scrutiny | a self-check that stayed green with the bug back in, five unguarded reads |
+1. [`ponytail`](#1-ponytail-the-one-that-started-it): the one that started it
+2. [`neckbeard`](#2-neckbeard-itself-before-publishing): itself, before publishing
+3. [`obra/superpowers`](#3-obrasuperpowers-the-large-one): the large one
+4. [`Koz-TV/viral-launch-pipeline`](#4-koz-tvviral-launch-pipeline-the-random-one): the random one
+5. [`claude-security`](#5-claude-security-anthropics-own-security-plugin): Anthropic's own security plugin
+6. [All 39 Anthropic first-party plugins](#6-all-39-anthropic-first-party-plugins-the-sweep): the sweep
+
+**Pointed at neckbeard itself**
+
+7. [Purpose-built directories](#7-purpose-built-directories-attacking-the-unexercised-branches): attacking the unexercised branches
+8. [The last unexercised branches](#8-the-last-unexercised-branches-a-crash-and-a-lie): a crash and a lie
+9. [An independent audit](#9-an-independent-audit-the-one-that-found-the-most): the one that found the most
+10. [The judgment half](#10-the-judgment-half-the-first-thing-that-passed): the first thing that passed
+11. [The judgment half again, on the hard case](#11-the-judgment-half-again-on-the-hard-case)
+12. [The fix that was the regression](#12-the-fix-that-was-the-regression)
+13. [The last claim resting on the builder's word](#13-the-last-claim-resting-on-the-builders-word)
+14. [Before going public](#14-before-going-public-the-tests-that-tested-the-wrong-thing): the tests that tested the wrong thing
+
+[What the fourteen add up to](#what-the-fourteen-add-up-to) · [Who did the reviewing](#who-did-the-reviewing)
 
 ---
 
 ## 1. `ponytail`: the one that started it
 
-Run against the installed `ponytail@ponytail`. Found all three hooks (`SessionStart`, `SubagentStart`, `UserPromptSubmit`) and the file they inject (`skills/ponytail/SKILL.md`, 6,637 bytes). Ponytail strips the frontmatter before injecting, so the real figure is nearer 5,229 characters, and no static read can know that. Six skills and six commands, no duplicates. Run cold against `addyosmani/agent-skills` by GitHub URL to exercise the clone path: 25 skills found.
+The plugin that prompted this one. Run against the installed `ponytail@ponytail`, then cold against `addyosmani/agent-skills` by GitHub URL to exercise the clone path (25 skills found).
 
-**Two bugs it exposed in the first pass**, both since fixed. The resolver missed ponytail's injection because the path is built two hops away, through a `require()` and a `path.join(__dirname, ...)` rather than a single string literal. And the skill count was doubled, because ponytail ships mirrors for other agent ecosystems under `.openclaw/` and `.opencode/` that Claude Code never loads. Counting what the host cannot see is worse than not counting.
+**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/ponytail.md)
+
+<!-- report:ponytail -->
+> 🟨 COPY RULES, SKIP PLUGIN · take the rule and three skills, skip the always-on injection
+> Injects its main skill into every session and every subagent, about 1,300 tokens each time (its 6.6 KB skill file, frontmatter stripped), and writes mode state to files outside the project. Two of its instructions tell the model to proceed on its own where the sample reader's rules say ask first. One new safety rule and three on-demand skills are worth having, and both are cheaper to copy as text than to carry as a permanent injection.
+
+| | | |
+|:--:|---|---|
+| 🟧 | **Cost** | ~1,300 tokens (its 6.6 KB skill file, frontmatter stripped) at every session start, and again at every subagent start |
+| 🟧 | **Reach** | main session + subagents (certain, a `SubagentStart` hook, documented) |
+| 🟧 | **Leaves state** | flag/config files outside the project: home config dir and host-specific dirs |
+| 🟩 | **Live surface** | no MCP servers, no network calls in its hooks; one nudge asks the model to offer editing settings.json |
+| 🟩 | **Refused reads** | none |
+| 🟨 | **Worth keeping** | 1 standing rule + 3 on-demand skills |
+<!-- /report -->
+
+**The first run** · before 1.0.0, against the author's own rules
+
+- three hooks (`SessionStart`, `SubagentStart`, `UserPromptSubmit`) injecting `skills/ponytail/SKILL.md`, 6,637 bytes; about 5,229 characters once ponytail strips the frontmatter, which no static read can know\
+  ↳ about the plugin
+- the resolver missed the injection, because the path is built two hops away through a `require()` and `path.join(__dirname, ...)` rather than one string literal\
+  ↳ 1.0.0 · guard: no `selfcheck.py` case yet
+- the skill count was doubled by mirrors for other agents under `.openclaw/` and `.opencode/`, which Claude Code never loads\
+  ↳ 1.0.0 · guard: no `selfcheck.py` case yet
+
+Counting what the host cannot see is worse than not counting.
 
 ## 2. `neckbeard`: itself, before publishing
 
-No hooks, no agents, one skill at 7,207 bytes. The parts that went as claimed went as claimed. The run also caught a false statement in this tool's own documentation.
+No hooks, no agents, one skill at 7,207 bytes. Its own report still marks it down, for a report format that needs a symbol key; that finding is left standing on purpose (see the [gallery](examples/README.md)).
 
-The docs said a directory-source install never gets a cache copy: the source directory *is* the install, so there is nothing to go stale. True for most. Not true here, because this plugin's own source directory is a git repo. Claude Code cached it anyway, keyed to `plugin.json`'s version, and that cache sat on the first commit, holding an early draft of the description, through two later commits that fixed it, because the version number never moved. Only an uninstall and reinstall picked it up. Any session reading the plugin in that window read a false claim about its own token cost.
+**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/neckbeard.md)
 
-It also flagged its own `inventory.py` as a persistence risk, for calling `os.path.expanduser` three times. All three read a caller-supplied path; none write anything. The heuristic cannot tell "resolves a path" from "writes to disk", so it says so and leaves the read to a human rather than guessing, the same posture it takes on a hook it cannot resolve statically.
+<!-- report:neckbeard -->
+> 🟧 INSTALL WITH CHANGES · keep the skill, fix the report's own jargon
+> Costs about 270 tokens a session and nothing more: no hooks, no agents, so it never runs uninvited. Two of its habits already match the sample reader's rules, and one collides with them. The one-shot vetting skill itself is worth keeping.
 
-**Fixed:** the version now moves with every change that touches behavior, and the cache claim now says "usually", with the exception named.
+| | | |
+|:--:|---|---|
+| 🟩 | **Cost** | ~270 tokens (the skill's description), every session; the full skill body loads only when invoked |
+| 🟩 | **Reach** | none automatic. Zero hooks, so nothing fires until a person asks for it |
+| 🟩 | **Leaves state** | the JSON dossier, only when `--out` is passed, only at that path (embeds the reader's rule files verbatim; never commit it) |
+| 🟩 | **Live surface** | `git clone --depth 1`, only when the target is a git URL, into a temp dir removed after; no MCP servers |
+| 🟩 | **Refused reads** | none |
+| 🟩 | **Worth keeping** | 1 skill |
+<!-- /report -->
+
+**The first run** · before 1.1.0, against the author's own rules
+
+- the docs said a directory-source install never gets a cache copy; this plugin's source is a git repo, so Claude Code cached it anyway, keyed to the version, and served an early false description through two commits that fixed it\
+  ↳ about the tool's docs · 1.1.0: the version moves with every behavior change, and the claim says "usually", with the exception named
+- its own `inventory.py` flagged as a persistence risk for three `os.path.expanduser` calls, all reads of a caller-supplied path; the heuristic cannot tell resolving a path from writing to disk, so it says so\
+  ↳ worked as designed: flagged for a human, not guessed
 
 ## 3. `obra/superpowers`: the large one
 
-231 files across 67 directories as of 2026-09-19 (it has grown since; see §14), 15 skills, one hook. Picked by checking real file, hook and skill counts across four candidates via GitHub's tree API, not by reading descriptions.
+Picked by measurement: real file, hook and skill counts across four candidates from GitHub's tree API, not their descriptions. 231 files across 67 directories as of 2026-09-19 (it has grown since; see §14).
+
+**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/superpowers.md)
+
+<!-- report:superpowers -->
+> 🟧 INSTALL WITH CHANGES · install it, skip the two model overrides
+> Fifteen skills and one hook, 3,192 bytes injected once at session start and never reaching a subagent. Two skills tell you to override a dispatched subagent's pinned model, which collides with a rule the sample reader already runs; two more just restate a rule it already has. The other ten, one of them condensed into a new rule, are worth keeping.
+
+| | | |
+|:--:|---|---|
+| 🟧 | **Cost** | 3,192 bytes injected at `SessionStart` (`startup\|clear\|compact`), once per session |
+| ⬜ | **Reach** | main session only: the matcher excludes every subagent-firing event, and the injected skill itself carries a guard telling a dispatched subagent to ignore it |
+| ⬜ | **Leaves state** | plans, specs and review ledgers under the consuming project's own `docs/superpowers/` and `.superpowers/`; nothing found outside the project |
+| ⬜ | **Live surface** | no MCP servers, no network calls; skills shell out to `git`, test runners and `gh` |
+| ⬜ | **Refused reads** | none |
+| 🟩 | **Worth keeping** | 10 (1 rule, 9 skills) |
+<!-- /report -->
+
+**The first run** · 2026-09-19, against the author's own rules
 
 ```
 has_hooks: true, events: [SessionStart]
@@ -49,24 +112,65 @@ hooks_reach_subagents: false
 skills: 15, total 168,036 bytes
 ```
 
-The resolver could not statically resolve the injection: the command is `run-hook.cmd session-start`, a wrapper with no recognizable script extension, not the shape ponytail uses. It said so rather than guessing, though only after a detour: a later fix briefly made this exact hook report nothing at all, and the correction is §12. Read by hand, `hooks/session-start` cats `skills/using-superpowers/SKILL.md` (3,192 bytes), wraps it in `<EXTREMELY_IMPORTANT>You have superpowers.`, and emits it as session context.
+- the hook command `run-hook.cmd session-start` has no script extension, so it could not be resolved statically; reported as unresolved, not guessed\
+  ↳ worked as designed · guard: `selfcheck.py`: "no skills, UNRESOLVED hook" (an unresolved hook still triggers the comparison)
+- a later fix narrowed resolution to an extension allowlist and made this same hook report nothing at all ([§12](#12-the-fix-that-was-the-regression))\
+  ↳ 1.11.0: resolved, unresolved and absent reported separately · guard: no `selfcheck.py` case yet
+- the hook's matcher is `startup|clear|compact` with no `SubagentStart`, and the injected skill opens with `<SUBAGENT-STOP>`: it never reaches a subagent\
+  ↳ about the plugin
 
-**Two things it does better than ponytail**, found by reading the same file it injects. Its `SessionStart` matcher is `startup|clear|compact` only, with no `SubagentStart`, so a dispatched subagent never receives it. And the skill itself opens with `<SUBAGENT-STOP>` telling a subagent to ignore it if it somehow arrives anyway. Belt and suspenders, where ponytail had neither. The cost is 3,192 bytes once against ponytail's ~6,600 on every session and every subagent.
+Read by hand, `hooks/session-start` cats `skills/using-superpowers/SKILL.md` (3,192 bytes) into session context, once, against ponytail's ~6,600 on every session and every subagent.
 
 ## 4. `Koz-TV/viral-launch-pipeline`: the random one
 
-One skill, 15,919 bytes, zero hooks, zero declared agents. Picked with an unseeded `random.choice()` from 183 candidates, filtered out of Anthropic's official (310) and community (2,282) catalogs by keyword.
+Picked with an unseeded `random.choice()` from 183 candidates, filtered by keyword out of Anthropic's official (310) and community (2,282) catalogs. One skill, 15,919 bytes, no hooks, no declared agents.
 
-The description claims a "21-agent viral product-launch pipeline." From the numbers alone that reads as an overclaim: no agent files, no hooks, one skill. **That reading was wrong.** The skill's own text *is* the orchestration protocol, instructing the main session to call the `Agent` tool 21 times in sequence, four of them in one parallel batch, writing each stage to disk before the next reads it. The 21 agents are real. They are just not files.
+**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/viral-launch-pipeline.md)
 
-**The blind spot this exposes is real and still open.** A pipeline built entirely as dispatch instructions inside one skill reports `agents: []` and looks inert next to a plugin that declares its agents as files. Zero declared agents does not mean zero agent-dispatching behavior. It means the dispatching lives in prose this tool does not yet parse for `Agent(` calls.
+<!-- report:viral-launch-pipeline -->
+> 🟩 INSTALL · adopt as-is, then copy four of its rules into your own
+> No hooks, no declared agents, no MCP servers: the only always-on cost is one skill description in the session listing. Its 21 subagents are real, they just live in prose rather than agent files, and the loop dispatches them straight into your `Agent` tool. Four of its internal rules are worth keeping on their own; two duplicate a rule you already run, and none of them conflict with it.
 
-**The 15,919-byte skill is also not the whole plugin.** Twenty-one per-stage prompt files and six reference documents sit beside it, 92,456 bytes total, loaded one at a time as each stage runs. Not counting them toward always-on cost is correct, since nothing about them is standing. But a reader judging total footprint from "one 15KB skill" would be off by a factor of six.
+| | | |
+|:--:|---|---|
+| 🟩 | **Cost** | 571 B skill description, every session; the 15,919 B `SKILL.md` and ~92 KB of prompt/reference files load only when the skill fires |
+| 🟩 | **Reach** | main session + subagents (certain): dispatches roughly 21 `Agent` calls per launch, one per pipeline stage |
+| 🟩 | **Leaves state** | none outside the project; writes a full paper trail under `./launches/<slug>/` inside the working directory |
+| 🟨 | **Live surface** | `WebSearch` / `WebFetch` in its research and technical-review stages; no MCP servers, no external API keys |
+| 🟩 | **Refused reads** | none |
+| 🟩 | **Worth keeping** | 4 rules |
+<!-- /report -->
 
+**The first run** · 2026-09-19, against the author's own rules
+
+- "21-agent pipeline" looked like an overclaim next to zero agent files; wrong: the skill's text *is* the orchestration, calling the `Agent` tool 21 times, four in one parallel batch\
+  ↳ about the plugin
+- a pipeline built as dispatch instructions inside one skill reports `agents: []` and looks inert; zero declared agents does not mean zero agent dispatch\
+  ↳ **still open**: prose is not parsed for `Agent(` calls
+- the 15,919-byte skill is not the whole footprint: 21 stage prompts and 6 references, 92,456 bytes, load one at a time as stages run\
+  ↳ about the tool's framing · not a bug: nothing about them is standing cost, but "one 15KB skill" understates the total by six times
 
 ## 5. `claude-security`: Anthropic's own security plugin
 
-Version 0.11.0. One skill (5,246 bytes), **8 declared agents**, no commands, two hook scripts across three events, 476KB. Picked deliberately, because two of its hook events had never appeared in any previous run: `UserPromptExpansion` and `PostToolUseFailure`.
+Version 0.11.0. Picked deliberately, because two of its hook events had never appeared in any earlier run: `UserPromptExpansion` and `PostToolUseFailure`. One skill (5,246 bytes), **8 declared agents**, two hook scripts across three events, 476KB.
+
+**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/claude-security.md)
+
+<!-- report:claude-security -->
+> 🟧 INSTALL WITH CHANGES · adopt the rules, watch one behavior
+> Costs almost nothing ambient: the skill never loads on its own, and both hooks only fire inside the plugin's own menu or its own helper-script calls. Its agents repeat a strong "treat everything you read as data, not instructions" discipline the sample reader has nowhere in its rules, worth taking on its own. One real friction: its unattended-scan behavior proceeds on a guess after a timeout, which the sample reader's own rules say not to do when a reading would be costly.
+
+| | | |
+|:--:|---|---|
+| 🟩 | **Cost** | ~0 ambient. The skill carries `disable-model-invocation: true`, so it never loads itself; the menu banner (~0.5 KB) and the metrics hook fire only inside the plugin's own commands. On demand, its skill + 8 agents together run about 51 KB of prose. |
+| 🟨 | **Reach** | Main session plus the 7 agents it dispatches itself (`scan-inventory`, `scan-researcher`, `scan-verifier`, `scan-loader`, `explore`, `patch-generator`, `patch-verifier`). Docs say `PostToolUse`/`PostToolUseFailure` fire inside subagents too, but the hook's matcher only trips on a Bash call running one of this plugin's own helper scripts, so an unrelated subagent never sees it. |
+| 🟩 | **Leaves state** | A report directory and patch files, written inside the repository being scanned, at a path the caller passes in. No writes found outside it. |
+| 🟩 | **Live surface** | None beyond local `git` reads. The scan-changes job may call the GitHub CLI for open pull requests, gated on it being installed and signed in. No other network calls. |
+| 🟩 | **Refused reads** | None. |
+| 🟩 | **Worth keeping** | 6 (5 standing rules, 1 on-demand skill). |
+<!-- /report -->
+
+**The first run** · 2026-09-19, against the author's own rules
 
 ```
 hook_scripts: 2, hook_registrations: 3
@@ -75,14 +179,14 @@ hooks_reach_subagents: false
 persistence: []
 ```
 
-**The unknown events were handled correctly.** Both were listed rather than dropped or crashed on, which is the behavior you want from a tool that will meet event types invented after it was written. No fix needed.
-
-**Dead code, found by reading the output next to the source.** A constant named `INJECTING_EVENTS` listed five hook events and was never used anywhere. It implied the tool classified events by whether they inject context. It does not. A misleading constant is worse than no constant in a tool whose pitch is honest inspection, so it is gone.
-
-**A field name that was correct and misleading at the same time.** The run reported `reaches_subagents: false` for a plugin with **eight declared agents**. Technically right: the field meant "a hook of this plugin fires on a subagent event", and none of these do. But no reader seeing eight agents and "reaches subagents: false" concludes the right thing. Renamed to `hooks_reach_subagents`, which says what it measures.
-
-**The persistence heuristic produced a true negative, and that is worth recording.** It reported nothing, against a plugin with sixteen Python files and two shell scripts. Checked by hand: `hooks.py` reads files and writes only to stdout and stderr, never to disk. Taken with the false positive it produced against its own `inventory.py`, the heuristic's failure mode so far is flagging reads as writes, not missing writes. That is the right direction for it to be wrong in, and now there is evidence rather than a hope.
-
+- both never-seen hook events were listed, not dropped or crashed on\
+  ↳ worked as designed
+- a constant, `INJECTING_EVENTS`, listed five events and was used nowhere, implying a classification the tool does not do\
+  ↳ 1.2.0: removed
+- `reaches_subagents: false` beside **eight declared agents**: correct (no hook fires on a subagent event) and misleading\
+  ↳ 1.2.0: renamed `hooks_reach_subagents`
+- the persistence scan found nothing across 16 Python files and 2 shell scripts; `hooks.py` writes only to stdout and stderr. Read at the time as evidence the heuristic errs toward false positives\
+  ↳ that reading was wrong: [§9](#9-an-independent-audit-the-one-that-found-the-most) built five writes it missed; widened in 1.7.0
 
 ## 6. All 39 Anthropic first-party plugins: the sweep
 
@@ -101,45 +205,69 @@ Nothing in this catalog triggered it, which is exactly why it survived five prev
 
 ## 7. Purpose-built directories: attacking the unexercised branches
 
-Case study 6 ended on a conclusion: the dangerous defects live in code paths no real plugin happens to take. So this run targets the branches directly, with directories built to provoke them rather than plugins found in the wild.
+§6 ended on a conclusion: the dangerous defects live in code paths no real plugin takes. So this round built directories to provoke those paths. A root-level `plugin.json`, a flat `hooks.json` and an empty directory all held.
 
-**What held up.** A `plugin.json` at the repo root instead of under `.claude-plugin/`: read correctly, version and all. A `hooks.json` in the flat shape with no top-level `hooks` wrapper: parsed, event found. A completely empty directory: handled, no crash, honest zeros. Both error paths produce a message naming the problem and what to do instead.
+- a skill with no frontmatter was named `SKILL`, the filename, so every such skill in a pack had the same name\
+  ↳ 1.4.0: named by its directory · guard: no `selfcheck.py` case
+- `--extra-rules` pointed at a folder silently took nothing unless the files were named `SKILL.md` or `CLAUDE.md`\
+  ↳ 1.4.0: every markdown file, and a warning when a path matches nothing · guard: no `selfcheck.py` case
+- a plugin declaring two MCP servers reported nothing about them: the worst omission it could make\
+  ↳ 1.4.0: an `mcp_servers` block; `.mcp.json` added in 1.7.0 after [§9](#9-an-independent-audit-the-one-that-found-the-most) · guard: no `selfcheck.py` case
 
-**Three bugs, in ascending order of how bad they were.**
+<details>
+<summary>2 more findings</summary>
 
-*A skill with no frontmatter was named `SKILL`.* The fallback used the filename stem, and every skill file in Claude Code is called `SKILL.md`, so every frontmatter-less skill in a pack reported the same useless name. A skill's identity is its directory: `skills/<name>/SKILL.md` is named `<name>`. Fixed to read the parent directory.
+- the first check of that fix passed only because the test plugin was named `mcpplug`\
+  ↳ rewritten to pass for the right reason
+- this section claimed no catalog plugin declares an MCP server; Anthropic's own `example-plugin` does\
+  ↳ corrected after §9
 
-*`--extra-rules` pointed at a directory silently contributed nothing.* The flag exists precisely for rules the automatic discovery would miss, and the directory branch then filtered by filename, accepting only `SKILL.md` and `CLAUDE.md`. Point it at a folder of rules named anything else and you get silence: no error, no warning, and a report that reads as though your rules were considered. Now takes every markdown file under an explicitly-given directory, warns when a path matches nothing, and warns when the path does not exist at all.
+</details>
 
-*A plugin declaring MCP servers reported nothing whatsoever.* The dossier filters the manifest down to name, version, description and license, so two declared MCP servers vanished completely. This is the worst omission the tool could make. An MCP server is a live tool surface with network reach and real side effects, which makes it the highest-consequence thing a plugin can ship, and it was the one thing a reader would never learn.
-
-The first check of this even gave a **false pass**: the probe searched the dossier for the string "mcp" and found it, because the test plugin had been named `mcpplug`. Worth recording as its own small lesson about writing a check that can only pass for the right reason.
-
-Now reported as a `mcp_servers` block with a count, each server's name, command and transport, and a note that this is the declaration only. What a server actually exposes is knowable only by speaking MCP to it, which this tool does not do and says so.
-
-**Both of those sentences were wrong**, and an independent audit proved it. An earlier version of this section claimed nothing in the 39-plugin catalog declares an MCP server, and that no sweep of real plugins could have caught the omission. Anthropic's own `example-plugin`, inside those 39, ships a `.mcp.json` declaring one. The fix read the inline `plugin.json` key only, so the sweep would have found it if the fix had looked in both places. See §9.
-
+**Write the check so it can only pass for the right reason.**
 
 ## 8. The last unexercised branches: a crash and a lie
 
-Three paths remained untested after round 7: the recursion limit on hook injection, a `hooks.json` that is present but broken, and a symlinked target.
+The three paths left after round 7: the hook-injection recursion limit, a `hooks.json` that is present but broken, and a symlinked target. The recursion limit failed honestly ("could not statically resolve") and the symlinked target resolved correctly.
 
-**Two held.** Beyond the one-hop recursion limit, a payload buried two `require()` calls deep produced "could not statically resolve, read the hook scripts manually" rather than a confident claim of no injection. That is the limit failing in the honest direction. A symlink pointing at a real plugin resolved correctly, 8 agents and all.
+- a `hooks.json` of invalid JSON reported `has_hooks: true` with no events, which reads as "registers nothing"\
+  ↳ 1.5.0: `has_hooks: "unknown"` with a `parse_error` · guard: `selfcheck.py`: "hooks file that did not parse"
+- a `hooks.json` holding a list where an object belongs crashed with an `AttributeError`\
+  ↳ 1.5.0 · guard: no `selfcheck.py` case
+- this section claimed the class was closed; three deeper shapes still crashed\
+  ↳ 1.7.0, after §9 · guard: no `selfcheck.py` case
 
-**Broken hook files produced a crash and a lie.**
+All 39 catalog plugins re-ran with no crashes and no false "unknown".
 
-A `hooks.json` containing invalid JSON reported `has_hooks: true` with an empty event list. Both halves are wrong. There *are* hooks, or at least a hooks file, and reporting zero events invites the reader to conclude the plugin registers nothing. The truth was "there is a hooks file here and I could not read it", which is exactly the kind of thing this tool exists to say out loud.
-
-A `hooks.json` containing valid JSON of the wrong shape, a list where an object belongs, **crashed with an uncaught `AttributeError`**. The parser accepts two layouts, nested under a `hooks` key or flat at the top level, and called `.get()` without ever checking it had an object at all.
-
-Both now return `has_hooks: "unknown"` with a `parse_error` naming what went wrong and telling the reader to open the file. A three-state answer, because "yes", "no" and "there is something here I could not read" are three different facts and only the third was missing.
-
-**This section originally claimed the class was closed. It was not.** The guard checked one nesting level, the one the fixture happened to exercise, and three deeper shapes still crashed. Found by the audit in §9.
-
-All 39 catalog plugins re-run afterward: no crashes, and not one false "unknown".
-
+**"I could not read that" is a third answer, distinct from yes and no.**
 
 ## 9. An independent audit: the one that found the most
+
+Eight rounds of self-testing, then a separate session with no stake in the code, briefed to treat every claim as a hypothesis. Eleven findings, all missed by the builder; the main ones:
+
+- a run embedded 90,533 bytes of the user's private rules in a file no `.gitignore` covered, one `git add` from a public repo\
+  ↳ 1.6.0: ignore rules, and a warning on every write · guard: no `selfcheck.py` case
+- a symlinked skill file could make it read and embed `/etc/passwd`\
+  ↳ 1.7.0: refused, and reported as refused · guard: `selfcheck.py`: the 12 containment cases
+- "nothing in the 39-plugin catalog declares an MCP server": Anthropic's `example-plugin` does, in `.mcp.json`\
+  ↳ 1.7.0: both locations read · guard: no `selfcheck.py` case
+
+<details>
+<summary>3 more findings</summary>
+
+- "the heuristics fail toward false positives": five constructed writes, two into `$HOME`, all missed\
+  ↳ 1.7.0: all six fixtures caught · guard: no `selfcheck.py` case
+- the injection resolver confidently named an unrelated `CHANGELOG.md`\
+  ↳ 1.7.0: a bare match is labelled low confidence · guard: no `selfcheck.py` case
+- `bytes` was a character count, and silently capped at 200,000\
+  ↳ 1.8.0: `bytes` and `chars` both reported; three published figures corrected · guard: no `selfcheck.py` case
+
+</details>
+
+**Widen the claim to match the fix, or narrow the claim to match the fixture.**
+
+<details>
+<summary>Read the full story</summary>
 
 Eight rounds of self-testing, then a fresh reviewer with no stake in the code and a brief that listed every claim as a hypothesis rather than a finding. It returned eleven findings. The builder had missed all of them.
 
@@ -162,57 +290,55 @@ That last one is the sharpest. The evidence offered for it was one false positiv
 
 **The lesson, in the auditor's words:** widen the claim to match the fix, or narrow the claim to match the fixture. Do not ship the general sentence off a single constructed case. Every fixture from this round is kept as a permanent regression case, because no real plugin exercises any of them.
 
+</details>
 
 ## 10. The judgment half: the first thing that passed
 
-Every round so far tested `inventory.py`, the mechanical half. The other half is `SKILL.md`, a set of instructions a model follows to classify rules, and nothing had ever tested whether those instructions work.
+Every earlier round tested `inventory.py`. This one tested `SKILL.md`, the instructions a model follows to sort rules: four planted rules with unambiguous answers, a throwaway `HOME`, and a model given only the instructions and the dossier. **Four of four, twice.**
 
-Mechanical testing cannot do it, and neither can the author: writing the instructions and then following them means filling every gap with the intent you already had. So: a fixture with four planted rules whose correct buckets are unambiguous, a rules corpus built from scratch under a throwaway `HOME` so the answer is fully controlled, then a model given the instructions and the dossier and **nothing else**, with no idea what the right answers were.
+- Step 4 named a section heading that existed only in the author's own rules file\
+  ↳ 1.9.0: a method instead of a name · guard: sealed fixture ([§13](#13-the-last-claim-resting-on-the-builders-word))
+- Step 4 demanded a repo for any proposed skill, which nothing could supply, so the model invented one\
+  ↳ 1.9.0: a proposed name, marked as a proposal · guard: sealed fixture
+- Step 2 said to weigh carrying cost and gave no criterion\
+  ↳ 1.9.0: a criterion, with the zero-hook case named · guard: sealed fixture
 
-| planted rule | correct bucket |
-|---|---|
-| prefer stdlib over a new dependency | duplicate of an existing rule |
-| run destructive commands without confirming | conflict with a hard stop |
-| prefix temporary files with `tmp-` | new, standing |
-| on request, list unused dependencies | new, on-demand |
-
-**Four out of four, twice.** The conflict was cited against the exact rule and the file it lives in, which is what Step 2 demands. This is the first time anything here passed on substance.
-
-**The instructions failed three ways, and one was the same mistake as round 7.**
-
-Step 4 told the reader to append to a section by name. That heading existed only in the author's own rules file. Any reader organised differently had to guess, and the executor said so plainly. It is the same class of defect as the hardcoded `~/proj` path caught earlier: a public tool carrying an assumption about one machine. Step 4 now hands over a method rather than a name, and requires the reader to say which section they chose.
-
-Step 4 also demanded a "which repo" for any proposed skill, a field neither the instructions nor the dossier can supply, so the executor invented one. It now asks for a proposed name marked as a proposal, and forbids inventing a location when the dossier does not show one.
-
-Step 2 said to weigh carrying cost and gave no criterion at all. It now gives one, and names the zero-hook case explicitly as having nothing to weigh.
-
-**What this run did not test, in the executor's own words.** The fixture is the easy case: no hooks, no persistence, no commands, one rule source. It never exercised reconciling a target against several overlapping rule sets, which is where the real classification difficulty lives, and it never exercised the by-hand path for a hook whose injection cannot be statically resolved. The carrying-cost criterion's non-zero branch is still, in its words, "a slogan rather than a test."
-
+**Instructions are testable, and were not being tested.**
 
 ## 11. The judgment half again, on the hard case
 
-Round 10 passed, and the executor said plainly why that proved less than it looked: one rule source, no hooks, no persistence, four unambiguous buckets. An audit made the same point more sharply. A criterion no test has ever made fire is not known to work, and the carrying-cost rule had never fired, because every fixture had zero hooks.
+Three overlapping rule sources, hooks that reach subagents so the carrying-cost rule finally has to fire, and one rule whose right answer is arguable. **Five of five**, including picking the right source among overlapping ones and calling the arguable one a coin flip rather than dressing it up.
 
-So: three overlapping rule sources that partly restate each other, a target whose hooks reach subagents so the cost branch has to execute, and one rule whose correct bucket is genuinely arguable.
+- one hook that resolved silenced the warning for every hook that did not, so a `PreToolUse` gate of unknown behavior looked like a hook with nothing to inject\
+  ↳ 1.10.0: unresolved hooks listed one by one · guard: `selfcheck.py`: "no skills, UNRESOLVED hook"
+- no rule for which source to cite when several cover the same ground\
+  ↳ 1.10.0 · guard: sealed fixture
+- no rule for exactly one rule surviving the carrying-cost test\
+  ↳ 1.10.0 · guard: sealed fixture
 
-| planted rule | correct answer |
-|---|---|
-| prefer stdlib | duplicate, but of the **global** file, where it stands alone, not the project file that mentions it in passing |
-| justify dependencies in the PR | duplicate of the **project** file, not the global one |
-| skip tests on hotfixes | conflict with a project rule that says "no exceptions for hotfixes" |
-| rationale comments on odd code | **deliberately arguable**: conflicts with "explain in the commit message, not a code comment", or is merely new |
-| summarise changes since the last tag | duplicate of a **personal skill**, not of any rules file |
-
-**Five of five.** It picked global over project for the first and said why, picked project for the second, found the duplicate that lived in a skill rather than a rules file, and on the arguable one gave both readings, chose the literal text, and called its own answer a coin flip rather than dressing it up. The carrying-cost branch fired for the first time and returned the right verdict: five rules in, none survived, nothing to justify a permanent injection.
-
-**It also found a real bug, and it is the familiar shape.** The target's `PreToolUse` hook gates every Bash call and reaches subagents, and its script could not be statically resolved. The dossier said nothing at all. Not an unknown, not a note, just absence, because the warning only fired when *no* hook in the whole set resolved. One hook that did resolve silenced the warning for every hook that did not, so a gate whose behaviour is unknown looked exactly like a hook with nothing to inject.
-
-The executor caught it unprompted and named the consequence: the procedure's own trigger to go read a script never fired, so a silent gap could pass through the judgment step undetected. Unresolved hooks are now listed individually, and the distinction is stated where it matters. A hook in neither list has nothing to inject. A hook in `unresolved_hooks` has behaviour that is unknown rather than absent. Those are different findings.
-
-Two instruction gaps closed alongside it: which source to cite when several cover the same ground, and what to do when exactly one rule survives the carrying-cost test, which the old criterion left undefined above zero.
-
+**A guard that has never fired is not known to work.**
 
 ## 12. The fix that was the regression
+
+An audit of the §11 fix found it had made a different hook invisible. `obra/superpowers` injects 3,192 bytes through `run-hook.cmd`, and `.cmd` was not on the fix's new extension allowlist:
+
+```
+1.9.0   injected_content_note: "could not statically resolve ..."
+1.10.0  injected_content_note: NONE
+```
+
+- the fix only examined a quoted path with one of five extensions, and dropped every other shape silently\
+  ↳ 1.11.0: three buckets, resolved, unresolved and unidentifiable; every token in the command tried · guard: no `selfcheck.py` case; superpowers kept as a regression target
+- §11 had told the reading model that a hook in neither list "genuinely has nothing resolvable to inject"\
+  ↳ 1.11.0: the sentence removed
+- 39 catalog plugins and 13 fixtures stayed clean throughout, because none had the wrapper shape
+
+Re-audited afterwards, with all eleven earlier findings re-checked: the first round to come back with nothing.
+
+**A fix is a change, and changes need the same suspicion as the bug.**
+
+<details>
+<summary>Read the full story</summary>
 
 The §11 fix made unresolved hooks visible. An audit of that fix found it had made a different hook invisible, and the new version was worse.
 
@@ -235,68 +361,76 @@ The proof is a real plugin, not a fixture. `obra/superpowers` runs `"${CLAUDE_PL
 
 Re-audited afterwards and confirmed closed, with all eleven earlier findings re-checked because `inventory.py` had moved 81 lines. First round to come back with nothing.
 
----
+</details>
 
 ## 13. The last claim resting on the builder's word
 
-Rounds 10 and 11 tested the judgment half and both passed. Neither pass was worth what it looked like, for a reason that took a session outside the build to name: **the builder designed those fixtures, planted the rules, knew the correct bucket for each one, and graded the result.** Every other claim in this repo had by then been re-derived by someone with no stake in it. That one had not, and it was the only one left.
+Rounds 10 and 11 passed, but the builder had planted the rules, known the answers and graded the result. So a separate session built its own fixture, sealed the ground truth, pre-registered a rubric, ran six evaluations and scored them. The builder has seen none of it, and this file does not describe it: a held-out set is only worth anything while the graded instructions have not seen the answers.
 
-It is also the claim that mattered most. The mechanical half can be checked against a filesystem. The judgment half is a set of instructions to a model about sorting rules into duplicate, conflict and new, and there is no disk to compare it to. "Not mechanically testable" had quietly become "not tested by anyone but the author," and those are very different sentences.
+- twelve rounds tested the half that was easy to test; the judgment half went untested by anyone but its author\
+  ↳ 1.11.2: graded blind against the sealed fixture · guard: sealed fixture 1
+- re-run on 1.11.6: 12 of 12 with the instructions, and 12 of 12 without them, so by its own rule inconclusive\
+  ↳ a second, harder fixture ([§14](#14-before-going-public-the-tests-that-tested-the-wrong-thing)) · guard: sealed fixture 2
 
-The close was to hand the whole problem out. A separate auditing session built its own fixture corpus, sealed the ground truth before a single evaluation ran, pre-registered the rubric it would grade against, ran six evaluations, and scored them itself. The builder specified none of it and saw none of it.
-
-**The fixture is now sealed and lives outside this repo, and this file is not going to tell you what is in it.** That is not coyness. A held-out set is worth something for exactly one reason, that the thing being graded has not seen the answers, and a model that reads the ground truth will score well on it while the score means nothing. Nothing afterwards can distinguish that from a real pass. There is no undo and no second copy, so the only safe place to keep it is somewhere the author of the instructions does not look.
-
-**The lesson is about the shape of the gap, not the score.** Twelve rounds of increasingly adversarial testing all pointed at the half that was easy to test, and the half that was hard to test went twelve rounds untouched while the document you are reading grew steadily more confident. Nobody decided to skip it. It simply never came up, because the available tools did not reach it and nothing forces you to notice the question your tools cannot ask.
-
-**Re-run on 1.11.6 (2026-09-24).** A fresh session on another machine re-ran the fixture against the rewritten instructions and reported only a score. The full instructions scored 12/12 on both evaluations, matching the original. The weakened controls also scored 12/12, up from 10.5 and 10, so by the fixture's own pre-registered rule the run is inconclusive: the current model no longer needs the instructions to pass it. A held-out set wears out as models improve, and the controls are what showed it. A second fixture, aimed at what only the instructions produce, was built next; see §14.
-
+**Grading your own fixture is not a test, it is a rehearsal.**
 
 ## 14. Before going public: the tests that tested the wrong thing
 
-1.11.3 and 1.11.4 landed the day after the last round, and only the session that wrote each fix had reviewed it. They were the newest code with the least scrutiny, in the repo about to be made public, so on 2026-09-24 they got an adversarial pass first: three reviewers, each a separate session running an adversarial-review brief, one on the code, one on the guards, one on the claims in these documents. None of them built this tool. The method is still the author's own, so this is not independent in the sense §9 and §13 are.
+1.11.3 and 1.11.4 had only been reviewed by the sessions that wrote them, in a repo about to go public. Three adversarial reviewers took the code, the guards and the claims, and a fourth then attacked their fixes.
 
-**The self-check passed for the wrong reason.** `selfcheck.py` shipped with 15 cases covering the two paths that fail silently. Every one of them called a helper directly. None ran the code that decides. A reviewer inverted the line in `main()` that chooses whether to read the reader's rules, and the suite stayed at 15 of 15. It then reverted discovery to reading one settings file, the exact bug 1.11.4 fixed, and the suite stayed at 15 of 15. The commit's claim, "15 checks, all passing", would have stayed true with the bug back in. A test of the helper is not a test of the decision.
+- the self-check's 15 cases called helpers directly; inverting the decision in `main()`, or putting 1.11.4's bug back, left it at 15 of 15\
+  ↳ 1.11.5: cases through the real CLI and discovery path · guard: `selfcheck.py`: "the wiring" cases
+- 1.11.3's skip treated a pack of commands and agents, a lone `CLAUDE.md`, or a single rule file as nothing to compare\
+  ↳ 1.11.5 · guard: `selfcheck.py`: "commands only", "agents only", "CLAUDE.md only", "a single rule file is a valid target"
+- `SECURITY.md` said every read was contained; five were not, and `"hooks": "../../elsewhere.json"` escaped with no symlink needed\
+  ↳ 1.11.5: one guard every read passes through · guard: `selfcheck.py`: the 12 containment cases
 
-**1.11.3's skip reached further than 1.11.3 knew.** It skips the reader's rules when the target carries nothing to compare. "Nothing" meant no skill and no hook. A pack of `commands/` and `agents/` telling the model to skip the tests and log nothing counted as nothing, and so did a directory holding only a `CLAUDE.md`. A single rule file could not be a target at all: the tool exited with "not a directory", though the skill's own description says it vets one. Each is the failure 1.11.3 set out to fix, in a shape it did not consider.
+<details>
+<summary>5 more findings</summary>
 
-**SECURITY.md said every symlink was checked. Five reads were not.** The containment guard sat on the three paths where earlier audits had found an escape: a plugin's skills, a hook's script, and the files an injection pulls in. It was missing from skills in a pack with no manifest, from the hooks file, from `.mcp.json`, from `plugin.json`, and from the README excerpt. The hooks file was the worst of them. `plugin.json` names it, and `"hooks": "../../elsewhere.json"` read a file from outside the target with no symlink needed. All of it now goes through one guard, and ten fixtures plant a marker outside the target and fail if it reaches the dossier.
+- inline hooks crashed the run; managed settings were not read; a corrupt `settings.json` looked like "no plugins"\
+  ↳ 1.11.5 · guard: `selfcheck.py`: "hooks inline in plugin.json are read, not a crash", "managed settings disabling it win over the user's enable"
+- the fixes had four gaps of their own: `/x/pack` accepted `/x/packEVIL`, `notes.git` went to `git clone`, an empty inline hooks object counted as a hook, a refused manifest went unreported\
+  ↳ 1.11.5 · guard: `selfcheck.py`: a case for each
+- `SKILL.md` had drifted from the code in four places, one citing a skill on the author's machine\
+  ↳ 1.11.6 · guard: `selfcheck.py`: "an agent's text is in the dossier"
+- a global `CLAUDE.md` of one `@` import line: the rules it pointed at were never read\
+  ↳ 1.11.7: imports followed the way Claude Code follows them · guard: `selfcheck.py`: the five `@`-import cases
+- second sealed fixture: 82 of 93 with the instructions; controls, once kept away from them, 16 of 31 where the full runs scored 30\
+  ↳ guard: sealed fixture 2
 
-**Smaller things, each a silence or a crash.** Hooks written inline in `plugin.json` as an object, a shape Claude Code accepts, crashed the run with no dossier. Managed settings, the layer an organisation uses and nothing overrides, were not read, so a plugin it had disabled still counted. A corrupt `settings.json` read exactly like "no plugins enabled", with no warning.
+</details>
 
-**These documents had drifted too.** The table at the top of this file stopped at round 12. The 1.11.4 changelog said discovery had found "one eighth" of the rules in force; 8 of 23 is about a third. The README and the close of this file both said the twelfth round came back clean, when §12 is the round that found a regression, and it was the re-audit of that round's fix that came back with nothing.
+Eighteen mutations have each turned at least one self-check case red. Every published count re-cloned and re-run: all matched.
 
-**What held.** The reviewer on the claims re-cloned ponytail, superpowers, agent-skills and claude-security and re-ran the published counts. Every byte count, skill count and hook event matched. Superpowers has grown since (261 files where §3 says 231), which is the repo moving, not the tool.
+**A test of the helper is not a test of the decision.**
 
-**How the fixes were checked.** Every fix was broken on purpose, one at a time, in a scratch copy, including the two mutations that had left the old suite green. One mutation first appeared to pass, and only because it had broken the script's syntax, which proves nothing; a mutation that ran showed the case does fail. Then a fourth reviewer attacked the fixes themselves and found four more gaps in them. No check would have noticed a containment test that forgot the path separator, so `/x/pack` would have accepted `/x/packEVIL`. No check covered a rule file named `notes.git`, which would have gone to `git clone`. An empty inline hooks object counted as a hook. And a refused manifest went unreported when a second one was used. All four are closed. The self-check ends at 37 cases, 21 of them through the real CLI or the real discovery path, and eighteen mutations have each turned at least one of them red.
+## Who did the reviewing
 
-**The instructions had drifted from the code.** 1.11.5 left `SKILL.md` alone, because the sealed fixture of §13 graded that text. It was stale in four places. Step 1 described plugin discovery as the project's settings file alone. Step 2 did not name the new `rule_files`, `commands` and `agents` fields, and commands and agents reached the dossier as filenames only, which left nothing to read once a git-URL target's temp clone was gone. Step 3 wrote evaluations into whatever project the reader sat in, with no check that anything ignored them. And Step 4 cited `list-item`, a skill that exists only on the author's machine: the same defect §10 found in a section heading. 1.11.6 fixes all four and embeds the text of commands and agents, with two more containment fixtures and one that fails if an agent's text is missing. The self-check stands at 40 cases.
-
-That costs something real. The §13 score now describes instructions that no longer ship. The fixture is not spoiled, since nobody has read it, but its result is a statement about 1.11.5, not about this version, until it is run again.
-
-**And one more, found by using it.** The first reports run on 1.11.6 compared targets against a global `CLAUDE.md` of 26 bytes. That file held one line, `@~/.claude/roles/...`, because Claude Code lets a rules file import others and the author had split his rules that way two days earlier. The tool read the line and not the five files it pointed at, which held every rule a target could conflict with. It is 1.11.4's failure again, one layer down: discovery ran, reported success, and compared against almost nothing. The evaluator noticed only because its dossier looked too small. 1.11.7 follows imports the way Claude Code does, and the self-check proves each rule of that (nesting, the five-hop limit, nothing inside code, no escape from a target) by breaking it. One of those checks passed with its guard removed on the first try, because the fixture could not reach the code it named. That is round 14's lesson, repeated by the round's own author the same afternoon.
-
-**The second fixture.** A separate session built and sealed a harder one, aimed at what only the instructions produce, and 1.11.7 scored 82 of 93 (88%), with 4 points of difference between two runs on the same target. The first controls did not work: their prompt named the plugin's folder, so they read the instructions they were meant to lack. The brief allowed that, and the grader reported it rather than scoring around it. Repaired and re-run with the instructions out of reach, the controls scored 16 of 31 on the same targets where the full runs scored 30. That is the first evidence in this repo that the judgment half does work the model does not do alone. The repair found one more hole on the way: a control searched the disk and listed a path inside the sealed fixture, and was stopped before it opened anything.
-
----
+Every reviewer here was an AI agent: a Claude session, run on the author's machine. "Independent" in these case studies means a separate session that had not written the code it was reviewing and had no stake in the result; it does not mean a human auditor. Both sealed fixtures were built and graded by such sessions, and the author has never seen their answers. The only outside human user so far ran an early version once and hit bugs that later rounds fixed.
 
 ## What the fourteen add up to
 
-- **"Could not resolve" is honest, not a dead end.** Ponytail and superpowers both hit it. In both cases, five minutes reading the named file closed the gap. The note earns its keep by saying exactly which file to open.
-- **Zero hooks and zero agents is not the same claim as "does nothing unattended."** Viral-launch-pipeline proves it: one skill's prose drove 21 real subagent dispatches, invisible to a files-only count.
-- **Total size and always-on cost are different numbers.** Superpowers: 231 files when measured, ~3.2KB injected. Viral: 34 files, 0 bytes injected, 21 dispatches once invoked. Neither number predicts the other.
-- **Nearly every run has cost the tool something.** Eight of the first nine found a bug or a limit. The ninth, run by a session that did not build it, found more than the previous eight combined and proved four published claims false. The first clean result was the re-audit that closed round twelve, and it took eleven rounds to earn that. That is the argument for running it on things rather than trusting that it works.
-- **The builder cannot audit the builder.** Eight self-directed rounds attacked branches the builder thought of, and never asked what the tool's own output contained. That question took a session outside the build about an hour.
-- **Instructions are testable, and were not being tested.** Nine rounds went at the code while half the tool sat unexamined. Handing the instructions to something with no idea of the intended answer found three defects in one pass, including a heading that existed only on the author's machine.
-- **A guard that has never fired is not known to work.** The carrying-cost criterion sat in the instructions for a full round before any fixture had hooks to trigger it. Writing a rule is not testing it, and the gap between those two is where this tool kept failing.
-- **A real plugin with an awkward shape caught what a constructed corpus could not.** Thirty-nine catalog plugins and thirteen purpose-built fixtures were all clean while a live defect sat in the open, and one third-party plugin found it. This is the inverse of the lesson above and both are true: build the awkward case *and* keep a real, awkward, unowned target in the suite, because you cannot construct the shape you failed to imagine.
-- **A fix is a change, and changes need the same suspicion as the bug.** The §11 fix reintroduced the very defect it closed, narrower and better hidden, and shipped alongside a documentation sentence that made the new silence authoritative. It passed 39 plugins and 13 fixtures, because neither could contain the case it broke.
-- **The worst failures are silences.** Not wrong answers: absences that read as all-clears. A branch asserting no hooks without looking, a dossier omitting declared MCP servers, a resolver naming the wrong file with no caveat, an unresolved gate hook reported as nothing at all. Every one of them looked calm and said nothing.
-- **"I could not read that" is a distinct answer from yes and no.** The last two bugs were both a broken hooks file collapsing into a confident wrong answer, once as a crash and once as a quiet falsehood. A vetting tool needs three states, and the third is the one that keeps the other two honest.
-- **The claim that the heuristics fail toward false positives was false.** It rested on one false positive and one true negative, neither of which is evidence about false negatives. An audit constructed five real writes, two of them into `$HOME`, and the persistence scan missed all five. A vetting tool that cries wolf wastes five minutes; one that stays quiet wastes your trust, and this one was staying quiet. See §9.
-- **The dangerous bugs live in the branches nothing exercises.** Twenty-five real plugins agreed with disk perfectly. Every genuine defect since has come from a directory built to provoke one specific path: the manifest-less pack with hooks, the frontmatter-less skill, the explicitly-passed rules folder, the bundled MCP server. Sweeping a catalog finds crashes. Only constructing the awkward case finds the assertion nobody checked.
-- **Write the check so it can only pass for the right reason.** The MCP probe passed once because the test fixture's name contained the string being searched for. A green check that cannot fail is worth less than no check.
-- **The half that resists testing is the half that goes untested, and nobody will notice.** Twelve rounds hammered `inventory.py`, which a filesystem can contradict. `SKILL.md` went twelve rounds on the author's own say-so, not because anyone chose to skip it but because no available tool reached it. Absence of a test leaves no trace in a test report. Ask separately which claims your method is structurally incapable of checking, because that list will not appear on its own.
-- **Grading your own fixture is not a test, it is a rehearsal.** Rounds 10 and 11 planted the rules, knew the buckets, and marked the paper. They found real defects in the instructions, which is why they read as tests. What they could not do is fail in a way the author had not already imagined, which is the only thing a held-out set is for.
-- **A test of the helper is not a test of the decision.** Fifteen passing cases pinned two functions and left the lines that call them free to do the opposite. Sabotage found it in minutes; reading the tests never would have, because every one of them was correct.
-- **A guard added where the bug was found protects that spot, not the class.** Containment went onto each read path as an audit found it open, three times, and five paths nobody had attacked stayed open. A guard belongs where every read passes through, so the next read path is covered before anyone thinks of it.
+1. **The worst failures are silences.** Not wrong answers: absences that read as all-clears.
+2. **The builder cannot audit the builder.** One session outside the build found more in an hour than eight rounds of self-testing.
+3. **Nearly every run cost the tool something.** That is the argument for running it on things rather than trusting that it works.
+4. **Bugs live where nothing goes.** Build the awkward case, and keep a real, awkward, unowned plugin in the suite, because you cannot construct the shape you failed to imagine.
+5. **The half that resists testing goes untested, and nobody notices.** Ask separately which claims your method cannot check.
+
+<details>
+<summary>12 more</summary>
+
+6. **"Could not resolve" is honest, not a dead end.** Ponytail and superpowers both hit it. In both cases, five minutes reading the named file closed the gap. The note earns its keep by saying exactly which file to open.
+7. **Zero hooks and zero agents is not the same claim as "does nothing unattended."** Viral-launch-pipeline proves it: one skill's prose drove 21 real subagent dispatches, invisible to a files-only count.
+8. **Total size and always-on cost are different numbers.** Superpowers: 231 files when measured, ~3.2KB injected. Viral: 34 files, 0 bytes injected, 21 dispatches once invoked. Neither number predicts the other.
+9. **Instructions are testable, and were not being tested.** Nine rounds went at the code while half the tool sat unexamined. Handing the instructions to something with no idea of the intended answer found three defects in one pass, including a heading that existed only on the author's machine.
+10. **A guard that has never fired is not known to work.** The carrying-cost criterion sat in the instructions for a full round before any fixture had hooks to trigger it. Writing a rule is not testing it, and the gap between those two is where this tool kept failing.
+11. **A fix is a change, and changes need the same suspicion as the bug.** The §11 fix reintroduced the very defect it closed, narrower and better hidden, and shipped alongside a documentation sentence that made the new silence authoritative. It passed 39 plugins and 13 fixtures, because neither could contain the case it broke.
+12. **"I could not read that" is a distinct answer from yes and no.** The last two bugs were both a broken hooks file collapsing into a confident wrong answer, once as a crash and once as a quiet falsehood. A vetting tool needs three states, and the third is the one that keeps the other two honest.
+13. **The claim that the heuristics fail toward false positives was false.** It rested on one false positive and one true negative, neither of which is evidence about false negatives. An audit constructed five real writes, two of them into `$HOME`, and the persistence scan missed all five. A vetting tool that cries wolf wastes five minutes; one that stays quiet wastes your trust, and this one was staying quiet. See §9.
+14. **Write the check so it can only pass for the right reason.** The MCP probe passed once because the test fixture's name contained the string being searched for. A green check that cannot fail is worth less than no check.
+15. **Grading your own fixture is not a test, it is a rehearsal.** Rounds 10 and 11 planted the rules, knew the buckets, and marked the paper. They found real defects in the instructions, which is why they read as tests. What they could not do is fail in a way the author had not already imagined, which is the only thing a held-out set is for.
+16. **A test of the helper is not a test of the decision.** Fifteen passing cases pinned two functions and left the lines that call them free to do the opposite. Sabotage found it in minutes; reading the tests never would have, because every one of them was correct.
+17. **A guard added where the bug was found protects that spot, not the class.** Containment went onto each read path as an audit found it open, three times, and five paths nobody had attacked stayed open. A guard belongs where every read passes through, so the next read path is covered before anyone thinks of it.
+
+</details>
