@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.12.6 (2026-09-28)
+
+- **Hooks that no root manifest names are found.** Run on four pstack ports, the inventory called three of them hookless: two are marketplaces whose plugin lives in `plugins/pstack/`, and one merges ten hook groups from `install.json` into `~/.claude/settings.json` with an installer. A marketplace's local plugin is now what gets inventoried (`--plugin NAME` picks one of several), hook-shaped JSON anywhere in the tree is reported along with the scripts that write `settings.json`, and a marketplace or folder of plugins that was not inventoried plugin by plugin says `unknown`, never `false`. Ten self-check cases; see `CASE-STUDIES.md` §15.
+
 ## 1.12.5 (2026-09-25)
 
 - **The case studies read in half the time.** They open with a short link list in two groups: runs against real plugins, and rounds against neckbeard itself. Each run against a gallery plugin (§1 to §5) leads with that plugin's report today, then the first run's output. Every round then lists what it showed, the version that fixed it, and the self-check that guards it, and says so where none does. Lists longer than four show three and fold the rest; §9 and §12 keep their full stories in a fold; the closing lessons are five, with twelve more folded and numbered on from them.
