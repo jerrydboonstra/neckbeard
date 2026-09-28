@@ -416,6 +416,8 @@ Lauren Tan's pstack, a Cursor skill stack, has several Claude Code ports. On 202
   ↳ 1.12.6: hook-shaped JSON anywhere in the tree is reported, with the scripts that write `settings.json` · guard: `selfcheck.py`: "hooks in an installer's JSON are reported, with their reach"
 - re-running the old and new inventory over local plugins found a third shape, a folder of plugins with no marketplace manifest, also reported as hookless\
   ↳ 1.12.6: hooks unknown, the nested plugins named · guard: `selfcheck.py`: "a folder of plugins: hooks unknown, and the plugins named"
+- an independent review after 1.12.6 shipped found the new search stopped four levels down and said `false` for hooks below that, the same silence in a new place, and that a `marketplace.json` which failed to parse read as one listing nothing\
+  ↳ 1.12.7: no depth limit, a budget of JSON reads that says so when it runs out, and parse errors carried into the dossier · guard: `selfcheck.py`: "hooks six levels down are found", "a search that runs out of reads says unknown, never false", "a search that found hooks and then ran out says it is incomplete", "a marketplace.json that is not JSON says so"
 
 The evaluating sessions noticed all three and read the hooks by hand, so the reports were right; the tool was not. On its own, the inventory would have missed the hooks in three of the four. The gap was neckbeard's, not the ports'. Thanks to their authors for layouts that made the tool better.
 

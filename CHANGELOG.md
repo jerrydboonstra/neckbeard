@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.12.7 (2026-09-28)
+
+- **The hook search reads the whole tree, and says so when it cannot.** An independent review after 1.12.6 shipped found that its new search for hook-shaped JSON stopped four directory levels down and reported `has_hooks: false` for hooks below that, which is the silence 1.12.6 set out to remove. There is no depth limit now; a budget of 20,000 JSON reads bounds the walk (the largest of 128 local repos read 5,378 in about 3 seconds, with no false alarms), and running out says where it stopped: `unknown` if nothing was found by then, and the hooks found so far with a `search_incomplete` note if something was. A `marketplace.json` that is not valid JSON, or that was refused, now says so in the dossier instead of reading as a marketplace that lists nothing. Four self-check cases: the first and last fail against 1.12.6, and the partial-result case was added after a second review round found that gap; see `CASE-STUDIES.md` §15.
+
 ## 1.12.6 (2026-09-28)
 
 - **Hooks that no root manifest names are found.** Run on four pstack ports, the inventory called three of them hookless: two are marketplaces whose plugin lives in `plugins/pstack/`, and one merges ten hook groups from `install.json` into `~/.claude/settings.json` with an installer. A marketplace's local plugin is now what gets inventoried (`--plugin NAME` picks one of several), hook-shaped JSON anywhere in the tree is reported along with the scripts that write `settings.json`, and a marketplace or folder of plugins that was not inventoried plugin by plugin says `unknown`, never `false`. Ten self-check cases; see `CASE-STUDIES.md` §15.

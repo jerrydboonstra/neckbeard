@@ -417,5 +417,32 @@ code, d = run_cli(escaping("esc-installer", {"install.json": "hooks.json"}))
 chk("an installer JSON symlinked outside the target is not read",
     (code, MARK in json.dumps(d["target"]) if d else None), (0, False))
 
+# Found by review after 1.12.6 shipped: the search stopped four levels down and said
+# false for hooks below that, and a marketplace.json that failed to parse read as one
+# that lists nothing. See CHANGELOG.md 1.12.7.
+deep = pack("deep-hooks", {"a/b/c/d/e/f/install.json": SESSION_HOOK,
+                           "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+code, d = run_cli(deep)
+chk("hooks six levels down are found",
+    (code, (d or {}).get("target", {}).get("hooks", {}).get("has_hooks")), (0, True))
+many = pack("many-json", {**{f"data/{i}.json": "{}" for i in range(3)},
+                          "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+h = inventory.hooks_outside_manifest(many, max_reads=2)
+chk("a search that runs out of reads says unknown, never false",
+    (h.get("has_hooks"), "stopped after 2" in (h.get("search_incomplete") or "")), ("unknown", True))
+# ...and one that found some hooks before it ran out says it may have missed more.
+part = pack("partial-hooks", {"a/install.json": SESSION_HOOK,
+                              **{f"b/{i}.json": "{}" for i in range(3)},
+                              "c/late.json": SESSION_HOOK.replace("SessionStart", "Stop")})
+h = inventory.hooks_outside_manifest(part, max_reads=3)
+chk("a search that found hooks and then ran out says it is incomplete",
+    (h.get("has_hooks"), "Stop" in h.get("events", {}), "stopped after 3" in (h.get("search_incomplete") or "")),
+    (True, False, True))
+code, d = run_cli(pack("mkt-bad", {".claude-plugin/marketplace.json": "{not json",
+                                   "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"}))
+chk("a marketplace.json that is not JSON says so",
+    (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
+    (0, "marketplace.json is not valid JSON; read it by hand"))
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)

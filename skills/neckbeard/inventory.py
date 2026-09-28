@@ -592,7 +592,7 @@ def settings_writers(root):
                          read_text(os.path.join(root, rel), limit=50_000) or "")]
 
 
-def hooks_outside_manifest(root, max_depth=4):
+def hooks_outside_manifest(root, max_reads=20_000):
     """Hook configuration that no manifest names, which is not the same as none.
 
     A plugin can ship with no manifest at all and an installer that merges the
@@ -600,15 +600,18 @@ def hooks_outside_manifest(root, max_depth=4):
     only a manifest and hooks/hooks.json reported ten hook groups, SubagentStart
     among them, as none. So search the tree for JSON shaped like hook
     configuration, and when it turns up, report it as hooks with a note saying
-    how they get installed. A false alarm
-    here costs the reader a look at one file; a miss costs them every session.
-    See CHANGELOG.md 1.12.6."""
+    how they get installed. A false alarm here costs the reader a look at one
+    file; a miss costs them every session. See CHANGELOG.md 1.12.6.
+
+    No depth limit: 1.12.6 stopped four levels down and returned a bare false
+    for hooks below that (1.12.7). What bounds the walk instead is how many JSON
+    files it reads, and running out is said, never silent. The largest of
+    128 local trees measured read 5,378 JSON files in about 3 seconds."""
     root = root.rstrip("/")
-    base_depth = root.count(os.sep)
-    found, events = [], {}
+    found, events, reads, stopped_at = [], {}, 0, None
     for dirpath, dirnames, filenames in os.walk(root):
-        if dirpath.count(os.sep) - base_depth >= max_depth:
-            dirnames[:] = []
+        if stopped_at:
+            break
         dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
         for fn in sorted(filenames):
             if not fn.endswith(".json") or fn in NOT_HOOK_CONFIG:
@@ -619,11 +622,25 @@ def hooks_outside_manifest(root, max_depth=4):
                     continue
             except OSError:
                 continue
+            if reads >= max_reads:
+                stopped_at = os.path.relpath(dirpath, root)
+                break
+            reads += 1
             got = _hook_events_in(read_json(fp))
             if got:
                 found.append(os.path.relpath(fp, root))
                 for event, groups in got.items():
                     events.setdefault(event, []).extend(groups)
+    # A search cut short says so whatever it found: before it stopped, nothing
+    # means unknown, and something means those hooks and maybe more.
+    incomplete = (f"The search for hook-shaped JSON stopped after {max_reads} files, at "
+                  f"{stopped_at}/, before reading the whole tree, so hooks past that "
+                  "point were not looked for. Look for a hooks block by hand, or "
+                  "inventory the plugin's own directory.") if stopped_at else None
+    if not found and stopped_at:
+        return {"has_hooks": "unknown", "events": {}, "hook_scripts": None,
+                "hook_registrations": None, "hooks_reach_subagents": None,
+                "search_incomplete": incomplete}
     if not found:
         return {"has_hooks": False}
     # A folder of plugins (no marketplace manifest, each plugin in its own
@@ -641,9 +658,12 @@ def hooks_outside_manifest(root, max_depth=4):
                 "nested_plugins": nested,
                 "nested_note": (f"Hooks found inside {len(nested)} plugin(s) nested in this "
                                 f"directory ({', '.join(nested)}). Inventory each plugin "
-                                "directory on its own; this directory is not one plugin.")}
+                                "directory on its own; this directory is not one plugin."),
+                **({"search_incomplete": incomplete} if incomplete else {})}
     result = _parse_events(events, ", ".join(found), root)
     result["hooks_source"] = "outside-manifest"
+    if incomplete:
+        result["search_incomplete"] = incomplete
     writers = settings_writers(root)
     if writers:
         result["settings_writers"] = writers
@@ -669,8 +689,8 @@ def marketplace_listing(path):
     data = read_json(mp)
     entries = data.get("plugins") if isinstance(data, dict) else None
     if not isinstance(entries, list):
-        return {"parse_error": "marketplace.json has no list of plugins; read it by hand",
-                "plugins": []}
+        why = "is not valid JSON" if data is None else "has no list of plugins"
+        return {"parse_error": f"marketplace.json {why}; read it by hand", "plugins": []}
     plugins = []
     for e in entries:
         if not isinstance(e, dict):
@@ -986,7 +1006,11 @@ def inventory_target(path, plugin_name=None):
             "hooks": hooks,
             **({"marketplace": {"name": market.get("name"),
                                 "plugins": [{k: v for k, v in p.items() if k != "dir"}
-                                            for p in market["plugins"]]}} if market else {}),
+                                            for p in market["plugins"]],
+                                # a marketplace.json that failed to parse or was refused
+                                # says so, rather than reading as one that lists nothing
+                                **{k: market[k] for k in ("parse_error", "refused") if k in market}}}
+               if market else {}),
             "mcp_servers": mcp_servers({}, path),
             "persistence_candidates": inventory_persistence(path),
             "rule_files": target_rule_files(path),
