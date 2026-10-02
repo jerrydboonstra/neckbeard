@@ -6,6 +6,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
+- **neckbeard shows its own badge.** The README carries a neckbeard badge linked to its report on itself, rerun against the sample reader on 1.12.7: 🟩 install, no conflicts, in three separate runs. The 1.12.0 report's one conflict, its symbol key against "plain language over jargon", did not come back; the gallery says so rather than claiming a fix.
 - **`make release` also publishes the GitHub Release**, with that version's changelog entry as its notes, and refuses to push anything if the entry is missing. A pushed tag alone left the repo page showing the previous version as Latest. `make release-notes` prints what the notes will say.
 - **An issue form for ideas.** With blank issues off, a bug report was the only public way in. The bug form's version field now shows a generic `x.y.z` instead of a version that goes stale.
 

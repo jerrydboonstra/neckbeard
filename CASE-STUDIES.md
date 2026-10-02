@@ -59,20 +59,20 @@ Counting what the host cannot see is worse than not counting.
 
 ## 2. `neckbeard`: itself, before publishing
 
-No hooks, no agents, one skill at 7,207 bytes. Its own report still marks it down, for a report format that needs a symbol key; that finding is left standing on purpose (see the [gallery](examples/README.md)).
+No hooks, no agents, one skill at 7,207 bytes. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 found no conflict (see the [gallery](examples/README.md)).
 
-**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/neckbeard.md)
+**The report today** · neckbeard 1.12.7 against the [sample reader](examples/reader/) · [full report](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
-> 🟧 INSTALL WITH CHANGES · keep the skill, fix the report's own jargon
-> Costs about 270 tokens a session and nothing more: no hooks, no agents, so it never runs uninvited. Two of its habits already match the sample reader's rules, and one collides with them. The one-shot vetting skill itself is worth keeping.
+> 🟩 INSTALL · add the one skill, change no rules
+> No hooks, no agents, no subagent reach: it costs about 270 tokens of skill description each session and loads its 13.8 KB body only when invoked. Nothing it carries conflicts with the reader's rules, and two of its rules repeat ones the reader already runs. The reader has no way to vet a plugin, so the skill itself is the one new thing.
 
 | | | |
 |:--:|---|---|
-| 🟩 | **Cost** | ~270 tokens (the skill's description), every session; the full skill body loads only when invoked |
-| 🟩 | **Reach** | none automatic. Zero hooks, so nothing fires until a person asks for it |
-| 🟩 | **Leaves state** | the JSON dossier, only when `--out` is passed, only at that path (embeds the reader's rule files verbatim; never commit it) |
-| 🟩 | **Live surface** | `git clone --depth 1`, only when the target is a git URL, into a temp dir removed after; no MCP servers |
+| 🟩 | **Cost** | ~270 tokens of skill description at session start (the manifest's count); 13,810 bytes of `SKILL.md` (manifest: ~4.7k tokens) only when invoked |
+| 🟩 | **Reach** | main session only (certain: `has_hooks` is false, no agents declared) |
+| 🟩 | **Leaves state** | none found. `inventory.py` writes only to the `--out` file you name; the four files the scan flagged are that script and repo maintenance tooling |
+| 🟨 | **Live surface** | no MCP servers; runs `python3 inventory.py` locally; network only if you pass a git URL (`git clone --depth 1` into a temp dir it removes) |
 | 🟩 | **Refused reads** | none |
 | 🟩 | **Worth keeping** | 1 skill |
 <!-- /report -->

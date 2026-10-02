@@ -1,6 +1,6 @@
 # Gallery
 
-Real neckbeard reports on eight public plugins and skill packs, all run against the same [sample reader](reader/) on 2026-09-24: seven on 1.12.0, and calm-trader/skills on 1.12.2. Each row links to the full report.
+Real neckbeard reports on eight public plugins and skill packs, all run against the same [sample reader](reader/): six on 1.12.0 on 2026-09-24, calm-trader/skills on 1.12.2, and neckbeard itself on 1.12.7 on 2026-10-01. Each row links to the full report.
 
 | plugin | verdict | ⛔ conflicts | 🔁 covered | 🆕 new | 🗑️ dropped |
 |---|---|:--:|:--:|:--:|:--:|
@@ -10,10 +10,10 @@ Real neckbeard reports on eight public plugins and skill packs, all run against 
 | [addyosmani/agent-skills](agent-skills.md) 0.6.10 | 🟩 install | 0 | 1 | 37 | 1 |
 | [github/spec-kit](spec-kit.md) 1.0.12.dev0 | 🟨 copy rules, skip plugin | 1 | 1 | 2 | 0 |
 | [Koz-TV/viral-launch-pipeline](viral-launch-pipeline.md) 1.0.0 | 🟩 install | 0 | 2 | 4 | 4 |
-| [jerrydboonstra/neckbeard](neckbeard.md) 1.12.0, vetting itself | 🟧 install with changes | 1 | 2 | 1 | 1 |
+| [jerrydboonstra/neckbeard](neckbeard.md) 1.12.7, vetting itself | 🟩 install | 0 | 2 | 1 | 1 |
 | [calm-trader/skills](calm-trader-skills.md) @ 5a15cd2, a pack the author contributes to | 🟩 install | 0 | 2 | 4 | 10 |
 
-neckbeard's report on itself marks it down for its own report format: a page that needs a nine-symbol key runs against the sample reader's "plain language over jargon". That finding is left standing on purpose. The grid format is the product, and the key is the price of reading a report in one screen; a tool that hid its own conflicts would be the wrong tool for this job.
+neckbeard's report on itself is 🟩, and its README shows that badge. On 1.12.0 one run marked it down for its report format, a page that needs a nine-symbol key, against the sample reader's "plain language over jargon". Three separate runs on 1.12.7 found no conflict. The format did not change in between, so read the old finding as one run's call on a matter of taste, not as something fixed.
 
 calm-trader/skills is a skill pack the author of neckbeard contributes to, so its row is the same kind of conflict of interest as the self-vetting one. It is included with the other maintainer's agreement, and its report says so at the top.
 
