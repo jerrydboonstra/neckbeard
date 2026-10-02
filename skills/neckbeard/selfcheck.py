@@ -231,6 +231,27 @@ code, d = run_cli(gitnamed)
 chk("a rule file whose name ends in .git is read, not cloned",
     (code, d and d["target"]["kind"]), (0, "rule-file"))
 
+# A real, many-rule file, run against the public sample reader as the gallery
+# runs it. Pins today's behaviour before rule files get their own report.
+repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+reader = os.path.join(repo, "examples", "reader")
+agents_md = os.path.join(repo, "examples", "targets", "tvykruta-agents.md")
+out = os.path.join(w, "agents-md.json")
+r = subprocess.run([sys.executable, inventory.__file__, agents_md, "--project-dir", wp, "--out", out],
+                   env=dict(os.environ, CLAUDE_CONFIG_DIR=reader), capture_output=True, text=True)
+d = json.load(open(out)) if r.returncode == 0 else {}
+t = d.get("target", {})
+files = t.get("rule_files") or []
+text = files[0].get("text", "") if len(files) == 1 else ""
+chk("a many-rule AGENTS.md is one lossless rule-file item, with nothing to install",
+    (r.returncode, t.get("kind"), len(files), len(t.get("skills") or []), len(t.get("commands") or []),
+     len(t.get("agents") or []), (t.get("hooks") or {}).get("has_hooks"),
+     text.startswith("# Tomas Vykruta's `AGENTS.md` rules"), text.rstrip().endswith("8. Then pick the next system.")),
+    (0, "rule-file", 1, 0, 0, 0, False, True, True))
+chk("an AGENTS.md run reads only the sample reader's rule files",
+    sorted(os.path.relpath(i["path"], reader) for i in d.get("current_rules", {}).get("items", [])),
+    ["CLAUDE.md", "rules/engineering.md", "rules/safety.md", "skills/release-notes/SKILL.md"])
+
 # ---------------------------------------------------------------- 4. containment
 MARK = "OUTSIDE_THE_TARGET_7f3a"
 outside = os.path.join(w, "outside")
