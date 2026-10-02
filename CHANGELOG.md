@@ -4,6 +4,11 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **`make deploy`, as Cat Herder has it.** It refuses unless `main` is released on every remote, then brings this machine and each host in `HOSTS` to that commit: a directory marketplace's checkout must be clean and is fast-forwarded to exactly the release, the marketplace is updated, every install of neckbeard is updated from its own folder, and each one's version is printed and checked. `tools/test_deploy.py` runs it end to end against a fake `claude`, and `make check` runs that.
+- **`make release` pushes to a fixed list**, `origin` plus the `MIRRORS` a git-ignored `local.mk` names, never every remote the checkout happens to have. Before, a checkout with a work-queue remote would have pushed `main` and the tag into the queue.
+
 ## 1.12.8 (2026-10-01)
 
 - **neckbeard shows its own badge.** The README carries a neckbeard badge linked to its report on itself, rerun against the sample reader on 1.12.7: 🟩 install, no conflicts, in three separate runs. The 1.12.0 report's one conflict, its symbol key against "plain language over jargon", did not come back; the gallery says so rather than claiming a fix.

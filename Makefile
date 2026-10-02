@@ -1,11 +1,18 @@
 # neckbeard. `make` runs the self-check.
 
 PYTHON  ?= python3
-REMOTES ?= $(shell git remote)
+# Every remote a release goes to: origin (GitHub, whose Actions run the self-check) and any MIRRORS. A fixed
+# list, never `git remote`, which would also push main into whatever else the checkout has (a work queue, say).
+# This machine's own setup lives in local.mk, which git ignores: MIRRORS (more remotes a release pushes to) and
+# HOSTS (machines `make deploy` reaches over plain ssh, besides this one).
+MIRRORS :=
+HOSTS :=
+-include local.mk
+REMOTES := origin $(MIRRORS)
 VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
 
 .DEFAULT_GOAL := check
-.PHONY: check excerpts release release-notes help
+.PHONY: check excerpts release release-notes deploy help
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -13,6 +20,7 @@ help: ## list targets
 check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) bin/excerpts --check
+	$(PYTHON) tools/test_deploy.py
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) bin/excerpts
@@ -36,3 +44,16 @@ release: check ## push main and the version tag to every remote, fast-forward on
 	@if gh release view "v$(VERSION)" >/dev/null 2>&1; then echo "== GitHub Release v$(VERSION) already exists"; \
 	else $(MAKE) --no-print-directory release-notes | gh release create "v$(VERSION)" --verify-tag --latest \
 	       --title "neckbeard $(VERSION)" --notes-file - && echo "== GitHub Release v$(VERSION) published"; fi
+
+deploy: ## bring this machine and every host in HOSTS to main as released, then print what each one runs
+	@test "$$(git branch --show-current)" = main || { echo "deploy: not on main"; exit 1; }
+	@sha=$$(git rev-parse HEAD); \
+	for r in $(REMOTES); do \
+	  test "$$(git ls-remote "$$r" refs/heads/main | cut -f1)" = "$$sha" || { echo "deploy: $$r's main isn't $$sha; run make release first"; exit 1; }; \
+	done; \
+	fail=0; \
+	bash tools/deploy-host.sh "$(VERSION)" "$$sha" || fail=1; \
+	for h in $(HOSTS); do \
+	  ssh "$$h" bash -s -- "$(VERSION)" "$$sha" < tools/deploy-host.sh || fail=1; \
+	done; \
+	exit $$fail
