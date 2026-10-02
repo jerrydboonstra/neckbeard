@@ -10,7 +10,7 @@
 
 Before you install a plugin into Claude Code, neckbeard reads it for you. Every hook, every string it injects, every session and subagent it reaches, every file it writes outside your project. Then it checks each rule against what you already run and tells you what is duplicate, what conflicts, and what is new. It changes nothing.
 
-**Tested by trying to break it, fourteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
+**Tested by trying to break it, fifteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
 ## What you get
 
@@ -81,6 +81,7 @@ bin/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
 
 - an **installed plugin**, `name@marketplace` (e.g. `ponytail@ponytail`). It reads `installed_plugins.json` first, falling back to the marketplace manifest when that record has no working `installPath` (true for most directory-source installs, but not all: see [CASE-STUDIES, round 2](CASE-STUDIES.md#2-neckbeard-itself-before-publishing))
 - a **local directory**: an already-cloned repo, a skill pack, a plugin source tree
+- a **marketplace** repo (local or a git URL): its plugin is inventoried, not the repo root. When it lists several, `--plugin NAME` picks one; without it, hooks are reported as unknown rather than absent
 - a **git URL**, cloned read-only, depth 1, into a temp directory that is gone when the command exits
 
 `--project-dir` (default: cwd) is where rule discovery starts. `--extra-rules` adds a file or directory the discovery would otherwise miss.
@@ -91,7 +92,7 @@ It prints the dossier to stdout, or writes it to `--out FILE` and warns you what
 
 ## How it was tested
 
-Fourteen rounds, each one pointed at something real. **[CASE-STUDIES.md](./CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
+Fifteen rounds, each one pointed at something real. **[CASE-STUDIES.md](./CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
 
 Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itself](CASE-STUDIES.md#2-neckbeard-itself-before-publishing) · [superpowers](CASE-STUDIES.md#3-obrasuperpowers-the-large-one) · [a random pick](CASE-STUDIES.md#4-koz-tvviral-launch-pipeline-the-random-one) · [claude-security](CASE-STUDIES.md#5-claude-security-anthropics-own-security-plugin) · [all 39 Anthropic plugins](CASE-STUDIES.md#6-all-39-anthropic-first-party-plugins-the-sweep) · [built to break](CASE-STUDIES.md#7-purpose-built-directories-attacking-the-unexercised-branches) · [a crash and a lie](CASE-STUDIES.md#8-the-last-unexercised-branches-a-crash-and-a-lie) · [independent audit](CASE-STUDIES.md#9-an-independent-audit-the-one-that-found-the-most) · [judgment](CASE-STUDIES.md#10-the-judgment-half-the-first-thing-that-passed) · [judgment, hard case](CASE-STUDIES.md#11-the-judgment-half-again-on-the-hard-case) · [the fix that regressed](CASE-STUDIES.md#12-the-fix-that-was-the-regression) · [sealed fixture](CASE-STUDIES.md#13-the-last-claim-resting-on-the-builders-word) · [before going public](CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing)
 

@@ -10,6 +10,7 @@ Every time this tool has been pointed at something real, in order, with what it 
 4. [`Koz-TV/viral-launch-pipeline`](#4-koz-tvviral-launch-pipeline-the-random-one): the random one
 5. [`claude-security`](#5-claude-security-anthropics-own-security-plugin): Anthropic's own security plugin
 6. [All 39 Anthropic first-party plugins](#6-all-39-anthropic-first-party-plugins-the-sweep): the sweep
+15. [Four `pstack` ports](#15-four-pstack-ports-hooks-where-the-manifest-did-not-say): hooks where the manifest did not say
 
 **Pointed at neckbeard itself**
 
@@ -22,7 +23,7 @@ Every time this tool has been pointed at something real, in order, with what it 
 13. [The last claim resting on the builder's word](#13-the-last-claim-resting-on-the-builders-word)
 14. [Before going public](#14-before-going-public-the-tests-that-tested-the-wrong-thing): the tests that tested the wrong thing
 
-[What the fourteen add up to](#what-the-fourteen-add-up-to) · [Who did the reviewing](#who-did-the-reviewing)
+[What the fifteen add up to](#what-the-fifteen-add-up-to) · [Who did the reviewing](#who-did-the-reviewing)
 
 ---
 
@@ -405,11 +406,28 @@ Eighteen mutations have each turned at least one self-check case red. Every publ
 
 **A test of the helper is not a test of the decision.**
 
+## 15. Four `pstack` ports: hooks where the manifest did not say
+
+Lauren Tan's pstack, a Cursor skill stack, has several Claude Code ports. On 2026-09-28 neckbeard 1.12.5 was run on four of them, each by a separate Sonnet session: [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude), [backnotprop/pstack](https://github.com/backnotprop/pstack), [ericlitman/open-pstack](https://github.com/ericlitman/open-pstack) and [EvanBatten/pstack-for-cc](https://github.com/EvanBatten/pstack-for-cc). Each port packages the same idea its own way, and two of those ways were new to the tool.
+
+- two ports are marketplaces whose one plugin lives in `plugins/pstack/`; read from the repo root, the inventory reported no hooks and no agents where there were a `SessionStart` hook and 2 and 12 agents\
+  ↳ 1.12.6: a marketplace's local plugin is inventoried, `--plugin NAME` picks one of several, several unpicked report hooks as unknown · guard: `selfcheck.py`: "a marketplace's only plugin, in plugins/<name>/, is the one inventoried", "several plugins and none chosen: hooks are unknown, never false"
+- another has no manifest; its installer merges ten hook groups on eight events, `SubagentStart` among them, from `install.json` into `~/.claude/settings.json`, and the dossier said `has_hooks: false`\
+  ↳ 1.12.6: hook-shaped JSON anywhere in the tree is reported, with the scripts that write `settings.json` · guard: `selfcheck.py`: "hooks in an installer's JSON are reported, with their reach"
+- re-running the old and new inventory over local plugins found a third shape, a folder of plugins with no marketplace manifest, also reported as hookless\
+  ↳ 1.12.6: hooks unknown, the nested plugins named · guard: `selfcheck.py`: "a folder of plugins: hooks unknown, and the plugins named"
+- an independent review after 1.12.6 shipped found the new search stopped four levels down and said `false` for hooks below that, the same silence in a new place, and that a `marketplace.json` which failed to parse read as one listing nothing\
+  ↳ 1.12.7: no depth limit, a budget of JSON reads that says so when it runs out, and parse errors carried into the dossier · guard: `selfcheck.py`: "hooks six levels down are found", "a search that runs out of reads says unknown, never false", "a search that found hooks and then ran out says it is incomplete", "a marketplace.json that is not JSON says so"
+
+The evaluating sessions noticed all three and read the hooks by hand, so the reports were right; the tool was not. On its own, the inventory would have missed the hooks in three of the four. The gap was neckbeard's, not the ports'. Thanks to their authors for layouts that made the tool better.
+
+**Where a manifest does not name hooks is not where there are none.**
+
 ## Who did the reviewing
 
 Every reviewer here was an AI agent: a Claude session, run on the author's machine. "Independent" in these case studies means a separate session that had not written the code it was reviewing and had no stake in the result; it does not mean a human auditor. Both sealed fixtures were built and graded by such sessions, and the author has never seen their answers. The only outside human user so far ran an early version once and hit bugs that later rounds fixed.
 
-## What the fourteen add up to
+## What the fifteen add up to
 
 1. **The worst failures are silences.** Not wrong answers: absences that read as all-clears.
 2. **The builder cannot audit the builder.** One session outside the build found more in an hour than eight rounds of self-testing.

@@ -4,11 +4,19 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
-## Unreleased
+## 1.12.8 (2026-10-01)
 
 - **neckbeard shows its own badge.** The README carries a neckbeard badge linked to its report on itself, rerun against the sample reader on 1.12.7: 🟩 install, no conflicts, in three separate runs. The 1.12.0 report's one conflict, its symbol key against "plain language over jargon", did not come back; the gallery says so rather than claiming a fix.
 - **`make release` also publishes the GitHub Release**, with that version's changelog entry as its notes, and refuses to push anything if the entry is missing. A pushed tag alone left the repo page showing the previous version as Latest. `make release-notes` prints what the notes will say.
 - **An issue form for ideas.** With blank issues off, a bug report was the only public way in. The bug form's version field now shows a generic `x.y.z` instead of a version that goes stale.
+
+## 1.12.7 (2026-09-28)
+
+- **The hook search reads the whole tree, and says so when it cannot.** An independent review after 1.12.6 shipped found that its new search for hook-shaped JSON stopped four directory levels down and reported `has_hooks: false` for hooks below that, which is the silence 1.12.6 set out to remove. There is no depth limit now; a budget of 20,000 JSON reads bounds the walk (the largest of 128 local repos read 5,378 in about 3 seconds, with no false alarms), and running out says where it stopped: `unknown` if nothing was found by then, and the hooks found so far with a `search_incomplete` note if something was. A `marketplace.json` that is not valid JSON, or that was refused, now says so in the dossier instead of reading as a marketplace that lists nothing. Four self-check cases: the first and last fail against 1.12.6, and the partial-result case was added after a second review round found that gap; see `CASE-STUDIES.md` §15.
+
+## 1.12.6 (2026-09-28)
+
+- **Hooks that no root manifest names are found.** Run on four pstack ports, the inventory called three of them hookless: two are marketplaces whose plugin lives in `plugins/pstack/`, and one merges ten hook groups from `install.json` into `~/.claude/settings.json` with an installer. A marketplace's local plugin is now what gets inventoried (`--plugin NAME` picks one of several), hook-shaped JSON anywhere in the tree is reported along with the scripts that write `settings.json`, and a marketplace or folder of plugins that was not inventoried plugin by plugin says `unknown`, never `false`. Ten self-check cases; see `CASE-STUDIES.md` §15.
 
 ## 1.12.5 (2026-09-25)
 

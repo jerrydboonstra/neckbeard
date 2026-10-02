@@ -3,7 +3,7 @@
 emit one JSON dossier. Makes no judgment calls — that's the SKILL.md's job.
 
 Usage:
-  inventory.py <target> [--project-dir DIR] [--extra-rules PATH ...] [--out FILE]
+  inventory.py <target> [--project-dir DIR] [--extra-rules PATH ...] [--out FILE] [--plugin NAME]
 
 <target> is one of:
   - an installed plugin, "name@marketplace" (e.g. "ponytail@ponytail")
@@ -416,7 +416,9 @@ def inventory_hooks(plugin_root, plugin_json):
             if os.path.isfile(default):
                 hooks_path = default
         if not hooks_path or not os.path.isfile(hooks_path):
-            return {"has_hooks": False}
+            # Not where Claude Code would load them from, which is not the same
+            # as nowhere. See hooks_outside_manifest().
+            return hooks_outside_manifest(plugin_root)
         rel = os.path.relpath(hooks_path, plugin_root)
         # plugin.json names this path, and plugin.json is untrusted: "../../x.json"
         # or a symlinked hooks/ can read a file from anywhere, no symlink
@@ -454,6 +456,12 @@ def inventory_hooks(plugin_root, plugin_json):
                 "parse_error": f"events container is {type(inner).__name__}, "
                                "expected an object of event names; read it by hand"}
 
+    return _parse_events(events, rel, plugin_root)
+
+
+def _parse_events(events, rel, plugin_root):
+    """Everything known about one object of hook events: what each registers, what
+    it injects where that can be traced, and whether any of it reaches subagents."""
     result = {"has_hooks": True, "hooks_file": rel, "events": {}}
     reaches_subagents = False
     reaches_subagents_likely = False
@@ -555,6 +563,154 @@ def inventory_hooks(plugin_root, plugin_json):
             f"{unknown} hook(s) have unknown behaviour, which is not the same as none: "
             + "; ".join(parts) + ". Read them by hand.")
     return result
+
+
+# Claude Code's hook event names. A JSON object keyed by at least one of these, each
+# a list, is hook configuration wherever it sits in the tree.
+HOOK_EVENTS = {"PreToolUse", "PostToolUse", "PostToolUseFailure", "UserPromptSubmit",
+               "Notification", "Stop", "SubagentStart", "SubagentStop", "SessionStart",
+               "SessionEnd", "PreCompact", "PermissionRequest"}
+# Manifests and package metadata: read elsewhere or never hook configuration.
+NOT_HOOK_CONFIG = {"plugin.json", "marketplace.json", "package.json", "package-lock.json",
+                   "tsconfig.json"}
+
+
+def _hook_events_in(obj):
+    if not isinstance(obj, dict):
+        return None
+    events = obj["hooks"] if isinstance(obj.get("hooks"), dict) else obj
+    known = {k: v for k, v in events.items() if k in HOOK_EVENTS}
+    if known and all(isinstance(v, list) for v in known.values()):
+        return known
+    return None
+
+
+def settings_writers(root):
+    """Scripts that write files and name a settings.json: the likely installers."""
+    return [rel for rel in inventory_persistence(root)
+            if re.search(r"settings(\.local)?\.json",
+                         read_text(os.path.join(root, rel), limit=50_000) or "")]
+
+
+def hooks_outside_manifest(root, max_reads=20_000):
+    """Hook configuration that no manifest names, which is not the same as none.
+
+    A plugin can ship with no manifest at all and an installer that merges the
+    "hooks" block of its install.json into ~/.claude/settings.json. Checking
+    only a manifest and hooks/hooks.json reported ten hook groups, SubagentStart
+    among them, as none. So search the tree for JSON shaped like hook
+    configuration, and when it turns up, report it as hooks with a note saying
+    how they get installed. A false alarm here costs the reader a look at one
+    file; a miss costs them every session. See CHANGELOG.md 1.12.6.
+
+    No depth limit: 1.12.6 stopped four levels down and returned a bare false
+    for hooks below that (1.12.7). What bounds the walk instead is how many JSON
+    files it reads, and running out is said, never silent. The largest of
+    128 local trees measured read 5,378 JSON files in about 3 seconds."""
+    root = root.rstrip("/")
+    found, events, reads, stopped_at = [], {}, 0, None
+    for dirpath, dirnames, filenames in os.walk(root):
+        if stopped_at:
+            break
+        dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
+        for fn in sorted(filenames):
+            if not fn.endswith(".json") or fn in NOT_HOOK_CONFIG:
+                continue
+            fp = os.path.join(dirpath, fn)
+            try:
+                if not _within(fp, root) or os.path.getsize(fp) > READ_LIMIT:
+                    continue
+            except OSError:
+                continue
+            if reads >= max_reads:
+                stopped_at = os.path.relpath(dirpath, root)
+                break
+            reads += 1
+            got = _hook_events_in(read_json(fp))
+            if got:
+                found.append(os.path.relpath(fp, root))
+                for event, groups in got.items():
+                    events.setdefault(event, []).extend(groups)
+    # A search cut short says so whatever it found: before it stopped, nothing
+    # means unknown, and something means those hooks and maybe more.
+    incomplete = (f"The search for hook-shaped JSON stopped after {max_reads} files, at "
+                  f"{stopped_at}/, before reading the whole tree, so hooks past that "
+                  "point were not looked for. Look for a hooks block by hand, or "
+                  "inventory the plugin's own directory.") if stopped_at else None
+    if not found and stopped_at:
+        return {"has_hooks": "unknown", "events": {}, "hook_scripts": None,
+                "hook_registrations": None, "hooks_reach_subagents": None,
+                "search_incomplete": incomplete}
+    if not found:
+        return {"has_hooks": False}
+    # A folder of plugins (no marketplace manifest, each plugin in its own
+    # directory) turns up each plugin's own hooks/hooks.json here. Those are not
+    # an installer's hooks, and merging several plugins' into one list describes
+    # an install that never happens, so say unknown and name the plugins.
+    nested = sorted({os.path.relpath(os.path.dirname(os.path.dirname(os.path.join(root, f))), root)
+                     for f in found
+                     if os.path.basename(os.path.dirname(os.path.join(root, f))) == "hooks"
+                     and os.path.isfile(os.path.join(os.path.dirname(os.path.dirname(
+                         os.path.join(root, f))), ".claude-plugin", "plugin.json"))})
+    if nested and all(any(f.startswith(n + os.sep) for n in nested) for f in found):
+        return {"has_hooks": "unknown", "events": {}, "hook_scripts": None,
+                "hook_registrations": None, "hooks_reach_subagents": None,
+                "nested_plugins": nested,
+                "nested_note": (f"Hooks found inside {len(nested)} plugin(s) nested in this "
+                                f"directory ({', '.join(nested)}). Inventory each plugin "
+                                "directory on its own; this directory is not one plugin."),
+                **({"search_incomplete": incomplete} if incomplete else {})}
+    result = _parse_events(events, ", ".join(found), root)
+    result["hooks_source"] = "outside-manifest"
+    if incomplete:
+        result["search_incomplete"] = incomplete
+    writers = settings_writers(root)
+    if writers:
+        result["settings_writers"] = writers
+    result["hooks_note"] = (
+        "No manifest names these, so Claude Code does not load them from this directory. "
+        "They take effect when an installer script, or the README's instructions, merge "
+        "them into a settings.json, and then they run in every session that file covers, "
+        "not only this tool's. Check which file the install step uses.")
+    return result
+
+
+def marketplace_listing(path):
+    """The plugins a marketplace manifest at the target's root lists, and where each
+    one's files are. A repo whose root is a marketplace and whose one plugin lives
+    in plugins/<name>/ looked, read from the root, like a pack with no hooks and no
+    agents. See CHANGELOG.md 1.12.6."""
+    mp = os.path.join(path, ".claude-plugin", "marketplace.json")
+    if not os.path.isfile(mp):
+        return None
+    if not _within(mp, path):
+        return {"refused": "marketplace.json resolves outside the target tree; not read",
+                "plugins": []}
+    data = read_json(mp)
+    entries = data.get("plugins") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        why = "is not valid JSON" if data is None else "has no list of plugins"
+        return {"parse_error": f"marketplace.json {why}; read it by hand", "plugins": []}
+    plugins = []
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        src = e.get("source")
+        entry = {"name": e.get("name"), "source": src}
+        if isinstance(src, str) and not re.match(r"^[a-z+]+://", src):
+            d = os.path.normpath(os.path.join(path, src))
+            if not _within(d, path):
+                entry["status"] = "refused: resolves outside the target tree"
+            elif os.path.realpath(d) == os.path.realpath(path):
+                entry["status"] = "the root itself"
+            elif os.path.isdir(d):
+                entry["status"], entry["dir"] = "local", d
+            else:
+                entry["status"] = "missing from this repository"
+        else:
+            entry["status"] = "external: fetched from elsewhere, not in this repository"
+        plugins.append(entry)
+    return {"name": data.get("name"), "plugins": plugins}
 
 
 def mcp_servers(plugin_json, plugin_root=None):
@@ -773,7 +929,7 @@ def target_rule_files(root):
     return with_imports("target-CLAUDE.md", p, root=root)
 
 
-def inventory_target(path):
+def inventory_target(path, plugin_name=None):
     if os.path.isfile(path):
         rule_files = with_imports("rule-file", path, root=os.path.dirname(path))
         return {
@@ -784,6 +940,28 @@ def inventory_target(path):
             "rule_files": rule_files,
             "hooks": {"has_hooks": False},
         }
+    # A marketplace at the root: inventory the plugin it lists, not the root. With
+    # one local plugin that is unambiguous; with several, --plugin picks, and
+    # without it the root is read as before but its hooks are reported as unknown,
+    # because the plugins that carry them were not read.
+    market = marketplace_listing(path)
+    local = [p for p in (market or {}).get("plugins", []) if p.get("status") == "local"]
+    if plugin_name is not None:
+        chosen = next((p for p in local if p.get("name") == plugin_name), None)
+        if not chosen:
+            names = ", ".join(str(p.get("name")) for p in local) or "none"
+            sys.exit(f"--plugin {plugin_name}: not a plugin in this repository's marketplace "
+                     f"(local plugins: {names})")
+    else:
+        chosen = local[0] if len(local) == 1 else None
+    if chosen:
+        sub = inventory_target(chosen["dir"])
+        sub["marketplace"] = {"name": market.get("name"), "root": path,
+                              "selected": chosen["name"],
+                              "selected_source": chosen["source"],
+                              "plugins": [{k: v for k, v in p.items() if k != "dir"}
+                                          for p in market["plugins"]]}
+        return sub
     plugin_json_path, manifest_refused = None, None
     for cand in (os.path.join(path, ".claude-plugin", "plugin.json"), os.path.join(path, "plugin.json")):
         if os.path.isfile(cand) and not _within(cand, path):
@@ -808,12 +986,31 @@ def inventory_target(path):
             if os.path.isfile(os.path.join(path, r)) and _within(os.path.join(path, r), path):
                 readme = read_text(os.path.join(path, r), limit=4000)
                 break
+        hooks = inventory_hooks(path, {})
+        if market and market.get("plugins"):
+            # The plugins this marketplace lists carry their own hooks, and none of
+            # them was inventoried. A tree search would merge several plugins'
+            # hooks into one list that no install ever produces, so say unknown.
+            names = ", ".join(str(p.get("name")) for p in market["plugins"])
+            hooks = {"has_hooks": "unknown", "events": {}, "hook_scripts": None,
+                     "hook_registrations": None, "hooks_reach_subagents": None,
+                     "marketplace_note": (
+                         f"This is a marketplace listing {len(market['plugins'])} plugins "
+                         f"({names}); each carries its own hooks and none was inventoried. "
+                         "Run again with --plugin NAME for each one you would install.")}
         return {
             "kind": "generic-pack",
             "path": path,
             "is_plugin": False,
             "skills": skills,
-            "hooks": inventory_hooks(path, {}),
+            "hooks": hooks,
+            **({"marketplace": {"name": market.get("name"),
+                                "plugins": [{k: v for k, v in p.items() if k != "dir"}
+                                            for p in market["plugins"]],
+                                # a marketplace.json that failed to parse or was refused
+                                # says so, rather than reading as one that lists nothing
+                                **{k: market[k] for k in ("parse_error", "refused") if k in market}}}
+               if market else {}),
             "mcp_servers": mcp_servers({}, path),
             "persistence_candidates": inventory_persistence(path),
             "rule_files": target_rule_files(path),
@@ -1016,11 +1213,13 @@ def main():
     ap.add_argument("--project-dir", default=os.getcwd())
     ap.add_argument("--extra-rules", action="append", default=[])
     ap.add_argument("--out")
+    ap.add_argument("--plugin", help="when the target is a marketplace listing several "
+                                     "plugins, the one to inventory")
     args = ap.parse_args()
 
     with tempfile.TemporaryDirectory(prefix="neckbeard-") as tmp:
         path, resolution = resolve_target(args.target, tmp)
-        target_dossier = inventory_target(path)
+        target_dossier = inventory_target(path, args.plugin)
         target_dossier["resolved_via"] = resolution
         target_dossier["requested_target"] = args.target
         if classifiable_items(target_dossier):
