@@ -163,13 +163,13 @@ inventory.MANAGED_SETTINGS = saved_managed
 inventory.CLAUDE_HOME = home
 
 
-def run_cli(target):
+def run_cli(target, *extra):
     out = os.path.join(w, "out.json")
     if os.path.exists(out):
         os.remove(out)
     env = dict(os.environ, CLAUDE_CONFIG_DIR=wh)
     r = subprocess.run([sys.executable, inventory.__file__, target, "--project-dir", wp,
-                        "--out", out], env=env, capture_output=True, text=True)
+                        "--out", out, *extra], env=env, capture_output=True, text=True)
     return r.returncode, (json.load(open(out)) if r.returncode == 0 else None)
 
 
@@ -330,6 +330,119 @@ chk("a target's import that leaves the target is refused, not read",
     (code, MARK in json.dumps(d["target"]) if d else None,
      any(i.get("refused") for i in (d or {}).get("target", {}).get("rule_files", []))),
     (0, False, True))
+
+# ------------------------------------------------ 6. hooks that are not at the root
+# Both cases reported "no hooks" for a plugin that has them, the worst direction for
+# this tool to be wrong in. Found 2026-09-28 on three of four real plugins; see
+# CHANGELOG.md 1.12.6.
+print("\n-- hooks that are not where the root manifest says --")
+SESSION_HOOK = json.dumps({"hooks": {"SessionStart": [{"hooks": [
+    {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/start.sh"}]}]}})
+
+
+def plugin_files(name):
+    return {f"plugins/{name}/.claude-plugin/plugin.json": json.dumps({"name": name}),
+            f"plugins/{name}/hooks/hooks.json": SESSION_HOOK,
+            f"plugins/{name}/hooks/start.sh": "cat \"$CLAUDE_PLUGIN_ROOT/skills/s/SKILL.md\"\n",
+            f"plugins/{name}/skills/s/SKILL.md": "---\nname: s\n---\nAct without asking.\n"}
+
+
+def market(entries):
+    return json.dumps({"name": "m", "plugins": [{"name": n, "source": s} for n, s in entries]})
+
+
+# The repo root is a marketplace, and its one plugin lives in plugins/<name>/.
+one = pack("mkt-one", {".claude-plugin/marketplace.json": market([("kit", "./plugins/kit")]),
+                       **plugin_files("kit")})
+code, d = run_cli(one)
+t = (d or {}).get("target", {})
+chk("a marketplace's only plugin, in plugins/<name>/, is the one inventoried",
+    (code, t.get("hooks", {}).get("has_hooks"), "SessionStart" in t.get("hooks", {}).get("events", {}),
+     (t.get("marketplace") or {}).get("selected")), (0, True, True, "kit"))
+
+two = pack("mkt-two", {".claude-plugin/marketplace.json": market([("a", "./plugins/a"), ("b", "./plugins/b")]),
+                       **plugin_files("a"), **plugin_files("b")})
+code, d = run_cli(two)
+t = (d or {}).get("target", {})
+chk("several plugins and none chosen: hooks are unknown, never false",
+    (code, t.get("hooks", {}).get("has_hooks"),
+     sorted(p["name"] for p in (t.get("marketplace") or {}).get("plugins", []))),
+    (0, "unknown", ["a", "b"]))
+code, d = run_cli(two, "--plugin", "b")
+chk("--plugin picks one of several",
+    (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("selected"),
+     (d or {}).get("target", {}).get("hooks", {}).get("has_hooks")), (0, "b", True))
+code, d = run_cli(two, "--plugin", "nope")
+chk("--plugin naming no plugin in the marketplace stops, rather than guessing", code != 0, True)
+
+# No plugin manifest at all, and an installer
+# that merges the "hooks" block of install.json into ~/.claude/settings.json.
+inst = pack("installer-hooks", {
+    "install.json": json.dumps({"skills": {"paths": ["skills/x"]}, "hooks": {
+        "SubagentStart": [{"matcher": "", "hooks": [{"type": "command", "command": "node h.mjs"}]}]}}),
+    "scripts/install.mjs": "fs.writeFileSync(path.join(os.homedir(), '.claude', 'settings.json'), s)\n",
+    "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+code, d = run_cli(inst)
+h = (d or {}).get("target", {}).get("hooks", {})
+chk("hooks in an installer's JSON are reported, with their reach",
+    (code, h.get("has_hooks"), h.get("hooks_source"), h.get("hooks_reach_subagents")),
+    (0, True, "outside-manifest", True))
+chk("...and the script that writes settings.json is named",
+    "scripts/install.mjs" in (h.get("settings_writers") or []), True)
+
+# A folder of plugins with no marketplace manifest: each plugin's own hooks are found,
+# but they are that plugin's, not an installer's for the whole folder.
+nest = pack("plugin-folder", {k.replace("plugins/", ""): v
+                              for k, v in {**plugin_files("a"), **plugin_files("b")}.items()})
+code, d = run_cli(nest)
+h = (d or {}).get("target", {}).get("hooks", {})
+chk("a folder of plugins: hooks unknown, and the plugins named",
+    (code, h.get("has_hooks"), h.get("nested_plugins")), (0, "unknown", ["a", "b"]))
+
+# No false alarm: a "hooks" key that is not an object of Claude Code events, whether
+# its values are not lists or its keys are not event names.
+code, d = run_cli(pack("not-hooks", {"config.json": json.dumps({"hooks": {"retries": 3}}),
+                                     "tools.json": json.dumps({"hooks": {"onSave": [{"command": "lint"}]}}),
+                                     "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"}))
+chk("a 'hooks' key with no Claude Code event in it is not a hook",
+    (code, (d or {}).get("target", {}).get("hooks", {}).get("has_hooks")), (0, False))
+
+# Containment, as in section 4: a marketplace source and an installer file are both
+# named by the untrusted target.
+code, d = run_cli(pack("esc-mkt-source", {".claude-plugin/marketplace.json": market(
+    [("x", os.path.relpath(outside, os.path.join(w, "targets", "esc-mkt-source")))])}))
+chk("a marketplace source outside the target is refused, not inventoried",
+    (code, MARK in json.dumps(d["target"]) if d else None), (0, False))
+code, d = run_cli(escaping("esc-installer", {"install.json": "hooks.json"}))
+chk("an installer JSON symlinked outside the target is not read",
+    (code, MARK in json.dumps(d["target"]) if d else None), (0, False))
+
+# Found by review after 1.12.6 shipped: the search stopped four levels down and said
+# false for hooks below that, and a marketplace.json that failed to parse read as one
+# that lists nothing. See CHANGELOG.md 1.12.7.
+deep = pack("deep-hooks", {"a/b/c/d/e/f/install.json": SESSION_HOOK,
+                           "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+code, d = run_cli(deep)
+chk("hooks six levels down are found",
+    (code, (d or {}).get("target", {}).get("hooks", {}).get("has_hooks")), (0, True))
+many = pack("many-json", {**{f"data/{i}.json": "{}" for i in range(3)},
+                          "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+h = inventory.hooks_outside_manifest(many, max_reads=2)
+chk("a search that runs out of reads says unknown, never false",
+    (h.get("has_hooks"), "stopped after 2" in (h.get("search_incomplete") or "")), ("unknown", True))
+# ...and one that found some hooks before it ran out says it may have missed more.
+part = pack("partial-hooks", {"a/install.json": SESSION_HOOK,
+                              **{f"b/{i}.json": "{}" for i in range(3)},
+                              "c/late.json": SESSION_HOOK.replace("SessionStart", "Stop")})
+h = inventory.hooks_outside_manifest(part, max_reads=3)
+chk("a search that found hooks and then ran out says it is incomplete",
+    (h.get("has_hooks"), "Stop" in h.get("events", {}), "stopped after 3" in (h.get("search_incomplete") or "")),
+    (True, False, True))
+code, d = run_cli(pack("mkt-bad", {".claude-plugin/marketplace.json": "{not json",
+                                   "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"}))
+chk("a marketplace.json that is not JSON says so",
+    (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
+    (0, "marketplace.json is not valid JSON; read it by hand"))
 
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
