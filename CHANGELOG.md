@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **A single rules file reads only itself.** Pointed at one file, neckbeard used to follow its `@path` lines and read the files they named, so a downloaded `rules.md` could pull its neighbours into the dossier. Now only a file named `CLAUDE.md` follows imports, as Claude Code does, and still only inside its own folder; any other file lists the names it gives under `imports_not_followed` and reads none of them. A binary or unreadable file is refused with an error instead of producing an empty dossier.
+
 ## 1.12.8 (2026-10-01)
 
 - **neckbeard shows its own badge.** The README carries a neckbeard badge linked to its report on itself, rerun against the sample reader on 1.12.7: 🟩 install, no conflicts, in three separate runs. The 1.12.0 report's one conflict, its symbol key against "plain language over jargon", did not come back; the gallery says so rather than claiming a fix.

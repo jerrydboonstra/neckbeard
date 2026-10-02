@@ -239,8 +239,8 @@ agents_md = os.path.join(repo, "examples", "targets", "tvykruta-agents.md")
 out = os.path.join(w, "agents-md.json")
 r = subprocess.run([sys.executable, inventory.__file__, agents_md, "--project-dir", wp, "--out", out],
                    env=dict(os.environ, CLAUDE_CONFIG_DIR=reader), capture_output=True, text=True)
-d = json.load(open(out)) if r.returncode == 0 else {}
-t = d.get("target", {})
+ad = json.load(open(out)) if r.returncode == 0 else {}
+t = ad.get("target", {})
 files = t.get("rule_files") or []
 text = files[0].get("text", "") if len(files) == 1 else ""
 chk("a many-rule AGENTS.md is one lossless rule-file item, with nothing to install",
@@ -248,8 +248,35 @@ chk("a many-rule AGENTS.md is one lossless rule-file item, with nothing to insta
      len(t.get("agents") or []), (t.get("hooks") or {}).get("has_hooks"),
      text.startswith("# Tomas Vykruta's `AGENTS.md` rules"), text.rstrip().endswith("8. Then pick the next system.")),
     (0, "rule-file", 1, 0, 0, 0, False, True, True))
+# A standalone file is one trust boundary: naming a sibling must not get it read.
+# A CLAUDE.md keeps its imports, because they are part of that format, but still
+# only inside its own folder.
+SIB = "SIBLING_SECRET_5c1e"
+bound = os.path.join(w, "boundary", "inner")
+os.makedirs(bound)
+for fn, body in {"rules.md": "Be careful.\n@notes.md\n", "notes.md": f"{SIB}\n",
+                 "CLAUDE.md": "Team rules.\n@notes.md\n@../outer.md\n"}.items():
+    with open(os.path.join(bound, fn), "w") as f:
+        f.write(body)
+with open(os.path.join(w, "boundary", "outer.md"), "w") as f:
+    f.write("OUTER_MARK_5c1e\n")
+code, d = run_cli(os.path.join(bound, "rules.md"))
+chk("a standalone rules.md does not read the sibling it names, and says so",
+    (code, SIB in json.dumps(d), (d or {}).get("target", {}).get("imports_not_followed")),
+    (0, False, ["notes.md"]))
+code, d = run_cli(os.path.join(bound, "CLAUDE.md"))
+rfs = (d or {}).get("target", {}).get("rule_files") or []
+chk("a CLAUDE.md target follows its own import and refuses one outside its folder",
+    (code, SIB in json.dumps(d), "OUTER_MARK_5c1e" in json.dumps(d), [bool(i.get("refused")) for i in rfs]),
+    (0, True, False, [False, False, True]))
+binf = os.path.join(w, "image.png")
+with open(binf, "wb") as f:
+    f.write(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+code, d = run_cli(binf)
+chk("a binary file is refused with an error, not read as an empty rule file", (code != 0, d), (True, None))
+
 chk("an AGENTS.md run reads only the sample reader's rule files",
-    sorted(os.path.relpath(i["path"], reader) for i in d.get("current_rules", {}).get("items", [])),
+    sorted(os.path.relpath(i["path"], reader) for i in ad.get("current_rules", {}).get("items", [])),
     ["CLAUDE.md", "rules/engineering.md", "rules/safety.md", "skills/release-notes/SKILL.md"])
 
 # ---------------------------------------------------------------- 4. containment

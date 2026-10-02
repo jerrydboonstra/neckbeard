@@ -931,8 +931,20 @@ def target_rule_files(root):
 
 def inventory_target(path, plugin_name=None):
     if os.path.isfile(path):
-        rule_files = with_imports("rule-file", path, root=os.path.dirname(path))
-        return {
+        text = read_text(path)
+        if text is None or "\x00" in text:
+            sys.exit(f"{path}: not a readable text file, so there are no rules to read")
+        # A CLAUDE.md's @-imports are part of its format, so they are followed,
+        # still contained to its folder. Any other file is one trust boundary: a
+        # downloaded rules.md must not gain a read of its sibling files by
+        # naming them. The names it gives are listed, never read.
+        if os.path.basename(path) == "CLAUDE.md":
+            rule_files, not_followed = with_imports("rule-file", path, root=os.path.dirname(path)), []
+        else:
+            rule_files = [rule_item("rule-file", path)]
+            not_followed = [m.group(1).rstrip(".,;:)]}\"'")
+                            for m in _IMPORT_RE.finditer(_CODE_RE.sub(" ", text))]
+        target = {
             "kind": "rule-file",
             "path": path,
             "is_plugin": False,
@@ -940,6 +952,9 @@ def inventory_target(path, plugin_name=None):
             "rule_files": rule_files,
             "hooks": {"has_hooks": False},
         }
+        if not_followed:
+            target["imports_not_followed"] = not_followed
+        return target
     # A marketplace at the root: inventory the plugin it lists, not the root. With
     # one local plugin that is unambiguous; with several, --plugin picks, and
     # without it the root is read as before but its hooks are reported as unknown,
