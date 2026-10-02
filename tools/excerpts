@@ -11,8 +11,8 @@ verdict and "At a glance" table, between two markers:
 The text between them is copied from examples/superpowers.md, never typed by
 hand, so re-running the gallery cannot leave a case study quoting an old report.
 
-    bin/excerpts           rewrite every excerpt from its report
-    bin/excerpts --check   exit 1, naming each excerpt that has drifted
+    tools/excerpts           rewrite every excerpt from its report
+    tools/excerpts --check   exit 1, naming each excerpt that has drifted
 """
 import re
 import sys
@@ -51,7 +51,7 @@ def main():
         sys.exit("excerpts: no <!-- report:... --> blocks in CASE-STUDIES.md")
     if check:
         if stale:
-            sys.exit("excerpts: out of step with the gallery: " + ", ".join(stale) + ". Run bin/excerpts.")
+            sys.exit("excerpts: out of step with the gallery: " + ", ".join(stale) + ". Run tools/excerpts.")
         print(f"excerpts: {len(BLOCK.findall(text))} in step with the gallery")
         return
     DOC.write_text(new)

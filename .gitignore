@@ -19,3 +19,6 @@ evaluations/
 
 # Full-size logo sources (about 2 MB each). The README uses assets/logo.webp.
 assets/source/
+
+# This machine's release and deploy setup (see the Makefile).
+local.mk
