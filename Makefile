@@ -19,11 +19,11 @@ help: ## list targets
 
 check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
 	$(PYTHON) skills/neckbeard/selfcheck.py
-	$(PYTHON) bin/excerpts --check
+	$(PYTHON) tools/excerpts --check
 	$(PYTHON) tools/test_deploy.py
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
-	$(PYTHON) bin/excerpts
+	$(PYTHON) tools/excerpts
 
 release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Release will carry
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d' | grep . >/dev/null || { echo "release: CHANGELOG.md has no entry for $(VERSION)" >&2; exit 1; }
