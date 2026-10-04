@@ -44,6 +44,19 @@ CLAUDE_CONFIG_DIR="$PWD/examples/reader" \
 
 `current_rules` in the dossier should list exactly the four reader files. Then follow Steps 2 to 4 of [`SKILL.md`](../skills/neckbeard/SKILL.md) against that dossier. The classification is a model's judgment, so a rerun will not match word for word; the counts may move by an item or two, and a verdict that flips is worth reporting.
 
+Or do all of it in one command from this repo: `tools/vet <path-to-target> <report.md>`. It builds the dossier against a throwaway copy of the reader (the judge writes into its config folder, so it never gets the real one), runs the judge in a separate `claude -p` session on Sonnet, and checks that the report has a verdict and names no local path. Where the judge can't log in with the reader as its config folder, as on a Mac, it falls back to your own config and says so.
+
+## Keep your plugin's published report current
+
+If your plugin publishes a neckbeard report, a release can leave it vetting an older version. The cheap fix is a check in CI that only compares the report's version with the plugin's and fails when they differ; it needs no Claude. When it fails, rebuild the report in a Claude Code web session on your plugin's repo, on your own subscription:
+
+```bash
+git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+/tmp/nb/tools/vet . docs/neckbeard-report.md
+```
+
+A web session logs the judge in from its environment, so the judge starts with the sample reader as its only rules. Sonnet is enough for the session itself, since it only runs the command. Keep the judge on Sonnet: in a side-by-side run on 2026-10-04, a Haiku judge finished in under a minute but missed both conflicts and all nine covered rules that the Sonnet judge found and that checked out against the files. A full run takes two to three minutes.
+
 ## How these were made
 
 Each report was written by a separate model session (Claude Sonnet) that saw only the dossier and the target's files, and was told to ignore everything else in its context. Every report was then checked: the counts in "How its rules sorted" equal the rows in the grids, every citation points at a real reader file, and the inventory confirmed that only the sample reader was read. The calm-trader/skills report failed that check as first written: it counted 9 dropped items against 10 listed, said four hard stops where the reader has five, and named the wrong neckbeard version. Those three were corrected by hand, and its em dashes were removed to match the rest of the gallery; every other claim in it was checked against the repo and left as the session wrote it.
