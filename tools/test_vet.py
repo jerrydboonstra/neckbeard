@@ -21,7 +21,7 @@ cfg = os.environ.get("CLAUDE_CONFIG_DIR", "")
 args = sys.argv[1:]
 prompt = args[-1] if args and not args[-1].startswith("-") and "ok" in args[-1] else sys.stdin.read()
 with open(os.environ["FAKE_LOG"], "a") as f:
-    f.write(json.dumps({"cwd": os.getcwd(), "cfg": cfg, "args": args}) + "\n")
+    f.write(json.dumps({"cwd": os.getcwd(), "cfg": cfg, "args": args, "prompt": prompt}) + "\n")
 if os.environ.get("FAKE_LOGIN") == "default" and cfg:
     print("Not logged in · Please run /login"); sys.exit(1)
 if cfg:
@@ -55,7 +55,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=()):
+def run(case, login="env", report="good", extra=(), remote=None):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -67,6 +67,9 @@ def run(case, login="env", report="good", extra=()):
         json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
         open(os.path.join(target, "skills", "demo", "SKILL.md"), "w").write(
             "---\nname: demo\ndescription: A demo skill.\n---\n\nAlways run the tests before you commit.\n")
+        if remote:
+            for c in (["init", "-q"], ["remote", "add", "origin", remote]):
+                subprocess.run(["git", *c], cwd=target, check=True)
         out = os.path.join(tmp, "out", "report.md")
         log = os.path.join(tmp, "claude.log")
         env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR"}
@@ -100,6 +103,14 @@ chk("web: judge config is a copy, not the checkout",
 chk("web: judge starts outside the target", bool(j) and not os.path.realpath(j[0]["cwd"]).startswith(os.path.realpath(r["target"])), True)
 chk("web: examples/reader untouched", r["reader_untouched"], True)
 chk("web: temp folder removed", r["temp_left"], [])
+
+header = lambda r: next(l for l in judge(r)[0]["prompt"].splitlines() if l.startswith("Header line"))
+chk("web: header names the target plainly", header(r).endswith("· demo 1.0.0"), True)
+
+# 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
+r = run("remote", remote="git@github.com:someone/demo.git")
+chk("remote: header links the repo once", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r)
+    and header(r).count("https://github.com/someone/demo") == 1, True)
 
 # 2. a Mac: the reader copy can't log in, so the judge falls back to the caller's config and says so
 r = run("mac", login="default")

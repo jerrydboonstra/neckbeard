@@ -73,6 +73,8 @@ case $remote in https://github.com/*) ;; *) remote="" ;; esac
 nbversion=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$nb/.claude-plugin/plugin.json")
 name=$(basename "$target")
 [ -n "$remote" ] && name=${remote#https://github.com/}
+source=$name
+[ -n "$remote" ] && source="[$name]($remote)"
 prompt=$work/prompt.md
 cat > "$prompt" <<EOF
 Vet one plugin with neckbeard against the SAMPLE READER and write the report.
@@ -82,7 +84,7 @@ DOSSIER (already built, read-only): $dossier. It was built with the sample reade
 METHOD: $nb/skills/neckbeard/SKILL.md. Step 1 is done (the dossier). Follow Steps 2 to 4 as written, using the report shape in Step 3 exactly.
 REPORT FILE (the only file you create): $out
 
-Header line to use: \`$(date +%Y-%m-%d)\` · neckbeard $nbversion · ${remote:+[$name]($remote)}${remote:-$name}${version:+ $version}${commit:+ @ \`$commit\`}
+Header line to use: \`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}
 Put this paragraph in the verdict block, after the summary: "Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
 
 Rules:
