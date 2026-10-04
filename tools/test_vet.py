@@ -112,6 +112,12 @@ r = run("remote", remote="git@github.com:someone/demo.git")
 chk("remote: header links the repo once", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r)
     and header(r).count("https://github.com/someone/demo") == 1, True)
 
+# 1c. --repo names the public repo over a private origin, and --note leads the reader paragraph
+r = run("repo", remote="https://github.com/someone/demo-dev.git",
+        extra=("--repo", "https://github.com/someone/demo", "--note", "Same author, so a self-vetting."))
+chk("repo: header names the public repo", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r), True)
+chk("repo: note leads the paragraph", '"Same author, so a self-vetting. Verdict is relative' in judge(r)[0]["prompt"], True)
+
 # 2. a Mac: the reader copy can't log in, so the judge falls back to the caller's config and says so
 r = run("mac", login="default")
 chk("mac: exit 0", r["rc"], 0)
