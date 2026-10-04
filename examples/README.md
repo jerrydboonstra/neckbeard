@@ -48,7 +48,18 @@ Or do all of it in one command from this repo: `tools/vet <path-to-target> <repo
 
 ## Keep your plugin's published report current
 
-If your plugin publishes a neckbeard report, a release can leave it vetting an older version. The cheap fix is a check in CI that only compares the report's version with the plugin's and fails when they differ; it needs no Claude. When it fails, rebuild the report in a Claude Code web session on your plugin's repo, on your own subscription:
+If your plugin publishes a neckbeard report, a release can leave it vetting an older version. `tools/vet --check REPORT TARGET` catches that: it compares the version in the report's header with the one in your `plugin.json` and fails when they differ. It needs only python3, no Claude and no login, so it fits in CI. As a GitHub Actions job, with the neckbeard tag pinned:
+
+```yaml
+neckbeard-report:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: git clone --depth 1 --branch v1.13.0 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+    - run: /tmp/nb/tools/vet --check docs/neckbeard-report.md .
+```
+
+When it fails, rebuild the report in a Claude Code web session on your plugin's repo, on your own subscription:
 
 ```bash
 git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
@@ -56,6 +67,8 @@ git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
 ```
 
 A web session logs the judge in from its environment, so the judge starts with the sample reader as its only rules. Sonnet is enough for the session itself, since it only runs the command. Keep the judge on Sonnet: in a side-by-side run on 2026-10-04, a Haiku judge finished in under a minute but missed both conflicts and all nine covered rules that the Sonnet judge found and that checked out against the files. A full run takes two to three minutes.
+
+If the session's checkout is a private copy of your plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo, and `--note "..."` for a sentence of your own before the verdict's disclaimer, such as saying you wrote both. `tools/vet` sets the report's title line itself, so it always says the verdict is against the sample reader.
 
 ## How these were made
 

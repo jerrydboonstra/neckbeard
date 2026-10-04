@@ -12,12 +12,44 @@
 #      rules and nothing else; that needs a login from the environment, as a web session has. Where it can't log
 #      in that way (a Mac keeps its login with the default config), it falls back to --judge own, the caller's
 #      own config, and says so: the judge is told to ignore those instructions but still starts with them
-#   4. check the report: it exists, carries a verdict, and names no local path
+#   4. check the report: it exists, carries a verdict, and names no local path; set its title line, which
+#      says the verdict is against the sample reader
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
 # Exit 0 only when the report passed every check. Kept out of bin/, which a plugin puts on every session's PATH.
+#
+# vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
+# Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
+# has no header to read.
 set -u
-usage() { echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT]" >&2; exit 2; }
+usage() {
+  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT]" >&2
+  echo "       tools/vet --check REPORT TARGET" >&2
+  exit 2
+}
+die() { echo "vet: $*" >&2; exit 1; }
+plugin_version() { python3 -c 'import json,sys
+for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
+    try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
+    except Exception: pass' "$1"; }
+
+if [ "${1:-}" = --check ]; then
+  [ $# -eq 3 ] || usage
+  report=$2 target=$3
+  [ -f "$report" ] || die "no report at $report"
+  [ -d "$target" ] || die "$target is not a folder"
+  want=$(plugin_version "$target")
+  [ -n "$want" ] || die "no version in $target's plugin.json"
+  # the header line tools/vet writes: `DATE` · neckbeard X · <name or [name](url)> VERSION[ @ `commit`]
+  got=$(python3 -c 'import re,sys
+for line in open(sys.argv[1], encoding="utf-8"):
+    m = re.match(r"^`\d{4}-\d{2}-\d{2}` · neckbeard \S+ · (?:\[[^\]]+\]\([^)]+\)|\S+) (\S+)(?: @ |\s*$)", line)
+    if m: print(m.group(1)); break' "$report")
+  [ -n "$got" ] || die "$report has no header line naming a version"
+  [ "$got" = "$want" ] || die "$report vets $got, but $target is $want: rebuild it (see examples/README.md)"
+  echo "vet: $report is current ($want)"
+  exit 0
+fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2; shift 2
 judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note=""
@@ -28,7 +60,6 @@ while [ $# -gt 0 ]; do case $1 in
   --note) [ $# -ge 2 ] || usage; note=$2; shift 2 ;;
   *) usage ;;
 esac; done
-die() { echo "vet: $*" >&2; exit 1; }
 
 nb=$(cd "$(dirname "$0")/.." && pwd -P)
 [ -d "$target" ] || die "$target is not a folder"
@@ -67,10 +98,7 @@ if [ "$judge" = auto ]; then
     echo "vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it" >&2
   fi
 fi
-version=$(python3 -c 'import json,sys
-for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
-    try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
-    except Exception: pass' "$target")
+version=$(plugin_version "$target")
 commit=$(git -C "$target" rev-parse --short HEAD 2>/dev/null || true)
 remote=$(git -C "$target" remote get-url origin 2>/dev/null | sed -E 's#^git@github\.com:#https://github.com/#; s#\.git$##' || true)
 case $remote in https://github.com/*) ;; *) remote="" ;; esac
@@ -80,6 +108,7 @@ name=$(basename "$target")
 [ -n "$remote" ] && name=${remote#https://github.com/}
 source=$name
 [ -n "$remote" ] && source="[$name]($remote)"
+title="# 🔍 ${name##*/}${version:+ $version} · vetted against the sample reader"
 prompt=$work/prompt.md
 cat > "$prompt" <<EOF
 Vet one plugin with neckbeard against the SAMPLE READER and write the report.
@@ -90,7 +119,7 @@ METHOD: $nb/skills/neckbeard/SKILL.md. Step 1 is done (the dossier). Follow Step
 REPORT FILE (the only file you create): $out
 
 Header line to use: \`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}
-Title line: `# 🔍 <target> <version> · vetted against the sample reader`.
+Title line to use: $title
 Put this paragraph in the verdict block, after the summary: "${note:+$note }Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
 
 Rules:
@@ -110,6 +139,16 @@ rm -f "$out"
 # 4. the report
 [ -s "$out" ] || die "the judge wrote no report to $out"
 grep -qE '^> ## (🟥|🟧|🟨|🟩) ' "$out" || die "$out carries no verdict banner"
+# the title says whose rules these are; a judge started with its own rules has been seen to write "your rules"
+case $(head -n 1 "$out") in "# 🔍 "*) ;; *) die "$out has no 🔍 title line" ;; esac
+python3 - "$out" "$title" <<'EOF'
+import sys
+lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
+if lines[0] != sys.argv[2]:
+    print(f"vet: title was {lines[0]!r}, set to {sys.argv[2]!r}", file=sys.stderr)
+    lines[0] = sys.argv[2]
+    open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
+EOF
 for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
   [ "$p" = / ] && continue
   grep -qF -- "$p" "$out" && die "$out names a local path ($p); fix it by hand or rerun"

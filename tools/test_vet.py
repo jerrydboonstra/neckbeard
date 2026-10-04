@@ -72,14 +72,17 @@ def run(case, login="env", report="good", extra=(), remote=None):
                 subprocess.run(["git", *c], cwd=target, check=True)
         out = os.path.join(tmp, "out", "report.md")
         log = os.path.join(tmp, "claude.log")
-        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR"}
-        env.update(PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report,
+        # a cloud container rewrites git@github.com: to https itself through GIT_CONFIG_*, which would hide vet's own rewrite
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR" and not k.startswith("GIT_CONFIG")}
+        env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+                   PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report,
                    TMPDIR=os.path.join(tmp, "t"))
         os.mkdir(env["TMPDIR"])
         before = reader_files()
         p = subprocess.run([VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
-        res = dict(rc=p.returncode, out=p.stdout + p.stderr, calls=calls, report=os.path.exists(out),
+        title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
+        res = dict(rc=p.returncode, out=p.stdout + p.stderr, calls=calls, report=os.path.exists(out), title=title,
                    reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
         if os.environ.get("VERBOSE"):
             print(case, res)
@@ -103,12 +106,14 @@ chk("web: judge config is a copy, not the checkout",
 chk("web: judge starts outside the target", bool(j) and not os.path.realpath(j[0]["cwd"]).startswith(os.path.realpath(r["target"])), True)
 chk("web: examples/reader untouched", r["reader_untouched"], True)
 chk("web: temp folder removed", r["temp_left"], [])
+chk("web: title names the sample reader", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
 
 header = lambda r: next(l for l in judge(r)[0]["prompt"].splitlines() if l.startswith("Header line"))
 chk("web: header names the target plainly", header(r).endswith("· demo 1.0.0"), True)
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
 r = run("remote", remote="git@github.com:someone/demo.git")
+chk("remote: title uses the repo's short name", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
 chk("remote: header links the repo once", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r)
     and header(r).count("https://github.com/someone/demo") == 1, True)
 
@@ -142,6 +147,34 @@ chk("no verdict: exit 1", r["rc"], 1)
 r = run("leak", report="leak")
 chk("leak: exit 1", r["rc"], 1)
 chk("leak: says so", "names a local path" in r["out"], True)
+
+# 7. --check, the staleness check a plugin's CI runs: python3 only, no claude on PATH
+def check(header, version="1.0.0"):
+    tmp = tempfile.mkdtemp()
+    try:
+        bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
+        for tool in ("bash", "python3"):
+            os.symlink(shutil.which(tool), os.path.join(bindir, tool))
+        target = os.path.join(tmp, "demo")
+        os.makedirs(os.path.join(target, ".claude-plugin"))
+        json.dump({"name": "demo", "version": version}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
+        report = os.path.join(tmp, "report.md")
+        open(report, "w").write("# 🔍 demo · vetted against the sample reader\n\n> ## 🟩 INSTALL · fine\n\n" + header + "\n")
+        env = {"PATH": bindir, "HOME": tmp}
+        p = subprocess.run([VET, "--check", report, target], env=env, capture_output=True, text=True)
+        return p.returncode, p.stdout + p.stderr
+    finally:
+        shutil.rmtree(tmp)
+
+linked = "`2026-10-04` · neckbeard 1.12.9 · [someone/demo](https://github.com/someone/demo) 1.0.0 @ `abc1234`"
+rc, out = check(linked)
+chk("check: matching version passes with no claude", (rc, "current (1.0.0)" in out), (0, True))
+rc, out = check("`2026-10-04` · neckbeard 1.12.9 · demo 1.0.0", version="1.1.0")
+chk("check: older report fails", (rc, "vets 1.0.0, but" in out and "is 1.1.0" in out), (1, True))
+rc, out = check("`2026-10-04` · neckbeard 1.12.9 · demo 1.0.0")
+chk("check: plain name, no commit passes", rc, 0)
+rc, out = check("Vetted some time ago.")
+chk("check: no header fails", (rc, "no header line" in out), (1, True))
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)
