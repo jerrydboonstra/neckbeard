@@ -1,0 +1,90 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "declares_agents_in_manifest": false,
+    "declares_hooks_in_manifest": false,
+    "hooks": {
+      "events": {
+        "SessionStart": [
+          {
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh",
+            "matcher": null
+          }
+        ]
+      },
+      "has_hooks": true,
+      "hook_registrations": 1,
+      "hook_scripts": 1,
+      "hooks_file": "hooks/hooks.json",
+      "hooks_reach_subagents": false,
+      "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+      "injected_bytes_total_estimate": null,
+      "injected_content": null,
+      "injected_content_note": "1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.",
+      "unresolved_hooks": [
+        "SessionStart: hooks/run.sh"
+      ]
+    },
+    "is_plugin": true,
+    "kind": "plugin",
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "plugin_json": {
+      "description": null,
+      "license": null,
+      "name": "hooks-untraced",
+      "version": "1.0.0"
+    },
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [
+          "hooks/hooks.json: unresolved hooks: SessionStart: hooks/run.sh",
+          "hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand."
+        ],
+        "state": "partial"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "read"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": []
+  }
+}

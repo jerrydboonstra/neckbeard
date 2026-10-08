@@ -1,0 +1,87 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "declares_agents_in_manifest": false,
+    "declares_hooks_in_manifest": false,
+    "hooks": {
+      "has_hooks": false
+    },
+    "is_plugin": true,
+    "kind": "plugin",
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "plugin_json": {
+      "description": null,
+      "license": null,
+      "name": "skill-companion",
+      "version": "1.0.0"
+    },
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "read"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "read"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [
+          "skills/a/bad.md: companion file could not be read"
+        ],
+        "state": "partial"
+      }
+    },
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": [
+      {
+        "bytes": 52,
+        "chars": 52,
+        "companion_files": [
+          {
+            "path": "skills/a/bad.md",
+            "text": null
+          }
+        ],
+        "description": "A fixture skill.",
+        "name": "a",
+        "path": "<ROOT>/skills/a/SKILL.md",
+        "source": "skills/a/SKILL.md",
+        "text": "---\nname: a\ndescription: A fixture skill.\n---\nBody.\n",
+        "user_invocable": true
+      }
+    ]
+  }
+}

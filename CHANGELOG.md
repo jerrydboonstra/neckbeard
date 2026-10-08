@@ -9,6 +9,9 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ### Reports
 
 - **`tools/vet TARGET OUT --facts` writes the facts report.** It lists what the target adds (the "What it adds" section), reads no reader's rules, makes no model call and gives no verdict, so it needs only python3. Its title reads `what it adds`, and its header line is built by the same function as the judged report's, so `tools/vet --check` reads it unchanged. With `--judge`, `--model`, `--units` or `--note` it is a usage error.
+### Inventory
+
+- **`inventory.py T --live-mcp NAME` lists what a local MCP server declares, and only that.** It starts one checked-in stdio server, initializes it and lists its MCP tools (with input and output schemas and annotations), resources, resource templates and prompts. It never calls an MCP tool, reads a resource, gets a prompt, opens a browser or logs in. Without the flag nothing changes. The result is the server's entry in `mcp_servers` gaining a `live` key; a refusal or a failed read (a hang, a byte bound, a malformed reply) keeps its status on `live` and adds a note naming the server to `read_status.mcp_servers`. The server runs with a temporary home and only the environment its declaration names, a remote transport, a shell, eval or module command and an outside-tree entrypoint are refused, and time, bytes, pages, items and depth are bounded. Its text is untrusted data, and a declared environment value is scrubbed from it.
 
 ## 1.16.0 (2026-11-10)
 
@@ -44,7 +47,6 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ## 1.13.0 (2026-10-06)
 
 - **`tools/vet` runs the whole gallery method in one command**, so a plugin can rebuild its published report, for example in a Claude Code web session on its own repo (see `examples/README.md`). It vets against a throwaway copy of the sample reader, because the judge writes its backups and synced skills into its config folder; it lets the judge edit its own report, so it can fix a count it got wrong; and it refuses a report with no verdict or with a local path in it. It writes the title line itself, since a judge was seen to write "vetted against your rules". `tools/vet --check REPORT TARGET` is the matching CI check: it needs only python3 and fails when the report vets a different version than the plugin's `plugin.json`. `tools/test_vet.py` runs both against a fake `claude`, and `make check` runs that.
-
 ## 1.12.9 (2026-10-02)
 
 - **`make deploy`, as Cat Herder has it.** It refuses unless `main` is released on every remote, then brings this machine and each host in `HOSTS` to that commit: a directory marketplace's checkout must be clean and is fast-forwarded to exactly the release, the marketplace is updated, every install of neckbeard is updated from its own folder, and each one's version is printed and checked. `tools/test_deploy.py` runs it end to end against a fake `claude`, and `make check` runs that.

@@ -4,9 +4,11 @@
 
 Neckbeard exists to be pointed at code you have not decided to trust yet. That is the whole point, and it shapes everything below.
 
-**It never executes the target.** It reads files and parses manifests. It does not run hooks, import the plugin's code, invoke its build, or start an MCP server. A plugin that is malicious is still only ever text to this tool.
+**The default never executes the target.** It reads files and parses manifests. It does not run hooks, import the plugin's code, invoke its build, or start an MCP server. A plugin that is malicious is still only ever text to the default inventory.
 
-**The script writes in two places and nowhere else**: the path given to `--out`, and a temporary clone directory when the target is a git URL. The skill also writes one file, the evaluation, and checks first that git ignores its path. It does not edit your rules files, your settings, or the plugin it is reading, and it never uninstalls anything.
+**`--live-mcp NAME` crosses that boundary deliberately.** It starts one explicitly named local stdio server from the target's checked-in declaration. Only a target-owned executable, or a short allowlist of interpreters pointed at a target-owned file, is accepted; remote transports, shell snippets, package runners and outside-tree entrypoints are refused. The child gets a temporary home and a minimal environment plus the declaration's own environment. Neckbeard initializes it and sends list requests only. It never invokes a tool, reads a resource, gets a prompt or performs an authentication flow. Time, bytes, pages, item counts and metadata depth are bounded. Declared environment values are always represented as `<redacted>` and scrubbed again from server metadata and stderr before the dossier is written. This is still execution of untrusted target code under your user account; use it only after the static report makes that acceptable.
+
+**The script itself writes in two places and nowhere else**: the path given to `--out`, and temporary directories for a git clone or the isolated home used by live MCP inventory. The target process started by `--live-mcp` is untrusted code and can write anywhere your user can; Neckbeard cannot sandbox it. The skill also writes one file, the evaluation, and checks first that git ignores its path. It does not edit your rules files, your settings, or the plugin it is reading, and it never uninstalls anything.
 
 **It reads your rules in order to compare against them.** That is how it tells duplicate from conflict. Those rules are private, and they end up in the evaluation it writes.
 

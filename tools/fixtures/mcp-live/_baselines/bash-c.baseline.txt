@@ -1,0 +1,78 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": null,
+    "skipped": "The target carries no classifiable item (no skill, hook, command, agent or rule file), so there is nothing for the classification step to compare against and your rule files were not read. Anything the target still needs looked at -- unresolved hooks, an MCP server, persistence -- is reported above, and reading it does not need your rules."
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "hooks": {
+      "has_hooks": false
+    },
+    "is_plugin": false,
+    "kind": "generic-pack",
+    "mcp_servers": {
+      "count": 1,
+      "note": "this reports the declaration, not the tool surface. A local-process server runs on your machine; what it exposes needs a live MCP call.",
+      "servers": [
+        {
+          "args": [
+            "-c",
+            "echo hi"
+          ],
+          "command": "bash",
+          "name": "s",
+          "transport": "local-process",
+          "url": null
+        }
+      ],
+      "source": ".mcp.json"
+    },
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "read"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "readme_excerpt": null,
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": []
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [
+      {
+        "bytes": 37,
+        "chars": 37,
+        "description": "d",
+        "name": "x",
+        "path": "agents/a.md",
+        "source": "agent",
+        "text": "---\nname: x\ndescription: d\n---\nText.\n"
+      }
+    ],
+    "commands": [
+      {
+        "bytes": 37,
+        "chars": 37,
+        "description": "d",
+        "name": "x",
+        "path": "commands/c.md",
+        "source": "command",
+        "text": "---\nname: x\ndescription: d\n---\nText.\n"
+      }
+    ],
+    "declares_agents_in_manifest": false,
+    "declares_hooks_in_manifest": false,
+    "hooks": {
+      "events": {
+        "SessionStart": [
+          {
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh",
+            "matcher": null
+          }
+        ]
+      },
+      "has_hooks": true,
+      "hook_registrations": 1,
+      "hook_scripts": 1,
+      "hooks_file": "hooks/hooks.json",
+      "hooks_reach_subagents": false,
+      "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+      "injected_bytes_total_estimate": 15,
+      "injected_content": [
+        {
+          "bytes": 15,
+          "file": "hooks/inject.md"
+        }
+      ]
+    },
+    "is_plugin": true,
+    "kind": "plugin",
+    "mcp_servers": {
+      "count": 1,
+      "note": "this reports the declaration, not the tool surface. A local-process server runs on your machine; what it exposes needs a live MCP call.",
+      "servers": [
+        {
+          "args": [
+            "x.js"
+          ],
+          "command": "node",
+          "name": "s",
+          "transport": "local-process",
+          "url": null
+        }
+      ],
+      "source": ".mcp.json"
+    },
+    "path": "<ROOT>",
+    "persistence_candidates": [
+      "hooks/install.sh"
+    ],
+    "plugin_json": {
+      "description": null,
+      "license": null,
+      "name": "plugin-full",
+      "version": "1.0.0"
+    },
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "read"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "read"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [
+      {
+        "bytes": 6,
+        "chars": 6,
+        "description": null,
+        "name": "CLAUDE",
+        "path": "<ROOT>/CLAUDE.md",
+        "source": "target-CLAUDE.md",
+        "text": "plain\n"
+      }
+    ],
+    "skills": [
+      {
+        "bytes": 52,
+        "chars": 52,
+        "companion_files": [],
+        "description": "A fixture skill.",
+        "name": "a",
+        "path": "<ROOT>/skills/a/SKILL.md",
+        "source": "skills/a/SKILL.md",
+        "text": "---\nname: a\ndescription: A fixture skill.\n---\nBody.\n",
+        "user_invocable": true
+      }
+    ]
+  }
+}
