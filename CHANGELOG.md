@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **The dossier carries the text the judge needs, so two runs judge the same thing.** Run twice on Cat Herder, neckbeard named 5 conflicts, then 2, because the dossier held only each `SKILL.md` and the judge opened the role and section files by hand, differently each time. Each skill now lists its other Markdown files, with their text, as `companion_files` (capped at 40 per skill; a file past the cap or outside the target is named, never read). A plugin whose `plugin.json` gives `hooks` as a list of files (Cat Herder's does) is now read and merged instead of reported `unknown`; a missing or outside entry still makes the answer `unknown`. Each skill also carries `user_invocable`, read from its frontmatter, so no run has to work that out by hand. `SKILL.md` is unchanged. Five self-check cases; three fail against 1.13.0, and the missing-file and outside-target cases guard the new list path.
+
 ## 1.13.0 (2026-10-06)
 
 - **`tools/vet` runs the whole gallery method in one command**, so a plugin can rebuild its published report, for example in a Claude Code web session on its own repo (see `examples/README.md`). It vets against a throwaway copy of the sample reader, because the judge writes its backups and synced skills into its config folder; it lets the judge edit its own report, so it can fix a count it got wrong; and it refuses a report with no verdict or with a local path in it. It writes the title line itself, since a judge was seen to write "vetted against your rules". `tools/vet --check REPORT TARGET` is the matching CI check: it needs only python3 and fails when the report vets a different version than the plugin's `plugin.json`. `tools/test_vet.py` runs both against a fake `claude`, and `make check` runs that.
