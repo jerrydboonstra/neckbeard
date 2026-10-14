@@ -21,6 +21,7 @@ check: ## run the self-check (every case has been seen to fail), and check CASE-
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
 	$(PYTHON) tools/test_deploy.py
+	$(PYTHON) tools/test_vet.py
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) tools/excerpts

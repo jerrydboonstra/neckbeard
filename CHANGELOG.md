@@ -8,6 +8,10 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 - **A single rules file reads only itself.** Pointed at one file, neckbeard used to follow its `@path` lines and read the files they named, so a downloaded `rules.md` could pull its neighbours into the dossier. Now only a file named `CLAUDE.md` follows imports, as Claude Code does, and still only inside its own folder; any other file lists the names it gives under `imports_not_followed` and reads none of them. A binary or unreadable file is refused with an error instead of producing an empty dossier.
 
+## 1.13.0 (2026-10-06)
+
+- **`tools/vet` runs the whole gallery method in one command**, so a plugin can rebuild its published report, for example in a Claude Code web session on its own repo (see `examples/README.md`). It vets against a throwaway copy of the sample reader, because the judge writes its backups and synced skills into its config folder; it lets the judge edit its own report, so it can fix a count it got wrong; and it refuses a report with no verdict or with a local path in it. It writes the title line itself, since a judge was seen to write "vetted against your rules". `tools/vet --check REPORT TARGET` is the matching CI check: it needs only python3 and fails when the report vets a different version than the plugin's `plugin.json`. `tools/test_vet.py` runs both against a fake `claude`, and `make check` runs that.
+
 ## 1.12.9 (2026-10-02)
 
 - **`make deploy`, as Cat Herder has it.** It refuses unless `main` is released on every remote, then brings this machine and each host in `HOSTS` to that commit: a directory marketplace's checkout must be clean and is fast-forwarded to exactly the release, the marketplace is updated, every install of neckbeard is updated from its own folder, and each one's version is printed and checked. `tools/test_deploy.py` runs it end to end against a fake `claude`, and `make check` runs that.
