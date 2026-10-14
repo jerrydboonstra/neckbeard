@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **The dossier flags frontmatter that strict YAML cannot read.** Claude Code loads a skill whose description has an unquoted `: ` without complaint, so the author never sees the fault, while GitHub shows "Error in user YAML" and stricter agents may drop the skill. Each skill, command and agent that has such a fault now carries `frontmatter_errors` (a line and a message), and only those do. The check is a small stdlib one, not a full YAML parser: it covers an unquoted `: `, a value starting with `@`, a backtick, `*` or `&`, a tab in indentation, an unclosed quote and a frontmatter fence that never closes, and a `# debt:` comment in the code names what it misses. On 70 real skill, agent and command files it agreed with PyYAML on all 70. The report does not mention it yet: that needs a change to `SKILL.md` and a sealed-fixture version, which is the owner's call. Ten self-check cases.
+
 ## 1.13.0 (2026-10-06)
 
 - **`tools/vet` runs the whole gallery method in one command**, so a plugin can rebuild its published report, for example in a Claude Code web session on its own repo (see `examples/README.md`). It vets against a throwaway copy of the sample reader, because the judge writes its backups and synced skills into its config folder; it lets the judge edit its own report, so it can fix a count it got wrong; and it refuses a report with no verdict or with a local path in it. It writes the title line itself, since a judge was seen to write "vetted against your rules". `tools/vet --check REPORT TARGET` is the matching CI check: it needs only python3 and fails when the report vets a different version than the plugin's `plugin.json`. `tools/test_vet.py` runs both against a fake `claude`, and `make check` runs that.
