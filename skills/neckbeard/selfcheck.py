@@ -444,5 +444,46 @@ chk("a marketplace.json that is not JSON says so",
     (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
     (0, "marketplace.json is not valid JSON; read it by hand"))
 
+# ---------------------------------------------------------------- 6. what the judge reads
+# A dossier that leaves out text the judge needs makes it open the files by hand, and two
+# runs then read different text (Cat Herder's report at 178648f8a: 5 conflicts, then 2).
+ev = lambda cmd: {"hooks": {"Stop": [{"hooks": [{"type": "command", "command": cmd}]}]}}
+lst = pack("hooks-list", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "hl", "hooks": ["./hooks/a.json", "./hooks/b.json"]}),
+    "hooks/a.json": json.dumps({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo a"}]}]}}),
+    "hooks/b.json": json.dumps({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "echo b"}]}]}}),
+})
+code, d = run_cli(lst)
+hk = (d or {}).get("target", {}).get("hooks", {})
+chk("plugin.json hooks given as a list of files are all read",
+    (code, hk.get("has_hooks"), sorted(hk.get("events", {}))), (0, True, ["SessionStart", "Stop"]))
+
+code, d = run_cli(pack("hooks-list-missing", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "hm", "hooks": ["./hooks/a.json", "./hooks/gone.json"]}),
+    "hooks/a.json": json.dumps(ev("echo a"))}))
+chk("a hooks list naming a file that is not there is unknown, not a partial answer",
+    (code, ((d or {}).get("target", {}).get("hooks") or {}).get("has_hooks")), (0, "unknown"))
+
+outside = os.path.join(w, "outside-hooks.json")
+with open(outside, "w") as f:
+    f.write(json.dumps(ev("echo " + MARK)))
+code, d = run_cli(pack("hooks-list-outside", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "ho", "hooks": ["../../outside-hooks.json"]})}))
+chk("a hooks list pointing outside the target is refused, and its text stays out",
+    (code, ((d or {}).get("target", {}).get("hooks") or {}).get("has_hooks"), MARK in json.dumps(d)),
+    (0, "unknown", False))
+
+code, d = run_cli(pack("skill-companions", {
+    ".claude-plugin/plugin.json": '{"name": "sc"}',
+    "skills/herd/SKILL.md": "---\nname: herd\ndescription: d\n---\nSee roles/worker.md.\n",
+    "skills/herd/roles/worker.md": "COMPANION_TEXT_ONLY_HERE\n",
+    "skills/quiet/SKILL.md": "---\nname: quiet\ndescription: d\nuser-invocable: false\n---\nBody.\n"}))
+sk = {x["name"]: x for x in (d or {}).get("target", {}).get("skills", [])}
+chk("a skill's other Markdown files are in the dossier with their text",
+    [(c["path"], "COMPANION_TEXT_ONLY_HERE" in (c["text"] or "")) for c in sk.get("herd", {}).get("companion_files", [])],
+    [("skills/herd/roles/worker.md", True)])
+chk("user-invocable is read from each skill's frontmatter (default true)",
+    (sk.get("herd", {}).get("user_invocable"), sk.get("quiet", {}).get("user_invocable")), (True, False))
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)

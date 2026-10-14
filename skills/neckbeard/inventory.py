@@ -402,6 +402,9 @@ def inventory_hooks(plugin_root, plugin_json):
     # CASE-STUDIES.md, round 14.
     if isinstance(hooks_ref, dict) and hooks_ref:
         rel, hooks_json = "plugin.json (inline hooks)", hooks_ref
+    elif isinstance(hooks_ref, list) and hooks_ref and all(isinstance(h, (str, dict)) for h in hooks_ref):
+        # A list of hook files (or inline objects): Claude Code merges them, and so do we.
+        return _merge_hook_list(plugin_root, hooks_ref)
     elif hooks_ref and not isinstance(hooks_ref, (str, dict)):
         return {"has_hooks": "unknown", "hooks_file": "plugin.json", "events": {},
                 "hook_scripts": None, "hook_registrations": None,
@@ -457,6 +460,44 @@ def inventory_hooks(plugin_root, plugin_json):
                                "expected an object of event names; read it by hand"}
 
     return _parse_events(events, rel, plugin_root)
+
+
+def _merge_hook_list(plugin_root, refs):
+    """plugin.json's "hooks" as a list: each entry is a path to a hooks file or an inline
+    object of events. Every path passes the same containment and parse checks as a single
+    file, and a bad entry makes the whole answer "unknown" rather than a quiet partial."""
+    merged, names = {}, []
+    for ref in refs:
+        if isinstance(ref, dict):
+            name, hooks_json = "plugin.json (inline hooks)", ref
+        else:
+            path = os.path.normpath(os.path.join(plugin_root, ref))
+            name = os.path.relpath(path, plugin_root)
+            if not _within(path, plugin_root):
+                return {"has_hooks": "unknown", "hooks_file": name, "events": {},
+                        "hook_scripts": None, "hook_registrations": None,
+                        "hooks_reach_subagents": None,
+                        "refused": "hooks file resolves outside the target tree; not read"}
+            hooks_json = read_json(path) if os.path.isfile(path) else None
+            if hooks_json is None:
+                return {"has_hooks": "unknown", "hooks_file": name, "events": {},
+                        "hook_scripts": None, "hook_registrations": None,
+                        "hooks_reach_subagents": None,
+                        "parse_error": "hooks file is missing or not valid JSON; read it by hand"}
+        events = hooks_json.get("hooks", hooks_json) if isinstance(hooks_json, dict) else None
+        if not isinstance(events, dict):
+            return {"has_hooks": "unknown", "hooks_file": name, "events": {},
+                    "hook_scripts": None, "hook_registrations": None,
+                    "hooks_reach_subagents": None,
+                    "parse_error": "hooks entry is not an object of event names; read it by hand"}
+        names.append(name)
+        for event, groups in events.items():
+            merged.setdefault(event, [])
+            if isinstance(groups, list):
+                merged[event].extend(groups)
+            else:
+                merged[event] = groups  # malformed: _parse_events reports it
+    return _parse_events(merged, ", ".join(names), plugin_root)
 
 
 def _parse_events(events, rel, plugin_root):
@@ -809,7 +850,37 @@ def contained_skill(sm, root):
                 "name": os.path.basename(os.path.dirname(sm)),
                 "description": None, "bytes": None, "text": None,
                 "refused": "resolves outside the target tree; not read"}
-    return rule_item(os.path.relpath(sm, root), sm)
+    item = rule_item(os.path.relpath(sm, root), sm)
+    if item:
+        fm, _ = split_frontmatter(item["text"])
+        # Claude Code treats a skill as user-invocable unless its frontmatter says false.
+        item["user_invocable"] = str((fm or {}).get("user-invocable", "true")).strip().lower() != "false"
+        item["companion_files"] = skill_companions(sm, root)
+    return item
+
+
+COMPANION_LIMIT = 40
+
+
+def skill_companions(sm, root):
+    """The other Markdown files in a skill's folder (roles/, sections/, references). A
+    SKILL.md often only points at them, so a judge that sees SKILL.md alone has to open
+    them by hand, and two runs then read different text. Contained and capped; a file
+    past the cap is listed by name with no text, so the dossier says what it left out."""
+    base = os.path.dirname(sm)
+    paths = sorted(p for p in glob.glob(os.path.join(base, "**", "*.md"), recursive=True)
+                   if os.path.abspath(p) != os.path.abspath(sm))
+    out = []
+    for i, p in enumerate(paths):
+        rel = os.path.relpath(p, root)
+        if not _within(p, root):
+            out.append({"path": rel, "text": None, "refused": "resolves outside the target tree; not read"})
+        elif i >= COMPANION_LIMIT:
+            out.append({"path": rel, "text": None, "skipped": f"more than {COMPANION_LIMIT} companion files"})
+        else:
+            text = read_text(p)
+            out.append({"path": rel, "text": text, **(measure(p, text) if text is not None else {})})
+    return out
 
 
 def inventory_skills(root):
