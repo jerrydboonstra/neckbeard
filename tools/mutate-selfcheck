@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""Which self-check cases fail when the code they guard is broken?
+
+    tools/mutate-selfcheck [--jobs N] [--limit N] [--out FILE]
+
+The Makefile says every self-check case has been seen to fail. This tests that claim in
+bulk: it makes copies of skills/neckbeard/inventory.py with one condition deleted (every
+`if` test replaced by False, then by True, and every and/or operand dropped), runs
+selfcheck.py against each copy in a scratch directory, and records which cases failed.
+A case that fails for no mutant guards nothing the mutations reach: strengthen its fixture
+or say why it cannot fail. The repo is never touched. A mutant whose selfcheck crashes or
+times out is counted as killed overall but credits no case, because the cases after a
+crash never ran. Run it on a test host (agentbay), not the Mac: it runs selfcheck hundreds of times.
+"""
+import argparse, ast, concurrent.futures as cf, json, os, re, shutil, subprocess, sys, tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SKILL = os.path.join(ROOT, "skills", "neckbeard")
+FAIL_RE = re.compile(r"^\s+FAIL\s+(.*?):", re.M)
+OK_RE = re.compile(r"^\s+ok\s+(.*?):", re.M)
+
+
+def mutants(src):
+    """(description, mutated source) pairs, one condition changed in each."""
+    tree = ast.parse(src)
+    lines = src.splitlines(keepends=True)
+    starts = [0]
+    for l in lines:
+        starts.append(starts[-1] + len(l))
+    # ast col offsets are UTF-8 bytes; work on bytes
+    b = src.encode()
+    off = lambda ln, col: len(src.splitlines(keepends=True)[ln - 1].encode()[:col].decode()) + starts[ln - 1]
+
+    def span(n):
+        return off(n.lineno, n.col_offset), off(n.end_lineno, n.end_col_offset)
+
+    out = []
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.If, ast.IfExp, ast.While)):
+            a, z = span(n.test)
+            for repl in ("False", "True"):
+                out.append((f"line {n.test.lineno}: condition -> {repl}", src[:a] + f"({repl})" + src[z:]))
+        elif isinstance(n, ast.BoolOp):
+            for i, v in enumerate(n.values):
+                keep = [x for j, x in enumerate(n.values) if j != i]
+                a, z = span(n)
+                sep = " and " if isinstance(n.op, ast.And) else " or "
+                text = sep.join("(" + ast.get_source_segment(src, x) + ")" for x in keep)
+                out.append((f"line {v.lineno}: operand {i + 1} of {type(n.op).__name__.lower()} dropped",
+                            src[:a] + "(" + text + ")" + src[z:]))
+    return out
+
+
+def run_one(item):
+    desc, text = item
+    d = tempfile.mkdtemp(prefix="mut-")
+    try:
+        shutil.copytree(SKILL, os.path.join(d, "n"), ignore=shutil.ignore_patterns("__pycache__"))
+        with open(os.path.join(d, "n", "inventory.py"), "w") as f:
+            f.write(text)
+        try:
+            r = subprocess.run([sys.executable, os.path.join(d, "n", "selfcheck.py")], capture_output=True,
+                               text=True, timeout=120)
+            return desc, r.returncode, sorted(set(FAIL_RE.findall(r.stdout))), "Traceback" in r.stderr
+        except subprocess.TimeoutExpired:
+            return desc, None, [], True
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--limit", type=int, default=0, help="only the first N mutants (a trial run)")
+    ap.add_argument("--out", help="write the full result as JSON")
+    a = ap.parse_args()
+    base = subprocess.run([sys.executable, os.path.join(SKILL, "selfcheck.py")], capture_output=True, text=True)
+    if base.returncode:
+        sys.exit("the unmutated selfcheck fails; fix that first")
+    cases = OK_RE.findall(base.stdout)
+    src = open(os.path.join(SKILL, "inventory.py")).read()
+    ms = mutants(src)
+    if a.limit:
+        ms = ms[:a.limit]
+    print(f"{len(cases)} cases, {len(ms)} mutants, {a.jobs} jobs", file=sys.stderr)
+    killed_by = {c: [] for c in cases}
+    survived, crashed = [], 0
+    with cf.ThreadPoolExecutor(a.jobs) as ex:
+        for desc, code, failed, crash in ex.map(run_one, ms):
+            for c in failed:
+                if c in killed_by:
+                    killed_by[c].append(desc)
+            if code == 0 and not failed:
+                survived.append(desc)
+            crashed += bool(crash)
+    never = [c for c, k in killed_by.items() if not k]
+    print(f"\nmutants: {len(ms)}; survived every case: {len(survived)}; crashed or timed out: {crashed}")
+    print(f"cases that no mutant made fail: {len(never)} of {len(cases)}")
+    for c in never:
+        print(f"  NEVER FAILS  {c}")
+    if a.out:
+        json.dump({"cases": killed_by, "survived": survived, "crashed": crashed}, open(a.out, "w"), indent=1)
+
+
+if __name__ == "__main__":
+    main()
