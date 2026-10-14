@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Fails if DIR (default: the repo root) has a top-level bin/. Claude Code puts a plugin's bin/ on every session's PATH,
+# and claude.ai Chat and Cowork refuse the whole plugin ("Can't be installed", claude.com/docs/plugins/platform-support).
+set -euo pipefail
+dir="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+if [ -e "$dir/bin" ] || [ -L "$dir/bin" ]; then
+  echo "check: $dir/bin exists. A plugin's top-level bin/ goes on every session's PATH and makes claude.ai Chat and Cowork refuse the plugin; put scripts in tools/" >&2
+  exit 1
+fi

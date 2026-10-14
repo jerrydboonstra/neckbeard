@@ -18,11 +18,12 @@ help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
 
 check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
-	@test ! -e bin || { echo "check: a plugin's top-level bin/ goes on every session's PATH and makes claude.ai Chat and Cowork refuse the plugin; put scripts in tools/"; exit 1; }
+	tools/check-no-bin
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
 	$(PYTHON) tools/test_deploy.py
 	$(PYTHON) tools/test_vet.py
+	$(PYTHON) tools/test_layout.py
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) tools/excerpts

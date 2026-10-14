@@ -6,7 +6,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
-- **The plugin has no top-level `bin/` at all.** 1.12.9 moved `excerpts` out but kept `bin/neckbeard`, so every session still got a `neckbeard` command on its PATH, and claude.ai Chat and Cowork still refused the whole plugin, because they reject any plugin with a top-level `bin/`. `bin/neckbeard`, a wrapper that only ran `skills/neckbeard/inventory.py`, is now `tools/neckbeard` (the skill itself always called `inventory.py` from its own folder). From a clone, run `tools/neckbeard <target>`. `make check` now fails if a top-level `bin/` comes back.
+- **The plugin has no top-level `bin/` at all.** 1.12.9 moved `excerpts` out but kept `bin/neckbeard`, so every session still got a `neckbeard` command on its PATH, and claude.ai Chat and Cowork still refused the whole plugin, because they reject any plugin with a top-level `bin/`. `bin/neckbeard`, a wrapper that only ran `skills/neckbeard/inventory.py`, is now `tools/neckbeard` (the skill itself has called `inventory.py` from its own folder since 1.12.2). Removed: a bare `neckbeard` command is no longer on your PATH. From a clone, run `tools/neckbeard <target>`. `make check` now fails if a top-level `bin/` comes back.
 
 ## 1.13.0 (2026-10-06)
 
