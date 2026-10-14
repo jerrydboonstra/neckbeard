@@ -868,8 +868,16 @@ def skill_companions(sm, root):
     them by hand, and two runs then read different text. Contained and capped; a file
     past the cap is listed by name with no text, so the dossier says what it left out."""
     base = os.path.dirname(sm)
-    paths = sorted(p for p in glob.glob(os.path.join(base, "**", "*.md"), recursive=True)
-                   if os.path.abspath(p) != os.path.abspath(sm))
+    paths = []
+    # os.walk does not follow directory symlinks, so a skill folder that links to itself
+    # cannot loop (a recursive glob does follow them, and ran until killed). It prunes the
+    # same directories find_files does, so vendored READMEs do not crowd out the real files.
+    for dirpath, dirnames, filenames in os.walk(base):
+        if dirpath[len(base):].count(os.sep) >= 6:
+            dirnames[:] = []
+        dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
+        paths += [os.path.join(dirpath, fn) for fn in sorted(filenames)
+                  if fn.endswith(".md") and os.path.abspath(os.path.join(dirpath, fn)) != os.path.abspath(sm)]
     out = []
     for i, p in enumerate(paths):
         rel = os.path.relpath(p, root)
