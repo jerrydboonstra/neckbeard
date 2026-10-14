@@ -18,6 +18,7 @@ help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
 
 check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
+	@test ! -e bin || { echo "check: a plugin's top-level bin/ goes on every session's PATH and makes claude.ai Chat and Cowork refuse the plugin; put scripts in tools/"; exit 1; }
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
 	$(PYTHON) tools/test_deploy.py

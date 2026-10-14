@@ -74,7 +74,7 @@ That gap is the point. A tool that catches plugins for running in the background
 Ask Claude to "vet this plugin" or "should I install X". From a clone, you can also run the inventory directly:
 
 ```bash
-bin/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
+tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
 ```
 
 `<target>` is one of:
