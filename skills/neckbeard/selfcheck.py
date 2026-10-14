@@ -444,5 +444,40 @@ chk("a marketplace.json that is not JSON says so",
     (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
     (0, "marketplace.json is not valid JSON; read it by hand"))
 
+# ---------------------------------------------------------------- 6. frontmatter strict YAML can't read
+# Claude Code is lenient, so the author never sees these; GitHub and stricter agents do.
+fe = inventory.frontmatter_errors
+chk("an unquoted ': ' in a description is flagged, with its line",
+    [(e["line"]) for e in fe("---\nname: x\ndescription: Use when: the user asks\n---\nBody\n")], [3])
+chk("a quoted description with ': ' is fine",
+    fe('---\nname: x\ndescription: "Use when: the user asks"\n---\n'), [])
+chk("a >- block with ': ' inside is fine",
+    fe("---\nname: x\ndescription: >-\n  Use when: the user asks\n  and more\n---\n"), [])
+chk("a continued unquoted value with ': ' is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: Use it\n  when: asked\n---\n")], [4])
+chk("a value that starts with @ is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: @mention people\n---\n")], [3])
+chk("a tab in indentation is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: >-\n\ttabbed\n---\n")], [4])
+chk("an unclosed quote is flagged",
+    [e["line"] for e in fe('---\nname: x\ndescription: "never closed\n---\n')], [3])
+chk("frontmatter that never closes is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: d\nBody with no fence\n")], [1])
+chk("a file with no frontmatter has no errors", fe("# Just a rule file\n\nUse when: asked\n"), [])
+
+code, d = run_cli(pack("fm-bad", {
+    ".claude-plugin/plugin.json": '{"name": "fb"}',
+    "skills/a/SKILL.md": "---\nname: a\ndescription: Use when: asked\n---\nDo a.\n",
+    "skills/b/SKILL.md": "---\nname: b\ndescription: fine\n---\nDo b.\n",
+    "commands/c.md": "---\ndescription: Run it: now\n---\nGo.\n",
+    "agents/d.md": "---\nname: d\ndescription: ok\n---\nYou are d.\n"}))
+t = (d or {}).get("target", {})
+chk("the dossier names each skill, command and agent whose frontmatter fails, and only those",
+    (code,
+     sorted(x["name"] for x in t.get("skills", []) if x.get("frontmatter_errors")),
+     [c["name"] for c in t.get("commands", []) if c.get("frontmatter_errors")],
+     [a["name"] for a in t.get("agents", []) if a.get("frontmatter_errors")]),
+    (0, ["a"], ["c"], []))
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)

@@ -147,6 +147,68 @@ def split_frontmatter(text):
     return fm, body.strip()
 
 
+# A plain (unquoted) value may not start with one of these in strict YAML.
+_YAML_RESERVED_START = ("@", "`", "*", "&")
+
+
+def frontmatter_errors(text):
+    """Faults a strict YAML parser rejects in a file's frontmatter, as [{"line", "message"}].
+
+    Claude Code loads frontmatter leniently, so an unquoted ": " in a description works
+    there while GitHub shows "Error in user YAML" and stricter agents may drop the skill.
+    This is not a YAML parser (the standard library has none, and CONTRIBUTING.md allows no
+    dependency); it checks the faults seen in real repos. Line numbers count from the file's first line.
+    # debt: misses flow collections ([a, b] and {a: b}), anchors used as values and duplicate
+    keys; the upgrade path is a vendored strict parser behind this same function."""
+    if not text or not text.startswith("---"):
+        return []
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return []
+    close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if close is None:
+        return [{"line": 1, "message": "the opening --- has no closing ---"}]
+    errs, block, plain = [], False, False
+    for i in range(1, close):
+        line, n = lines[i], i + 1
+        if "\t" in line[:len(line) - len(line.lstrip())]:
+            errs.append({"line": n, "message": "a tab is used for indentation; YAML allows only spaces"})
+            continue
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        top = re.match(r"^([A-Za-z_][\w-]*):(?:\s+(.*))?$", line)
+        if top and not line.startswith(" "):
+            val = (top.group(2) or "").strip()
+            block, plain = val[:1] in (">", "|"), False
+            if not val or block:
+                continue
+            if val[0] in "\"'":
+                if val.count(val[0]) < 2 and not any(val[0] in l for l in lines[i + 1:close]):
+                    errs.append({"line": n, "message": f"a {val[0]} opened here is never closed"})
+                continue
+            if val[0] in "[{":
+                continue
+            plain = True
+            if val[0] in _YAML_RESERVED_START:
+                errs.append({"line": n, "message": f"a plain value may not start with {val[0]}; quote it"})
+            elif ": " in val or val.endswith(":"):
+                errs.append({"line": n, "message": "an unquoted value holds ': ', which strict YAML reads as a "
+                                                    "nested mapping; quote the value or use a >- block"})
+        elif line.startswith(" ") and plain and not block:
+            if ": " in line.strip() or line.strip().endswith(":"):
+                errs.append({"line": n, "message": "a continued unquoted value holds ': '; "
+                                                    "quote the value or use a >- block"})
+    return errs
+
+
+def note_frontmatter(item):
+    """Attach frontmatter_errors to a target's skill, command or agent, only when there are some."""
+    errs = frontmatter_errors(item.get("text"))
+    if errs:
+        item["frontmatter_errors"] = errs
+    return item
+
+
 def find_up(start, filename):
     """Walk up from start looking for filename; stop at $HOME or filesystem root."""
     d = os.path.abspath(start)
@@ -809,7 +871,8 @@ def contained_skill(sm, root):
                 "name": os.path.basename(os.path.dirname(sm)),
                 "description": None, "bytes": None, "text": None,
                 "refused": "resolves outside the target tree; not read"}
-    return rule_item(os.path.relpath(sm, root), sm)
+    it = rule_item(os.path.relpath(sm, root), sm)
+    return note_frontmatter(it) if it else it
 
 
 def inventory_skills(root):
@@ -848,6 +911,7 @@ def inventory_commands_agents(root):
                 continue
             it = rule_item(source, p)
             if it:
+                note_frontmatter(it)
                 it["path"] = os.path.relpath(p, root)
                 out.append(it)
         return out
