@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# vet-repeat TARGET OUTDIR N [vet options]: run tools/vet on one unchanged target N times, one report per run
+# (OUTDIR/run-1.md ... run-N.md), then tools/vet-stability on them. Each run is a real judge session, so N runs
+# cost N times one: run it where the credit is, and not on the Mac (a test host such as agentbay).
+# Exit 0 when every run passed vet's own checks and the reports agree, 1 when they differ or a run failed.
+set -u
+here=$(cd "$(dirname "$0")" && pwd)
+vet=${VET_SCRIPT:-$here/vet}
+[ $# -ge 3 ] || { echo "usage: tools/vet-repeat TARGET OUTDIR N [vet options]" >&2; exit 2; }
+target=$1 outdir=$2 n=$3; shift 3
+case $n in ''|*[!0-9]*|0) echo "vet-repeat: N must be a whole number of 2 or more" >&2; exit 2 ;; esac
+[ "$n" -ge 2 ] || { echo "vet-repeat: N must be 2 or more" >&2; exit 2; }
+mkdir -p "$outdir" || exit 2
+failed=0 reports=()
+for i in $(seq 1 "$n"); do
+  echo "vet-repeat: run $i of $n" >&2
+  if "$vet" "$target" "$outdir/run-$i.md" "$@"; then reports+=("$outdir/run-$i.md"); else echo "vet-repeat: run $i failed" >&2; failed=$((failed + 1)); fi
+done
+[ "${#reports[@]}" -ge 2 ] || { echo "vet-repeat: fewer than two runs produced a report" >&2; exit 1; }
+python3 "$here/vet-stability" "${reports[@]}" || failed=$((failed + 1))
+[ "$failed" -eq 0 ]

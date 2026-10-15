@@ -73,4 +73,30 @@ rc, out = run("# no banner here\n", report("INSTALL", [A]))
 chk("a report with no verdict banner is refused", rc == 2 and "no verdict banner" in out, out)
 rc, out = run(report("INSTALL", [A]))
 chk("one report is a usage error", rc == 2, out)
+
+# vet-repeat, with a stub for tools/vet that writes the next canned report
+d = tempfile.mkdtemp()
+canned = [report("INSTALL", [A]), report("INSTALL", [A]), report("COPY RULES, SKIP PLUGIN", [A, B])]
+for i, t in enumerate(canned):
+    open(os.path.join(d, f"canned{i}"), "w").write(t)
+stub = os.path.join(d, "stub-vet")
+open(stub, "w").write(f"""#!/usr/bin/env bash
+n=$(cat {d}/count 2>/dev/null || echo 0); echo $((n + 1)) > {d}/count
+[ -n "$STUB_FAIL_RUN" ] && [ "$STUB_FAIL_RUN" = "$((n + 1))" ] && exit 1
+cp {d}/canned$n "$2"
+""")
+os.chmod(stub, 0o755)
+def repeat(n, **env):
+    open(os.path.join(d, "count"), "w").write("0")
+    r = subprocess.run([os.path.join(HERE, "vet-repeat"), "tgt", os.path.join(d, "out"), str(n)], capture_output=True, text=True,
+                       env={**os.environ, "VET_SCRIPT": stub, **env})
+    return r.returncode, r.stdout + r.stderr
+rc, out = repeat(2)
+chk("vet-repeat of two agreeing runs is stable", rc == 0 and "stable" in out, out)
+rc, out = repeat(3)
+chk("vet-repeat of three disagreeing runs exits 1 and shows the spread", rc == 1 and "INSTALL in 2 of 3" in out, out)
+rc, out = repeat(3, STUB_FAIL_RUN="3")
+chk("a failed run is reported and fails the repeat, the others still compared", rc == 1 and "run 3 failed" in out and "2 reports" in out, out)
+rc, out = repeat(1)
+chk("N of 1 is refused", rc == 2, out)
 sys.exit(1 if fails else 0)
