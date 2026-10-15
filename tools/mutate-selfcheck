@@ -16,8 +16,15 @@ import argparse, ast, concurrent.futures as cf, json, os, re, shutil, subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, "skills", "neckbeard")
-CHK_LINES = [(i + 1, m.group(1)) for i, l in enumerate(open(os.path.join(SKILL, "selfcheck.py")))
-             for m in [re.match(r'\s*chk\("([^"]+)"', l)] if m]
+def _chk_calls():
+    """(first line, last line, case name) of every chk("name", ...) call in selfcheck.py."""
+    tree = ast.parse(open(os.path.join(SKILL, "selfcheck.py")).read())
+    return sorted((n.lineno, n.end_lineno, n.args[0].value) for n in ast.walk(tree)
+                  if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "chk" and n.args
+                  and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str))
+
+
+CHK_CALLS = _chk_calls()
 FAIL_RE = re.compile(r"^\s+FAIL\s+(.*?):", re.M)
 OK_RE = re.compile(r"^\s+ok\s+(.*?):", re.M)
 
@@ -68,7 +75,10 @@ def run_one(item):
             if crash:
                 # A crash stops selfcheck at the case being set up; credit that case.
                 lines = [int(n) for n in re.findall(r'selfcheck\.py", line (\d+)', r.stderr)]
-                nxt = next((c for ln, c in CHK_LINES if lines and ln >= lines[-1]), None)
+                # The case whose call holds the crashing line, else the next case (a crash in its setup).
+                at = lines[-1] if lines else None
+                nxt = next((c for a0, a1, c in CHK_CALLS if at and a0 <= at <= a1), None) or \
+                    next((c for a0, a1, c in CHK_CALLS if at and a0 >= at), None)
                 if nxt:
                     failed.add(nxt)
             return desc, r.returncode, sorted(failed), crash
