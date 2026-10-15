@@ -514,5 +514,57 @@ chk("vendored folders are pruned, and past 40 files the rest are named with no t
 chk("user-invocable is read from each skill's frontmatter (default true)",
     (sk.get("herd", {}).get("user_invocable"), sk.get("quiet", {}).get("user_invocable")), (True, False))
 
+# ---------------------------------------------------------------- 7. frontmatter strict YAML can't read
+# Claude Code is lenient, so the author never sees these; GitHub and stricter agents do.
+fe = inventory.frontmatter_errors
+chk("an unquoted ': ' in a description is flagged, with its line",
+    [(e["line"]) for e in fe("---\nname: x\ndescription: Use when: the user asks\n---\nBody\n")], [3])
+chk("a quoted description with ': ' is fine",
+    fe('---\nname: x\ndescription: "Use when: the user asks"\n---\n'), [])
+chk("a >- block with ': ' inside is fine",
+    fe("---\nname: x\ndescription: >-\n  Use when: the user asks\n  and more\n---\n"), [])
+chk("a continued unquoted value with ': ' is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: Use it\n  when: asked\n---\n")], [4])
+chk("a value that starts with @ is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: @mention people\n---\n")], [3])
+chk("a tab in indentation is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: >-\n\ttabbed\n---\n")], [4])
+chk("an unclosed quote is flagged",
+    [e["line"] for e in fe('---\nname: x\ndescription: "never closed\n---\n')], [3])
+chk("frontmatter that never closes is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: d\nBody with no fence\n")], [1])
+chk("a file with no frontmatter has no errors", fe("# Just a rule file\n\nUse when: asked\n"), [])
+
+# What a reviewer found PyYAML rejecting that the first version passed, and a value it wrongly flagged.
+bad = lambda v: [e["line"] for e in fe(f"---\nname: x\ndescription: {v}\n---\n")]
+chk("a value with a trailing comment holding ': ' is valid", bad("foo # bar: baz"), [])
+chk("an apostrophe inside a single-quoted value is flagged", bad("'it's here'"), [3])
+chk("a doubled '' inside a single-quoted value is fine", bad("'it''s here'"), [])
+chk("text after a closing quote is flagged", bad('"foo" bar'), [3])
+chk("a plain value starting with % ! '- ' or '? ' is flagged", [bad(v) for v in ("%x", "!t x", "- x", "? x")], [[3]] * 4)
+chk("text after a block header is flagged, a comment after it is not", (bad("> foo"), bad(">- # c")), ([3], []))
+chk("an unclosed flow collection is flagged, a closed one is not", (bad("[a"), bad("{a: b"), bad("[a, b]")), ([3], [3], []))
+chk("a nested mapping value holding ': ' is flagged",
+    [e["line"] for e in fe("---\nname: x\nmetadata:\n  short: Use when: x\n---\n")], [4])
+chk("a quoted value that runs over two lines is fine",
+    fe('---\nname: x\ndescription: "one\n  two"\n---\n'), [])
+chk("an unclosed quote is not hidden by a later line holding the same quote character (flagged where the stray quote closes it)",
+    [e["line"] for e in fe('---\nname: x\ndescription: "never\nother: say "hi"\n---\n')], [4])
+chk("an anchor on a value is valid YAML and is not flagged", bad("&a text"), [])
+
+code, d = run_cli(pack("fm-bad", {
+    ".claude-plugin/plugin.json": '{"name": "fb"}',
+    "skills/a/SKILL.md": "---\nname: a\ndescription: Use when: asked\n---\nDo a.\n",
+    "skills/b/SKILL.md": "---\nname: b\ndescription: fine\n---\nDo b.\n",
+    "commands/c.md": "---\ndescription: Run it: now\n---\nGo.\n",
+    "agents/d.md": "---\nname: d\ndescription: ok\n---\nYou are d.\n"}))
+t = (d or {}).get("target", {})
+chk("the dossier names each skill, command and agent whose frontmatter fails, and only those",
+    (code,
+     sorted(x["name"] for x in t.get("skills", []) if x.get("frontmatter_errors")),
+     [c["name"] for c in t.get("commands", []) if c.get("frontmatter_errors")],
+     [a["name"] for a in t.get("agents", []) if a.get("frontmatter_errors")]),
+    (0, ["a"], ["c"], []))
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
