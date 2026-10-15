@@ -6,7 +6,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
-- **`make mutate` tests the claim that every self-check case has been seen to fail.** `tools/mutate-selfcheck` makes 452 copies of `inventory.py` with one condition deleted each, runs the self-check against every copy and lists the cases that no copy made fail; `--targeted` breaks by hand the behaviours generic mutation cannot reach (a merge order, a regex). The first run found 8 of 59 cases that never failed. Two were weak or duplicated: "local true overrides project false" passed with every later settings layer ignored, because its final value equalled the global one (its fixture now uses a key the global layer never sets), and "no settings anywhere" needed its own hand-made break (`return merged or None`). The other six fail under the hand-made sabotages. It is heavy (10 jobs, several minutes), so it is not part of `make check`.
+- **`make mutate` tests the claim that every self-check case has been seen to fail.** `tools/mutate-selfcheck` makes 452 copies of `inventory.py` with one condition deleted each, runs the self-check against every copy and lists the cases that no copy made fail; `--targeted` breaks by hand the behaviours generic mutation cannot reach (a merge order, a regex). The first run found 8 of 59 cases that never failed. One was weak: "local true overrides project false" passed with every later settings layer ignored, because its final value equalled the global one (its fixture now uses a key the global layer never sets). The other seven, "no settings anywhere" among them, fail under the hand-made sabotages. It is heavy (10 jobs, several minutes), so it is not part of `make check`.
 
 ## 1.13.0 (2026-10-06)
 
