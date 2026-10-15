@@ -17,6 +17,7 @@ VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugi
 	deploy \
 	excerpts \
 	help \
+	mutate \
 	release \
 	release-notes
 
@@ -28,6 +29,10 @@ check: ## run the self-check (every case has been seen to fail), and check CASE-
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
 	@for t in tools/test_*.py; do echo "$$t"; $(PYTHON) $$t || exit 1; done
+
+mutate: ## break inventory.py a few hundred ways and list the self-check cases no break makes fail (heavy: run it under testslot on a test host)
+	$(PYTHON) tools/mutate-selfcheck --jobs 10
+	$(PYTHON) tools/mutate-selfcheck --targeted
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) tools/excerpts

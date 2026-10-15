@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""Which self-check cases fail when the code they guard is broken?
+
+    tools/mutate-selfcheck [--jobs N] [--limit N] [--out FILE] [--targeted]
+
+The Makefile says every self-check case has been seen to fail. This tests that claim in
+bulk: it makes copies of skills/neckbeard/inventory.py with one condition deleted (every
+`if` test replaced by False, then by True, and every and/or operand dropped), runs
+selfcheck.py against each copy in a scratch directory, and records which cases failed.
+A case that fails for no mutant guards nothing the mutations reach: strengthen its fixture
+or say why it cannot fail. The repo is never touched. A mutant whose selfcheck crashes or
+times out is counted as killed overall; a crash is credited to the case that was running, the
+one after the last case selfcheck printed (so loop-driven cases and helper frames count too).
+`--table` prints one killing mutant per case. Run it on a test host (agentbay), not the Mac: it runs selfcheck hundreds of times.
+"""
+import argparse, ast, concurrent.futures as cf, json, os, re, shutil, subprocess, sys, tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SKILL = os.path.join(ROOT, "skills", "neckbeard")
+FAIL_RE = re.compile(r"^\s+FAIL\s+(.*?):", re.M)
+OK_RE = re.compile(r"^\s+ok\s+(.*?):", re.M)
+CASE_RE = re.compile(r"^\s+(?:ok|FAIL)\s+(.*?):", re.M)
+ORDER = []  # case names in the order the unmutated selfcheck prints them; set by main()
+
+
+def crashed_case(stdout, order):
+    """The case a crash belongs to: the one after the last case selfcheck printed."""
+    done = CASE_RE.findall(stdout)
+    i = order.index(done[-1]) + 1 if done and done[-1] in order else 0
+    return order[i] if i < len(order) else None
+
+
+def mutants(src):
+    """(description, mutated source) pairs, one condition changed in each."""
+    tree = ast.parse(src)
+    lines = src.splitlines(keepends=True)
+    starts = [0]
+    for l in lines:
+        starts.append(starts[-1] + len(l))
+    # ast col offsets are UTF-8 bytes; work on bytes
+    off = lambda ln, col: len(src.splitlines(keepends=True)[ln - 1].encode()[:col].decode()) + starts[ln - 1]
+
+    def span(n):
+        return off(n.lineno, n.col_offset), off(n.end_lineno, n.end_col_offset)
+
+    out = []
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.If, ast.IfExp, ast.While)):
+            a, z = span(n.test)
+            for repl in ("False", "True"):
+                out.append((f"line {n.test.lineno}: condition -> {repl}", src[:a] + f"({repl})" + src[z:]))
+        elif isinstance(n, ast.BoolOp):
+            for i, v in enumerate(n.values):
+                keep = [x for j, x in enumerate(n.values) if j != i]
+                a, z = span(n)
+                sep = " and " if isinstance(n.op, ast.And) else " or "
+                text = sep.join("(" + ast.get_source_segment(src, x) + ")" for x in keep)
+                out.append((f"line {v.lineno}: operand {i + 1} of {type(n.op).__name__.lower()} dropped",
+                            src[:a] + "(" + text + ")" + src[z:]))
+    return out
+
+
+def run_one(item):
+    desc, text = item
+    d = tempfile.mkdtemp(prefix="mut-")
+    try:
+        shutil.copytree(SKILL, os.path.join(d, "n"), ignore=shutil.ignore_patterns("__pycache__"))
+        with open(os.path.join(d, "n", "inventory.py"), "w") as f:
+            f.write(text)
+        try:
+            r = subprocess.run([sys.executable, os.path.join(d, "n", "selfcheck.py")], capture_output=True,
+                               text=True, timeout=120)
+            failed = set(FAIL_RE.findall(r.stdout))
+            crash = "Traceback" in r.stderr
+            if crash:
+                nxt = crashed_case(r.stdout, ORDER)
+                if nxt:
+                    failed.add(nxt)
+            return desc, r.returncode, sorted(failed), crash
+        except subprocess.TimeoutExpired:
+            return desc, None, [], True
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+# Cases no generic mutation reaches, because the guarded behaviour is a merge order, a regex or
+# two layers of defence. Each is broken by hand: (case, [(old, new), ...]); every old snippet
+# must occur once in inventory.py, and the case must then fail or crash selfcheck.
+TARGETED = [
+    ("project false overrides global true", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
+    ("local true overrides project false", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
+    # The first two edits here also break "no settings anywhere" only through the case before it;
+    # its own sabotage is the one below.
+    ("no settings anywhere", [("    return merged\n", "    return merged or None\n")]),
+    ("a project with NO .claude/ still sees a global enable", [("        if not os.path.isfile(settings_path):\n            continue\n", ""),
+                              ("    except Exception:\n        return None\n\n\nREAD_LIMIT", "    except ValueError:\n        return None\n\n\nREAD_LIMIT")]),
+    ("enabledPlugins of the wrong type is ignored", [("if isinstance(got, dict):\n            merged.update(got)", "if got is not None:\n            merged.update(got)")]),
+    ("unparseable JSON is ignored", [("            continue\n        got = layer.get(\"enabledPlugins\") if isinstance(layer, dict) else None",
+                                      "            pass\n        got = layer.get(\"enabledPlugins\")")]),
+    ("settings with no enabledPlugins key", [("got = layer.get(\"enabledPlugins\") if isinstance(layer, dict) else None", "got = layer[\"enabledPlugins\"]")]),
+    ("an @ inside a code block is not an import", [('text = _CODE_RE.sub(" ", read_text(path) or "")', 'text = read_text(path) or ""')]),
+    ("an email address is not an import", [('r"(?:^|(?<=\\s))@(\\S+)"', 'r"@(\\S+)"')]),
+]
+
+
+def targeted():
+    src = open(os.path.join(SKILL, "inventory.py")).read()
+    items = []
+    for case, subs in TARGETED:
+        text = src
+        for old, new in subs:
+            if text.count(old) != 1:
+                sys.exit(f"targeted sabotage for {case!r}: {old[:50]!r} occurs {text.count(old)} times; update TARGETED")
+            text = text.replace(old, new)
+        items.append((case, text))
+    print(f"{'case':58} failed?")
+    bad = 0
+    for case, text in items:
+        _, _, failed, _ = run_one((case, text))
+        ok = case in failed
+        bad += not ok
+        print(f"{case:58} {'yes' if ok else 'NO'}")
+    sys.exit(1 if bad else 0)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--limit", type=int, default=0, help="only the first N mutants (a trial run)")
+    ap.add_argument("--out", help="write the full result as JSON")
+    ap.add_argument("--table", action="store_true", help="print one killing mutant per case")
+    ap.add_argument("--targeted", action="store_true", help="only the hand-made sabotages for cases no generic mutant reaches")
+    a = ap.parse_args()
+    base = subprocess.run([sys.executable, os.path.join(SKILL, "selfcheck.py")], capture_output=True, text=True)
+    if base.returncode:
+        sys.exit("the unmutated selfcheck fails; fix that first")
+    cases = OK_RE.findall(base.stdout)
+    ORDER[:] = cases
+    if a.targeted:
+        targeted()
+    src = open(os.path.join(SKILL, "inventory.py")).read()
+    ms = mutants(src)
+    if a.limit:
+        ms = ms[:a.limit]
+    print(f"{len(cases)} cases, {len(ms)} mutants, {a.jobs} jobs", file=sys.stderr)
+    killed_by = {c: [] for c in cases}
+    survived, crashed = [], 0
+    with cf.ThreadPoolExecutor(a.jobs) as ex:
+        for desc, code, failed, crash in ex.map(run_one, ms):
+            for c in failed:
+                if c in killed_by:
+                    killed_by[c].append(desc)
+            if code == 0 and not failed:
+                survived.append(desc)
+            crashed += bool(crash)
+    never = [c for c, k in killed_by.items() if not k]
+    print(f"\nmutants: {len(ms)}; survived every case: {len(survived)}; crashed or timed out: {crashed}")
+    print(f"cases that no mutant made fail: {len(never)} of {len(cases)}")
+    for c in never:
+        print(f"  NEVER FAILS  {c}")
+    if a.table:
+        print(f"\n{'case':64} killed by (first of N)")
+        for c in cases:
+            k = killed_by[c]
+            print(f"{c:64} {k[0] + f' (+{len(k) - 1})' if k else 'NEVER'}")
+    if a.out:
+        json.dump({"cases": killed_by, "survived": survived, "crashed": crashed}, open(a.out, "w"), indent=1)
+
+
+if __name__ == "__main__":
+    main()
