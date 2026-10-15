@@ -6,7 +6,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
-- **`tools/vet-stability` shows how far repeated reports agree.** Give it two or more reports for one unchanged target and it prints each verdict and count line, then every conflict with how many reports found it ("found in 4 of 5"), and exits 1 when the verdicts or the conflict lists differ. A conflict is matched by the file it comes from and the rule it collides with, not by wording, since the judge words one finding differently each run. It needs only python3, so it costs no model run. `tools/vet-repeat TARGET OUTDIR N` runs `tools/vet` N times and then this (each run is a real judge session). This is the measuring half of `verdict-stability`; the measured runs and the judge changes follow.
+- **`tools/vet-stability` shows how far repeated reports agree.** Give it two or more reports for one unchanged target and it prints each verdict and count line, then every conflict with how many reports found it ("found in 4 of 5"), and exits 1 when the verdicts or the conflict lists differ. A conflict is matched by the rule it collides with (the rule file and number in "held in", punctuation ignored) and, when the "it says" cell names one, the file it comes from, never by wording, since the judge words one finding differently each run. Two findings from one file against one rule count as one, and the output says so. It needs only python3, so it costs no model run. `tools/vet-repeat TARGET OUTDIR N` runs `tools/vet` N times and then this (each run is a real judge session). This is the measuring half of `verdict-stability`; the measured runs and the judge changes follow.
 
 ## 1.13.0 (2026-10-06)
 

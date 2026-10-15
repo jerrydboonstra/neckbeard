@@ -8,9 +8,11 @@ and the five counts of each, then every conflict with the number of reports that
 ("found in 4 of 5"). Needs only python3: no claude, no login, no model cost. Exit 0 when every
 report has the same verdict and the same conflict list, 1 when they differ, 2 on bad input.
 
-A conflict is identified by where it comes from and what it collides with (the file named in
-its "it says" cell and the rule named in "held in"), not by its wording, since the judge words
-the same finding differently each run.
+A conflict is identified by what it collides with, not by its wording, since the judge words
+the same finding differently each run: the rule file and rule number in the "held in" cell
+(punctuation ignored), plus the file in the "it says" cell when it names one. A report whose
+"it says" cell names no file is keyed on "held in" alone. Two different findings from one file
+against one rule count as one; the output says so when a report's conflict count is larger.
 """
 import collections, re, sys
 
@@ -22,6 +24,15 @@ COUNT_RE = re.compile(r"^\| \S+ \| \*\*(conflicts|already covered|new, standing 
 LABEL = {"conflicts": "conflicts", "already covered": "covered", "new, standing rule": "new standing",
          "new, on-demand skill": "new skill", "dropped": "dropped"}
 PATH_RE = re.compile(r"\(`([^`]+)`\)")
+TICK_RE = re.compile(r"`([^`]+)`")
+RULE_RE = re.compile(r"rules?\s*(\d+)", re.I)
+
+
+def held_key(cell):
+    """The rule file(s) and rule number(s) a "held in" cell names, whatever punctuation surrounds them."""
+    paths = sorted(TICK_RE.findall(cell))
+    rules = sorted(RULE_RE.findall(cell))
+    return " ".join(paths + [f"rule {r}" for r in rules]) or re.sub(r"\W+", " ", cell.lower()).strip()
 
 
 def conflicts_section(text):
@@ -41,8 +52,8 @@ def parse(path):
         cells = [c.strip() for c in row.strip().strip("|").split("|")]
         if len(cells) >= 4 and cells[0].isdigit():
             src = PATH_RE.search(cells[1])
-            keys.append((src.group(1) if src else cells[1][:60], cells[3]))
-    return v.group(1).strip(), counts, keys
+            keys.append((src.group(1) if src else "", held_key(cells[3])))
+    return v.group(1).strip(), counts, keys, len(keys)
 
 
 def main(paths):
@@ -52,17 +63,18 @@ def main(paths):
     runs = [parse(p) for p in paths]
     n = len(runs)
     print(f"{n} reports")
-    for p, (verdict, counts, keys) in zip(paths, runs):
+    for p, (verdict, counts, keys, rows) in zip(paths, runs):
         print(f"  {p}: {verdict}; " + " / ".join(f"{counts.get(r, '?')}" for r in SORT_ROWS) + "  (conflicts / covered / new standing / new skill / dropped)")
-    verdicts = collections.Counter(v for v, _, _ in runs)
+        if rows != len(set(keys)):
+            print(f"    note: {rows} conflict rows but {len(set(keys))} distinct sources and rules; rows that share both are counted once")
+    verdicts = collections.Counter(v for v, _, _, _ in runs)
     print("verdicts: " + ", ".join(f"{v} in {c} of {n}" for v, c in verdicts.most_common()))
-    seen = collections.Counter(k for _, _, keys in runs for k in set(keys))
-    same_conflicts = all(c == n for c in seen.values())
-    for k, c in seen.most_common():
-        print(f"  conflict found in {c} of {n}: {k[0]}  vs  {k[1]}")
+    seen = collections.Counter(k for _, _, keys, _ in runs for k in set(keys))
+    for (src, held), c in seen.most_common():
+        print(f"  conflict found in {c} of {n}: {src + '  vs  ' if src else ''}{held}")
     if not seen:
         print("  no conflicts in any report")
-    stable = len(verdicts) == 1 and same_conflicts
+    stable = len(verdicts) == 1 and all(c == n for c in seen.values())
     print("stable" if stable else "NOT stable: the reports disagree")
     return 0 if stable else 1
 

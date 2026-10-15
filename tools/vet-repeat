@@ -17,5 +17,7 @@ for i in $(seq 1 "$n"); do
   if "$vet" "$target" "$outdir/run-$i.md" "$@"; then reports+=("$outdir/run-$i.md"); else echo "vet-repeat: run $i failed" >&2; failed=$((failed + 1)); fi
 done
 [ "${#reports[@]}" -ge 2 ] || { echo "vet-repeat: fewer than two runs produced a report" >&2; exit 1; }
-python3 "$here/vet-stability" "${reports[@]}" || failed=$((failed + 1))
+python3 "$here/vet-stability" "${reports[@]}"; rc=$?
+[ "$rc" -eq 2 ] && exit 2   # unparseable report: not the same as unstable
+[ "$rc" -eq 0 ] || failed=$((failed + 1))
 [ "$failed" -eq 0 ]
