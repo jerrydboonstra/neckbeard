@@ -134,10 +134,10 @@ def main():
     base = subprocess.run([sys.executable, os.path.join(SKILL, "selfcheck.py")], capture_output=True, text=True)
     if base.returncode:
         sys.exit("the unmutated selfcheck fails; fix that first")
-    if a.targeted:
-        targeted()
     cases = OK_RE.findall(base.stdout)
     ORDER[:] = cases
+    if a.targeted:
+        targeted()
     src = open(os.path.join(SKILL, "inventory.py")).read()
     ms = mutants(src)
     if a.limit:
