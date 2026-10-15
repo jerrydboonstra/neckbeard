@@ -147,8 +147,52 @@ def split_frontmatter(text):
     return fm, body.strip()
 
 
-# A plain (unquoted) value may not start with one of these in strict YAML.
-_YAML_RESERVED_START = ("@", "`", "*", "&")
+# A plain (unquoted) value may not start with these in strict YAML.
+_YAML_PLAIN_BAD_START = ("@", "`", "*", "%", "!", "- ", "? ")
+_BLOCK_HEADER_RE = re.compile(r"^[+\-0-9]*\s*(#.*)?$")
+
+
+def _quoted_end(text, q, start=1):
+    """Index of the quote that closes a quoted scalar opened before `start`, or -1.
+    A double-quoted scalar escapes with a backslash, a single-quoted one by doubling the quote."""
+    i = start
+    while i < len(text):
+        c = text[i]
+        if q == '"' and c == "\\":
+            i += 2
+            continue
+        if c == q:
+            if q == "'" and text[i + 1:i + 2] == "'":
+                i += 2
+                continue
+            return i
+        i += 1
+    return -1
+
+
+def _flow_depth(text, depth):
+    """Bracket depth after `text`, ignoring quoted parts; text after depth reaches 0 is returned too."""
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c in "\"'":
+            e = _quoted_end(text, c, i + 1)
+            if e < 0:
+                return depth, ""
+            i = e
+        elif c in "[{":
+            depth += 1
+        elif c in "]}":
+            depth -= 1
+            if depth <= 0:
+                return 0, text[i + 1:]
+        i += 1
+    return depth, ""
+
+
+def _after_value_ok(rest):
+    rest = rest.strip()
+    return not rest or rest.startswith("#")
 
 
 def frontmatter_errors(text):
@@ -157,9 +201,11 @@ def frontmatter_errors(text):
     Claude Code loads frontmatter leniently, so an unquoted ": " in a description works
     there while GitHub shows "Error in user YAML" and stricter agents may drop the skill.
     This is not a YAML parser (the standard library has none, and CONTRIBUTING.md allows no
-    dependency); it checks the faults seen in real repos. Line numbers count from the file's first line.
-    # debt: misses flow collections ([a, b] and {a: b}), anchors used as values and duplicate
-    keys; the upgrade path is a vendored strict parser behind this same function."""
+    dependency); it checks the faults seen in real repos, and was compared with PyYAML on
+    them. Line numbers count from the file's first line.
+    # debt: misses a bad value inside a flow collection ([a, b: c]), anchors, aliases and
+    tags used as values, duplicate keys, list items (`- key: a: b`), and a stray ' or " in the
+    middle of a plain value; the upgrade path is a vendored strict parser behind this same function."""
     if not text or not text.startswith("---"):
         return []
     lines = text.splitlines()
@@ -168,36 +214,78 @@ def frontmatter_errors(text):
     close = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
     if close is None:
         return [{"line": 1, "message": "the opening --- has no closing ---"}]
-    errs, block, plain = [], False, False
-    for i in range(1, close):
+    errs = []
+
+    def err(n, msg):
+        errs.append({"line": n, "message": msg})
+
+    mode, key_indent = None, 0   # mode: None, "block", "plain"
+    i = 1
+    while i < close:
         line, n = lines[i], i + 1
-        if "\t" in line[:len(line) - len(line.lstrip())]:
-            errs.append({"line": n, "message": "a tab is used for indentation; YAML allows only spaces"})
+        indent = len(line) - len(line.lstrip())
+        if "\t" in line[:indent]:
+            err(n, "a tab is used for indentation; YAML allows only spaces")
+            i += 1
             continue
         if not line.strip() or line.lstrip().startswith("#"):
+            i += 1
             continue
-        top = re.match(r"^([A-Za-z_][\w-]*):(?:\s+(.*))?$", line)
-        if top and not line.startswith(" "):
-            val = (top.group(2) or "").strip()
-            block, plain = val[:1] in (">", "|"), False
-            if not val or block:
-                continue
-            if val[0] in "\"'":
-                if val.count(val[0]) < 2 and not any(val[0] in l for l in lines[i + 1:close]):
-                    errs.append({"line": n, "message": f"a {val[0]} opened here is never closed"})
-                continue
-            if val[0] in "[{":
-                continue
-            plain = True
-            if val[0] in _YAML_RESERVED_START:
-                errs.append({"line": n, "message": f"a plain value may not start with {val[0]}; quote it"})
-            elif ": " in val or val.endswith(":"):
-                errs.append({"line": n, "message": "an unquoted value holds ': ', which strict YAML reads as a "
-                                                    "nested mapping; quote the value or use a >- block"})
-        elif line.startswith(" ") and plain and not block:
-            if ": " in line.strip() or line.strip().endswith(":"):
-                errs.append({"line": n, "message": "a continued unquoted value holds ': '; "
-                                                    "quote the value or use a >- block"})
+        if mode == "block" and indent > key_indent:
+            i += 1
+            continue
+        if mode == "plain" and indent > key_indent:
+            body = re.split(r"\s#", line.strip())[0].rstrip()
+            if ": " in body or body.endswith(":"):
+                err(n, "a continued unquoted value holds ': '; quote the value or use a >- block")
+            i += 1
+            continue
+        mode = None
+        m = re.match(r"^\s*([A-Za-z_][\w-]*):(?:\s+(.*))?$", line)
+        if not m:
+            i += 1
+            continue
+        key_indent, val = indent, (m.group(2) or "").strip()
+        if not val:
+            i += 1
+            continue
+        c = val[0]
+        if c in ">|":
+            if not _BLOCK_HEADER_RE.match(val[1:]):
+                err(n, f"text after the {c} block header; put it on the following lines")
+            mode = "block"
+        elif c in "\"'":
+            end, j = _quoted_end(val, c), i
+            while end < 0 and j + 1 < close:   # a quoted value may run on over several lines
+                j += 1
+                end = _quoted_end(lines[j], c, 0)
+                last = lines[j]
+            if end < 0:
+                err(n, f"a {c} opened here is never closed")
+            else:
+                tail = (val if j == i else last)[end + 1:]
+                if not _after_value_ok(tail):
+                    err(j + 1, "text after the closing quote")
+            i = j
+        elif c in "[{":
+            depth, tail, j = *_flow_depth(val, 0), i
+            while depth > 0 and j + 1 < close:
+                j += 1
+                depth, tail = _flow_depth(lines[j], depth)
+            if depth > 0:
+                err(n, f"a {c} opened here is never closed")
+            elif not _after_value_ok(tail):
+                err(j + 1, "text after the closing bracket")
+            i = j
+        else:
+            mode = "plain"
+            body = re.split(r"\s#", val)[0].rstrip()
+            if body.startswith(_YAML_PLAIN_BAD_START) or body in ("-", "?"):
+                err(n, f"a plain value may not start with {body[:2].strip() or body}; quote it")
+            elif ": " in body or body.endswith(":"):
+                err(n, "an unquoted value holds ': ', which strict YAML reads as a nested mapping; "
+                       "quote the value or use a >- block")
+        i += 1
     return errs
 
 

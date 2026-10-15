@@ -465,6 +465,23 @@ chk("frontmatter that never closes is flagged",
     [e["line"] for e in fe("---\nname: x\ndescription: d\nBody with no fence\n")], [1])
 chk("a file with no frontmatter has no errors", fe("# Just a rule file\n\nUse when: asked\n"), [])
 
+# What a reviewer found PyYAML rejecting that the first version passed, and a value it wrongly flagged.
+bad = lambda v: [e["line"] for e in fe(f"---\nname: x\ndescription: {v}\n---\n")]
+chk("a value with a trailing comment holding ': ' is valid", bad("foo # bar: baz"), [])
+chk("an apostrophe inside a single-quoted value is flagged", bad("'it's here'"), [3])
+chk("a doubled '' inside a single-quoted value is fine", bad("'it''s here'"), [])
+chk("text after a closing quote is flagged", bad('"foo" bar'), [3])
+chk("a plain value starting with % ! '- ' or '? ' is flagged", [bad(v) for v in ("%x", "!t x", "- x", "? x")], [[3]] * 4)
+chk("text after a block header is flagged, a comment after it is not", (bad("> foo"), bad(">- # c")), ([3], []))
+chk("an unclosed flow collection is flagged, a closed one is not", (bad("[a"), bad("{a: b"), bad("[a, b]")), ([3], [3], []))
+chk("a nested mapping value holding ': ' is flagged",
+    [e["line"] for e in fe("---\nname: x\nmetadata:\n  short: Use when: x\n---\n")], [4])
+chk("a quoted value that runs over two lines is fine",
+    fe('---\nname: x\ndescription: "one\n  two"\n---\n'), [])
+chk("an unclosed quote is not hidden by a later line holding the same quote character (flagged where the stray quote closes it)",
+    [e["line"] for e in fe('---\nname: x\ndescription: "never\nother: say "hi"\n---\n')], [4])
+chk("an anchor on a value is valid YAML and is not flagged", bad("&a text"), [])
+
 code, d = run_cli(pack("fm-bad", {
     ".claude-plugin/plugin.json": '{"name": "fb"}',
     "skills/a/SKILL.md": "---\nname: a\ndescription: Use when: asked\n---\nDo a.\n",
