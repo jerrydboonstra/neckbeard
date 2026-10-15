@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Which self-check cases fail when the code they guard is broken?
 
-    tools/mutate-selfcheck [--jobs N] [--limit N] [--out FILE]
+    tools/mutate-selfcheck [--jobs N] [--limit N] [--out FILE] [--targeted]
 
 The Makefile says every self-check case has been seen to fail. This tests that claim in
 bulk: it makes copies of skills/neckbeard/inventory.py with one condition deleted (every
@@ -16,6 +16,8 @@ import argparse, ast, concurrent.futures as cf, json, os, re, shutil, subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, "skills", "neckbeard")
+CHK_LINES = [(i + 1, m.group(1)) for i, l in enumerate(open(os.path.join(SKILL, "selfcheck.py")))
+             for m in [re.match(r'\s*chk\("([^"]+)"', l)] if m]
 FAIL_RE = re.compile(r"^\s+FAIL\s+(.*?):", re.M)
 OK_RE = re.compile(r"^\s+ok\s+(.*?):", re.M)
 
@@ -61,11 +63,56 @@ def run_one(item):
         try:
             r = subprocess.run([sys.executable, os.path.join(d, "n", "selfcheck.py")], capture_output=True,
                                text=True, timeout=120)
-            return desc, r.returncode, sorted(set(FAIL_RE.findall(r.stdout))), "Traceback" in r.stderr
+            failed = set(FAIL_RE.findall(r.stdout))
+            crash = "Traceback" in r.stderr
+            if crash:
+                # A crash stops selfcheck at the case being set up; credit that case.
+                lines = [int(n) for n in re.findall(r'selfcheck\.py", line (\d+)', r.stderr)]
+                nxt = next((c for ln, c in CHK_LINES if lines and ln >= lines[-1]), None)
+                if nxt:
+                    failed.add(nxt)
+            return desc, r.returncode, sorted(failed), crash
         except subprocess.TimeoutExpired:
             return desc, None, [], True
     finally:
         shutil.rmtree(d, ignore_errors=True)
+
+
+# Cases no generic mutation reaches, because the guarded behaviour is a merge order, a regex or
+# two layers of defence. Each is broken by hand: (case, [(old, new), ...]); every old snippet
+# must occur once in inventory.py, and the case must then fail or crash selfcheck.
+TARGETED = [
+    ("project false overrides global true", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
+    ("local true overrides project false", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
+    ("no settings anywhere", [("        if not os.path.isfile(settings_path):\n            continue\n", ""),
+                              ("    except Exception:\n        return None\n\n\nREAD_LIMIT", "    except ValueError:\n        return None\n\n\nREAD_LIMIT")]),
+    ("enabledPlugins of the wrong type is ignored", [("if isinstance(got, dict):\n            merged.update(got)", "if got is not None:\n            merged.update(got)")]),
+    ("unparseable JSON is ignored", [("            continue\n        got = layer.get(\"enabledPlugins\") if isinstance(layer, dict) else None",
+                                      "            pass\n        got = layer.get(\"enabledPlugins\")")]),
+    ("settings with no enabledPlugins key", [("got = layer.get(\"enabledPlugins\") if isinstance(layer, dict) else None", "got = layer[\"enabledPlugins\"]")]),
+    ("an @ inside a code block is not an import", [('text = _CODE_RE.sub(" ", read_text(path) or "")', 'text = read_text(path) or ""')]),
+    ("an email address is not an import", [('r"(?:^|(?<=\\s))@(\\S+)"', 'r"@(\\S+)"')]),
+]
+
+
+def targeted():
+    src = open(os.path.join(SKILL, "inventory.py")).read()
+    items = []
+    for case, subs in TARGETED:
+        text = src
+        for old, new in subs:
+            if text.count(old) != 1:
+                sys.exit(f"targeted sabotage for {case!r}: {old[:50]!r} occurs {text.count(old)} times; update TARGETED")
+            text = text.replace(old, new)
+        items.append((case, text))
+    print(f"{'case':58} failed?")
+    bad = 0
+    for case, text in items:
+        _, _, failed, _ = run_one((case, text))
+        ok = case in failed
+        bad += not ok
+        print(f"{case:58} {'yes' if ok else 'NO'}")
+    sys.exit(1 if bad else 0)
 
 
 def main():
@@ -73,10 +120,13 @@ def main():
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0, help="only the first N mutants (a trial run)")
     ap.add_argument("--out", help="write the full result as JSON")
+    ap.add_argument("--targeted", action="store_true", help="only the hand-made sabotages for cases no generic mutant reaches")
     a = ap.parse_args()
     base = subprocess.run([sys.executable, os.path.join(SKILL, "selfcheck.py")], capture_output=True, text=True)
     if base.returncode:
         sys.exit("the unmutated selfcheck fails; fix that first")
+    if a.targeted:
+        targeted()
     cases = OK_RE.findall(base.stdout)
     src = open(os.path.join(SKILL, "inventory.py")).read()
     ms = mutants(src)
