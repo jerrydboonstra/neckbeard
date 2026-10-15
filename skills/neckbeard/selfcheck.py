@@ -106,7 +106,13 @@ write(os.path.join(proj, ".claude", "settings.json"),
 chk("project false overrides global true", merge(proj)["alpha@example-market"], False)
 write(os.path.join(proj, ".claude", "settings.local.json"),
       {"enabledPlugins": {"alpha@example-market": True}})
-chk("local true overrides project false", merge(proj)["alpha@example-market"], True)
+# A key the global layer never sets: with alpha, the last layer's True also equals the global True,
+# so a merge that ignored every later layer still passed (found by sabotaging the merge).
+write(os.path.join(proj, ".claude", "settings.json"),
+      {"enabledPlugins": {"alpha@example-market": False, "beta@example-market": True, "delta@example-market": False}})
+write(os.path.join(proj, ".claude", "settings.local.json"),
+      {"enabledPlugins": {"alpha@example-market": True, "delta@example-market": True}})
+chk("local true overrides project false", merge(proj)["delta@example-market"], True)
 
 # Rules discovery must never crash: a malformed settings file is common and is not a
 # reason to abandon the comparison.

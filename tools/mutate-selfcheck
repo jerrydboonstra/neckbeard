@@ -84,7 +84,10 @@ def run_one(item):
 TARGETED = [
     ("project false overrides global true", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
     ("local true overrides project false", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
-    ("no settings anywhere", [("        if not os.path.isfile(settings_path):\n            continue\n", ""),
+    # Shadowed: the same sabotage crashes "a project with NO .claude/ still sees a global enable"
+    # first, so selfcheck never reaches "no settings anywhere". Its own guard is a duplicate of
+    # that case's, and the earlier case is the one that fails.
+    ("a project with NO .claude/ still sees a global enable", [("        if not os.path.isfile(settings_path):\n            continue\n", ""),
                               ("    except Exception:\n        return None\n\n\nREAD_LIMIT", "    except ValueError:\n        return None\n\n\nREAD_LIMIT")]),
     ("enabledPlugins of the wrong type is ignored", [("if isinstance(got, dict):\n            merged.update(got)", "if got is not None:\n            merged.update(got)")]),
     ("unparseable JSON is ignored", [("            continue\n        got = layer.get(\"enabledPlugins\") if isinstance(layer, dict) else None",
