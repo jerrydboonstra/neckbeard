@@ -22,6 +22,7 @@ check: ## run the self-check (every case has been seen to fail), and check CASE-
 	$(PYTHON) tools/excerpts --check
 	$(PYTHON) tools/test_deploy.py
 	$(PYTHON) tools/test_vet.py
+	$(PYTHON) tools/test_mutate_selfcheck.py
 
 mutate: ## break inventory.py a few hundred ways and list the self-check cases no break makes fail (heavy: run it under testslot on a test host)
 	$(PYTHON) tools/mutate-selfcheck --jobs 10
