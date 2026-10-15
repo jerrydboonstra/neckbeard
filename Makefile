@@ -12,7 +12,7 @@ REMOTES := origin $(MIRRORS)
 VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
 
 .DEFAULT_GOAL := check
-.PHONY: check excerpts release release-notes deploy help
+.PHONY: check mutate excerpts release release-notes deploy help
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -22,6 +22,10 @@ check: ## run the self-check (every case has been seen to fail), and check CASE-
 	$(PYTHON) tools/excerpts --check
 	$(PYTHON) tools/test_deploy.py
 	$(PYTHON) tools/test_vet.py
+
+mutate: ## break inventory.py a few hundred ways and list the self-check cases no break makes fail (heavy: run it under testslot on a test host)
+	$(PYTHON) tools/mutate-selfcheck --jobs 10
+	$(PYTHON) tools/mutate-selfcheck --targeted
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) tools/excerpts

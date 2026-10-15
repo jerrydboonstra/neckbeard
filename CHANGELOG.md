@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **`make mutate` tests the claim that every self-check case has been seen to fail.** `tools/mutate-selfcheck` makes 452 copies of `inventory.py` with one condition deleted each, runs the self-check against every copy and lists the cases that no copy made fail; `--targeted` breaks by hand the behaviours generic mutation cannot reach (a merge order, a regex). The first run found 8 of 59 cases that never failed. Two were weak or duplicated: "local true overrides project false" passed with every later settings layer ignored, because its final value equalled the global one (its fixture now uses a key the global layer never sets), and "no settings anywhere" is shadowed by an earlier case that fails first. The other six fail under the hand-made sabotages. It is heavy (10 jobs, several minutes), so it is not part of `make check`.
+
 ## 1.13.0 (2026-10-06)
 
 - **`tools/vet` runs the whole gallery method in one command**, so a plugin can rebuild its published report, for example in a Claude Code web session on its own repo (see `examples/README.md`). It vets against a throwaway copy of the sample reader, because the judge writes its backups and synced skills into its config folder; it lets the judge edit its own report, so it can fix a count it got wrong; and it refuses a report with no verdict or with a local path in it. It writes the title line itself, since a judge was seen to write "vetted against your rules". `tools/vet --check REPORT TARGET` is the matching CI check: it needs only python3 and fails when the report vets a different version than the plugin's `plugin.json`. `tools/test_vet.py` runs both against a fake `claude`, and `make check` runs that.
