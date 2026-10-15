@@ -9,24 +9,25 @@ bulk: it makes copies of skills/neckbeard/inventory.py with one condition delete
 selfcheck.py against each copy in a scratch directory, and records which cases failed.
 A case that fails for no mutant guards nothing the mutations reach: strengthen its fixture
 or say why it cannot fail. The repo is never touched. A mutant whose selfcheck crashes or
-times out is counted as killed overall but credits no case, because the cases after a
-crash never ran. Run it on a test host (agentbay), not the Mac: it runs selfcheck hundreds of times.
+times out is counted as killed overall; a crash is credited to the case that was running, the
+one after the last case selfcheck printed (so loop-driven cases and helper frames count too).
+`--table` prints one killing mutant per case. Run it on a test host (agentbay), not the Mac: it runs selfcheck hundreds of times.
 """
 import argparse, ast, concurrent.futures as cf, json, os, re, shutil, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, "skills", "neckbeard")
-def _chk_calls():
-    """(first line, last line, case name) of every chk("name", ...) call in selfcheck.py."""
-    tree = ast.parse(open(os.path.join(SKILL, "selfcheck.py")).read())
-    return sorted((n.lineno, n.end_lineno, n.args[0].value) for n in ast.walk(tree)
-                  if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "chk" and n.args
-                  and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str))
-
-
-CHK_CALLS = _chk_calls()
 FAIL_RE = re.compile(r"^\s+FAIL\s+(.*?):", re.M)
 OK_RE = re.compile(r"^\s+ok\s+(.*?):", re.M)
+CASE_RE = re.compile(r"^\s+(?:ok|FAIL)\s+(.*?):", re.M)
+ORDER = []  # case names in the order the unmutated selfcheck prints them; set by main()
+
+
+def crashed_case(stdout, order):
+    """The case a crash belongs to: the one after the last case selfcheck printed."""
+    done = CASE_RE.findall(stdout)
+    i = order.index(done[-1]) + 1 if done and done[-1] in order else 0
+    return order[i] if i < len(order) else None
 
 
 def mutants(src):
@@ -37,7 +38,6 @@ def mutants(src):
     for l in lines:
         starts.append(starts[-1] + len(l))
     # ast col offsets are UTF-8 bytes; work on bytes
-    b = src.encode()
     off = lambda ln, col: len(src.splitlines(keepends=True)[ln - 1].encode()[:col].decode()) + starts[ln - 1]
 
     def span(n):
@@ -73,12 +73,7 @@ def run_one(item):
             failed = set(FAIL_RE.findall(r.stdout))
             crash = "Traceback" in r.stderr
             if crash:
-                # A crash stops selfcheck at the case being set up; credit that case.
-                lines = [int(n) for n in re.findall(r'selfcheck\.py", line (\d+)', r.stderr)]
-                # The case whose call holds the crashing line, else the next case (a crash in its setup).
-                at = lines[-1] if lines else None
-                nxt = next((c for a0, a1, c in CHK_CALLS if at and a0 <= at <= a1), None) or \
-                    next((c for a0, a1, c in CHK_CALLS if at and a0 >= at), None)
+                nxt = crashed_case(r.stdout, ORDER)
                 if nxt:
                     failed.add(nxt)
             return desc, r.returncode, sorted(failed), crash
@@ -94,9 +89,9 @@ def run_one(item):
 TARGETED = [
     ("project false overrides global true", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
     ("local true overrides project false", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
-    # Shadowed: the same sabotage crashes "a project with NO .claude/ still sees a global enable"
-    # first, so selfcheck never reaches "no settings anywhere". Its own guard is a duplicate of
-    # that case's, and the earlier case is the one that fails.
+    # The first two edits here also break "no settings anywhere" only through the case before it;
+    # its own sabotage is the one below.
+    ("no settings anywhere", [("    return merged\n", "    return merged or None\n")]),
     ("a project with NO .claude/ still sees a global enable", [("        if not os.path.isfile(settings_path):\n            continue\n", ""),
                               ("    except Exception:\n        return None\n\n\nREAD_LIMIT", "    except ValueError:\n        return None\n\n\nREAD_LIMIT")]),
     ("enabledPlugins of the wrong type is ignored", [("if isinstance(got, dict):\n            merged.update(got)", "if got is not None:\n            merged.update(got)")]),
@@ -133,6 +128,7 @@ def main():
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0, help="only the first N mutants (a trial run)")
     ap.add_argument("--out", help="write the full result as JSON")
+    ap.add_argument("--table", action="store_true", help="print one killing mutant per case")
     ap.add_argument("--targeted", action="store_true", help="only the hand-made sabotages for cases no generic mutant reaches")
     a = ap.parse_args()
     base = subprocess.run([sys.executable, os.path.join(SKILL, "selfcheck.py")], capture_output=True, text=True)
@@ -141,6 +137,7 @@ def main():
     if a.targeted:
         targeted()
     cases = OK_RE.findall(base.stdout)
+    ORDER[:] = cases
     src = open(os.path.join(SKILL, "inventory.py")).read()
     ms = mutants(src)
     if a.limit:
@@ -161,6 +158,11 @@ def main():
     print(f"cases that no mutant made fail: {len(never)} of {len(cases)}")
     for c in never:
         print(f"  NEVER FAILS  {c}")
+    if a.table:
+        print(f"\n{'case':64} killed by (first of N)")
+        for c in cases:
+            k = killed_by[c]
+            print(f"{c:64} {k[0] + f' (+{len(k) - 1})' if k else 'NEVER'}")
     if a.out:
         json.dump({"cases": killed_by, "survived": survived, "crashed": crashed}, open(a.out, "w"), indent=1)
 
