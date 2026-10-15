@@ -12,7 +12,13 @@ REMOTES := origin $(MIRRORS)
 VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
 
 .DEFAULT_GOAL := check
-.PHONY: check excerpts release release-notes deploy help
+.PHONY: \
+	check \
+	deploy \
+	excerpts \
+	help \
+	release \
+	release-notes
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -20,8 +26,7 @@ help: ## list targets
 check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
-	$(PYTHON) tools/test_deploy.py
-	$(PYTHON) tools/test_vet.py
+	@for t in tools/test_*.py; do echo "$$t"; $(PYTHON) $$t || exit 1; done
 
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) tools/excerpts

@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **CONTRIBUTING.md has a "Merging several branches" section, and the layout follows it.** `CHANGELOG.md` merges by union, `make check` runs every `tools/test_*.py` instead of naming each, and `.PHONY` lists one target per line. A trial merge of six open branches conflicted only in those two files.
+
 ## 1.13.0 (2026-10-06)
 
 - **`tools/vet` runs the whole gallery method in one command**, so a plugin can rebuild its published report, for example in a Claude Code web session on its own repo (see `examples/README.md`). It vets against a throwaway copy of the sample reader, because the judge writes its backups and synced skills into its config folder; it lets the judge edit its own report, so it can fix a count it got wrong; and it refuses a report with no verdict or with a local path in it. It writes the title line itself, since a judge was seen to write "vetted against your rules". `tools/vet --check REPORT TARGET` is the matching CI check: it needs only python3 and fails when the report vets a different version than the plugin's `plugin.json`. `tools/test_vet.py` runs both against a fake `claude`, and `make check` runs that.
