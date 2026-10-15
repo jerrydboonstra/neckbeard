@@ -7,6 +7,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ## Unreleased
 
 - **CONTRIBUTING.md has a "Merging several branches" section, and the layout follows it.** `CHANGELOG.md` merges by union, `make check` runs every `tools/test_*.py` instead of naming each, and `.PHONY` lists one target per line. A trial merge of six open branches conflicted only in those two files.
+- **The plugin has no top-level `bin/` at all.** 1.12.9 moved `excerpts` out but kept `bin/neckbeard`, so every session still got a `neckbeard` command on its PATH, and claude.ai Chat and Cowork still refused the whole plugin, because they reject any plugin with a top-level `bin/`. `bin/neckbeard`, a wrapper that only ran `skills/neckbeard/inventory.py`, is now `tools/neckbeard` (the skill itself has called `inventory.py` from its own folder since 1.12.2). Removed: a bare `neckbeard` command is no longer on your PATH. From a clone, run `tools/neckbeard <target>`. `make check` now fails if a top-level `bin/` comes back.
 
 ## 1.13.0 (2026-10-06)
 
@@ -15,7 +16,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ## 1.12.9 (2026-10-02)
 
 - **`make deploy`, as Cat Herder has it.** It refuses unless `main` is released on every remote, then brings this machine and each host in `HOSTS` to that commit: a directory marketplace's checkout must be clean and is fast-forwarded to exactly the release, the marketplace is updated, every install of neckbeard is updated from its own folder, and each one's version is printed and checked. `tools/test_deploy.py` runs it end to end against a fake `claude`, and `make check` runs that.
-- **`excerpts` is no longer on your PATH.** A plugin's top-level `bin/` is on the PATH of every session's Bash tool, so every neckbeard user had our maintainer script as a command. It now lives in `tools/`. `bin/` keeps `neckbeard`, the one command meant for users.
+- **`excerpts` is no longer on your PATH.** A plugin's top-level `bin/` is on the PATH of every session's Bash tool, so every neckbeard user had our maintainer script as a command. It now lives in `tools/`. `bin/` kept `neckbeard`, which a later release also moved out (see Unreleased).
 - **`make release` pushes to a fixed list**, `origin` plus the `MIRRORS` a git-ignored `local.mk` names, never every remote the checkout happens to have. Before, a checkout with a work-queue remote would have pushed `main` and the tag into the queue.
 
 ## 1.12.8 (2026-10-01)
@@ -35,7 +36,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ## 1.12.5 (2026-09-25)
 
 - **The case studies read in half the time.** They open with a short link list in two groups: runs against real plugins, and rounds against neckbeard itself. Each run against a gallery plugin (§1 to §5) leads with that plugin's report today, then the first run's output. Every round then lists what it showed, the version that fixed it, and the self-check that guards it, and says so where none does. Lists longer than four show three and fold the rest; §9 and §12 keep their full stories in a fold; the closing lessons are five, with twelve more folded and numbered on from them.
-- **The report excerpts are copied, never typed.** `bin/excerpts` fills them from `examples/`, and `make check` fails if a case study quotes a report that has since changed.
+- **The report excerpts are copied, never typed.** `bin/excerpts` (now `tools/excerpts`) fills them from `examples/`, and `make check` fails if a case study quotes a report that has since changed.
 - **The README reads in the order an evaluator asks.** What it produces, then how to install and use it, then how it was tested and what it will and will not touch, then the story behind it. A line under the intro says every round is published, and "How it was tested" links each round. It also said the gallery has seven plugins; it has eight.
 
 ## 1.12.4 (2026-09-25)

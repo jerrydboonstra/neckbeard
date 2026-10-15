@@ -24,6 +24,7 @@ help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
 
 check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
+	tools/check-no-bin
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
 	@for t in tools/test_*.py; do echo "$$t"; $(PYTHON) $$t || exit 1; done
