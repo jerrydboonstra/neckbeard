@@ -444,5 +444,75 @@ chk("a marketplace.json that is not JSON says so",
     (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
     (0, "marketplace.json is not valid JSON; read it by hand"))
 
+# ---------------------------------------------------------------- 6. what the judge reads
+# A dossier that leaves out text the judge needs makes it open the files by hand, and two
+# runs then read different text (Cat Herder's report at 178648f8a: 5 conflicts, then 2).
+ev = lambda cmd: {"hooks": {"Stop": [{"hooks": [{"type": "command", "command": cmd}]}]}}
+lst = pack("hooks-list", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "hl", "hooks": ["./hooks/a.json", "./hooks/b.json"]}),
+    "hooks/a.json": json.dumps({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo a"}]}]}}),
+    "hooks/b.json": json.dumps({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "echo b"}]}]}}),
+})
+code, d = run_cli(lst)
+hk = (d or {}).get("target", {}).get("hooks", {})
+chk("plugin.json hooks given as a list of files are all read",
+    (code, hk.get("has_hooks"), sorted(hk.get("events", {}))), (0, True, ["SessionStart", "Stop"]))
+
+code, d = run_cli(pack("hooks-list-missing", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "hm", "hooks": ["./hooks/a.json", "./hooks/gone.json"]}),
+    "hooks/a.json": json.dumps(ev("echo a"))}))
+chk("a hooks list naming a file that is not there is unknown, not a partial answer",
+    (code, ((d or {}).get("target", {}).get("hooks") or {}).get("has_hooks")), (0, "unknown"))
+
+outside = os.path.join(w, "outside-hooks.json")
+with open(outside, "w") as f:
+    f.write(json.dumps(ev("echo " + MARK)))
+code, d = run_cli(pack("hooks-list-outside", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "ho", "hooks": ["../../outside-hooks.json"]})}))
+chk("a hooks list pointing outside the target is refused, and its text stays out",
+    (code, ((d or {}).get("target", {}).get("hooks") or {}).get("has_hooks"), MARK in json.dumps(d)),
+    (0, "unknown", False))
+
+code, d = run_cli(pack("skill-companions", {
+    ".claude-plugin/plugin.json": '{"name": "sc"}',
+    "skills/herd/SKILL.md": "---\nname: herd\ndescription: d\n---\nSee roles/worker.md.\n",
+    "skills/herd/roles/worker.md": "COMPANION_TEXT_ONLY_HERE\n",
+    "skills/quiet/SKILL.md": "---\nname: quiet\ndescription: d\nuser-invocable: false\n---\nBody.\n"}))
+sk = {x["name"]: x for x in (d or {}).get("target", {}).get("skills", [])}
+chk("a skill's other Markdown files are in the dossier with their text",
+    [(c["path"], "COMPANION_TEXT_ONLY_HERE" in (c["text"] or "")) for c in sk.get("herd", {}).get("companion_files", [])],
+    [("skills/herd/roles/worker.md", True)])
+# The target is untrusted: a skill folder that links to itself must not hang the inventory or
+# list one file many times, and vendored folders must not use up the cap.
+loop = pack("skill-loop", {".claude-plugin/plugin.json": '{"name": "sl"}',
+                           "skills/s/SKILL.md": "---\nname: s\ndescription: d\n---\nBody.\n",
+                           "skills/s/r.md": "ROLE_TEXT\n"})
+for ln in ("a", "b"):
+    os.symlink(".", os.path.join(loop, "skills", "s", ln))
+try:
+    r = subprocess.run([sys.executable, inventory.__file__, loop, "--project-dir", wp,
+                        "--out", os.path.join(w, "loop.json")], env=dict(os.environ, CLAUDE_CONFIG_DIR=wh),
+                       capture_output=True, text=True, timeout=30)
+    cf = [c["path"] for c in json.load(open(os.path.join(w, "loop.json")))["target"]["skills"][0]["companion_files"]]
+    chk("a skill folder that links to itself neither hangs nor lists a file twice",
+        (r.returncode, cf), (0, ["skills/s/r.md"]))
+except subprocess.TimeoutExpired:
+    chk("a skill folder that links to itself neither hangs nor lists a file twice", "hung", "finishes")
+
+many = {".claude-plugin/plugin.json": '{"name": "mn"}',
+        "skills/s/SKILL.md": "---\nname: s\ndescription: d\n---\nBody.\n"}
+for i in range(45):
+    many[f"skills/s/scripts/node_modules/p/{i:02d}.md"] = f"vendored {i}\n"
+    many[f"skills/s/refs/{i:02d}.md"] = f"ref {i}\n"
+many["skills/s/zz-role.md"] = "REAL_ROLE\n"
+code, d = run_cli(pack("skill-many", many))
+cf = [(c["path"], c["text"] is not None) for c in (d or {})["target"]["skills"][0]["companion_files"]]
+chk("vendored folders are pruned, and past 40 files the rest are named with no text",
+    (len(cf), sum(t for _, t in cf), any(p.endswith("node_modules/p/00.md") for p, _ in cf),
+     ("skills/s/zz-role.md", True) in cf, cf[-1]),
+    (46, 40, False, True, ("skills/s/refs/44.md", False)))
+chk("user-invocable is read from each skill's frontmatter (default true)",
+    (sk.get("herd", {}).get("user_invocable"), sk.get("quiet", {}).get("user_invocable")), (True, False))
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
