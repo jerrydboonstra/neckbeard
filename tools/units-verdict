@@ -1,50 +1,58 @@
 #!/usr/bin/env python3
 """units-verdict UNITS ANSWERS [ANSWERS ...]: the verdict and counts, computed by code from a judge's per-unit answers.
 
-UNITS is what tools/rule-units wrote. Each ANSWERS file is the judge's JSON: {"answers": [{"id": "u1", "bucket": ...,
-"why": ...}, ...]}, one answer for every unit, no more. With one ANSWERS file it prints the counts and the verdict;
-with several it also prints, per unit, how often the runs agreed. Exit 0 when every file is valid (and, with several,
-when they agree on the verdict and on every unit), 1 when several valid files disagree, 2 on a bad file.
+UNITS is what tools/rule-units wrote. Each ANSWERS file is the judge's JSON: {"answers": [{"id": "u1", "skill": ...,
+"rules": ..., "why": ...}, ...]}, one answer for every unit, no more. Each unit gets two answers, because they are
+two questions:
+- skill: keep or drop. Is this section part of a skill, command or agent worth keeping as shipped?
+- rules: conflict, new-standing, new-skill-text, duplicate or none. What does it hold that matters outside the skill?
+  A rule in an on-demand skill applies only while that skill is loaded, so a general rule is worth copying as a
+  standing rule even when the plugin is installed. With several, the first in that order.
 
-Buckets, the strongest that applies (the order is the precedence, so a unit with a conflict and a good rule is a
-conflict): conflict, install-skill, new-standing, new-skill-text, duplicate, dropped.
+With one ANSWERS file it prints the counts and the verdict; with several it also prints, per unit, how often the runs
+agreed on each answer. Exit 0 when every file is valid (and, with several, when they agree on the verdict and on
+every unit), 1 when several valid files disagree, 2 on a bad file.
 
 The verdict, from the counts:
-- any install-skill: INSTALL with no conflict, INSTALL WITH CHANGES with one;
+- any skill kept: INSTALL with no conflict, INSTALL WITH CHANGES with one;
 - else any new-standing or new-skill-text: COPY RULES, SKIP PLUGIN;
 - else: DON'T INSTALL.
-Part of the units prototype (verdict-prototype-units); SKILL.md does not know about it yet.
+Rules to copy are listed whatever the verdict. Part of the units prototype (verdict-prototype-units); SKILL.md does
+not know about it yet.
 """
 import collections, json, sys
 
-BUCKETS = ["conflict", "install-skill", "new-standing", "new-skill-text", "duplicate", "dropped"]
+SKILL = ["keep", "drop"]
+RULES = ["conflict", "new-standing", "new-skill-text", "duplicate", "none"]
 
 
-def verdict(counts):
-    if counts["install-skill"]:
-        return "INSTALL WITH CHANGES" if counts["conflict"] else "INSTALL"
-    if counts["new-standing"] or counts["new-skill-text"]:
+def verdict(skill, rules):
+    if skill["keep"]:
+        return "INSTALL WITH CHANGES" if rules["conflict"] else "INSTALL"
+    if rules["new-standing"] or rules["new-skill-text"]:
         return "COPY RULES, SKIP PLUGIN"
     return "DON'T INSTALL"
 
 
 def load(path, ids):
-    """{unit id: bucket}, or a list of problems."""
+    """{unit id: (skill, rules)}, or a list of problems."""
     try:
         answers = json.load(open(path, encoding="utf-8"))["answers"]
     except (OSError, ValueError, KeyError, TypeError) as e:
         return [f"can't read answers: {e}"]
     got, problems = {}, []
     for a in answers:
-        uid, bucket = a.get("id"), a.get("bucket")
+        uid, skill, rules = a.get("id"), a.get("skill"), a.get("rules")
         if uid not in ids:
             problems.append(f"{uid}: no such unit")
         elif uid in got:
             problems.append(f"{uid}: answered twice")
-        elif bucket not in BUCKETS:
-            problems.append(f"{uid}: bucket {bucket!r} is not one of {', '.join(BUCKETS)}")
+        elif skill not in SKILL:
+            problems.append(f"{uid}: skill {skill!r} is not one of {', '.join(SKILL)}")
+        elif rules not in RULES:
+            problems.append(f"{uid}: rules {rules!r} is not one of {', '.join(RULES)}")
         else:
-            got[uid] = bucket
+            got[uid] = (skill, rules)
     problems += [f"{u}: no answer" for u in ids if u not in got and not any(p.startswith(u + ":") for p in problems)]
     return problems or got
 
@@ -64,10 +72,12 @@ def main():
             for p in got[:10]:
                 print(f"  {p}")
             continue
-        counts = collections.Counter(got.values())
-        v = verdict(counts)
+        skill = collections.Counter(s for s, _ in got.values())
+        rules = collections.Counter(r for _, r in got.values())
+        v = verdict(skill, rules)
         runs.append((path, got, v))
-        print(f"{path}: {v}; " + " / ".join(str(counts[b]) for b in BUCKETS) + "  (" + " / ".join(BUCKETS) + ")")
+        print(f"{path}: {v}; skills kept {skill['keep']} of {len(ids)}; rules "
+              + " / ".join(str(rules[r]) for r in RULES) + "  (" + " / ".join(RULES) + ")")
     if bad:
         return 2
     if len(runs) < 2:
@@ -75,14 +85,17 @@ def main():
     n = len(runs)
     vs = collections.Counter(v for _, _, v in runs)
     print("verdicts: " + ", ".join(f"{v} in {k} of {n}" for v, k in vs.most_common()))
-    split = []
-    for u in units:
-        seen = collections.Counter(got[u["id"]] for _, got, _ in runs)
-        if len(seen) > 1:
-            split.append((u, seen))
-    print(f"units judged the same in all {n} runs: {len(units) - len(split)} of {len(units)}")
-    for u, seen in split:
-        print(f"  {u['id']} {u['file']} > {u['heading']}: " + ", ".join(f"{b} {k}" for b, k in seen.most_common()))
+    split = 0
+    for axis, name in ((0, "skill"), (1, "rules")):
+        rows = []
+        for u in units:
+            seen = collections.Counter(got[u["id"]][axis] for _, got, _ in runs)
+            if len(seen) > 1:
+                rows.append((u, seen))
+        split += len(rows)
+        print(f"{name}: units answered the same in all {n} runs: {len(units) - len(rows)} of {len(units)}")
+        for u, seen in rows:
+            print(f"  {u['id']} {u['file']} > {u['heading']}: " + ", ".join(f"{b} {k}" for b, k in seen.most_common()))
     stable = len(vs) == 1 and not split
     print("stable" if stable else "NOT stable: the runs disagree")
     return 0 if stable else 1

@@ -39,8 +39,8 @@ if body is not None:
 m = re.search(r"Write the answers to (\S+) as JSON", prompt)
 if m:
     units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
-    bucket = {"units-install": "install-skill", "units-mismatch": "new-standing"}.get(os.environ.get("FAKE_UNITS", ""))
-    answers = [{"id": u["id"], "bucket": bucket, "why": "x"} for u in units] if bucket else []
+    pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing")}.get(os.environ.get("FAKE_UNITS", ""))
+    answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "why": "x"} for u in units] if pick else []
     json.dump({"answers": answers}, open(m.group(1), "w"))
 print("🟩 INSTALL · 0/0/0/1/0")
 '''
@@ -102,7 +102,7 @@ judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"]]
 # 0. --units (prototype): the verdict comes from the per-unit answers, and the banner must carry it
 r = run("units", extra=("--units",), units="units-install")
 chk("units: answers that compute INSTALL, banner INSTALL: exit 0", r["rc"], 0)
-chk("units: the judge got the unit list and the written tests", "UNITS PROTOTYPE" in judge(r)[0]["prompt"] and "install-skill" in judge(r)[0]["prompt"], True)
+chk("units: the judge got the unit list and the written tests", "UNITS PROTOTYPE" in judge(r)[0]["prompt"] and "new-standing" in judge(r)[0]["prompt"], True)
 r = run("units-mismatch", extra=("--units",), units="units-mismatch")
 chk("units: banner INSTALL but answers compute COPY RULES: refused", (r["rc"], "computed verdict is COPY RULES" in r["out"]), (1, True))
 r = run("units-missing", extra=("--units",), units="units-none")
