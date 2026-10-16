@@ -135,14 +135,70 @@ Rules:
 Reply with the verdict line and the counts (conflicts / covered / new standing / new skill / dropped).
 EOF
 if [ "$units" = yes ]; then
-  unitsf=${out%.md}.units.json answers=${out%.md}.answers.json
-  rm -f "$answers"
+  stem=${out%.md}
+  unitsf=$stem.units.json answers=$stem.answers.json cands=$stem.candidates.json confs=$stem.confirmations.json confirmed=$stem.confirmed.json
+  rm -f "$answers" "$cands" "$confs" "$confirmed" "$stem".finds-*.json
   python3 "$nb/tools/rule-units" "$dossier" "$unitsf" >&2 || die "rule-units failed"
-  python3 - "$nb/tools/vet-units.md" "$unitsf" "$answers" "$nb" >>"$prompt" <<'EOF' || die "couldn't write the units addendum"
+  test_text=$(cat "$nb/tools/vet-conflict-test.md")
+  ucfg=()
+  [ "$judge" = reader ] && ucfg=(env CLAUDE_CONFIG_DIR="$reader")
+  usage_log=$work/usage.log
+  # an isolated judge call: PROMPT-FILE in, its text answer on stdout; its cost and time go to the usage log
+  call() { # call TOOLS PROMPT-FILE
+    (cd "$project" && "${ucfg[@]}" claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") |
+      python3 -c 'import json,sys
+r = json.load(sys.stdin)
+print(r.get("result", ""))
+open(sys.argv[1], "a").write("%s %s\n" % (r.get("total_cost_usd", 0), r.get("duration_ms", 0)))' "$usage_log"
+  }
+  # 3a. three find passes, side by side, each writing its own candidates
+  for i in 1 2 3; do
+    python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossier=sys.argv[3], finds=sys.argv[4], test=sys.argv[5]))' \
+      "$nb/tools/vet-find.md" "$unitsf" "$dossier" "$stem.finds-$i.json" "$test_text" >"$work/find-$i.md"
+    call Read,Write,Glob,Grep "$work/find-$i.md" >/dev/null 2>"$work/find-$i.err" &
+  done
+  wait
+  for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.err"))"; done
+  python3 "$nb/tools/units-confirm" pool "$unitsf" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
+  # 3b. each candidate confirmed alone: it sees the reader rule, the sentence and the written test, and nothing else
+  python3 -c 'import json,sys
+for c in json.load(open(sys.argv[1]))["candidates"]:
+    open("%s/confirm-%s.rule" % (sys.argv[2], c["cid"]), "w").write(c["reader_rule"])
+    open("%s/confirm-%s.sentence" % (sys.argv[2], c["cid"]), "w").write(c["quote"])' "$cands" "$work"
+  for f in "$work"/confirm-*.rule; do
+    [ -e "$f" ] || break
+    cid=${f##*/confirm-}; cid=${cid%.rule}
+    python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(rule=open(sys.argv[2]).read(), sentence=open(sys.argv[3]).read(), test=sys.argv[4]))' \
+      "$nb/tools/vet-confirm.md" "$f" "$work/confirm-$cid.sentence" "$test_text" >"$work/confirm-$cid.md"
+    call "" "$work/confirm-$cid.md" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err" &
+  done
+  wait
+  python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF' || die "a confirm call gave no usable answer"
+import json, re, sys
+cands = json.load(open(sys.argv[1]))["candidates"]
+confs, kept = [], []
+for c in cands:
+    try:
+        text = open(f"{sys.argv[2]}/confirm-{c['cid']}.out", encoding="utf-8").read()
+        a = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
+        assert isinstance(a["conflict"], bool)
+    except Exception:
+        print(f"vet: the confirm call for {c['cid']} gave no usable answer", file=sys.stderr)
+        sys.exit(1)
+    confs.append({"cid": c["cid"], "conflict": a["conflict"], "why": str(a.get("why", ""))})
+    if a["conflict"]:
+        kept.append({**c, "why": str(a.get("why", ""))})
+json.dump({"confirmations": confs}, open(sys.argv[3], "w"), indent=1)
+json.dump({"confirmed": kept}, open(sys.argv[4], "w"), indent=1)
+print(f"vet: units: {len(kept)} of {len(cands)} candidates confirmed", file=sys.stderr)
+PYEOF
+  python3 - "$nb/tools/vet-units.md" "$unitsf" "$answers" "$nb" "$confirmed" "$cands" "$confs" >>"$prompt" <<'PYEOF' || die "couldn't write the units addendum"
 import sys
-print("\n" + open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], answers=sys.argv[3], nb=sys.argv[4]))
+print("\n" + open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], answers=sys.argv[3], nb=sys.argv[4], confirmed=sys.argv[5], cands=sys.argv[6], confs=sys.argv[7]))
 print("The ANSWERS file above is the one file you may write besides the REPORT FILE.")
-EOF
+PYEOF
 fi
 cfg=()
 [ "$judge" = reader ] && cfg=(env CLAUDE_CONFIG_DIR="$reader")
@@ -154,8 +210,16 @@ rm -f "$out"
 [ -s "$out" ] || die "the judge wrote no report to $out"
 grep -qE '^> ## (🟥|🟧|🟨|🟩) ' "$out" || die "$out carries no verdict banner"
 if [ "$units" = yes ]; then
+  # whatever the judge wrote under conflicts, only the confirmed ones count: put them in again, as the judge was told to
+  python3 "$nb/tools/units-confirm" merge "$cands" "$confs" "$answers" >/dev/null || die "couldn't put the confirmed conflicts into the answers"
   computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers") || { echo "$computed" >&2; die "the judge's answers were refused"; }
   echo "vet: units: $computed" >&2
+  python3 - "$usage_log" "$SECONDS" <<'PYEOF' >&2
+import sys
+try: rows = [l.split() for l in open(sys.argv[1]) if l.strip()]
+except OSError: rows = []
+print(f"vet: units cost: {len(rows)} find and confirm calls, ${sum(float(r[0]) for r in rows):.2f}, {sum(int(float(r[1])) for r in rows) // 1000} s of call time; whole vet {sys.argv[2]} s (the report pass is not in the dollars)")
+PYEOF
   v=$(printf '%s\n' "$computed" | sed -E 's/^[^:]*: ([^;]+);.*/\1/')
   bv=$(grep -E '^> ## ' "$out" | head -n 1 | sed -E 's/^> ## [^ ]+ //; s/ · .*//')
   case $bv in "$v"|"$v /"*) ;; *) die "the banner says $bv, but the computed verdict is $v" ;; esac

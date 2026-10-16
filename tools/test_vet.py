@@ -28,6 +28,25 @@ if cfg:
     os.makedirs(os.path.join(cfg, "backups"), exist_ok=True)
 if "single word ok" in prompt:
     print("ok"); sys.exit(0)
+def reply(text):
+    if "--output-format" in args and args[args.index("--output-format") + 1] == "json":
+        print(json.dumps({"result": text, "total_cost_usd": 0.01, "duration_ms": 1000}))
+    else:
+        print(text)
+    sys.exit(0)
+m = re.search(r"Write (\S+) as JSON, \{\"conflicts\"", prompt)
+if "FIND PASS" in prompt and m:
+    mode = os.environ.get("FAKE_FINDS", "none")
+    n = m.group(1).rsplit("-", 1)[1][0]
+    quote = {"one": "Always run the tests before you commit.", "invented": "Never run the tests."}.get(mode)
+    if mode == "late" and n == "3":
+        quote = "Always run the tests before you commit."
+    units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
+    found = [{"id": units[0]["id"], "quote": quote, "reader_rule": "rule X"}] if quote else []
+    json.dump({"conflicts": found}, open(m.group(1), "w"))
+    reply(str(len(found)))
+if "CONFIRM CALL" in prompt:
+    reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") == "yes", "why": "fake"}))
 out = re.search(r"REPORT FILE \(the only file you create\): (\S+)", prompt).group(1)
 target = re.search(r"checked out at (\S+)", prompt).group(1).rstrip(",")
 mode = os.environ.get("FAKE_REPORT", "good")
@@ -42,7 +61,7 @@ if m:
     pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing")}.get(os.environ.get("FAKE_UNITS", ""))
     answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "conflicts": [], "why": "x"} for u in units] if pick else []
     json.dump({"answers": answers}, open(m.group(1), "w"))
-print("🟩 INSTALL · 0/0/0/1/0")
+reply("🟩 INSTALL · 0/0/0/1/0")
 '''
 
 fail = checks = 0
@@ -61,7 +80,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units=""):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no"):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -81,7 +100,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units=""):
         # a cloud container rewrites git@github.com: to https itself through GIT_CONFIG_*, which would hide vet's own rewrite
         env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR" and not k.startswith("GIT_CONFIG")}
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
-                   PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report, FAKE_UNITS=units,
+                   PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report, FAKE_UNITS=units, FAKE_FINDS=finds, FAKE_CONFIRM=confirm,
                    TMPDIR=os.path.join(tmp, "t"))
         os.mkdir(env["TMPDIR"])
         before = reader_files()
@@ -97,7 +116,8 @@ def run(case, login="env", report="good", extra=(), remote=None, units=""):
         shutil.rmtree(tmp)
 
 
-judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"]]
+judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"] and "--output-format" in c["args"] and c["args"][c["args"].index("--output-format") + 1] == "text"]
+isolated = lambda r, word: [c for c in r["calls"] if word in c["prompt"]]
 
 # 0. --units (prototype): the verdict comes from the per-unit answers, and the banner must carry it
 r = run("units", extra=("--units",), units="units-install")
@@ -107,6 +127,25 @@ r = run("units-mismatch", extra=("--units",), units="units-mismatch")
 chk("units: banner INSTALL but answers compute COPY RULES: refused", (r["rc"], "computed verdict is COPY RULES" in r["out"]), (1, True))
 r = run("units-missing", extra=("--units",), units="units-none")
 chk("units: an answer missing for a unit: refused", (r["rc"], "answers were refused" in r["out"]), (1, True))
+# 0b. --units pools three find passes and confirms each candidate alone; only confirmed conflicts count
+r = run("units-find-none", extra=("--units",), units="units-install")
+chk("pool: three find passes, no candidates, no confirm call, exit 0", (r["rc"], len(isolated(r, "FIND PASS")), len(isolated(r, "CONFIRM CALL"))), (0, 3, 0))
+r = run("units-confirmed", extra=("--units",), units="units-install", finds="one", confirm="yes")
+chk("pool: the same candidate in three passes is confirmed once", len(isolated(r, "CONFIRM CALL")), 1)
+chk("confirm: a confirmed conflict counts, so INSTALL becomes INSTALL WITH CHANGES and the banner is refused",
+    (r["rc"], "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
+c = isolated(r, "CONFIRM CALL")[0]
+chk("confirm: the call sees the sentence and the written test, not the units or the dossier",
+    ("Always run the tests before you commit." in c["prompt"], "rule X" in c["prompt"], "permits, with no limit" in c["prompt"], "UNITS:" in c["prompt"], "dossier" in c["prompt"].lower()),
+    (True, True, True, False, False))
+chk("confirm: the call is allowed no tools", c["args"][c["args"].index("--allowedTools") + 1], "")
+r = run("units-rejected", extra=("--units",), units="units-install", finds="one", confirm="no")
+chk("confirm: a rejected candidate does not count, exit 0", (r["rc"], "0 of 1 candidates confirmed" in r["out"]), (0, True))
+r = run("units-late", extra=("--units",), units="units-install", finds="late", confirm="yes")
+chk("pool: a candidate found in one pass of three is still confirmed", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
+r = run("units-invented", extra=("--units",), units="units-install", finds="invented", confirm="yes")
+chk("pool: a quote that is not in the unit is dropped before any confirm call", (r["rc"], len(isolated(r, "CONFIRM CALL"))), (0, 0))
+chk("cost: the vet prints calls and dollars", "units cost: 3 find and confirm calls, $0.03" in r["out"], True)
 r = run("no-units")
 chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)[0]["prompt"], False)
 
