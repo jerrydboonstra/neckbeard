@@ -11,7 +11,7 @@ fails = 0
 
 
 def report(verdict, conflicts, covered=2):
-    rows = "\n".join(f'| {i + 1} | "{say}"' + (f" (`{src}`)" if src else "") + f' | "a rule" | {held} | 🟥 |' for i, (src, say, held) in enumerate(conflicts))
+    rows = "\n".join(f'| {i + 1} | "{c[1]}"' + (f" (`{c[0]}`)" if c[0] else "") + f' | {c[3] if len(c) > 3 else chr(34) + "a rule" + chr(34)} | {c[2]} | 🟥 |' for i, c in enumerate(conflicts))
     return f"""# 🔍 x 1.0 · vetted against the sample reader
 
 > ## 🟧 {verdict} · reason
@@ -79,10 +79,24 @@ rc, out = run(report("COPY RULES", [P1, P2]), report("COPY RULES", [P1b]))
 chk("a finding present in one report and not the other is still caught", rc == 1 and "found in 1 of 2" in out, out)
 S1 = ("skills/a/SKILL.md", "x", "`rules/e.md` rule 6")
 S2 = ("skills/b/SKILL.md", "y", "`rules/e.md` rule 6")
-rc, out = run(report("INSTALL", [S1, S2]), report("INSTALL", [S1, S2]))
-chk("two skills against one rule stay two findings", rc == 0 and out.count("conflict found in 2 of 2") == 2, out)
+rc, out = run(report("INSTALL", [S1, S2]), report("INSTALL", [S1]))
+chk("two skills against one rule are one finding, the same in a report that has only one of them", rc == 0 and out.count("conflict found in 2 of 2") == 1, out)
 rc, out = run(report("INSTALL", [S1, S1]), report("INSTALL", [S1, S1]))
-chk("rows that share source and rule are counted once, and the output says so", rc == 0 and "counted once" in out, out)
+chk("rows that share a rule are counted once, and the output says so", rc == 0 and "counted once" in out, out)
+# the five runs on Cat Herder v0.53.2, as they were written: 3 to 4 findings each, the rule number in "collides with"
+# or in "held in" as "#6" or ", rule 6", the source file in parentheses or not at all
+E, SF = "examples/reader/rules/engineering.md", "examples/reader/rules/safety.md"
+R = [
+    [(None, "Kitten swarms", E, '"Do not override it on the dispatch call" (rule 6)'), (None, "Escalated item", E, "The same rule 6: the model comes from the definition"), (None, "Grooming", E, "The same rule 6")],
+    [("skills/herd/SKILL.md", "respawn unasked", E, 'Rule 4: "say what you would change"'), ("skills/herd/SKILL.md", "Act first", SF, 'Rule 5: "ask"'), ("skills/queue/SKILL.md", "Groom", E, 'Rule 6: "Do not override it"')],
+    [(None, "Kitten swarms", E + " #6", '"Subagents run on the model their definition pins."'), (None, "Grooming", E + " #6", "The same rule"), (None, "respawn", E + " #4", '"say what you would change"')],
+    [("skills/herd/roles/worker.md", "a", "`" + E + "`", '"Do not override it" (rule 6)'), ("skills/herd/roles/worker.md", "b", "`" + E + "`", "Same rule 6"), ("skills/queue/SKILL.md", "c", "`" + E + "`", "Same rule 6")],
+    [(None, "Worker hand-in", E + ", rule 6", '"Do not override it"'), (None, "Grooming", E + ", rule 6", "the same rule"), (None, "Standing rules", SF + ", header and rule 5", 'rule 5: "Do not pick the cheaper reading"'), (None, "Word each commit", E + ", rule 7", '"imperative subject"')],
+]
+rc, out = run(*[report("COPY RULES, SKIP PLUGIN", r) for r in R])
+chk("the five Cat Herder runs: the model-override rule is found in 5 of 5, not 1 of 5",
+    "found in 5 of 5: rules/engineering.md rule 6" in out and "found in 2 of 5: rules/engineering.md rule 4" in out
+    and "found in 2 of 5: rules/safety.md rule 5" in out and "found in 1 of 5: rules/engineering.md rule 7" in out, out)
 rc, out = run(report("INSTALL", []), report("INSTALL", []))
 chk("no conflicts anywhere is stable", rc == 0 and "no conflicts" in out, out)
 rc, out = run("# no banner here\n", report("INSTALL", [A]))
