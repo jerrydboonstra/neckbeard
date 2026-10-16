@@ -1,0 +1,452 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure around the meow queue; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure around the meow queue; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure around the meow queue; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure around the meow queue; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure around the meow queue; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure around the meow queue; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Prompt-me procedure tied to AskUserQuestion and the ledger; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Herd orientation, pairs and hikes; starting a reviewer session on opus is a session start, not a subagent dispatch call, so rule 6 does not apply."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Auditor intro; pinning a sha is covered by the method it feeds."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "List every checkable claim in the area ... Break the code in one place the claim depends on.",
+   "why": "A claim-by-claim doc audit with break-the-code checks is a one-shot procedure the reader has no skill for."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Findings format for the audit; tied to meow topics and triage."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "never `pkill` or `killall` by pattern ... Stop a process by the pid you started.",
+   "why": "Process-safety rule the reader does not state."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Host permission-prompt hygiene for the audit."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Report hand-back for the audit."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Coordinator checklist for an audit run, tied to meow items and the project's audit record."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Template for a falsify queue item; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Bonded-review stance; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff procedure between herd sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff procedure between herd sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u21",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff procedure between herd sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u22",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff procedure between herd sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u23",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff procedure between herd sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u24",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`",
+   "why": "Tells the orchestrator to dispatch subagents with a model chosen on the call."
+  },
+  {
+   "id": "u25",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed read-only report form; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u26",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "If a git fetch or push fails on authentication, stop and report the remote and the error.",
+   "why": "Authentication-failure stop is general and the reader's safety rules do not state it."
+  },
+  {
+   "id": "u27",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup template."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents at it",
+   "why": "Lets the reviewer dispatch its own subagents with an explicit model."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer limits and branch conventions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Stop and parentage rules between sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "covered by examples/reader/rules/engineering.md rule 3 (a test is not done until seen to fail)",
+   "why": "Revert-and-watch-it-fail and cite-the-claim are already stated."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each",
+   "why": "Worker is told to dispatch haiku subagents by model on every hand-in."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never paraphrase evidence ... Stop only the processes you started, by their PID, never by port.",
+   "why": "Evidence and process-safety rules beyond the reader's; its five coding rules duplicate the reader's."
+  },
+  {
+   "id": "u34",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Orchestrator section for launches and run ends; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u35",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Orchestrator section for launches and run ends; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u36",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u37",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u38",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u39",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u40",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u41",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u42",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u43",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u44",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, which only changes how the herd speaks in chat."
+  },
+  {
+   "id": "u45",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue skill intro; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u46",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers",
+   "why": "Grooming hands work to agents on a model picked by price, which overrides what a definition pins."
+  },
+  {
+   "id": "u47",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard-block format for relaying sessions; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u48",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "One example ledger line, nothing to run."
+  },
+  {
+   "id": "u49",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue skill section; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u50",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue skill section; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u51",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue skill section; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u52",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue skill section; Cat Herder's own queue mechanics, nothing general."
+  },
+  {
+   "id": "u53",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u54",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u55",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u56",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u57",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u58",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u59",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u60",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u61",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u62",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u63",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  },
+  {
+   "id": "u64",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or meow call judged elsewhere."
+  }
+ ]
+}

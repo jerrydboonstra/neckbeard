@@ -1,0 +1,169 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "bucket": "install-skill",
+   "why": "Capture skill's entry: command lookup, repo rules file, who; nothing in the reader's rules or skills queues work mid-task."
+  },
+  {
+   "id": "u2",
+   "bucket": "install-skill",
+   "why": "Capture's one-exchange procedure (\"Queued.\" then back to the task); no reader rule or skill does this, and it asks before queueing (\"never queue without their say-so\"), so it breaks no reader rule."
+  },
+  {
+   "id": "u3",
+   "bucket": "install-skill",
+   "why": "Part of capture: queue and claim work before the first edit; it matches the reader's scope rule rather than fighting it."
+  },
+  {
+   "id": "u4",
+   "bucket": "install-skill",
+   "why": "Capture's Rescue session procedure; works with the plugin's meow queue and has no reader counterpart."
+  },
+  {
+   "id": "u5",
+   "bucket": "install-skill",
+   "why": "Capture's riffing mode (one-line replies, \"Nothing is built, merged, dropped or released on a reply nobody read\"); nothing like it in the reader."
+  },
+  {
+   "id": "u6",
+   "bucket": "install-skill",
+   "why": "The herd skill's body; its model default (\"on opus\") applies to sessions the plugin starts, not to a subagent dispatch, so reader engineering rule 6 does not govern it, and it gates paid starts on the owner's say-so."
+  },
+  {
+   "id": "u7",
+   "bucket": "install-skill",
+   "why": "Associate role file of the herd skill; routes work by declared domain, which the reader has no equivalent of."
+  },
+  {
+   "id": "u8",
+   "bucket": "install-skill",
+   "why": "Opening of the herd skill's handoff role: when a session hands off; part of a working skill the reader lacks."
+  },
+  {
+   "id": "u9",
+   "bucket": "install-skill",
+   "why": "Handoff steps for the retiring session; it leaves clone removal to the owner (\"only on their go-ahead\"), consistent with reader safety rule 1."
+  },
+  {
+   "id": "u10",
+   "bucket": "install-skill",
+   "why": "Handoff steps for the session that stays; part of the herd skill, no reader counterpart."
+  },
+  {
+   "id": "u11",
+   "bucket": "install-skill",
+   "why": "Handoff steps for the new session; part of the herd skill, and its branch naming does not touch main."
+  },
+  {
+   "id": "u12",
+   "bucket": "install-skill",
+   "why": "Fixed chat lines for handoff steps, part of the herd skill's handoff role."
+  },
+  {
+   "id": "u13",
+   "bucket": "install-skill",
+   "why": "Reviewer role opening of the herd skill: an independent reviewer whose verdict binds; the reader has no review-pair skill."
+  },
+  {
+   "id": "u14",
+   "bucket": "install-skill",
+   "why": "Reviewer setup step of the herd skill; a template that works when the plugin fills it in."
+  },
+  {
+   "id": "u15",
+   "bucket": "install-skill",
+   "why": "Reviewer's per-review procedure (fetch commits, run tests, attack, accept or reopen); the reader's release-notes skill does nothing like it."
+  },
+  {
+   "id": "u16",
+   "bucket": "install-skill",
+   "why": "Reviewer limits: no editing the worker's code, \"Never use `--force`\"; consistent with reader safety rules."
+  },
+  {
+   "id": "u17",
+   "bucket": "install-skill",
+   "why": "Reviewer stop rules; it never stops its own pair and leaves clone cleanup to others, in line with reader safety rule 1."
+  },
+  {
+   "id": "u18",
+   "bucket": "install-skill",
+   "why": "Reviewer's rigor: build checks (cite file:line, watch the test fail); part of the herd skill, and the test-fails point restates reader engineering rule 3 inside a working skill."
+  },
+  {
+   "id": "u19",
+   "bucket": "install-skill",
+   "why": "Worker role of the herd skill: claim, branch, hand in, wait for the verdict; pushes only to item branches, never to main."
+  },
+  {
+   "id": "u20",
+   "bucket": "install-skill",
+   "why": "Builder checks of the herd skill (paste raw output, \"Blocked is a real answer\"); its five coding rules mostly repeat reader engineering rules 1, 2 and 5, and it defers to the project's own debt marker."
+  },
+  {
+   "id": "u21",
+   "bucket": "dropped",
+   "why": "Opening of the herder voice skill; only wraps the persona."
+  },
+  {
+   "id": "u22",
+   "bucket": "dropped",
+   "why": "Switch for the Cat Herder cat voice, a persona setting."
+  },
+  {
+   "id": "u23",
+   "bucket": "dropped",
+   "why": "Cat names and voice lines, persona text."
+  },
+  {
+   "id": "u24",
+   "bucket": "dropped",
+   "why": "Cat-voice wording of capture confirmations, persona."
+  },
+  {
+   "id": "u25",
+   "bucket": "dropped",
+   "why": "One voice line for retirement, persona."
+  },
+  {
+   "id": "u26",
+   "bucket": "dropped",
+   "why": "Cat-voice handoff lines, persona."
+  },
+  {
+   "id": "u27",
+   "bucket": "dropped",
+   "why": "Euphemism rules for the cat voice, persona."
+  },
+  {
+   "id": "u28",
+   "bucket": "install-skill",
+   "why": "Queue skill: set up, find the command, field-trip phone rules, voice-reading of dictated messages; asks before setup and \"Never `init` over it\", and the reader has no queue skill."
+  },
+  {
+   "id": "u29",
+   "bucket": "install-skill",
+   "why": "Queue skill's working procedures (claim, review, reorder, move, groom); \"Never use `--force` on your own\" agrees with reader safety rules, and nothing in the reader does this work."
+  },
+  {
+   "id": "u30",
+   "bucket": "install-skill",
+   "why": "Queue skill's Overheard block format for relaying another session's words; part of a working skill the reader lacks."
+  },
+  {
+   "id": "u31",
+   "bucket": "dropped",
+   "why": "A sample ledger entry used as an example, not an instruction."
+  },
+  {
+   "id": "u32",
+   "bucket": "install-skill",
+   "why": "Queue skill's question ledger (\"A question the owner skipped is unread, not answered\"); agrees with reader safety rule 5 and adds a procedure the reader lacks."
+  },
+  {
+   "id": "u33",
+   "bucket": "install-skill",
+   "why": "The /meow command: runs one quoted meow call and shows its output; it works as shipped and the reader has no command like it."
+  }
+ ]
+}

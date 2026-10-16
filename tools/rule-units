@@ -2,8 +2,8 @@
 """rule-units DOSSIER OUT: number the target's rule units, so every vet run judges the same items.
 
 A unit is one section of one instruction file the dossier carries for the target: each skill, its companion files
-(roles, sections), each command, agent and rule file, split at its #, ## and ### headings. Frontmatter is left out
-(the skill's description is judged with its first section), and a section with no text under its heading is skipped.
+(roles, sections), each command, agent and rule file, split at its #, ## and ### headings. Frontmatter is left out,
+so the skill's description is in no unit (the judge reads it in the dossier), and a section with no text under its heading is skipped.
 Writes OUT as {"units": [{"id": "u1", "file": ..., "heading": ..., "chars": N, "text": ...}, ...]} and prints the
 count. Part of the units prototype (verdict-prototype-units); SKILL.md does not know about it yet.
 """

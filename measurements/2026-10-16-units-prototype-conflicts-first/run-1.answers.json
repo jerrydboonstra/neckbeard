@@ -1,0 +1,273 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Finding the command, rules file and who are meow mechanics."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Facts come from the conversation or a file you checked; mark anything else as an assumption.",
+   "why": "The reader has no rule on marking unchecked facts as assumptions; the rest is queue mechanics."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Queue-then-claim is meow-specific; its general rule, work found along the way is captured and not done inline, is examples/reader/rules/engineering.md rule 4 (scope asked is the deliverable)."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A rescue pass over the queue is meow mechanics."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A riffing mode that shortens replies and defers questions to the ledger is capture mechanics."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Pairs, hikes, launchers and the status footer are the herd tool's own mechanics."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Domain declaration on the roster is meow mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Defines when a handoff happens; plugin mechanics."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff steps run through meow herd handoff."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Checking and confirming a successor uses meow herd handoff."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Successor steps and branch naming are tied to the roster."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps; plugin wording."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Identity and pointer text for the reviewer role."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer checkout setup via a template."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "The reader has no rule on mixing a refactor with a behaviour change; the other steps repeat rule 3 (tests seen to fail)."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "It lapses when what it covers changes.",
+   "why": "An approval relayed to another session must name what it covers and when it was given; the reader's go-ahead rules do not say a go-ahead lapses."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Who may stop a pair is meow mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Name the failure you fear. Write \"I claim X; the failure I fear is Y\", then try to produce Y.",
+   "why": "A review technique the reader lacks; the test-fails check is its rule 3."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Never ask the reviewer to run it for you: that would pass a refused action to another session.",
+   "why": "The reader does not say a refused action stays refused when handed to someone else; the rest is pair mechanics."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Absent from the reader (its rules 1, 2 and 5 cover reuse, root cause and debt marks only); also \"Stop only the processes you started, by their PID, never by port.\""
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice: persona and wording, off by default and set by the owner."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "conflicts": [
+    {
+     "quote": "Short. The answer first, in a few sentences. Details only when asked.",
+     "reader_rule": "examples/reader/CLAUDE.md: \"Short is good; complete is required\", and give \"the reasoning with the verdict\" (applies to replies under Field Trip phone rules)"
+    }
+   ],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Its general rules (never act on a guessed reading of an irreversible command, do not init over a config on your own) are examples/reader/rules/safety.md rule 5 and rule 1; the rest is queue setup."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Its premise moved, or it's bigger now: don't build the old version. Show the owner the brief, what changed and what you recommend, and wait.",
+   "why": "The reader has no rule to re-check a stale brief against the repo before starting; the ready check line itself is meow's."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "The Overheard block is a fixed reply format for the queue tool."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A one-line sample ledger entry that only illustrates the section before it."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered. ... don't take it as a yes or a no, and don't act on it.",
+   "why": "The reader requires an explicit go-ahead but does not say silence is not one for a question."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A thin wrapper that runs one meow command with quoted arguments."
+  }
+ ]
+}

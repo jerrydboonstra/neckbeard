@@ -1,0 +1,169 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "bucket": "install-skill",
+   "why": "Part of the capture skill, which works as shipped and queues mid-task work, something no reader rule or skill does."
+  },
+  {
+   "id": "u2",
+   "bucket": "install-skill",
+   "why": "The capture procedure (levels, split, topic, duplicate check, confirm and return) is a plugin workflow skill with nothing like it in the reader; its \"nothing added\" split rule agrees with examples/reader/rules/engineering.md rule 4."
+  },
+  {
+   "id": "u3",
+   "bucket": "install-skill",
+   "why": "Capture's rule for queuing and claiming self-assigned work is part of the shipped capture skill and has no reader counterpart."
+  },
+  {
+   "id": "u4",
+   "bucket": "install-skill",
+   "why": "Rescue session (Roundup) is a shipped capture procedure that the reader has nothing like."
+  },
+  {
+   "id": "u5",
+   "bucket": "install-skill",
+   "why": "The riffing mode is a shipped capture procedure; it adds no unasked build, so it does not collide with the reader's scope rule."
+  },
+  {
+   "id": "u6",
+   "bucket": "install-skill",
+   "why": "The herd skill body (pairs, hikes, handoffs, status footer) works as shipped; its \"start the reviewer ... on opus\" default governs a session the plugin starts, not a subagent dispatch, so examples/reader/rules/engineering.md rule 6 does not apply."
+  },
+  {
+   "id": "u7",
+   "bucket": "install-skill",
+   "why": "The associate role file belongs to the herd skill and defines a role the reader does not have."
+  },
+  {
+   "id": "u8",
+   "bucket": "install-skill",
+   "why": "Handoff intro is part of the shipped herd role files and has no reader counterpart."
+  },
+  {
+   "id": "u9",
+   "bucket": "install-skill",
+   "why": "Retiring-session steps are part of the shipped handoff procedure."
+  },
+  {
+   "id": "u10",
+   "bucket": "install-skill",
+   "why": "The staying-session steps are part of the shipped handoff procedure."
+  },
+  {
+   "id": "u11",
+   "bucket": "install-skill",
+   "why": "The new-session steps are part of the shipped handoff procedure."
+  },
+  {
+   "id": "u12",
+   "bucket": "install-skill",
+   "why": "The handoff chat lines are part of the shipped herd role files; the voice variant is only a pointer."
+  },
+  {
+   "id": "u13",
+   "bucket": "install-skill",
+   "why": "The reviewer role header is part of the shipped herd skill and sets up a binding second-session review the reader lacks."
+  },
+  {
+   "id": "u14",
+   "bucket": "install-skill",
+   "why": "Reviewer setup is part of the shipped pair workflow."
+  },
+  {
+   "id": "u15",
+   "bucket": "install-skill",
+   "why": "The per-review procedure is part of the shipped pair workflow; its \"Attack it\" step agrees with the reader's verification stance rather than breaking it."
+  },
+  {
+   "id": "u16",
+   "bucket": "install-skill",
+   "why": "Reviewer limits are part of the shipped pair workflow; \"Never use --force\" and the no-edit rule fit the reader's hard stops."
+  },
+  {
+   "id": "u17",
+   "bucket": "install-skill",
+   "why": "Stopping and retiring rules for a started reviewer are part of the shipped pair workflow."
+  },
+  {
+   "id": "u18",
+   "bucket": "install-skill",
+   "why": "The rigor: build reviewer checklist is part of the shipped herd skill; its revert-and-watch-it-fail check overlaps examples/reader/rules/engineering.md rule 3 but sits inside a role file that works as shipped."
+  },
+  {
+   "id": "u19",
+   "bucket": "install-skill",
+   "why": "The worker role is the core of the shipped pair workflow and works with meow; it asks for the owner's go-ahead before spending or a deploy, so no safety rule is broken."
+  },
+  {
+   "id": "u20",
+   "bucket": "install-skill",
+   "why": "The rigor: build worker section is part of the shipped worker role; its five coding rules mostly repeat examples/reader/rules/engineering.md rules 1, 2 and 5, and are not split out from the role."
+  },
+  {
+   "id": "u21",
+   "bucket": "dropped",
+   "why": "Intro and command lookup for the voice-toggle skill, which only wraps the voice judged in the other herder units."
+  },
+  {
+   "id": "u22",
+   "bucket": "dropped",
+   "why": "The /herder on/off toggle exists only to switch the cat persona, which is voice, off by default."
+  },
+  {
+   "id": "u23",
+   "bucket": "dropped",
+   "why": "Cat names and cat voice in chat are persona."
+  },
+  {
+   "id": "u24",
+   "bucket": "dropped",
+   "why": "The cat-voice confirmation openers (\"Mrrp. Boxed.\") are persona."
+  },
+  {
+   "id": "u25",
+   "bucket": "dropped",
+   "why": "A one-line goodbye flavour for the persona."
+  },
+  {
+   "id": "u26",
+   "bucket": "dropped",
+   "why": "Cat-voice handoff lines duplicate the plain ones in the herd role files and are persona."
+  },
+  {
+   "id": "u27",
+   "bucket": "dropped",
+   "why": "A rule about which words the cat voice may use is persona."
+  },
+  {
+   "id": "u28",
+   "bucket": "install-skill",
+   "why": "The queue skill is the shipped procedure for setting up and using the queue; it asks before setup and before moving the queue, consistent with examples/reader/rules/safety.md rule 5."
+  },
+  {
+   "id": "u29",
+   "bucket": "install-skill",
+   "why": "Working the queue (claim, ready check, review, groom) is shipped queue procedure; it says \"Never use --force on your own\" and relays refusals to the owner, matching the reader's stop-and-ask rules."
+  },
+  {
+   "id": "u30",
+   "bucket": "install-skill",
+   "why": "The overheard block is a shipped reporting format of the queue skill that the reader has no equivalent for."
+  },
+  {
+   "id": "u31",
+   "bucket": "dropped",
+   "why": "A single sample ledger bullet that only illustrates the question ledger described in the other queue units."
+  },
+  {
+   "id": "u32",
+   "bucket": "install-skill",
+   "why": "The question ledger and answer-reading rules are shipped queue procedure; the reader has nothing like them."
+  },
+  {
+   "id": "u33",
+   "bucket": "install-skill",
+   "why": "The /meow command works as shipped, runs one quoted meow call and nothing else, and has no reader counterpart."
+  }
+ ]
+}

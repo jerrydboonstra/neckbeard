@@ -44,6 +44,9 @@ def load(path, ids):
         return [f"can't read answers: {e}"]
     got, problems = {}, []
     for a in answers:
+        if not isinstance(a, dict):
+            problems.append(f"an answer is not an object: {a!r}")
+            continue
         uid, skill, rules, conflicts = a.get("id"), a.get("skill"), a.get("rules"), a.get("conflicts")
         if uid not in ids:
             problems.append(f"{uid}: no such unit")

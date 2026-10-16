@@ -1,0 +1,235 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Finding the command and rules-file lookup are meow mechanics."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Facts come from the conversation or a file you checked; mark anything else as an assumption.",
+   "why": "Capture works as shipped; the facts-versus-assumptions rule is general and the reader's rules do not state it."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Work you find along the way that isn't part of your item is captured the same way, not done inline.",
+   "why": "Covered by examples/reader/rules/engineering.md rule 4 on scope."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue session is queue mechanics."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing-mode reply style is tied to the ledger and meow."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pairs, hikes, launchers and status footers are the plugin's own mechanics; the opus default governs sessions it starts, not subagent dispatch."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role is roster mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Short intro to the handoff role."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Retiring steps are meow handoff commands."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Staying-session steps are meow handoff commands."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "New-session steps are tied to the handoff tool and clone layout."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role preamble."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup template."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Do the tests fail without the change?",
+   "why": "Covered by examples/reader/rules/engineering.md rule 3 and the reader's reasoning-with-verdict answer rule."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "quote the answer, name exactly what it covers (the item, the commit, the wording) and say when the owner gave it. It lapses when what it covers changes.",
+   "why": "A relayed approval expires when its subject changes; the reader's safety rules do not say so."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pair stop and retire mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "Write \"I claim X; the failure I fear is Y\", then try to produce Y.",
+   "why": "A strict verification pass (cite file:line, name the feared failure, say what was not checked) is worth a small skill of the reader's own."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never ask the reviewer to run it for you: that would pass a refused action to another session.",
+   "why": "Do not route a refused action through another session; the reader's rules do not state it. The rest is pair mechanics or covered by engineering.md rules 2 and 5."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Report what you observed, never the verdict.",
+   "why": "Hand-off notes carry raw evidence, not self-judgment; the five coding rules in the unit duplicate engineering.md rules 1 to 5."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona intro for the cat voice."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Toggle for the cat voice."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat names are persona."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice confirmations are persona."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona retirement line."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice handoff lines are persona."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice euphemism rule is persona."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Never act on a guessed reading of an irreversible command.",
+   "why": "Covered by examples/reader/rules/safety.md rule 5 (ask when ambiguous and costly) and rule 1; the rest is setup and phone-style mechanics."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Its premise moved, or it's bigger now: don't build the old version. Show the owner the brief, what changed and what you recommend (narrow it, split it, or rewrite it with `edit`), and wait.",
+   "why": "Recheck a stale brief against what changed before building it; the reader's rules do not say so."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard block format is the plugin's own reply style."
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Example ledger line."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered.",
+   "why": "Silence is not a yes or a no and is not acted on; the reader's rules do not state it."
+  },
+  {
+   "id": "u33",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Thin /meow command wrapper around the CLI judged in the skills."
+  }
+ ]
+}

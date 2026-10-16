@@ -1,0 +1,273 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Command lookup, rules-file and who/owner mechanics of the plugin's own queue."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Facts come from the conversation or a file you checked; mark anything else as an assumption.",
+   "why": "Mostly queue mechanics, but one general habit is absent from the reader."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Capturing found-along-the-way work instead of doing it inline restates the scope rule: examples/reader/rules/engineering.md 'The scope I asked for is the deliverable'."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue procedure is built on meow add and the ledger."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode is reply-shortening and ledger mechanics."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Pair, hike, launcher and supervisor mechanics around the plugin's own tools."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role: domain declaration and queue answers."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Defines when a handoff starts; plugin-specific."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff commands of the plugin."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff confirm/abandon commands."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "New-session handoff steps and branch naming for the plugin."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Scripted handoff status lines."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role preamble and rigor switch."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer pair setup template."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "Review procedure; the test-fail check is already in force but the refactor-versus-behaviour split is not."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "conflicts": [
+    {
+     "quote": "A done note may report an action the worker's session was refused by its permission classifier. You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "examples/reader/rules/safety.md: 'Never run anything destructive without my explicit go-ahead in this conversation'"
+    }
+   ],
+   "rules": "new-standing",
+   "quote": "It lapses when what it covers changes.",
+   "why": "Limits hold one conflict, and a general rule about how long an owner's approval lasts."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Stopping and retiring a reviewer; plugin commands."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "was a criterion, a test or a threshold changed to make it pass? Read the test diff.",
+   "why": "Stricter verifier habits; the test-pins-the-claim check is already in force, but reading the test diff for relaxed criteria is not."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Do the work, and attack it yourself first. A reviewer doesn't replace that.",
+   "why": "Worker procedure around the plugin's commands; one general habit the reader lacks."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Builder rules; four of the five coding rules are covered, the validation rule is not."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its wording, off by default."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Setup and phone rules are plugin mechanics; the read-back-before-irreversible-action rule is covered by examples/reader/rules/safety.md 'If a request is ambiguous and the wrong reading is costly, ask'."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Queue commands; the ready-check 'premise moved, show the owner and wait' is covered by examples/reader/rules/engineering.md 'say what you would change and let me decide'."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed reply format for relayed messages."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A sample ledger line that only illustrates a format described elsewhere."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "When a reply skips something you asked, don't take it as a yes or a no, and don't act on it.",
+   "why": "Ledger mechanics plus one general rule on silence."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A /meow command that quotes its arguments and runs the plugin's CLI; mechanics only."
+  }
+ ]
+}

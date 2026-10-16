@@ -1,0 +1,235 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Command lookup, rules-file reading and the who/owner convention are the plugin's own mechanics."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Splitting is bookkeeping, not new scope: the items together cover exactly what was asked, nothing added, so the scope they asked for stays the deliverable.",
+   "why": "Scope-stays-as-asked is examples/reader/rules/engineering.md rule 4; the rest is queue mechanics."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue-and-claim-before-you-edit is the plugin's own workflow."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue session is a procedure over the meow queue and ledger."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode is a reply-style mode tied to the queue and ledger."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pairs, hikes, supervisor and launcher mechanics; the opus default governs sessions the launcher starts, not a subagent dispatch, so it does not collide with engineering rule 6."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role is roster and queue mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Two sentences that only describe when a handoff happens; the procedure is in the following units."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff brief and launch steps use the plugin's own commands."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Confirming or abandoning a handoff is the plugin's own mechanics."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "New-session handoff steps and branch naming are tied to the roster and queue."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plain-words chat lines for handoff steps, tied to the roster."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role preamble and rules-file reading."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup is pair mechanics."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding: reopen with \"split the refactor out\"",
+   "why": "The reader has no rule against mixing a refactor with a behaviour change in one diff."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "why": "A reviewer may retry an action another session was refused, even a destructive one, while examples/reader/rules/safety.md rule 1 says never run anything destructive without my explicit go-ahead in this conversation."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Stop and retire rules for a started reviewer are pair mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Stop only the processes you started, by their PID, never by port.",
+   "why": "General process hygiene the reader does not state; the other bullets are covered by engineering rule 3 and the reader's reason-with-the-verdict preference."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pair, branch, done-note, hike and clean mechanics; its go-ahead and clean-up gates agree with the reader's safety rules."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "The reader has no rule protecting validation or error handling; no-new-dependency also new; source priority, root cause and debt marks are covered by engineering rules 1, 2 and 5."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice skill introduction; persona."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice switch; persona."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat names; persona."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice confirmations; persona."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice goodbye line; persona."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice handoff lines; persona."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice word rule; persona."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Never act on a guessed reading of an irreversible command.",
+   "why": "Reading back and waiting for a yes is covered by examples/reader/rules/safety.md rule 5 (ask when ambiguous and costly) and rule 1; the rest is queue setup and phone formatting."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Its premise moved, or it's bigger now: don't build the old version. Show the owner the brief, what changed and what you recommend",
+   "why": "Covered by examples/reader/rules/engineering.md rule 4 (say what you would change and let me decide); the rest is meow commands."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard block is a reply format tied to the roster."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A worked example of a ledger entry, no instruction of its own."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered. ... don't take it as a yes or a no, and don't act on it.",
+   "why": "The reader has no rule that silence is not consent; the ledger commands themselves are plugin mechanics."
+  },
+  {
+   "id": "u33",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash-command wrapper that only runs meow, which the queue skills already cover."
+  }
+ ]
+}

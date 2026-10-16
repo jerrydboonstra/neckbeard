@@ -1,0 +1,169 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "bucket": "install-skill",
+   "why": "Capture skill's entry rules (find the command, read the repo's rules file, who, owner, leave-Cat-Herder); works as shipped and no reader skill does queue capture."
+  },
+  {
+   "id": "u2",
+   "bucket": "install-skill",
+   "why": "The seven-step capture procedure ('Capture takes one exchange at most'); it asks before queuing ('never queue without their say-so'), so it fits reader rules 4 and the ask-first stop, and nothing in the reader covers it."
+  },
+  {
+   "id": "u3",
+   "bucket": "install-skill",
+   "why": "Capture skill's rule to queue and claim work before editing ('queue it for yourself before you start'); part of the shipped capture skill, no reader equivalent."
+  },
+  {
+   "id": "u4",
+   "bucket": "install-skill",
+   "why": "Rescue-session procedure of the capture skill (read queue, match, report counts); works as shipped, nothing like it in the reader."
+  },
+  {
+   "id": "u5",
+   "bucket": "install-skill",
+   "why": "Riffing mode of the capture skill ('Nothing is built, merged, dropped or released on a reply nobody read'); shipped and new to the reader."
+  },
+  {
+   "id": "u6",
+   "bucket": "install-skill",
+   "why": "The herd skill's main body (pairs, hikes, status footer, launcher rules). Its default of starting a reviewer 'on opus' governs a session meow launches, not a subagent dispatch, so reader rule 6 is not broken; the pair start also waits for the owner's say-so."
+  },
+  {
+   "id": "u7",
+   "bucket": "install-skill",
+   "why": "Associate role file of the herd skill, 'Stay in your domain'; works as shipped, no reader equivalent."
+  },
+  {
+   "id": "u8",
+   "bucket": "dropped",
+   "why": "Two-sentence lead-in that only describes when a handoff happens; the procedure is judged in u9 to u12."
+  },
+  {
+   "id": "u9",
+   "bucket": "install-skill",
+   "why": "Retiring-session steps of the handoff role ('Take no new work, and push anything you haven't'); it holds back 'meow herd clean' until the owner's go-ahead, matching reader safety rule 1."
+  },
+  {
+   "id": "u10",
+   "bucket": "install-skill",
+   "why": "Staying-member steps of the handoff role (read the readback, confirm or abandon); shipped workflow with no reader equivalent."
+  },
+  {
+   "id": "u11",
+   "bucket": "install-skill",
+   "why": "New-session steps of the handoff role ('Take no items and give no verdicts until you're confirmed'); shipped workflow."
+  },
+  {
+   "id": "u12",
+   "bucket": "install-skill",
+   "why": "Scripted chat lines for each handoff step in plain voice; part of the shipped handoff role, which the reader has nothing like."
+  },
+  {
+   "id": "u13",
+   "bucket": "install-skill",
+   "why": "Reviewer role preamble ('you judge the work from the queue and the commits alone'); shipped, reviewer sessions are not in the reader."
+  },
+  {
+   "id": "u14",
+   "bucket": "install-skill",
+   "why": "Reviewer setup step; its placeholders are filled by meow's own pair start, so it works as shipped."
+  },
+  {
+   "id": "u15",
+   "bucket": "install-skill",
+   "why": "Each-review procedure ('review the commits the note names, never a working tree'); shipped and no reader skill reviews queue items."
+  },
+  {
+   "id": "u16",
+   "bucket": "install-skill",
+   "why": "Reviewer limits (binding verdict, 'Never use --force', no edits to the worker's code); consistent with reader safety rules and not found there."
+  },
+  {
+   "id": "u17",
+   "bucket": "install-skill",
+   "why": "Who-started-you and stopping rules for a reviewer ('The owner always has the last word'); shipped workflow."
+  },
+  {
+   "id": "u18",
+   "bucket": "install-skill",
+   "why": "Rigor-build reviewer section ('Revert the change in your scratch copy and watch the test fail'); it echoes reader engineering rule 3 but is part of the shipped reviewer role and adds citation and budget rules."
+  },
+  {
+   "id": "u19",
+   "bucket": "install-skill",
+   "why": "Worker-in-a-pair role (claim, branch, done note, pair wait, hikes); pushes only item branches, never main, and cleans only on the owner's word, so it fits reader safety rules; shipped and new."
+  },
+  {
+   "id": "u20",
+   "bucket": "install-skill",
+   "why": "Rigor-build worker section; its five coding rules overlap reader engineering rules 1, 2 and 5 (it defers to 'TODO(debt):') and add 'Never simplify away validation at a trust boundary', but it sits inside the shipped worker role."
+  },
+  {
+   "id": "u21",
+   "bucket": "dropped",
+   "why": "Persona intro to the herder voice skill ('The herd always speaks cat'); voice only, off by default."
+  },
+  {
+   "id": "u22",
+   "bucket": "dropped",
+   "why": "The /herder on/off switch for the cat voice; persona toggle, owner-controlled and off by default, so it does not collide with the reader's plain-language preference."
+  },
+  {
+   "id": "u23",
+   "bucket": "dropped",
+   "why": "Cat names and cat-voice phrasing for chat; persona."
+  },
+  {
+   "id": "u24",
+   "bucket": "dropped",
+   "why": "Cat-voice confirmation lines ('Mrrp. Boxed.'); persona."
+  },
+  {
+   "id": "u25",
+   "bucket": "dropped",
+   "why": "One sentence of voice flavor for retiring cats; persona."
+  },
+  {
+   "id": "u26",
+   "bucket": "dropped",
+   "why": "Cat-voice handoff lines; persona variant of u12."
+  },
+  {
+   "id": "u27",
+   "bucket": "dropped",
+   "why": "Word-choice rule for the cat voice ('never died or got hurt'); persona."
+  },
+  {
+   "id": "u28",
+   "bucket": "install-skill",
+   "why": "Queue skill core: set up a queue, refuse to init over a missing one, 'don't set one up unasked', phone rules; every write stays behind the owner's word, and it refuses queues on main, which agrees with reader safety rule 2."
+  },
+  {
+   "id": "u29",
+   "bucket": "install-skill",
+   "why": "Queue skill's working commands (claim, accept, reopen, ready check); 'Never use --force on your own' agrees with the reader's stops; shipped and new."
+  },
+  {
+   "id": "u30",
+   "bucket": "install-skill",
+   "why": "Queue skill's 'Overheard' relay format for what another session said; shipped formatting procedure with no reader equivalent."
+  },
+  {
+   "id": "u31",
+   "bucket": "dropped",
+   "why": "One example ledger bullet that illustrates u30; wraps something judged elsewhere."
+  },
+  {
+   "id": "u32",
+   "bucket": "install-skill",
+   "why": "Queue skill's ledger rules ('Every question for the owner goes on the ledger'); asks the owner rather than guessing, in line with reader safety rule 5; shipped."
+  },
+  {
+   "id": "u33",
+   "bucket": "install-skill",
+   "why": "The /meow command passes quoted arguments to one meow call and shows the output; a shipped command, and the typed command is the owner's explicit go-ahead."
+  }
+ ]
+}

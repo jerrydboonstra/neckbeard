@@ -74,6 +74,8 @@ code, out = run("units-verdict", U, J("noc.json", {"answers": [{"id": f"u{i}", "
 chk("an answer with no conflicts list is refused", code == 2 and "u1: conflicts must be a list" in out, out)
 code, out = run("units-verdict", U, answers("conf.json", [("keep", "conflict"), D, D, D, D]))
 chk("a section with a conflict counts as one, whatever its rules answer", "INSTALL WITH CHANGES" in out and "units with a conflict 1" in out, out)
+code, out = run("units-verdict", U, J("notdict.json", {"answers": ["u1"]}))
+chk("an answer that isn't an object is refused, exit 2", code == 2 and "not an object" in out, out)
 code, out = run("units-verdict", U, os.path.join(d, "nope.json"))
 chk("a missing answers file is refused", code == 2 and "can't read" in out, out)
 
