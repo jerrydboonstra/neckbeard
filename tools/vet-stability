@@ -27,13 +27,16 @@ COUNT_RE = re.compile(r"^\| \S+ \| \*\*(conflicts|already covered|new, standing 
 LABEL = {"conflicts": "conflicts", "already covered": "covered", "new, standing rule": "new standing",
          "new, on-demand skill": "new skill", "dropped": "dropped"}
 RULE_FILE_RE = re.compile(r"(rules/[\w.-]+\.md)")
-RULE_RE = re.compile(r"(?:rules?|#)\s*(\d+)", re.I)
+RULE_RE = re.compile(r"rules?\s*(\d+)", re.I)
+HASH_RE = re.compile(r"#\s*(\d+)")
 
 
 def rule_key(collides, held):
     """The reader's rule a conflict breaks: its file from "held in", its number from either cell."""
     f = RULE_FILE_RE.search(held)
-    n = RULE_RE.search(held) or RULE_RE.search(collides)
+    # "rule N" before a bare "#N", in either cell: "#12" is as often an issue as a rule. A judge who quotes the
+    # target's own "rule 3" in "collides with" is still read as the reader's rule 3; the reports don't say which.
+    n = (RULE_RE.search(held) or RULE_RE.search(collides) or HASH_RE.search(held) or HASH_RE.search(collides))
     if not f:
         return re.sub(r"\W+", " ", held.lower()).strip()
     return f.group(1) + (f" rule {n.group(1)}" if n else "")

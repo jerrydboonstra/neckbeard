@@ -97,6 +97,10 @@ rc, out = run(*[report("COPY RULES, SKIP PLUGIN", r) for r in R])
 chk("the five Cat Herder runs: the model-override rule is found in 5 of 5, not 1 of 5",
     "found in 5 of 5: rules/engineering.md rule 6" in out and "found in 2 of 5: rules/engineering.md rule 4" in out
     and "found in 2 of 5: rules/safety.md rule 5" in out and "found in 1 of 5: rules/engineering.md rule 7" in out, out)
+# a bare "#12" (an issue, say) in "collides with" doesn't beat "rule 6" written after it
+Q = [(None, "x", E, "the plugin's issue #12 breaks the reader's rule 6")]
+rc, out = run(report("INSTALL", Q), report("INSTALL", Q))
+chk('"rule 6" wins over an earlier bare "#12"', "found in 2 of 2: rules/engineering.md rule 6" in out, out)
 rc, out = run(report("INSTALL", []), report("INSTALL", []))
 chk("no conflicts anywhere is stable", rc == 0 and "no conflicts" in out, out)
 rc, out = run("# no banner here\n", report("INSTALL", [A]))
