@@ -2,12 +2,14 @@
 """units-verdict UNITS ANSWERS [ANSWERS ...]: the verdict and counts, computed by code from a judge's per-unit answers.
 
 UNITS is what tools/rule-units wrote. Each ANSWERS file is the judge's JSON: {"answers": [{"id": "u1", "skill": ...,
-"rules": ..., "why": ...}, ...]}, one answer for every unit, no more. Each unit gets two answers, because they are
-two questions:
+"conflicts": [...], "rules": ..., "why": ...}, ...]}, one answer for every unit, no more. Each unit gets three
+answers, because they are three questions:
 - skill: keep or drop. Is this section part of a skill, command or agent worth keeping as shipped?
-- rules: conflict, new-standing, new-skill-text, duplicate or none. What does it hold that matters outside the skill?
-  A rule in an on-demand skill applies only while that skill is loaded, so a general rule is worth copying as a
-  standing rule even when the plugin is installed. With several, the first in that order.
+- conflicts: every sentence in it that breaks a reader rule, each {"quote": ..., "reader_rule": ...}; [] when none.
+  Asked on its own so the judge checks every sentence, not just the first rule it reads.
+- rules: new-standing, new-skill-text, duplicate or none. What general rule does it hold that matters outside the
+  skill? A rule in an on-demand skill applies only while that skill is loaded, so a general rule is worth copying
+  as a standing rule even when the plugin is installed. With several, the first in that order.
 
 With one ANSWERS file it prints the counts and the verdict; with several it also prints, per unit, how often the runs
 agreed on each answer. Exit 0 when every file is valid (and, with several, when they agree on the verdict and on
@@ -23,12 +25,12 @@ not know about it yet.
 import collections, json, sys
 
 SKILL = ["keep", "drop"]
-RULES = ["conflict", "new-standing", "new-skill-text", "duplicate", "none"]
+RULES = ["new-standing", "new-skill-text", "duplicate", "none"]
 
 
 def verdict(skill, rules):
     if skill["keep"]:
-        return "INSTALL WITH CHANGES" if rules["conflict"] else "INSTALL"
+        return "INSTALL WITH CHANGES" if rules["conflict"] else "INSTALL"  # rules["conflict"]: units with a conflict
     if rules["new-standing"] or rules["new-skill-text"]:
         return "COPY RULES, SKIP PLUGIN"
     return "DON'T INSTALL"
@@ -42,7 +44,7 @@ def load(path, ids):
         return [f"can't read answers: {e}"]
     got, problems = {}, []
     for a in answers:
-        uid, skill, rules = a.get("id"), a.get("skill"), a.get("rules")
+        uid, skill, rules, conflicts = a.get("id"), a.get("skill"), a.get("rules"), a.get("conflicts")
         if uid not in ids:
             problems.append(f"{uid}: no such unit")
         elif uid in got:
@@ -51,8 +53,10 @@ def load(path, ids):
             problems.append(f"{uid}: skill {skill!r} is not one of {', '.join(SKILL)}")
         elif rules not in RULES:
             problems.append(f"{uid}: rules {rules!r} is not one of {', '.join(RULES)}")
+        elif not isinstance(conflicts, list) or not all(isinstance(c, dict) and c.get("quote") and c.get("reader_rule") for c in conflicts):
+            problems.append(f"{uid}: conflicts must be a list of {{quote, reader_rule}}, [] when none")
         else:
-            got[uid] = (skill, rules)
+            got[uid] = (skill, rules, "conflict" if conflicts else "no conflict")
     problems += [f"{u}: no answer" for u in ids if u not in got and not any(p.startswith(u + ":") for p in problems)]
     return problems or got
 
@@ -72,11 +76,12 @@ def main():
             for p in got[:10]:
                 print(f"  {p}")
             continue
-        skill = collections.Counter(s for s, _ in got.values())
-        rules = collections.Counter(r for _, r in got.values())
+        skill = collections.Counter(s for s, _, _ in got.values())
+        rules = collections.Counter(r for _, r, _ in got.values())
+        rules["conflict"] = sum(1 for _, _, c in got.values() if c == "conflict")
         v = verdict(skill, rules)
         runs.append((path, got, v))
-        print(f"{path}: {v}; skills kept {skill['keep']} of {len(ids)}; rules "
+        print(f"{path}: {v}; skills kept {skill['keep']} of {len(ids)}; units with a conflict {rules['conflict']}; rules "
               + " / ".join(str(rules[r]) for r in RULES) + "  (" + " / ".join(RULES) + ")")
     if bad:
         return 2
@@ -86,7 +91,7 @@ def main():
     vs = collections.Counter(v for _, _, v in runs)
     print("verdicts: " + ", ".join(f"{v} in {k} of {n}" for v, k in vs.most_common()))
     split = 0
-    for axis, name in ((0, "skill"), (1, "rules")):
+    for axis, name in ((0, "skill"), (2, "conflict"), (1, "rules")):
         rows = []
         for u in units:
             seen = collections.Counter(got[u["id"]][axis] for _, got, _ in runs)

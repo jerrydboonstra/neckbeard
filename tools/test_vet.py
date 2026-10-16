@@ -40,7 +40,7 @@ m = re.search(r"Write the answers to (\S+) as JSON", prompt)
 if m:
     units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
     pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing")}.get(os.environ.get("FAKE_UNITS", ""))
-    answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "why": "x"} for u in units] if pick else []
+    answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "conflicts": [], "why": "x"} for u in units] if pick else []
     json.dump({"answers": answers}, open(m.group(1), "w"))
 print("🟩 INSTALL · 0/0/0/1/0")
 '''

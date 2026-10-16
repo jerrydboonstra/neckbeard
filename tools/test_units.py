@@ -39,8 +39,10 @@ chk("rule-units: ids are u1.. in order", [u["id"] for u in units] == ["u1", "u2"
 U = os.path.join(d, "units.json")
 
 # units-verdict: the verdict rule, from two answers per unit
+C = [{"quote": "q", "reader_rule": "r"}]
 def answers(name, pairs):
-    return J(name, {"answers": [{"id": f"u{i + 1}", "skill": k, "rules": r, "why": "x"} for i, (k, r) in enumerate(pairs)]})
+    return J(name, {"answers": [{"id": f"u{i + 1}", "skill": k, "rules": "none" if r == "conflict" else r,
+                                 "conflicts": C if r == "conflict" else [], "why": "x"} for i, (k, r) in enumerate(pairs)]})
 D = ("drop", "none")
 cases = [
     ([("keep", "none"), D, D, ("drop", "duplicate"), D], "INSTALL"),
@@ -55,19 +57,23 @@ for i, (p, want) in enumerate(cases):
     code, out = run("units-verdict", U, answers(f"a{i}.json", p))
     chk(f"units-verdict: {sorted(set(p))} gives {want}", code == 0 and f": {want};" in out, out)
 code, out = run("units-verdict", U, answers("keepcopy.json", [("keep", "new-standing"), ("keep", "new-standing"), D, D, D]))
-chk("a kept skill's general rules are still counted as rules to copy", "rules 0 / 2 / 0 / 0 / 3" in out and "skills kept 2 of 5" in out, out)
+chk("a kept skill's general rules are still counted as rules to copy", "units with a conflict 0; rules 2 / 0 / 0 / 3" in out and "skills kept 2 of 5" in out, out)
 
 # refusals
 code, out = run("units-verdict", U, answers("short.json", [D] * 4))
 chk("a unit with no answer is refused, exit 2", code == 2 and "u5: no answer" in out, out)
-code, out = run("units-verdict", U, J("twice.json", {"answers": [{"id": "u1", "skill": "drop", "rules": "none"}] * 2 + [{"id": f"u{i}", "skill": "drop", "rules": "none"} for i in range(2, 6)]}))
+code, out = run("units-verdict", U, J("twice.json", {"answers": [{"id": "u1", "skill": "drop", "rules": "none", "conflicts": []}] * 2 + [{"id": f"u{i}", "skill": "drop", "rules": "none", "conflicts": []} for i in range(2, 6)]}))
 chk("a unit answered twice is refused", code == 2 and "u1: answered twice" in out, out)
 code, out = run("units-verdict", U, answers("bad.json", [("maybe", "none")] + [D] * 4))
 chk("a skill answer outside keep/drop is refused", code == 2 and "u1: skill 'maybe'" in out, out)
 code, out = run("units-verdict", U, answers("bad2.json", [("drop", "install-skill")] + [D] * 4))
 chk("a rules answer outside the list is refused", code == 2 and "u1: rules 'install-skill'" in out, out)
-code, out = run("units-verdict", U, J("extra.json", {"answers": [{"id": f"u{i}", "skill": "drop", "rules": "none"} for i in range(1, 7)]}))
+code, out = run("units-verdict", U, J("extra.json", {"answers": [{"id": f"u{i}", "skill": "drop", "rules": "none", "conflicts": []} for i in range(1, 7)]}))
 chk("an answer for a unit that doesn't exist is refused", code == 2 and "u6: no such unit" in out, out)
+code, out = run("units-verdict", U, J("noc.json", {"answers": [{"id": f"u{i}", "skill": "drop", "rules": "none"} for i in range(1, 6)]}))
+chk("an answer with no conflicts list is refused", code == 2 and "u1: conflicts must be a list" in out, out)
+code, out = run("units-verdict", U, answers("conf.json", [("keep", "conflict"), D, D, D, D]))
+chk("a section with a conflict counts as one, whatever its rules answer", "INSTALL WITH CHANGES" in out and "units with a conflict 1" in out, out)
 code, out = run("units-verdict", U, os.path.join(d, "nope.json"))
 chk("a missing answers file is refused", code == 2 and "can't read" in out, out)
 
@@ -79,6 +85,6 @@ code, out = run("units-verdict", U, a, b)
 chk("two identical runs are stable, exit 0", code == 0 and "skill: units answered the same in all 2 runs: 5 of 5" in out and out.rstrip().endswith("stable"), out)
 code, out = run("units-verdict", U, a, b, c)
 chk("a unit answered differently is named on its axis, and the set is not stable (exit 1)",
-    code == 1 and "rules: units answered the same in all 3 runs: 4 of 5" in out and "u1 skills/s/SKILL.md > (top): new-standing 2, none 1" in out
+    code == 1 and "rules: units answered the same in all 3 runs: 4 of 5" in out and "conflict: units answered the same in all 3 runs: 5 of 5" in out and "u1 skills/s/SKILL.md > (top): new-standing 2, none 1" in out
     and "u5 commands/c.md > (top): drop 2, keep 1" in out, out)
 sys.exit(1 if fails else 0)
