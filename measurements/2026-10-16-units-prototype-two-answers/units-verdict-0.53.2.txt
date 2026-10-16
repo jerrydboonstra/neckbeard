@@ -1,0 +1,25 @@
+0.53.2/run-1.answers.json: INSTALL WITH CHANGES; skills kept 43 of 64; rules 5 / 7 / 1 / 6 / 45  (conflict / new-standing / new-skill-text / duplicate / none)
+0.53.2/run-2.answers.json: INSTALL WITH CHANGES; skills kept 42 of 64; rules 4 / 3 / 1 / 1 / 55  (conflict / new-standing / new-skill-text / duplicate / none)
+0.53.2/run-3.answers.json: INSTALL WITH CHANGES; skills kept 43 of 64; rules 4 / 7 / 1 / 2 / 50  (conflict / new-standing / new-skill-text / duplicate / none)
+0.53.2/run-4.answers.json: INSTALL WITH CHANGES; skills kept 43 of 64; rules 3 / 3 / 1 / 1 / 56  (conflict / new-standing / new-skill-text / duplicate / none)
+0.53.2/run-5.answers.json: INSTALL WITH CHANGES; skills kept 43 of 64; rules 4 / 8 / 1 / 2 / 49  (conflict / new-standing / new-skill-text / duplicate / none)
+verdicts: INSTALL WITH CHANGES in 5 of 5
+skill: units answered the same in all 5 runs: 62 of 64
+  u48 skills/queue/SKILL.md > Questions for you: drop 3, keep 2
+  u57 command > (top): drop 3, keep 2
+rules: units answered the same in all 5 runs: 50 of 64
+  u2 skills/capture/SKILL.md > An interruption, so keep it short: none 3, duplicate 2
+  u3 skills/capture/SKILL.md > Asked to do work yourself: every session, not only the worker: none 3, duplicate 2
+  u7 skills/capture/sections/prompt-me.md > Prompt me: answering the open questions with a tap (the rest): none 3, new-standing 2
+  u14 skills/herd/roles/auditor.md > Prompt hygiene: none 4, new-standing 1
+  u20 skills/herd/roles/handoff.md > If you're retiring: none 4, duplicate 1
+  u22 skills/herd/roles/handoff.md > If you're the new session: none 4, new-standing 1
+  u29 skills/herd/roles/reviewer.md > Limits: none 3, conflict 1, new-standing 1
+  u31 skills/herd/roles/reviewer.md > When the item says rigor: build: duplicate 3, new-standing 2
+  u45 skills/queue/SKILL.md > The queue: none 3, duplicate 2
+  u46 skills/queue/SKILL.md > Working the queue: conflict 4, none 1
+  u49 skills/queue/SKILL.md > Staying reasonable: new-standing 3, none 2
+  u50 skills/queue/sections/asks.md > Asking the owner to do something: none 3, new-standing 2
+  u51 skills/queue/sections/field-trip.md > Field Trip, and reading the owner as voice: none 3, duplicate 1, new-standing 1
+  u52 skills/queue/sections/setup.md > Setting up a queue: none 4, duplicate 1
+NOT stable: the runs disagree

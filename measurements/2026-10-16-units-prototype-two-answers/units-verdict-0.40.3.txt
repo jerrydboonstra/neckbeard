@@ -1,0 +1,19 @@
+0.40.3/run-1.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; rules 1 / 5 / 0 / 3 / 24  (conflict / new-standing / new-skill-text / duplicate / none)
+0.40.3/run-2.answers.json: INSTALL; skills kept 25 of 33; rules 0 / 3 / 0 / 4 / 26  (conflict / new-standing / new-skill-text / duplicate / none)
+0.40.3/run-3.answers.json: INSTALL; skills kept 25 of 33; rules 0 / 6 / 1 / 3 / 23  (conflict / new-standing / new-skill-text / duplicate / none)
+0.40.3/run-4.answers.json: INSTALL WITH CHANGES; skills kept 23 of 33; rules 1 / 4 / 0 / 3 / 25  (conflict / new-standing / new-skill-text / duplicate / none)
+0.40.3/run-5.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; rules 1 / 4 / 0 / 4 / 24  (conflict / new-standing / new-skill-text / duplicate / none)
+verdicts: INSTALL WITH CHANGES in 3 of 5, INSTALL in 2 of 5
+skill: units answered the same in all 5 runs: 30 of 33
+  u8 skills/herd/roles/handoff.md > Handing off to a new session: keep 4, drop 1
+  u31 skills/queue/SKILL.md > Questions for you: drop 4, keep 1
+  u33 command > (top): keep 3, drop 2
+rules: units answered the same in all 5 runs: 26 of 33
+  u2 skills/capture/SKILL.md > An interruption, so keep it short: new-standing 2, duplicate 2, none 1
+  u3 skills/capture/SKILL.md > Asked to do work yourself: every session, not only the worker: duplicate 3, none 2
+  u15 skills/herd/roles/reviewer.md > Each review: new-standing 4, duplicate 1
+  u16 skills/herd/roles/reviewer.md > Limits: conflict 3, none 1, new-standing 1
+  u18 skills/herd/roles/reviewer.md > When the item says rigor: build: new-standing 3, duplicate 1, new-skill-text 1
+  u19 skills/herd/roles/worker.md > The worker, in a pair: none 3, new-standing 1, duplicate 1
+  u29 skills/queue/SKILL.md > Working the queue: duplicate 4, new-standing 1
+NOT stable: the runs disagree
