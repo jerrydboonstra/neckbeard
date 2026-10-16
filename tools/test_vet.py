@@ -36,6 +36,12 @@ body = {"good": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n",
         "leak": "> ## 🟩 INSTALL · fine\n> Read " + target + "/skills/demo/SKILL.md.\n"}.get(mode)
 if body is not None:
     open(out, "w").write("# 🔍 demo 1.0.0\n\n" + body)
+m = re.search(r"Write the answers to (\S+) as JSON", prompt)
+if m:
+    units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
+    bucket = {"units-install": "install-skill", "units-mismatch": "new-standing"}.get(os.environ.get("FAKE_UNITS", ""))
+    answers = [{"id": u["id"], "bucket": bucket, "why": "x"} for u in units] if bucket else []
+    json.dump({"answers": answers}, open(m.group(1), "w"))
 print("🟩 INSTALL · 0/0/0/1/0")
 '''
 
@@ -55,7 +61,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None):
+def run(case, login="env", report="good", extra=(), remote=None, units=""):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -75,7 +81,7 @@ def run(case, login="env", report="good", extra=(), remote=None):
         # a cloud container rewrites git@github.com: to https itself through GIT_CONFIG_*, which would hide vet's own rewrite
         env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR" and not k.startswith("GIT_CONFIG")}
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
-                   PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report,
+                   PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report, FAKE_UNITS=units,
                    TMPDIR=os.path.join(tmp, "t"))
         os.mkdir(env["TMPDIR"])
         before = reader_files()
@@ -92,6 +98,17 @@ def run(case, login="env", report="good", extra=(), remote=None):
 
 
 judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"]]
+
+# 0. --units (prototype): the verdict comes from the per-unit answers, and the banner must carry it
+r = run("units", extra=("--units",), units="units-install")
+chk("units: answers that compute INSTALL, banner INSTALL: exit 0", r["rc"], 0)
+chk("units: the judge got the unit list and the written tests", "UNITS PROTOTYPE" in judge(r)[0]["prompt"] and "install-skill" in judge(r)[0]["prompt"], True)
+r = run("units-mismatch", extra=("--units",), units="units-mismatch")
+chk("units: banner INSTALL but answers compute COPY RULES: refused", (r["rc"], "computed verdict is COPY RULES" in r["out"]), (1, True))
+r = run("units-missing", extra=("--units",), units="units-none")
+chk("units: an answer missing for a unit: refused", (r["rc"], "answers were refused" in r["out"]), (1, True))
+r = run("no-units")
+chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)[0]["prompt"], False)
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
 r = run("web")

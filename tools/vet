@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT]: vet one plugin against the sample reader, headless,
+# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units]: vet one plugin against the sample reader, headless,
 # and write the report to OUT. This is the gallery method in one command, for a plugin that publishes its report
 # and wants to rebuild it, say in a Claude Code web session on its own repo:
 #   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
@@ -14,6 +14,9 @@
 #      own config, and says so: the judge is told to ignore those instructions but still starts with them
 #   4. check the report: it exists, carries a verdict, and names no local path; set its title line, which
 #      says the verdict is against the sample reader
+# --units (a prototype, verdict-prototype-units): number the target's sections with tools/rule-units, have the judge
+# answer every one by the written tests in tools/vet-units.md, and take the verdict from tools/units-verdict. Keeps
+# OUT's stem .units.json and .answers.json beside the report; fails when the answers or the banner don't match.
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
 # Exit 0 only when the report passed every check. Kept out of bin/, which a plugin puts on every session's PATH.
@@ -23,7 +26,7 @@
 # has no header to read.
 set -u
 usage() {
-  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT]" >&2
+  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units]" >&2
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
 }
@@ -52,12 +55,13 @@ for line in open(sys.argv[1], encoding="utf-8"):
 fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2; shift 2
-judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note=""
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no
 while [ $# -gt 0 ]; do case $1 in
   --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; shift 2 ;;
   --model) [ $# -ge 2 ] || usage; model=$2; shift 2 ;;
   --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
   --note) [ $# -ge 2 ] || usage; note=$2; shift 2 ;;
+  --units) units=yes; shift ;;
   *) usage ;;
 esac; done
 
@@ -130,6 +134,16 @@ Rules:
 
 Reply with the verdict line and the counts (conflicts / covered / new standing / new skill / dropped).
 EOF
+if [ "$units" = yes ]; then
+  unitsf=${out%.md}.units.json answers=${out%.md}.answers.json
+  rm -f "$answers"
+  python3 "$nb/tools/rule-units" "$dossier" "$unitsf" >&2 || die "rule-units failed"
+  python3 - "$nb/tools/vet-units.md" "$unitsf" "$answers" "$nb" >>"$prompt" <<'EOF' || die "couldn't write the units addendum"
+import sys
+print("\n" + open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], answers=sys.argv[3], nb=sys.argv[4]))
+print("The ANSWERS file above is the one file you may write besides the REPORT FILE.")
+EOF
+fi
 cfg=()
 [ "$judge" = reader ] && cfg=(env CLAUDE_CONFIG_DIR="$reader")
 rm -f "$out"
@@ -139,6 +153,13 @@ rm -f "$out"
 # 4. the report
 [ -s "$out" ] || die "the judge wrote no report to $out"
 grep -qE '^> ## (🟥|🟧|🟨|🟩) ' "$out" || die "$out carries no verdict banner"
+if [ "$units" = yes ]; then
+  computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers") || { echo "$computed" >&2; die "the judge's answers were refused"; }
+  echo "vet: units: $computed" >&2
+  v=$(printf '%s\n' "$computed" | sed -E 's/^[^:]*: ([^;]+);.*/\1/')
+  bv=$(grep -E '^> ## ' "$out" | head -n 1 | sed -E 's/^> ## [^ ]+ //; s/ · .*//')
+  case $bv in "$v"|"$v /"*) ;; *) die "the banner says $bv, but the computed verdict is $v" ;; esac
+fi
 # the title says whose rules these are; a judge started with its own rules has been seen to write "your rules"
 case $(head -n 1 "$out") in "# 🔍 "*) ;; *) die "$out has no 🔍 title line" ;; esac
 python3 - "$out" "$title" <<'EOF'
