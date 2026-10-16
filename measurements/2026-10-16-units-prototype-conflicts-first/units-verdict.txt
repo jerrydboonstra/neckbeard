@@ -1,0 +1,17 @@
+run-1.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; units with a conflict 1; rules 8 / 0 / 2 / 23  (new-standing / new-skill-text / duplicate / none)
+run-2.answers.json: INSTALL; skills kept 25 of 33; units with a conflict 0; rules 6 / 0 / 3 / 24  (new-standing / new-skill-text / duplicate / none)
+run-3.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; units with a conflict 1; rules 7 / 0 / 3 / 23  (new-standing / new-skill-text / duplicate / none)
+run-4.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; units with a conflict 1; rules 6 / 0 / 3 / 24  (new-standing / new-skill-text / duplicate / none)
+run-5.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; units with a conflict 1; rules 8 / 0 / 2 / 23  (new-standing / new-skill-text / duplicate / none)
+verdicts: INSTALL WITH CHANGES in 4 of 5, INSTALL in 1 of 5
+skill: units answered the same in all 5 runs: 33 of 33
+conflict: units answered the same in all 5 runs: 30 of 33
+  u15 skills/herd/roles/reviewer.md > Each review: no conflict 4, conflict 1
+  u16 skills/herd/roles/reviewer.md > Limits: no conflict 3, conflict 2
+  u28 skills/queue/SKILL.md > The queue: no conflict 4, conflict 1
+rules: units answered the same in all 5 runs: 29 of 33
+  u2 skills/capture/SKILL.md > An interruption, so keep it short: new-standing 3, none 1, duplicate 1
+  u3 skills/capture/SKILL.md > Asked to do work yourself: every session, not only the worker: duplicate 3, none 2
+  u5 skills/capture/SKILL.md > Stream-of-consciousness: the owner is riffing: none 4, duplicate 1
+  u29 skills/queue/SKILL.md > Working the queue: duplicate 3, new-standing 2
+NOT stable: the runs disagree
