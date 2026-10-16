@@ -1,0 +1,17 @@
+run 1 exit 0
+run 2 exit 0
+run 3 exit 0
+run 4 exit 0
+run 5 exit 0
+-- raw
+e681e0d7cf3e854a3a70e5e8bff8fe5507f10db147d9362d16bbc62b7a13afbd  /home/agent/runs/dossier-det/dossier-1.json
+d6eccd0abf844adf57fc68330e7d8b2d17370eaf0d4f41a845babe45b64cea88  /home/agent/runs/dossier-det/dossier-2.json
+f64e0e19a9d3526faa4ab9de590d049566a5be7c5b3e8ecdfe7a892ae773483d  /home/agent/runs/dossier-det/dossier-3.json
+9b171cf13951bade4663316afef0ebe7d1fc5640fe5c92fa920520931545f1aa  /home/agent/runs/dossier-det/dossier-4.json
+d65d8808fa2709e1bf6e1a72d4c00dffd9b1a0af2046d95b7fe57caf8ca44ef4  /home/agent/runs/dossier-det/dossier-5.json
+-- with the temp path blanked
+27bd905fee5d143777f3e527ba6c78a51eb6ae0d33dfe61598a9714b26512214  /home/agent/runs/dossier-det/dossier-1.norm.json
+27bd905fee5d143777f3e527ba6c78a51eb6ae0d33dfe61598a9714b26512214  /home/agent/runs/dossier-det/dossier-2.norm.json
+27bd905fee5d143777f3e527ba6c78a51eb6ae0d33dfe61598a9714b26512214  /home/agent/runs/dossier-det/dossier-3.norm.json
+27bd905fee5d143777f3e527ba6c78a51eb6ae0d33dfe61598a9714b26512214  /home/agent/runs/dossier-det/dossier-4.norm.json
+27bd905fee5d143777f3e527ba6c78a51eb6ae0d33dfe61598a9714b26512214  /home/agent/runs/dossier-det/dossier-5.norm.json
