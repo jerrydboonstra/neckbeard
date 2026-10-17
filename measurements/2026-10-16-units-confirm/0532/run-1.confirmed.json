@@ -1,0 +1,68 @@
+{
+ "confirmed": [
+  {
+   "id": "u24",
+   "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`, one lens each, at the handed-in tip.",
+   "reader_rule": "reader/rules/engineering.md: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c1",
+   "found_in": 3,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model the subagent definitions pin, and the reader rule forbids that override on the dispatch call."
+  },
+  {
+   "id": "u28",
+   "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents at it and confirm each finding yourself.",
+   "reader_rule": "reader/rules/engineering.md: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c2",
+   "found_in": 3,
+   "why": "The sentence permits sending a swarm of subagents on a specific model (`claude-haiku-5-5`) with no limit, which overrides the model the subagent definition pins, and the reader rule forbids overriding it on the dispatch call."
+  },
+  {
+   "id": "u29",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "reader/rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the unlimited permission to repeat an action the worker's session was refused needs a limit, e.g. only if it isn't destructive)",
+   "cid": "c3",
+   "found_in": 3,
+   "why": "The sentence grants unlimited permission to repeat a previously refused action on the model's own judgement, which could include destructive actions that the reader rule forbids without explicit go-ahead, and it has no limit such as 'only if it isn't destructive'."
+  },
+  {
+   "id": "u32",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each: correctness, tests, docs and help, trust boundaries.",
+   "reader_rule": "reader/rules/engineering.md: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c4",
+   "found_in": 3,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model their definitions pin, and the rule forbids overriding it on the dispatch call."
+  },
+  {
+   "id": "u32",
+   "quote": "send three subagents on `claude-haiku-5-5` at the passages you drafted, one lens each: house style against the project's own (Cat Herder's is `docs/style.md`), meaning against the code, and Orwell tightening.",
+   "reader_rule": "reader/rules/engineering.md: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c5",
+   "found_in": 3,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model their definitions pin, and the reader rule forbids overriding it on the dispatch call."
+  },
+  {
+   "id": "u32",
+   "quote": "one more read-only Haiku checks each docs or CHANGELOG line you added against the code",
+   "reader_rule": "engineering.md: \"6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.\"",
+   "cid": "c6",
+   "found_in": 1,
+   "why": "The sentence tells the plugin to dispatch a Haiku subagent, which overrides the model the subagent's definition pins, and the rule forbids overriding it on the dispatch call."
+  },
+  {
+   "id": "u32",
+   "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "safety.md: \"1. **Never run anything destructive without my explicit go-ahead in this conversation:**\"",
+   "cid": "c7",
+   "found_in": 1,
+   "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, so it could run a destructive action the rule forbids without the user's explicit go-ahead."
+  },
+  {
+   "id": "u46",
+   "quote": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers, at most 4 at once.",
+   "reader_rule": "reader/rules/engineering.md: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c9",
+   "found_in": 3,
+   "why": "The sentence tells the model to dispatch agents on \"the cheapest capable model your host offers\", which means choosing a model on the dispatch call and overriding the model each subagent definition pins, which the rule forbids."
+  }
+ ]
+}

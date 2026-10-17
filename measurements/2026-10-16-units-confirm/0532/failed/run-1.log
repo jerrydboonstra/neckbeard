@@ -1,0 +1,5 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+64 units, 169706 chars
+7 candidates from 3 passes (0 dropped)
+vet: the confirm call for c7 gave no usable answer
+vet: a confirm call gave no usable answer

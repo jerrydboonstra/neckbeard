@@ -1,0 +1,26 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+33 units, 95547 chars
+2 candidates from 3 passes (0 dropped)
+vet: units: 2 of 2 candidates confirmed
+**🟧 INSTALL WITH CHANGES** (the verdict `units-verdict` printed, used unchanged).
+
+| conflicts | covered | new standing | new skill | dropped |
+|:--:|:--:|:--:|:--:|:--:|
+| 2 | 2 | 7 | 0 | 9 |
+
+- **Skills kept:** 24 of 33 units.
+- **Conflicts:** u16 and u19. Both let a reviewer retry a refused action on its own judgement, which fights `examples/reader/rules/safety.md` rule 1 on destructive actions. The limit to ask for is non-destructive retries only.
+- **Covered:** u2 and u3, by `examples/reader/rules/engineering.md` rule 4.
+- **New standing rules:** u15, u16, u18, u19, u20, u29 and u32.
+- **Dropped:** u21 to u27 (the Cat Herder voice), u31 (an example ledger entry) and u33 (the `meow` command wrapper).
+
+I agree with the computed verdict. The dossier could not trace the three hooks, so I read the target's `lib/cat_herder/hooks.py` for the "Cost" row of the report.
+
+I reread the report: it has no em dashes and names no local path. The grid rows match the counts.
+
+Files are in `/home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/`:
+- `run-3.md`
+- `run-3.answers.json`
+vet: units: /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-3.answers.json: INSTALL WITH CHANGES; skills kept 24 of 33; units with a conflict 2; rules 7 / 0 / 2 / 24  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 5 find and confirm calls, $1.23, 62 s of call time; whole vet 131 s (the report pass is not in the dollars)
+vet: report /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-3.md (judge: own)

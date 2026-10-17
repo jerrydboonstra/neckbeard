@@ -1,0 +1,24 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+33 units, 95547 chars
+2 candidates from 3 passes (0 dropped)
+vet: units: 2 of 2 candidates confirmed
+**🟧 INSTALL WITH CHANGES.** The `units-verdict` tool printed it, and I used it unchanged.
+
+Counts:
+- **Conflicts:** 2 (u16 and u19). Both are sentences that let a refused action be retried on the session's own judgement, which collides with the destructive-action stop in `examples/reader/rules/safety.md`. The report asks for a limit: retry only when the action is not destructive.
+- **Covered:** 0
+- **New standing:** 6 (u15, u16, u18, u19, u20, u32)
+- **New skill:** 0
+- **Dropped:** 9 (u8, u21 to u27, u31). Seven of those are the herder cat voice, u8 only describes when a handoff happens, and u31 is a sample ledger bullet.
+- **Skills kept:** 24 of 33
+
+The merge step confirmed both conflicts and put them into the answers file. I read the rule 3 text for `rigor: build` and the reader's engineering rules and found no `duplicate` rows. Each overlapping unit also carries a rule the reader lacks, so it went under new standing instead.
+
+The dossier could not trace the three hooks' payload, so the report lists the injected size as unknown.
+
+Files are in `/home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/`:
+- `run-4.md`
+- `run-4.answers.json`
+vet: units: /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-4.answers.json: INSTALL WITH CHANGES; skills kept 24 of 33; units with a conflict 2; rules 6 / 0 / 0 / 27  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 5 find and confirm calls, $1.34, 73 s of call time; whole vet 117 s (the report pass is not in the dollars)
+vet: report /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-4.md (judge: own)

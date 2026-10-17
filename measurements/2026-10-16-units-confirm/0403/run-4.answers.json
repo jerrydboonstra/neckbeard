@@ -1,0 +1,278 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture intro and command lookup; the plugin's own mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Level, split and write steps for queueing work, all tied to meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue-and-claim rules for a session asked to do work, tied to meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue session procedure that reads and writes the meow queue.",
+   "conflicts": []
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode shortens replies and files items through meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pair, hike and handoff dispatch for the herd, all meow commands.",
+   "conflicts": []
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role: domain and answers on the item, all queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Only describes when a handoff happens; the steps are in the units after it.",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Retiring-session handoff steps through meow herd handoff.",
+   "conflicts": []
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Staying-session confirm or abandon steps through meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "New-session start rules; branch naming and clone rules are herd-specific.",
+   "conflicts": []
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps, specific to the herd.",
+   "conflicts": []
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role header with placeholders, tied to meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup template, tied to the pair record.",
+   "conflicts": []
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "Review steps use meow, but the restructure-versus-behaviour rule is general and the reader has no such rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "It lapses when what it covers changes.",
+   "why": "The reviewer role works as shipped; a relayed go-ahead expiring when its subject changes is a general rule the reader lacks.",
+   "conflicts": [
+    {
+     "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation: deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.\" The unlimited permission to repeat a refused action has no limit for destructive actions."
+    }
+   ]
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Stopping and retiring a reviewer through meow herd.",
+   "conflicts": []
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Cite every claim you accept with a `file:line` and a quoted span.",
+   "why": "Verifier rigor for rigor: build items; the citation rule is general, while seeing a test fail is already engineering.md rule 3.",
+   "conflicts": []
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never ask the reviewer to run it for you: that would pass a refused action to another session.",
+   "why": "Worker role works as shipped; not routing a refused action through another session is a general safety rule the reader lacks.",
+   "conflicts": [
+    {
+     "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+     "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\". The permission to retry a refused action on the reviewer's own judgement is unlimited, so it covers destructive actions too."
+    }
+   ]
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Builder rigor; reuse, root cause and debt marker repeat engineering.md rules 1, 2 and 5, but this one is new.",
+   "conflicts": []
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice toggle intro; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Switches the cat voice on and off; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat names and cat voice; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice wording for capture replies; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice goodbye line; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice handoff lines; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Euphemism rule for the cat voice; persona.",
+   "conflicts": []
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue setup, field trip and voice-reading rules, all around meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Day-to-day queue commands; mechanics of meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard block format for relaying another session; specific to the herd.",
+   "conflicts": []
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A sample ledger bullet shown as an example, not an instruction.",
+   "conflicts": []
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered.",
+   "why": "Ledger rules are meow mechanics, but treating silence as neither yes nor no is general and the reader lacks it.",
+   "conflicts": []
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "The /meow command runs one quoted meow call; tied to the plugin's tool.",
+   "conflicts": []
+  }
+ ]
+}

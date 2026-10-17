@@ -1,0 +1,49 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model the subagent definitions pin, and the reader rule forbids that override on the dispatch call."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence permits sending a swarm of subagents on a specific model (`claude-haiku-5-5`) with no limit, which overrides the model the subagent definition pins, and the reader rule forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence grants unlimited permission to repeat a previously refused action on the model's own judgement, which could include destructive actions that the reader rule forbids without explicit go-ahead, and it has no limit such as 'only if it isn't destructive'."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model their definitions pin, and the rule forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model their definitions pin, and the reader rule forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence tells the plugin to dispatch a Haiku subagent, which overrides the model the subagent's definition pins, and the rule forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, so it could run a destructive action the rule forbids without the user's explicit go-ahead."
+  },
+  {
+   "cid": "c8",
+   "conflict": false,
+   "why": "The sentence only restricts what content goes into commit messages (no agent/session/roster names) and says nothing against an imperative subject under 60 characters followed by the why, so both can be satisfied together."
+  },
+  {
+   "cid": "c9",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch agents on \"the cheapest capable model your host offers\", which means choosing a model on the dispatch call and overriding the model each subagent definition pins, which the rule forbids."
+  }
+ ]
+}

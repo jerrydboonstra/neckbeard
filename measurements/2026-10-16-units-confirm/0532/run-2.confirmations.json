@@ -1,0 +1,44 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents with an explicit model (`claude-haiku-5-5`) on the dispatch call, which rule 6 forbids because it overrides the model the subagent definition pins."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence permits dispatching subagents on a named model (`claude-haiku-5-5`) with no limit, and that would override whatever model a subagent's definition pins, which rule 6 forbids."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat a refused action on the model's own judgement, which could include destructive actions that the reader rule forbids without explicit go-ahead in the conversation."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which sets the model on the dispatch call and overrides whatever model each subagent's definition pins, which rule 6 forbids."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence instructs dispatching subagents explicitly on `claude-haiku-5-5`, which overrides the model their definition pins, and rule 6 forbids overriding the model on the dispatch call."
+  },
+  {
+   "cid": "c6",
+   "conflict": false,
+   "why": "The sentence only restricts what names may appear in commit text (no agent, session or roster names) and does not contradict the rule's imperative subject, 60-character limit, or why-body requirement, so both can be followed together."
+  },
+  {
+   "cid": "c7",
+   "conflict": false,
+   "why": "The sentence has the plugin dispatch a read-only Haiku check, and the reader rule only forbids overriding a subagent's pinned model on the dispatch call; the sentence names no override, and a Haiku check could be a definition that pins Haiku."
+  },
+  {
+   "cid": "c8",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch agents on the 'cheapest capable model your host offers', which selects a model on the dispatch call and so overrides the model the subagent definition pins, as rule 6 forbids."
+  }
+ ]
+}

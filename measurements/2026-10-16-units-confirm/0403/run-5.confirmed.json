@@ -1,0 +1,20 @@
+{
+ "confirmed": [
+  {
+   "id": "u16",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the permission to retry a refused action is unlimited, so it covers destructive actions)",
+   "cid": "c1",
+   "found_in": 3,
+   "why": "The sentence gives unlimited permission to retry any refused action on the model's own judgement, including destructive ones, which the reader rule forbids without explicit go-ahead, and it has no limit such as 'only if it isn't destructive'."
+  },
+  {
+   "id": "u19",
+   "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the permission is unlimited, so it covers refused destructive actions)",
+   "cid": "c2",
+   "found_in": 1,
+   "why": "The sentence gives the reviewer unlimited permission to retry a refused action on its own judgement, which could be destructive, while the rule forbids anything destructive without the user's explicit go-ahead in this conversation."
+  }
+ ]
+}
