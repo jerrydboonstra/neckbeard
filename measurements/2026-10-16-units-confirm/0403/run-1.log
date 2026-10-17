@@ -12,7 +12,7 @@ vet: units: 2 of 3 candidates confirmed
 | New skill | 0 |
 | Dropped | 8 (u21 to u27, the cat-voice sections, and u31, a sample ledger line) |
 
-I judged the skills as working as shipped from reading them and their hook code, and did not run them. The report is at `/home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-1.md`, and I reread its counts against the grids. The answers file is `run-1.answers.json` in the same folder, merged with the confirmed conflicts before the verdict.
+I judged the skills as working as shipped from reading them and their hook code, and did not run them. The report is at `measurements/2026-10-16-units-confirm/0403/run-1.md`, and I reread its counts against the grids. The answers file is `run-1.answers.json` in the same folder, merged with the confirmed conflicts before the verdict.
 
 I wrote the "Do this" and patch sections myself. They ask for the two retry sentences to be limited to non-destructive actions, and propose four rules for `examples/reader/rules/engineering.md`.
 
@@ -20,6 +20,6 @@ u16 sits in both the conflicts and covered grids, because the tool counts it in 
 
 ## Memory proposals
 None.
-vet: units: /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-1.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; units with a conflict 2; rules 4 / 0 / 2 / 27  (new-standing / new-skill-text / duplicate / none)
+vet: units: measurements/2026-10-16-units-confirm/0403/run-1.answers.json: INSTALL WITH CHANGES; skills kept 25 of 33; units with a conflict 2; rules 4 / 0 / 2 / 27  (new-standing / new-skill-text / duplicate / none)
 vet: units cost: 6 find and confirm calls, $1.58, 93 s of call time; whole vet 137 s (the report pass is not in the dollars)
-vet: report /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-1.md (judge: own)
+vet: report measurements/2026-10-16-units-confirm/0403/run-1.md (judge: own)

@@ -16,9 +16,9 @@ The merge step confirmed both conflicts and put them into the answers file. I re
 
 The dossier could not trace the three hooks' payload, so the report lists the injected size as unknown.
 
-Files are in `/home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/`:
+Files are in `measurements/2026-10-16-units-confirm/0403/`:
 - `run-4.md`
 - `run-4.answers.json`
-vet: units: /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-4.answers.json: INSTALL WITH CHANGES; skills kept 24 of 33; units with a conflict 2; rules 6 / 0 / 0 / 27  (new-standing / new-skill-text / duplicate / none)
+vet: units: measurements/2026-10-16-units-confirm/0403/run-4.answers.json: INSTALL WITH CHANGES; skills kept 24 of 33; units with a conflict 2; rules 6 / 0 / 0 / 27  (new-standing / new-skill-text / duplicate / none)
 vet: units cost: 5 find and confirm calls, $1.34, 73 s of call time; whole vet 117 s (the report pass is not in the dollars)
-vet: report /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0403/run-4.md (judge: own)
+vet: report measurements/2026-10-16-units-confirm/0403/run-4.md (judge: own)

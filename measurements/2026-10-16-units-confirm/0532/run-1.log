@@ -23,9 +23,9 @@ I reread the report. The numbered grid rows (5 conflicts, 9 rules to copy, 42 ke
 
 I wrote one thing besides the report: `run-1.answers.json`, which `units-confirm merge` updated. The merge printed "8 of 9 candidates confirmed".
 
-Files are in /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0532:
+Files are in measurements/2026-10-16-units-confirm/0532:
 - run-1.md
 - run-1.answers.json
-vet: units: /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0532/run-1.answers.json: INSTALL WITH CHANGES; skills kept 42 of 64; units with a conflict 5; rules 7 / 2 / 0 / 55  (new-standing / new-skill-text / duplicate / none)
+vet: units: measurements/2026-10-16-units-confirm/0532/run-1.answers.json: INSTALL WITH CHANGES; skills kept 42 of 64; units with a conflict 5; rules 7 / 2 / 0 / 55  (new-standing / new-skill-text / duplicate / none)
 vet: units cost: 12 find and confirm calls, $2.39, 137 s of call time; whole vet 161 s (the report pass is not in the dollars)
-vet: report /home/agent/runs/nb-confirm/measurements/2026-10-16-units-confirm/0532/run-1.md (judge: own)
+vet: report measurements/2026-10-16-units-confirm/0532/run-1.md (judge: own)
