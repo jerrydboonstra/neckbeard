@@ -46,7 +46,12 @@ if "FIND PASS" in prompt and m:
     json.dump({"conflicts": found}, open(m.group(1), "w"))
     reply(str(len(found)))
 if "CONFIRM CALL" in prompt:
-    reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") == "yes", "why": "fake"}))
+    if os.environ.get("FAKE_CONFIRM") == "flaky" and not os.path.exists(os.environ["FAKE_LOG"] + ".flaky"):
+        open(os.environ["FAKE_LOG"] + ".flaky", "w").close()
+        reply("I would rather not say.")
+    if os.environ.get("FAKE_CONFIRM") == "garbage":
+        reply("no json here")
+    reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") in ("yes", "flaky"), "why": "fake"}))
 out = re.search(r"REPORT FILE \(the only file you create\): (\S+)", prompt).group(1)
 target = re.search(r"checked out at (\S+)", prompt).group(1).rstrip(",")
 mode = os.environ.get("FAKE_REPORT", "good")
@@ -141,6 +146,10 @@ chk("confirm: the call sees the sentence and the written test, not the units or 
 chk("confirm: the call is allowed no tools", c["args"][c["args"].index("--allowedTools") + 1], "")
 r = run("units-rejected", extra=("--units",), units="units-install", finds="one", confirm="no")
 chk("confirm: a rejected candidate does not count, exit 0", (r["rc"], "0 of 1 candidates confirmed" in r["out"]), (0, True))
+r = run("units-flaky", extra=("--units",), units="units-install", finds="one", confirm="flaky")
+chk("confirm: a call with no JSON is retried once, and the second answer counts", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (2, True))
+r = run("units-garbage", extra=("--units",), units="units-install", finds="one", confirm="garbage")
+chk("confirm: two calls with no JSON fail the vet and show what was said", (r["rc"], "gave no usable answer: 'no json here" in r["out"]), (1, True))
 r = run("units-late", extra=("--units",), units="units-install", finds="late", confirm="yes")
 chk("pool: a candidate found in one pass of three is still confirmed", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
 r = run("units-invented", extra=("--units",), units="units-install", finds="invented", confirm="yes")

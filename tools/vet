@@ -175,17 +175,24 @@ print(open(sys.argv[1], encoding="utf-8").read().format(rule=open(sys.argv[2]).r
     call "" "$work/confirm-$cid.md" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err" &
   done
   wait
+  # a confirm call that answered with no JSON (a refusal, a hiccup) gets one more try, alone
+  for f in "$work"/confirm-*.md; do
+    [ -e "$f" ] || break
+    cid=${f##*/confirm-}; cid=${cid%.md}
+    grep -q '"conflict"' "$work/confirm-$cid.out" || call "" "$f" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err"
+  done
   python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF' || die "a confirm call gave no usable answer"
 import json, re, sys
 cands = json.load(open(sys.argv[1]))["candidates"]
 confs, kept = [], []
 for c in cands:
+    text = ""
     try:
         text = open(f"{sys.argv[2]}/confirm-{c['cid']}.out", encoding="utf-8").read()
         a = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
         assert isinstance(a["conflict"], bool)
     except Exception:
-        print(f"vet: the confirm call for {c['cid']} gave no usable answer", file=sys.stderr)
+        print(f"vet: the confirm call for {c['cid']} gave no usable answer: {text[:200]!r}", file=sys.stderr)
         sys.exit(1)
     confs.append({"cid": c["cid"], "conflict": a["conflict"], "why": str(a.get("why", ""))})
     if a["conflict"]:
