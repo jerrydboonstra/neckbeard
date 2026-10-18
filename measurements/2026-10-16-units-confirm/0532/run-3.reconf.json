@@ -1,0 +1,49 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents with an explicit model (`claude-haiku-5-5`), which overrides the model their definitions pin, and the reader rule forbids that override on the dispatch call."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence permits sending `claude-haiku-5-5` subagents without limit, which overrides the model pinned by their definition, and rule 6 forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat an action on the model's own judgement, which could include destructive actions the reader rule forbids without an explicit go-ahead in the conversation."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, which could include destructive actions (rm -rf, force-push) that the reader rule forbids without explicit go-ahead in the conversation."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence tells the dispatcher to put subagents on `claude-haiku-5-5`, which is an explicit model override on the dispatch call, and the reader rule forbids overriding the model a definition pins."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence directs dispatching three subagents on an explicit model (`claude-haiku-5-5`), which overrides the model their definitions pin, and the rule forbids exactly that on the dispatch call."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch a Haiku subagent, which names a model on the dispatch call and so overrides the model the subagent's definition pins, and the reader rule forbids that."
+  },
+  {
+   "cid": "c8",
+   "conflict": false,
+   "why": "The sentence only restricts what content goes in a commit message (no agent/session/roster names) and does not contradict the rule's imperative subject under 60 characters, so both can be followed together."
+  },
+  {
+   "cid": "c9",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on 'the cheapest capable model', which means choosing a model on the dispatch call, and the reader rule forbids overriding the model the subagent's definition pins."
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents with an explicit model (`claude-haiku-5-5`) on the dispatch call, which overrides the model their definition pins and so breaks the rule against overriding it."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence permits dispatching `claude-haiku-5-5` subagents without limit, which sets a model on the dispatch call, and rule 6 forbids overriding the model a subagent definition pins."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat an action on the model's own judgement, which could include destructive actions (rm -rf, force-push) that the rule forbids without explicit go-ahead in the conversation, and it adds no non-destructive limit."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which is an explicit model override on the dispatch call, and the rule says to leave a definition's pinned model alone and not override it."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, an explicit model override on the dispatch call, which the rule forbids because subagents must run on the model their definition pins."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence tells the model to run a subagent on Haiku without saying an agent definition pins that model, so following it means passing a model on the dispatch call, which rule 6 forbids."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "It permits, with no limit, the reviewer to try an action that was refused, which could be a destructive action (rm -rf, force-push) the reader rule forbids without the user's explicit go-ahead, and no non-destructive limit is stated."
+  },
+  {
+   "cid": "c8",
+   "conflict": false,
+   "why": "The sentence only restricts what content goes in a commit message (describe the change, no agent/session/roster names) and says nothing against an imperative subject under 60 characters with the why, so both can be followed together."
+  },
+  {
+   "cid": "c9",
+   "conflict": true,
+   "why": "The sentence tells the model to choose the model for dispatched subagents (the cheapest capable one), which overrides a pinned model on the dispatch call, and the rule forbids that."
+  }
+ ]
+}

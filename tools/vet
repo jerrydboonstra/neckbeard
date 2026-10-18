@@ -160,7 +160,7 @@ print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossi
   done
   wait
   for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.out" "$work/find-$i.err"))"; done
-  python3 "$nb/tools/units-confirm" pool "$unitsf" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
+  python3 "$nb/tools/units-confirm" pool "$unitsf" "$dossier" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
   # 3b. each candidate confirmed alone: it sees the reader rule, the sentence and the written test, and nothing else
   python3 -c 'import json,sys
 for c in json.load(open(sys.argv[1]))["candidates"]:

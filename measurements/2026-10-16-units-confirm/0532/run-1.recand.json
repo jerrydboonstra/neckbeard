@@ -1,0 +1,68 @@
+{
+ "candidates": [
+  {
+   "id": "u24",
+   "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`, one lens each, at the handed-in tip.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "cid": "c1",
+   "found_in": 3
+  },
+  {
+   "id": "u28",
+   "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents at it and confirm each finding yourself.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "cid": "c2",
+   "found_in": 3
+  },
+  {
+   "id": "u29",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "cid": "c3",
+   "found_in": 3
+  },
+  {
+   "id": "u32",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each: correctness, tests, docs and help, trust boundaries.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "cid": "c4",
+   "found_in": 3
+  },
+  {
+   "id": "u32",
+   "quote": "send three subagents on `claude-haiku-5-5` at the passages you drafted, one lens each: house style against the project's own (Cat Herder's is `docs/style.md`), meaning against the code, and Orwell tightening.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "cid": "c5",
+   "found_in": 3
+  },
+  {
+   "id": "u32",
+   "quote": "one more read-only Haiku checks each docs or CHANGELOG line you added against the code",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "cid": "c6",
+   "found_in": 1
+  },
+  {
+   "id": "u32",
+   "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "cid": "c7",
+   "found_in": 1
+  },
+  {
+   "id": "u32",
+   "quote": "Word each commit by what changed (`pairs.md: the nested-thread sentence reworded`), with no agent, session or roster names in a subject or body; item ids and product names are fine.",
+   "reader_rule": "rules/engineering.md: 7. **Commit messages:** imperative subject under 60 characters, then why.",
+   "cid": "c8",
+   "found_in": 1
+  },
+  {
+   "id": "u46",
+   "quote": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers, at most 4 at once.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "cid": "c9",
+   "found_in": 3
+  }
+ ],
+ "dropped": []
+}

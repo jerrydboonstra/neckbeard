@@ -42,7 +42,7 @@ if "FIND PASS" in prompt and m:
     if mode == "late" and n == "3":
         quote = "Always run the tests before you commit."
     units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
-    found = [{"id": units[0]["id"], "quote": quote, "reader_rule": "rule X"}] if quote else []
+    found = [{"id": units[0]["id"], "quote": quote, "reader_rule": 'safety.md: "Never run anything destructive without my explicit go-ahead in this conversation" (FINDER ARGUMENT: the permission is unlimited)'}] if quote else []
     json.dump({"conflicts": found}, open(m.group(1), "w"))
     reply(str(len(found)))
 if "CONFIRM CALL" in prompt:
@@ -141,8 +141,10 @@ chk("confirm: a confirmed conflict counts, so INSTALL becomes INSTALL WITH CHANG
     (r["rc"], "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
 c = isolated(r, "CONFIRM CALL")[0]
 chk("confirm: the call sees the sentence and the written test, not the units or the dossier",
-    ("Always run the tests before you commit." in c["prompt"], "rule X" in c["prompt"], "permits, with no limit" in c["prompt"], "UNITS:" in c["prompt"], "dossier" in c["prompt"].lower()),
+    ("Always run the tests before you commit." in c["prompt"], "Never run anything destructive without my explicit go-ahead" in c["prompt"], "permits, with no limit" in c["prompt"], "UNITS:" in c["prompt"], "dossier" in c["prompt"].lower()),
     (True, True, True, False, False))
+chk("confirm: the reader rule is the reader's own text; the finder's argument never reaches the call",
+    ("FINDER ARGUMENT" in c["prompt"], "rules/safety.md: 1. **Never run anything destructive" in c["prompt"]), (False, True))
 chk("confirm: the call is allowed no tools", c["args"][c["args"].index("--allowedTools") + 1], "")
 r = run("units-rejected", extra=("--units",), units="units-install", finds="one", confirm="no")
 chk("confirm: a rejected candidate does not count, exit 0", (r["rc"], "0 of 1 candidates confirmed" in r["out"]), (0, True))
