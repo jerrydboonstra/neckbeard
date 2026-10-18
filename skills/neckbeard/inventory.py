@@ -528,7 +528,10 @@ def _expand_plugin_root(s, plugin_root):
     Cat Herder writes "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow" so one
     hook file serves several hosts; matching only the plain forms reported all
     three of its hooks as unidentifiable. ${...:+word} (word when set) is left
-    alone: its value is the word, not the root."""
+    alone: its value is the word, not the root. So is $CLAUDE_PLUGIN_ROOTX, a
+    different variable (1.14.0 and earlier expanded it, by a substring replace). The scan
+    does not read quotes, so a quoted } inside the word ends it early and the
+    hook reads as unidentifiable: an unknown, never a false all-clear."""
     head = "${CLAUDE_PLUGIN_ROOT"
     out, i = [], 0
     while True:
@@ -552,8 +555,7 @@ def _expand_plugin_root(s, plugin_root):
                 depth -= 1
             m += 1
         if depth:
-            out.append(s[i:])
-            return "".join(out)
+            break
         out.append(s[i:j] + plugin_root)
         i = m
     s = "".join(out) + s[i:]
@@ -568,9 +570,12 @@ def _identify_hook_script(cmd, plugin_root):
     whitespace-separated token, strips quotes, and returns the first that
     exists as a file inside the tree. Anything else is unidentifiable, which
     is a reportable state, not silence."""
-    cmd = _expand_plugin_root(cmd, plugin_root)
-    for tok in cmd.split():
-        t = tok.strip("\"'")
+    # Expand to a token with no whitespace first, so a default word with spaces
+    # still splits as the shell would, and a plugin root with spaces in its path
+    # is never split; the real root goes in per token.
+    mark = "\0PLUGIN_ROOT\0"
+    for tok in _expand_plugin_root(cmd, mark).split():
+        t = tok.strip("\"'").replace(mark, plugin_root)
         if not t or t.startswith("-"):
             continue
         cands = [t] if os.path.isabs(t) else [

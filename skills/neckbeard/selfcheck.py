@@ -509,19 +509,26 @@ dflt = pack("root-default", {
     "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
 code, d = run_cli(dflt)
 h = (d or {}).get("target", {}).get("hooks", {})
-chk("a hook run as ${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow is identified",
-    (code, h.get("unidentifiable_hooks"), "meow" in json.dumps(h)), (0, None, True))
-root = "/r"
-chk("each default form of CLAUDE_PLUGIN_ROOT expands to the plugin root",
-    [inventory._expand_plugin_root(c, root) for c in (
-        "${CLAUDE_PLUGIN_ROOT}/a", "$CLAUDE_PLUGIN_ROOT/a", "${CLAUDE_PLUGIN_ROOT:-x}/a",
-        "${CLAUDE_PLUGIN_ROOT-x y}/a", "${CLAUDE_PLUGIN_ROOT:=${A:-${B}}}/a",
-        "${CLAUDE_PLUGIN_ROOT:?unset}/a")],
-    ["/r/a"] * 6)
-chk("${CLAUDE_PLUGIN_ROOT:+word}, a longer name, and an unclosed brace are left alone",
-    [inventory._expand_plugin_root(c, root) for c in (
-        "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTS/a", "${CLAUDE_PLUGIN_ROOT:-x/a")],
-    ["${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTS/a", "${CLAUDE_PLUGIN_ROOT:-x/a"])
+chk("a hook run as ${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow is found, its payload untraced",
+    (code, h.get("unidentifiable_hooks"), h.get("unresolved_hooks")),
+    (0, None, ["SessionEnd: bin/meow"]))
+# Through _identify_hook_script, the call site, so these fail (None, not a crash)
+# on a tool that does not expand the form. Each names a real file in the target.
+ident = lambda c, r=dflt: (lambda p: p and os.path.relpath(p, r))(
+    inventory._identify_hook_script(c, r))
+chk("each default form of CLAUDE_PLUGIN_ROOT names the script",
+    [ident(c + "/bin/meow x") for c in (
+        "${CLAUDE_PLUGIN_ROOT}", "$CLAUDE_PLUGIN_ROOT", "${CLAUDE_PLUGIN_ROOT:-x}",
+        "${CLAUDE_PLUGIN_ROOT-x y}", "${CLAUDE_PLUGIN_ROOT:=${A:-${B}}}", "${CLAUDE_PLUGIN_ROOT:?unset}",
+        "${CLAUDE_PLUGIN_ROOT:-/etc}")],
+    ["bin/meow"] * 7)
+chk("${CLAUDE_PLUGIN_ROOT:+word} and $CLAUDE_PLUGIN_ROOTS name no script",
+    [ident(c + "/bin/meow") for c in ("${CLAUDE_PLUGIN_ROOT:+w}", "$CLAUDE_PLUGIN_ROOTS")], [None, None])
+chk("an unclosed brace later in the command does not stop an earlier expansion",
+    ident("$CLAUDE_PLUGIN_ROOT/bin/meow ${CLAUDE_PLUGIN_ROOT:-${X}"), "bin/meow")
+spaced = pack("root with space", {"bin/meow": "print(1)\n"})
+chk("a plugin root with a space in its path is not split",
+    ident("\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook x", spaced), "bin/meow")
 
 # ---------------------------------------------------------------- 6. what the judge reads
 # A dossier that leaves out text the judge needs makes it open the files by hand, and two
