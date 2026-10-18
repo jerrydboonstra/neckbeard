@@ -519,19 +519,65 @@ def resolve_injected_text(hook_file_path, plugin_root, depth=1):
     return fallback
 
 
+def _expand_plugin_root(s, plugin_root):
+    """Replace every reference to CLAUDE_PLUGIN_ROOT in a hook command with the
+    plugin root: $CLAUDE_PLUGIN_ROOT, ${CLAUDE_PLUGIN_ROOT}, and the shell's
+    default forms ${CLAUDE_PLUGIN_ROOT:-word}, ${...-word}, ${...:=word} and
+    ${...:?word}, whose word may itself hold ${...}. Claude Code always sets the
+    variable, so each of those forms is its value and the word never runs.
+    Cat Herder writes "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow" so one
+    hook file serves several hosts; matching only the plain forms reported all
+    three of its hooks as unidentifiable. ${...:+word} (word when set) is left
+    alone: its value is the word, not the root. So is $CLAUDE_PLUGIN_ROOTX, a
+    different variable (1.14.0 and earlier expanded it, by a substring replace). The scan
+    does not read quotes, so a quoted } inside the word ends it early and the
+    hook reads as unidentifiable: an unknown, never a false all-clear."""
+    head = "${CLAUDE_PLUGIN_ROOT"
+    out, i = [], 0
+    while True:
+        j = s.find(head, i)
+        if j < 0:
+            break
+        k = j + len(head)
+        rest = s[k:]
+        op = next((o for o in (":-", ":=", ":?", "-", "=", "?") if rest.startswith(o)), None)
+        if not rest.startswith("}") and op is None:
+            out.append(s[i:k])
+            i = k
+            continue
+        # Find the closing brace of this ${...}, counting nested ${ ... }.
+        depth, m = 1, k
+        while m < len(s) and depth:
+            if s.startswith("${", m):
+                depth, m = depth + 1, m + 2
+                continue
+            if s[m] == "}":
+                depth -= 1
+            m += 1
+        if depth:
+            break
+        out.append(s[i:j] + plugin_root)
+        i = m
+    s = "".join(out) + s[i:]
+    return re.sub(r"\$CLAUDE_PLUGIN_ROOT(?![A-Za-z0-9_])", lambda _: plugin_root, s)
+
+
 def _identify_hook_script(cmd, plugin_root):
     """The file a hook command actually runs, or None if it cannot be worked out.
 
-    Deliberately not gated on an extension list or on quoting. Takes every
-    whitespace-separated token, strips quotes, expands the plugin-root
-    variable, and returns the first that exists as a file inside the tree.
-    Anything else is unidentifiable, which is a reportable state, not silence."""
-    for tok in cmd.split():
-        t = tok.strip("\"'")
+    Deliberately not gated on an extension list or on quoting. Expands the
+    plugin-root variable (with its default forms), takes every
+    whitespace-separated token, strips quotes, and returns the first that
+    exists as a file inside the tree. Anything else is unidentifiable, which
+    is a reportable state, not silence."""
+    # Expand to a token with no whitespace first, so a default word with spaces
+    # still splits as the shell would, and a plugin root with spaces in its path
+    # is never split; the real root goes in per token.
+    mark = "\0PLUGIN_ROOT\0"
+    for tok in _expand_plugin_root(cmd, mark).split():
+        t = tok.strip("\"'").replace(mark, plugin_root)
         if not t or t.startswith("-"):
             continue
-        for var in ("${CLAUDE_PLUGIN_ROOT}", "$CLAUDE_PLUGIN_ROOT"):
-            t = t.replace(var, plugin_root)
         cands = [t] if os.path.isabs(t) else [
             os.path.join(plugin_root, t),
             os.path.join(plugin_root, "hooks", os.path.basename(t)),

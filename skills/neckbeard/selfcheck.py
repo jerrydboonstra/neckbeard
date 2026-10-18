@@ -498,6 +498,38 @@ chk("a marketplace.json that is not JSON says so",
     (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
     (0, "marketplace.json is not valid JSON; read it by hand"))
 
+# The shell's default form, as Cat Herder writes it so one hook file serves several
+# hosts. Matching only ${CLAUDE_PLUGIN_ROOT} reported all three of its hooks as
+# unidentifiable, and the judge read the hook code by hand (verdict-stability-runs).
+dflt = pack("root-default", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "dflt", "hooks": ["./hooks/claude.json"]}),
+    "hooks/claude.json": json.dumps({"hooks": {"SessionEnd": [{"hooks": [{"type": "command",
+        "command": "\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend"}]}]}}),
+    "bin/meow": "#!/usr/bin/env python3\nprint(build_text())\n",
+    "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+code, d = run_cli(dflt)
+h = (d or {}).get("target", {}).get("hooks", {})
+chk("a hook run as ${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow is found, its payload untraced",
+    (code, h.get("unidentifiable_hooks"), h.get("unresolved_hooks")),
+    (0, None, ["SessionEnd: bin/meow"]))
+# Through _identify_hook_script, the call site, so these fail (None, not a crash)
+# on a tool that does not expand the form. Each names a real file in the target.
+ident = lambda c, r=dflt: (lambda p: p and os.path.relpath(p, r))(
+    inventory._identify_hook_script(c, r))
+chk("each default form of CLAUDE_PLUGIN_ROOT names the script",
+    [ident(c + "/bin/meow x") for c in (
+        "${CLAUDE_PLUGIN_ROOT}", "$CLAUDE_PLUGIN_ROOT", "${CLAUDE_PLUGIN_ROOT:-x}",
+        "${CLAUDE_PLUGIN_ROOT-x y}", "${CLAUDE_PLUGIN_ROOT:=${A:-${B}}}", "${CLAUDE_PLUGIN_ROOT:?unset}",
+        "${CLAUDE_PLUGIN_ROOT:-/etc}")],
+    ["bin/meow"] * 7)
+chk("${CLAUDE_PLUGIN_ROOT:+word} and $CLAUDE_PLUGIN_ROOTS name no script",
+    [ident(c + "/bin/meow") for c in ("${CLAUDE_PLUGIN_ROOT:+w}", "$CLAUDE_PLUGIN_ROOTS")], [None, None])
+chk("an unclosed brace later in the command does not stop an earlier expansion",
+    ident("$CLAUDE_PLUGIN_ROOT/bin/meow ${CLAUDE_PLUGIN_ROOT:-${X}"), "bin/meow")
+spaced = pack("root with space", {"bin/meow": "print(1)\n"})
+chk("a plugin root with a space in its path is not split",
+    ident("\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook x", spaced), "bin/meow")
+
 # ---------------------------------------------------------------- 6. what the judge reads
 # A dossier that leaves out text the judge needs makes it open the files by hand, and two
 # runs then read different text (Cat Herder's report at 178648f8a: 5 conflicts, then 2).
