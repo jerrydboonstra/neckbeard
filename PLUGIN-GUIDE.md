@@ -1,6 +1,6 @@
 # Building a plugin neckbeard will vet
 
-For people who build a Claude Code plugin and want its neckbeard report to come out the way they intend. It lists what neckbeard looks for under each rule of the [sample reader](examples/reader/) and on each card of the report's "At a glance" grid, and the usual way to comply. It also defines a **ledger**: a file in the plugin's repo that records, rule by rule, how compliant the plugin means to be.
+For people who build a Claude Code plugin and want its neckbeard report to come out the way they intend. It lists what neckbeard looks for under each rule of the [sample reader](examples/reader/) and on each card of the report's "At a glance" grid, and the usual way to comply. It also defines a **ledger**: a file in the plugin's repo that records, rule by rule, how far the plugin means to comply.
 
 Nothing here is required. neckbeard vets any plugin the same way, ledger or not. A plugin's own workflow can load this guide when it works on a repo that keeps a ledger, and leave it out everywhere else.
 
@@ -8,12 +8,12 @@ Nothing here is required. neckbeard vets any plugin the same way, ledger or not.
 
 neckbeard's inventory lists everything the plugin carries: skills, commands, agents, rule files, hooks and what each hook injects. The judge then sorts every rule the plugin carries against the reader's rules, as a duplicate, a conflict, or new. Two things follow:
 
-- **Your text is read as instructions.** An example in a skill (a sample commit message, a sample command) is read the way a model would read it, as something to copy. Examples break rules as easily as rules do.
-- **The judge varies from run to run.** The same text can be read as a conflict in one run and not the next. Text that states its bounds ("ask before X", "only on the owner's word") gives the judge less room than text that only states an action ("act first", "do it either way").
+- **Your text is read as instructions.** An example in a skill (a sample commit message, a sample command) is read the way a model would read it, as something to copy. An example can break a rule too.
+- **The judge varies from run to run.** The same text can be read as a conflict in one run and not the next. Text that states its bounds ("ask before X", "only on the owner's word") gives the judge fewer ways to read it than text that only states an action ("act first", "do it either way").
 
 ## The ledger
 
-A file named `neckbeard-ledger.md`, at the repo root or in `docs/`. Its header names the reader it was written against and the plugin version. Then one table, one row per reader rule and per card, every row present, so a missing row means undecided rather than fine.
+A file named `neckbeard-ledger.md`, at the repo root or in `docs/`. Its header names the reader it was written against and the plugin version. Then one table, with one row for every reader rule and every card.
 
 ```markdown
 # neckbeard ledger
@@ -21,24 +21,35 @@ A file named `neckbeard-ledger.md`, at the repo root or in `docs/`. Its header n
 reader: neckbeard v1.14.0, examples/reader
 target: my-plugin 2.3.0
 
-| rule | stance | where it shows, or why | agreed |
-|---|---|---|---|
-| engineering 6 | comply | agents/reviewer.md pins `model: haiku`; skills send it by name | |
-| safety 2 | exception | `make release` pushes main after its checks pass; the release is the point | owner, 2026-10-15 |
-| cost | open | SessionStart now fires on every start; narrowing it is queued (item hook-narrow) | owner, 2026-10-15 |
-| release-notes | n/a | the plugin writes no release notes | |
+| rule | stance | files | where it shows, or why | agreed |
+|---|---|---|---|---|
+| engineering 6 | comply | `agents/reviewer.md` | pins `model: haiku`; skills send it by name | |
+| safety 2 | exception | `Makefile` | `make release` pushes main after its checks pass; the release is the point | owner, 2026-10-15 |
+| cost | open | `hooks/hooks.json` | SessionStart now fires on every start; narrowing it is queued (item hook-narrow) | owner, 2026-10-15 |
+| release-notes | n/a | | the plugin writes no release notes | |
 ```
 
-**Rule names.** `engineering 1` to `engineering 7` and `safety 1` to `safety 5` are the numbered rules in [`rules/engineering.md`](examples/reader/rules/engineering.md) and [`rules/safety.md`](examples/reader/rules/safety.md). `answers` is "How I like answers" in the reader's [`CLAUDE.md`](examples/reader/CLAUDE.md), and `release-notes` is its one [skill](examples/reader/skills/release-notes/SKILL.md). The cards are `cost`, `reach`, `leaves state`, `live surface` and `refused reads`. "Worth keeping" is not a compliance matter and has no row.
+**Rule names.** Each name stands for a reader file and, where it has one, a rule number, which is how a report's conflicts table names them in its "held in" cell:
+
+| ledger name | reader file | rule |
+|---|---|---|
+| `engineering 1` to `engineering 7` | [`examples/reader/rules/engineering.md`](examples/reader/rules/engineering.md) | 1 to 7 |
+| `safety 1` to `safety 5` | [`examples/reader/rules/safety.md`](examples/reader/rules/safety.md) | 1 to 5 |
+| `answers` | [`examples/reader/CLAUDE.md`](examples/reader/CLAUDE.md), "How I like answers" | none |
+| `release-notes` | [`examples/reader/skills/release-notes/SKILL.md`](examples/reader/skills/release-notes/SKILL.md) | none |
+
+The cards are `cost`, `reach`, `leaves state`, `live surface` and `refused reads`. "Worth keeping" is not a compliance matter and has no row.
 
 **Stances.**
 
 - **comply**: the plugin keeps the rule. Say where that shows, so a reviewer can check it.
-- **exception**: the plugin breaks the rule on purpose. Give the reason, and in `agreed`, who agreed and when.
-- **open**: the plugin breaks the rule today and a fix is planned. Name the fix.
+- **exception**: the plugin breaks the rule on purpose. Name the files it breaks it in, give the reason, and in `agreed` write who agreed and the date (`owner, 2026-10-15`).
+- **open**: a fix is planned, because the plugin breaks the rule today or reads close enough that a run may count a conflict. Name the files and the fix.
 - **n/a**: the rule has nothing to act on in this plugin.
 
-**What counts.** neckbeard still reports a declared exception as a conflict, since the reader's rule is broken either way. A plugin's own gate (a release check, a minimum verdict) can count only the undeclared ones: a reported conflict whose reader file and rule number match a row marked `exception` is declared, and every other conflict, `open` rows included, counts. A card row records the stance only. Cards don't yet have written colour rules, so a gate can't hold a card to its row.
+**Cells.** Keep `|` out of a cell, even inside backticks, so a script can split a row on it. Write a hook matcher such as `startup|resume|compact` as "startup, resume and compact".
+
+**What counts.** neckbeard still reports a declared exception as a conflict, since the reader's rule is broken either way. A plugin's own gate (a release check, a minimum verdict) can count only the undeclared ones. A reported conflict is declared when its "held in" cell names the reader file and rule number of a row marked `exception`, and every plugin file the cell names is in that row's `files`. A conflict that names no plugin file is not declared, so an exception can't cover a passage nobody agreed to. Every other conflict counts, `open` rows included. A gate should also fail on a missing row and on a stance that isn't one of the four words, since a missing row means undecided, not fine. A card row records the stance only. Cards don't yet have written colour rules, so a gate can't hold a card to its row.
 
 **Today, neckbeard does not read the ledger.** Matching the report's conflicts to the ledger is the plugin's gate's job. A later neckbeard may read the ledger and mark declared conflicts in the report itself.
 
@@ -67,21 +78,21 @@ What neckbeard looks for under each rule, and how plugins usually comply.
 
 ## The cards
 
-| card | what it measures | the usual way to keep it green |
+| card | what it measures | the usual way to pass it |
 |---|---|---|
-| cost | bytes in every session: skill and command descriptions, and what each SessionStart hook injects | short descriptions; a SessionStart matcher as narrow as the job (`compact` rather than `startup\|resume\|compact`); load long text on demand |
-| reach | whether the plugin's text reaches subagents: a SubagentStart hook, or agents it ships | no SubagentStart hook unless subagents need it |
+| cost | bytes in every session: skill and command descriptions, and what each SessionStart hook injects | short descriptions; a SessionStart matcher as narrow as the job (compact alone, rather than startup, resume and compact); load long text on demand |
+| reach | whether the plugin's hooks fire inside subagents: certainly for SubagentStart, SubagentStop, PreToolUse and PostToolUse, likely for PostToolUseFailure, Stop and PermissionRequest | hook those events only when the job needs it inside subagents |
 | leaves state | files written outside the project | write inside the project, or name each file and what removes it |
 | live surface | MCP servers, network access, and commands its hooks and skills run | name each; keep hook commands local and bounded by a timeout |
-| refused reads | any path that leaves the plugin's tree, through a symlink or `../` | none; any refusal turns the card red |
+| refused reads | any path that leaves the plugin's tree, through a symlink or `../` | none; any refusal fails the card |
 
-**Write hook commands the inventory can follow.** Use `${CLAUDE_PLUGIN_ROOT}/path/to/script` (the shell's default forms, such as `${CLAUDE_PLUGIN_ROOT:-...}`, work too). A command the inventory can't tie to a file lands in `unidentifiable_hooks`, and the judge then reads your scripts by hand, which gives a less stable verdict. A script whose output is built at run time lands in `unresolved_hooks`: found, payload not traced.
+**Write hook commands the inventory can follow.** Use `${CLAUDE_PLUGIN_ROOT}/path/to/script`. neckbeard 1.14.0 and earlier don't follow the shell's default forms, such as `${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}`; the next release does. A command the inventory can't tie to a file lands in `unidentifiable_hooks`, and the judge then has to read your scripts itself. A script whose output is built at run time lands in `unresolved_hooks`: found, but what it injects is not traced.
 
 ## Patterns
 
-- **A pinned agent instead of a model on the call.** Engineering 6 is about where the model is chosen. Ship the agent definition with its model, tools and instructions, and have the skill send it by name. The same file is a good home for a fixed review rubric: two reviewers that share one definition share one rubric, rather than one retyped in each brief. Agent files load in Claude Code only, so a plugin that also runs on other hosts records `comply` for Claude Code and an exception for the rest in that row.
-- **Price a hook before you promote a rule into one.** A rule agents keep missing is tempting to enforce with a hook. A hook raises cost, and a SubagentStart hook raises reach. Make that a ledger decision with its card in view.
-- **Bound the actions the judge varies on.** The passages that flip from run to run are usually bare imperatives to act. Saying what the action may touch, and when it waits for a yes, steadies the verdict more than any other edit.
+- **A pinned agent instead of a model on the call.** Engineering 6 is about where the model is chosen. Ship the agent definition with its model, tools and instructions, and have the skill send it by name. The same file is a good home for a fixed review rubric: two reviewers that share one definition share one rubric, rather than retyping it into each brief. Agent files load in Claude Code only, so a plugin that also runs on other hosts still names a model there; its row says which hosts comply.
+- **Weigh a hook's cost before you promote a rule into one.** A rule agents keep missing is tempting to enforce with a hook. A hook raises cost, and a hook that fires inside subagents raises reach. Make that a ledger decision, with the card it moves in mind.
+- **Bound the actions the judge varies on.** The passages that flip from run to run are usually bare imperatives to act. Saying what the action may touch, and when it waits for a yes, is the first edit to try.
 
 ## A worked example
 

@@ -6,7 +6,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
-- **A guide for building a plugin neckbeard will vet, and a ledger format.** `PLUGIN-GUIDE.md` lists, for each of the sample reader's rules and each card, what neckbeard reads as a conflict and the usual way to comply, plus three patterns (a pinned agent instead of a model on the call, a hook priced before a rule is promoted into it, bounds on the actions verdicts flip on). A plugin's `neckbeard-ledger.md` records one stance per rule and card: comply, exception, open or n/a. neckbeard still reports a declared exception as a conflict; a plugin's own gate can count only the undeclared ones. neckbeard does not read the ledger yet, and `SKILL.md` is unchanged. Cat Herder 0.53.2's ledger is the worked example, in `examples/ledgers/cat-herder.md`.
+- **A guide for building a plugin neckbeard will vet, and a ledger format.** `PLUGIN-GUIDE.md` lists, for each of the sample reader's rules and each card, what neckbeard reads as a conflict and the usual way to comply, plus three patterns (a pinned agent instead of a model on the call, a hook's cost weighed before a rule is promoted into it, bounds on the actions verdicts flip on). A plugin's `neckbeard-ledger.md` records one stance per rule and card (comply, exception, open or n/a) and the files each covers. neckbeard still reports a declared exception as a conflict; a plugin's own gate can count only the undeclared ones, matched on reader rule and plugin file. neckbeard does not read the ledger yet, and `SKILL.md` is unchanged. Cat Herder 0.53.2's ledger is the worked example, in `examples/ledgers/cat-herder.md`.
 
 ## 1.14.0 (2026-10-14)
 

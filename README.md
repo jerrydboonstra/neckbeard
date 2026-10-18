@@ -46,7 +46,7 @@ One page per plugin, answer first. This is the top of a real report, [ponytail](
 
 The full report goes on to list every conflict with the rule it breaks, everything already covered, what is worth keeping, what the plugin installs, and a patch to copy. **[See the gallery](examples/README.md)**: eight public plugins and skill packs, including this one, all against the same sample reader.
 
-Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how compliant your plugin means to be.
+Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
 ## Install it. It adds one skill and nothing else.
 
