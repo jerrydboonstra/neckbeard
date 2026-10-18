@@ -522,8 +522,8 @@ def resolve_injected_text(hook_file_path, plugin_root, depth=1):
 def _expand_plugin_root(s, plugin_root):
     """Replace every reference to CLAUDE_PLUGIN_ROOT in a hook command with the
     plugin root: $CLAUDE_PLUGIN_ROOT, ${CLAUDE_PLUGIN_ROOT}, and the shell's
-    default forms ${CLAUDE_PLUGIN_ROOT:-word}, ${...-word}, ${...:=word} and
-    ${...:?word}, whose word may itself hold ${...}. Claude Code always sets the
+    default forms ${CLAUDE_PLUGIN_ROOT:-word}, ${...-word}, ${...:=word},
+    ${...=word}, ${...:?word} and ${...?word}, whose word may itself hold ${...}. Claude Code always sets the
     variable, so each of those forms is its value and the word never runs.
     Cat Herder writes "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow" so one
     hook file serves several hosts; matching only the plain forms reported all
