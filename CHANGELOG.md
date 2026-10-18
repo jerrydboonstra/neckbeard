@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **A guide for building a plugin neckbeard will vet, and a ledger format.** `PLUGIN-GUIDE.md` lists, for each of the sample reader's rules and each card, what neckbeard reads as a conflict and the usual way to comply, plus three patterns (a pinned agent instead of a model on the call, a hook priced before a rule is promoted into it, bounds on the actions verdicts flip on). A plugin's `neckbeard-ledger.md` records one stance per rule and card: comply, exception, open or n/a. neckbeard still reports a declared exception as a conflict; a plugin's own gate can count only the undeclared ones. neckbeard does not read the ledger yet, and `SKILL.md` is unchanged. Cat Herder 0.53.2's ledger is the worked example, in `examples/ledgers/cat-herder.md`.
+
 ## 1.14.0 (2026-10-14)
 
 - **CONTRIBUTING.md has a "Merging several branches" section, and the layout follows it.** `CHANGELOG.md` merges by union, `make check` runs every `tools/test_*.py` instead of naming each, and `.PHONY` lists one target per line. A trial merge of six open branches conflicted only in those two files.
