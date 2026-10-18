@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **A hook run through `${CLAUDE_PLUGIN_ROOT:-...}` is identified.** Cat Herder runs every hook as `"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow"`, so one hook file serves several hosts, and the inventory, which expanded only `${CLAUDE_PLUGIN_ROOT}` and `$CLAUDE_PLUGIN_ROOT`, listed all three of its hooks as unidentifiable; the judge then read the hook code by hand, differently each run. The shell's default forms (`:-`, `-`, `:=`, `=`, `:?`, `?`, with a word that may hold its own `${...}`) now expand to the plugin root, since Claude Code always sets the variable. `${CLAUDE_PLUGIN_ROOT:+word}` is left alone. A hook whose text is built at run time, as Cat Herder's is, is now reported as identified but not traced, which it is. Three self-check cases.
+
 ## 1.14.0 (2026-10-14)
 
 - **CONTRIBUTING.md has a "Merging several branches" section, and the layout follows it.** `CHANGELOG.md` merges by union, `make check` runs every `tools/test_*.py` instead of naming each, and `.PHONY` lists one target per line. A trial merge of six open branches conflicted only in those two files.

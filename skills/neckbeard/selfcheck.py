@@ -498,6 +498,31 @@ chk("a marketplace.json that is not JSON says so",
     (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
     (0, "marketplace.json is not valid JSON; read it by hand"))
 
+# The shell's default form, as Cat Herder writes it so one hook file serves several
+# hosts. Matching only ${CLAUDE_PLUGIN_ROOT} reported all three of its hooks as
+# unidentifiable, and the judge read the hook code by hand (verdict-stability-runs).
+dflt = pack("root-default", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "dflt", "hooks": ["./hooks/claude.json"]}),
+    "hooks/claude.json": json.dumps({"hooks": {"SessionEnd": [{"hooks": [{"type": "command",
+        "command": "\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend"}]}]}}),
+    "bin/meow": "#!/usr/bin/env python3\nprint(build_text())\n",
+    "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+code, d = run_cli(dflt)
+h = (d or {}).get("target", {}).get("hooks", {})
+chk("a hook run as ${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow is identified",
+    (code, h.get("unidentifiable_hooks"), "meow" in json.dumps(h)), (0, None, True))
+root = "/r"
+chk("each default form of CLAUDE_PLUGIN_ROOT expands to the plugin root",
+    [inventory._expand_plugin_root(c, root) for c in (
+        "${CLAUDE_PLUGIN_ROOT}/a", "$CLAUDE_PLUGIN_ROOT/a", "${CLAUDE_PLUGIN_ROOT:-x}/a",
+        "${CLAUDE_PLUGIN_ROOT-x y}/a", "${CLAUDE_PLUGIN_ROOT:=${A:-${B}}}/a",
+        "${CLAUDE_PLUGIN_ROOT:?unset}/a")],
+    ["/r/a"] * 6)
+chk("${CLAUDE_PLUGIN_ROOT:+word}, a longer name, and an unclosed brace are left alone",
+    [inventory._expand_plugin_root(c, root) for c in (
+        "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTS/a", "${CLAUDE_PLUGIN_ROOT:-x/a")],
+    ["${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTS/a", "${CLAUDE_PLUGIN_ROOT:-x/a"])
+
 # ---------------------------------------------------------------- 6. what the judge reads
 # A dossier that leaves out text the judge needs makes it open the files by hand, and two
 # runs then read different text (Cat Herder's report at 178648f8a: 5 conflicts, then 2).
