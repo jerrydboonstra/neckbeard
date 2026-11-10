@@ -283,6 +283,46 @@ try:
 except Exception as e:
     chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's", False, f"{type(e).__name__}: {e}")
 
+# ---------------------------------------------------------------- the State it may leave card summarises a long list
+def card_lines(out, heading):
+    """The lines of one card, from its ### heading to the line before the next, blank lines left out."""
+    keep, on = [], False
+    for l in out.split("\n"):
+        if l.startswith("### "):
+            on = l == f"### {heading}"
+            if on:
+                keep.append(l)
+        elif on and l.strip():
+            keep.append(l)
+    return keep
+
+
+out = render(fx("persist-many"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+more = [l for l in pl if l.startswith("and ")]
+folders = re.match(r"^and (\d+) more, in: (.*)$", more[0]) if more else None
+counts = [(m.group(1), int(m.group(2))) for m in re.finditer(r"(\S+/) (\d+)", folders.group(2))] if folders else []
+chk("9. 150 persistence candidates print 10 entries (the first 10 by path) and one 'and 140 more, in: ...' line whose folder counts sum to 140",
+    pl[:10] == [f"lib/f{i:03d}.py" for i in range(10)] and len(pl) == 11 and folders is not None and folders.group(1) == "140" and sum(n for _, n in counts) == 140, pl)
+chk("9. the folders are every folder of the rest, the highest count first, then by name; a root file counts under ./",
+    more == ["and 140 more, in: lib/ 105, tools/ 25, ./ 10"], more)
+chk("9. the card is at most 13 lines (heading, label, 10 entries, the more line)", len(card_lines(out, "State it may leave")) <= 13, card_lines(out, "State it may leave"))
+out = render(fx("persist-ten"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+chk("9. 10 candidates print all ten and no more line", len(pl) == 10 and not any("more" in l for l in pl), pl)
+p = variant("persist-ten", lambda d: d["target"]["persistence_candidates"].append("scripts/s9z.sh"))
+pl = lines(parse(render(p)[1]), "State it may leave", "Persistence candidates")
+chk("9. 11 candidates print ten and 'and 1 more, in: scripts/ 1'", len(pl) == 11 and pl[-1] == "and 1 more, in: scripts/ 1", pl)
+out = render(fx("persist-capped"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+nr = [l for l in pl if l.startswith("not read: ")]
+chk("9. 18 capped files: the not read line names 5 and ends 'and 13 more'",
+    len(nr) == 1 and nr[0].count("read capped") == 5 and nr[0].endswith("; and 13 more") and "c00.sh" in nr[0] and "c04.sh" in nr[0] and "c05.sh" not in nr[0], nr)
+chk("9. a partly read persistence card with its more line is at most 14 lines", len(card_lines(out, "State it may leave")) <= 14, card_lines(out, "State it may leave"))
+out = render(fx("plugin-partial"))[1]
+chk("9. a card that is not persistence still prints every entry (the cap is at the persistence call site only)",
+    lines(parse(out), "Injects", "Skills")[0].startswith("alpha: "), lines(parse(out), "Injects", "Skills"))
+
 # ---------------------------------------------------------------- Done when 5: the real inventory output, and no read_status
 def real_tree(root):
     """A small plugin: one skill, one hook with an injected file, one MCP server, an agent and a command."""

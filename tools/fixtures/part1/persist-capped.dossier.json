@@ -1,0 +1,95 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "persistence_candidates": [
+   "scripts/c00.sh",
+   "scripts/c01.sh",
+   "scripts/c02.sh",
+   "scripts/c03.sh",
+   "scripts/c04.sh",
+   "scripts/c05.sh",
+   "scripts/c06.sh",
+   "scripts/c07.sh",
+   "scripts/c08.sh",
+   "scripts/c09.sh",
+   "scripts/c10.sh",
+   "scripts/c11.sh",
+   "scripts/c12.sh",
+   "scripts/c13.sh",
+   "scripts/c14.sh",
+   "scripts/c15.sh",
+   "scripts/c16.sh",
+   "scripts/c17.sh"
+  ],
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [
+     "scripts/c00.sh: read capped at 50000 bytes",
+     "scripts/c01.sh: read capped at 50000 bytes",
+     "scripts/c02.sh: read capped at 50000 bytes",
+     "scripts/c03.sh: read capped at 50000 bytes",
+     "scripts/c04.sh: read capped at 50000 bytes",
+     "scripts/c05.sh: read capped at 50000 bytes",
+     "scripts/c06.sh: read capped at 50000 bytes",
+     "scripts/c07.sh: read capped at 50000 bytes",
+     "scripts/c08.sh: read capped at 50000 bytes",
+     "scripts/c09.sh: read capped at 50000 bytes",
+     "scripts/c10.sh: read capped at 50000 bytes",
+     "scripts/c11.sh: read capped at 50000 bytes",
+     "scripts/c12.sh: read capped at 50000 bytes",
+     "scripts/c13.sh: read capped at 50000 bytes",
+     "scripts/c14.sh: read capped at 50000 bytes",
+     "scripts/c15.sh: read capped at 50000 bytes",
+     "scripts/c16.sh: read capped at 50000 bytes",
+     "scripts/c17.sh: read capped at 50000 bytes"
+    ],
+    "state": "partial"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}
