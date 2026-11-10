@@ -1,0 +1,17 @@
+{
+ "agents": [],
+ "commands": [],
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": false,
+ "kind": "generic-pack",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "readme_excerpt": null,
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

@@ -1,0 +1,38 @@
+{
+ "agents": [],
+ "commands": [],
+ "declares_agents_in_manifest": false,
+ "declares_hooks_in_manifest": false,
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": true,
+ "kind": "plugin",
+ "mcp_servers": {
+  "ambiguity": "servers found at the top level of .mcp.json, not under an 'mcpServers' key. First-party examples use this shape and the docs describe the wrapped one; treat the list as best-effort and open the file",
+  "count": 1,
+  "note": "this reports the declaration, not the tool surface. A local-process server runs on your machine; what it exposes needs a live MCP call.",
+  "servers": [
+   {
+    "args": null,
+    "command": "x",
+    "name": "srv",
+    "transport": "local-process",
+    "url": null
+   }
+  ],
+  "source": ".mcp.json"
+ },
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "plugin_json": {
+  "description": null,
+  "license": null,
+  "name": "mcp-ambiguity",
+  "version": "1.0.0"
+ },
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

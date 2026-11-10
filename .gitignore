@@ -15,6 +15,21 @@ __pycache__/
 !.claude-plugin/marketplace.json
 # A measurement's raw data is its evidence: the units prototype's per-run answers and unit lists.
 !measurements/**/*.json
+# Fixtures for tools/test_read_status.py: each JSON file by name, none by glob. Baselines sit in
+# _baselines/ so a baseline is never part of the tree a fixture's own inventory reads.
+!tools/fixtures/read-status/_outside.json
+!tools/fixtures/read-status/_baselines/*.baseline.json
+!tools/fixtures/read-status/*/.mcp.json
+!tools/fixtures/read-status/*/plugin.json
+!tools/fixtures/read-status/*/.claude-plugin/plugin.json
+!tools/fixtures/read-status/*/.claude-plugin/marketplace.json
+!tools/fixtures/read-status/*/hooks/hooks.json
+!tools/fixtures/read-status/hooks-bad-json/hooks/h.json
+!tools/fixtures/read-status/*/plugins/*/.claude-plugin/plugin.json
+!tools/fixtures/read-status/nested-plugins/inner/.claude-plugin/plugin.json
+!tools/fixtures/read-status/nested-plugins/inner/hooks/hooks.json
+!tools/fixtures/read-status/hooks-search-bad-json/data/broken.json
+!tools/fixtures/read-status/outside-links/sub/link.json
 
 # Evaluations quote the rules they compared against, for the same reason.
 evaluations/

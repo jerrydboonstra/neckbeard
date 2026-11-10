@@ -1,0 +1,37 @@
+{
+ "agents": [],
+ "commands": [],
+ "hooks": {
+  "events": {},
+  "has_hooks": "unknown",
+  "hook_registrations": null,
+  "hook_scripts": null,
+  "hooks_reach_subagents": null,
+  "marketplace_note": "This is a marketplace listing 2 plugins (a, b); each carries its own hooks and none was inventoried. Run again with --plugin NAME for each one you would install."
+ },
+ "is_plugin": false,
+ "kind": "generic-pack",
+ "marketplace": {
+  "name": "m",
+  "plugins": [
+   {
+    "name": "a",
+    "source": "./plugins/a",
+    "status": "local"
+   },
+   {
+    "name": "b",
+    "source": "./plugins/b",
+    "status": "local"
+   }
+  ]
+ },
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "readme_excerpt": null,
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

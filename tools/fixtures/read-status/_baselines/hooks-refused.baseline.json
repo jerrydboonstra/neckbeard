@@ -1,0 +1,30 @@
+{
+ "agents": [],
+ "commands": [],
+ "declares_agents_in_manifest": false,
+ "declares_hooks_in_manifest": true,
+ "hooks": {
+  "events": {},
+  "has_hooks": "unknown",
+  "hook_registrations": null,
+  "hook_scripts": null,
+  "hooks_file": "../_outside.json",
+  "hooks_reach_subagents": null,
+  "refused": "hooks file resolves outside the target tree; not read"
+ },
+ "is_plugin": true,
+ "kind": "plugin",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "plugin_json": {
+  "description": null,
+  "license": null,
+  "name": "hooks-refused",
+  "version": "1.0.0"
+ },
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}
