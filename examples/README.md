@@ -44,7 +44,7 @@ CLAUDE_CONFIG_DIR="$PWD/examples/reader" \
 
 `current_rules` in the dossier should list exactly the four reader files. Then follow Steps 2 to 4 of [`SKILL.md`](../skills/neckbeard/SKILL.md) against that dossier. The classification is a model's judgment, so a rerun will not match word for word; the counts may move by an item or two, and a verdict that flips is worth reporting.
 
-Or do all of it in one command from this repo: `tools/vet <path-to-target> <report.md>`. It builds the dossier against a throwaway copy of the reader (the judge writes into its config folder, so it never gets the real one), runs the judge in a separate `claude -p` session on Sonnet, and checks that the report has a verdict and names no local path. Where the judge can't log in with the reader as its config folder, as on a Mac, it falls back to your own config and says so.
+Or do all of it in one command from this repo: `tools/vet <path-to-target> <report.md>`. It builds the dossier against a throwaway copy of the reader (the judge writes into its config folder, so it never gets the real one), runs the judge in a separate `claude -p` session on Sonnet, puts a "What it adds" section above the report's At a glance (what the target injects, reaches and leaves behind, written by `tools/part1` from the dossier with no reference to your rules), and checks that the report has a verdict and names no local path. Where the judge can't log in with the reader as its config folder, as on a Mac, it falls back to your own config and says so.
 
 ## Keep your plugin's published report current
 
