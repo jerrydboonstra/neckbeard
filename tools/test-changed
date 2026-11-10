@@ -33,7 +33,10 @@ def project_root(directory):
 def glob_regex(glob):
     out, i = [], 0
     while i < len(glob):
-        if glob.startswith("**", i):
+        if glob.startswith("**/", i):
+            out.append("(?:.*/)?")   # **/ is zero or more folders, so lib/**/x.py matches lib/x.py
+            i += 3
+        elif glob.startswith("**", i):
             out.append(".*")
             i += 2
         elif glob[i] == "*":
@@ -75,10 +78,12 @@ def main(argv=None):
     root = project_root(args.project)
     if subprocess.run(["git", "-C", root, "rev-parse", "--verify", "-q", f"{args.base}^{{commit}}"], capture_output=True).returncode:
         parser.exit(2, f"test-changed: {args.base} is not a commit in {os.path.basename(root)}\n")
-    diff = subprocess.run(["git", "-C", root, "diff", "--name-only", f"{args.base}...HEAD"], capture_output=True, text=True)
+    # -z: a path with a space or a non-ASCII character is not quoted; --no-renames: a moved file lists both its old and new path
+    diff = subprocess.run(["git", "-C", root, "diff", "--name-only", "-z", "--no-renames", f"{args.base}...HEAD"],
+                          capture_output=True, text=True)
     if diff.returncode:
         parser.exit(2, f"test-changed: git diff {args.base}...HEAD failed: {diff.stderr.strip()}\n")
-    paths = [p for p in diff.stdout.splitlines() if p]
+    paths = [p for p in diff.stdout.split("\0") if p]
     rows = read_map(root)
     modules, uncovered, whole = [], [], []
     for path in paths:

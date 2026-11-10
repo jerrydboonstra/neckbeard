@@ -78,9 +78,14 @@ shard_runs = [run(d, "--shard", f"{k}/3") for k in (1, 2, 3)]
 parts = [sorted(UNIT_START.match(l).group(1) for l in s.stdout.splitlines() if UNIT_START.match(l)) for s in shard_runs]
 check("--shard K/N: the shards together run every module once", sorted(sum(parts, [])) == ["test_a", "test_b", "test_c", "test_selfcheck"], repr(parts))
 r = run(d, "--shard", "4/3")
-check("--shard K/N: bad shard exits 2 and says so", r.returncode == 2 and "test-parallel:" in r.stderr and "shard" in r.stderr, r.stderr)
+check("--shard K/N: bad shard exits 2 and says so", r.returncode == 2 and "shard 4/3 is outside" in r.stderr, r.stderr)
 r = run(d, "--tier", "functional")
-check("an option meow sends only to a project with tiers (--tier) is refused, exit 2", r.returncode == 2 and "test-parallel:" in r.stderr, r.stderr)
+check("--tier (meow sends it for --live) is refused on purpose, exit 2, and nothing runs",
+      r.returncode == 2 and "--tier is refused" in r.stderr and "start" not in r.stdout, r.stderr)
+r = run(d, "--bogus")
+check("any other unknown option is refused by argparse, exit 2", r.returncode == 2 and "--tier is refused" not in r.stderr, r.stderr)
+r = run(d, "-j", "0")
+check("-j 0 exits 2", r.returncode == 2, r.stderr)
 
 d5 = project({"test_a": OK, "test_selfcheck": OK}, selfcheck=OK)
 r = run(d5)
@@ -100,7 +105,7 @@ r = run(d, "test_b", env={"TEST_PARALLEL_LOAD": "99"})
 check("a module that fails under load and fails alone: 'failed alone too: a real failure', exit 1",
       "test_b FAIL under load" in r.stdout and "test_b failed alone too: a real failure" in r.stdout and r.returncode == 1, r.stdout[-400:])
 check("MODULE_RESULT reads the under-load line", any(MODULE_RESULT.match(l) and MODULE_RESULT.match(l).group(2) == "FAIL under load" for l in r.stdout.splitlines()))
-r = run(d, "test_b")
+r = run(d, "test_b", env={"TEST_PARALLEL_LOAD": "0.01"})
 check("a failure on a quiet machine is not run again", "test_b FAIL " in r.stdout and "alone" not in r.stdout, r.stdout[-300:])
 
 # ---------------------------------------------------------------- test-changed
@@ -134,15 +139,133 @@ check("--changed: a path with no map line selects the whole suite and says so",
       "other.txt has no tests/map entry" in r.stdout and "running the whole suite" in r.stdout, r.stdout)
 r = sh([sys.executable, str(d3 / "tools" / "test-changed"), "--list", "no-such-commit"], d3)
 check("--changed: a base that is not a commit exits 2 and says so", r.returncode == 2 and "test-changed:" in r.stderr, f"rc={r.returncode} {r.stderr}")
-r = sh([sys.executable, str(d3 / "tools" / "test-changed"), f"--project={d3}", "--list", base], ROOT)
-check("--project=DIR (the form meow passes) is read, and the project's own map and diff are used",
-      r.returncode == 0 and "test-changed:" in r.stdout, f"rc={r.returncode} {r.stdout} {r.stderr}")
+(d3 / "src" / "a.py").write_text("changed a\n")
+sh(["git", "add", "-A"], d3)
+sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "a"], d3)
+r = sh([sys.executable, str(ROOT / "tools" / "test-changed"), f"--project={d3}", "--list", base], ROOT)
+check("--project=DIR (the form meow passes) reads that project's own map and diff: src/a.py selects its test_a",
+      r.returncode == 0 and "test-changed: src/a.py" in r.stdout and "test-changed: test_a" in r.stdout.splitlines()
+      and "no tests/map entry" not in r.stdout, f"rc={r.returncode} {r.stdout} {r.stderr}")
+sh(["git", "reset", "-q", "--hard", base], d3)
 (d3 / "src" / "b.py").write_text("changed b\n")
 sh(["git", "add", "-A"], d3)
 sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "b"], d3)
 r = sh([sys.executable, str(d3 / "tools" / "test-changed"), base], d3)
 check("--changed without --list runs the selection through tools/test-parallel, only test_b",
       r.returncode == 0 and "test_b start" in r.stdout and "test_a start" not in r.stdout, r.stdout[-300:] + r.stderr[-200:])
+
+# ---------------------------------------------------------------- found by the swarm: globs, renames, odd paths
+M2 = "**/*.py test_a\nlib/**/x.py test_b\ndocs/*.md test_c\nsrc/old.py test_b\n"
+d6 = project({"test_a": OK, "test_b": OK, "test_c": OK}, mapfile=M2)
+for p_, text in (("setup.py", "s\n"), ("lib/x.py", "x\n"), ("docs/a b.md", "d\n"), ("src/old.py", "o\n")):
+    (d6 / p_).parent.mkdir(parents=True, exist_ok=True)
+    (d6 / p_).write_text(text)
+sh(["git", "init", "-q", "-b", "main"], d6)
+sh(["git", "add", "-A"], d6)
+sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base"], d6)
+b6 = sh(["git", "rev-parse", "HEAD"], d6).stdout.strip()
+
+
+def selection(*edits):
+    for kind, a, b in edits:
+        if kind == "write":
+            (d6 / a).write_text(b)
+        else:
+            (d6 / b).parent.mkdir(parents=True, exist_ok=True)
+            sh(["git", "mv", a, b], d6)
+    sh(["git", "add", "-A"], d6)
+    sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "e"], d6)
+    r = sh([sys.executable, str(d6 / "tools" / "test-changed"), "--list", b6], d6)
+    sh(["git", "reset", "-q", "--hard", b6], d6)
+    return r
+
+
+r = selection(("write", "setup.py", "changed\n"))
+check("a ** glob with a slash after it matches a top-level file: **/*.py selects setup.py's modules",
+      "test-changed: test_a" in r.stdout.splitlines() and "no tests/map entry" not in r.stdout, r.stdout)
+r = selection(("write", "lib/x.py", "changed\n"))
+check("lib/**/x.py matches lib/x.py", "test-changed: test_a test_b" in r.stdout.splitlines() or "test-changed: test_b test_a" in r.stdout.splitlines(), r.stdout)
+r = selection(("write", "docs/a b.md", "changed\n"))
+check("a changed path with a space is read as it is, not quoted by git", "test-changed: test_c" in r.stdout.splitlines() and "no tests/map entry" not in r.stdout, r.stdout)
+r = selection(("move", "src/old.py", "other/new.py"))
+check("a renamed file selects the modules of its old path too (src/old.py -> test_b)", "src/old.py" in r.stdout and "test_b" in r.stdout.splitlines()[-1], r.stdout)
+
+M3 = "src/*.py test_a\nall.txt *\n"
+d9 = project({"test_a": OK, "test_b": OK}, mapfile=M3)
+for p_, text in (("src/x.py", "x\n"), ("src/sub/y.py", "y\n"), ("all.txt", "a\n"), ("note.txt", "n\n")):
+    (d9 / p_).parent.mkdir(parents=True, exist_ok=True)
+    (d9 / p_).write_text(text)
+sh(["git", "init", "-q", "-b", "main"], d9)
+sh(["git", "add", "-A"], d9)
+sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base"], d9)
+b9 = sh(["git", "rev-parse", "HEAD"], d9).stdout.strip()
+
+
+def selection9(*files):
+    for f in files:
+        (d9 / f).write_text("changed\n")
+    sh(["git", "add", "-A"], d9)
+    sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "e"], d9)
+    r = sh([sys.executable, str(d9 / "tools" / "test-changed"), "--list", b9], d9)
+    sh(["git", "reset", "-q", "--hard", b9], d9)
+    return r
+
+
+r = selection9("all.txt")
+check("a map row whose module is * selects the whole suite", "all.txt selects the whole suite" in r.stdout and "test-changed: test_a" not in r.stdout, r.stdout)
+r = selection9("src/x.py", "note.txt")
+check("a diff with a mapped path and an unmapped one runs the whole suite", "note.txt has no tests/map entry" in r.stdout and "running the whole suite" in r.stdout, r.stdout)
+r = selection9("src/sub/y.py")
+check("src/*.py stays in its folder: src/sub/y.py has no entry", "src/sub/y.py has no tests/map entry" in r.stdout, r.stdout)
+r = sh([sys.executable, str(d9 / "tools" / "test-changed"), "--list", b9], d9)
+check("an empty diff selects nothing and exits 0", r.returncode == 0 and "(no changed paths)" in r.stdout, r.stdout + r.stderr)
+r = run(project({"test_quiet": "import sys\nsys.exit(1)\n"}), env={"TEST_PARALLEL_LOAD": "0.01"})
+check("a failing module that printed nothing shows '(no output)' under its failure heading", "===== failure output: test_quiet =====\n(no output)" in r.stdout, r.stdout)
+
+r = run(project({}))
+check("a project with no test module exits 2 and says so", r.returncode == 2 and "no test module found" in r.stderr, f"rc={r.returncode} {r.stderr}")
+r = run(d, "--shard", "5/5")
+check("a shard past the last module has nothing to run and passes", r.returncode == 0 and "no module to run in this shard" in r.stdout, f"rc={r.returncode} {r.stdout}")
+
+env_odd = {"TEST_PARALLEL_HEARTBEAT": "nan", "TEST_PARALLEL_UNIT_LIMIT": "inf"}
+r = run(project({"test_a": OK}), env=env_odd)
+check("nan and inf in the time settings fall back to the defaults, and the run ends", r.returncode == 0 and "test_a ok" in r.stdout, r.stdout[-200:])
+
+slow = "import os, time\nopen(os.environ['PIDF'], 'w').write(str(os.getpid()))\ntime.sleep(60)\n"
+d7 = project({"test_slow": slow})
+pidf = d7 / "pid"
+proc = subprocess.Popen([sys.executable, str(d7 / "tools" / "test-parallel")], cwd=d7, env={**os.environ, "PIDF": str(pidf)},
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+for _ in range(100):
+    if pidf.exists() and pidf.read_text():
+        break
+    import time as _t; _t.sleep(0.1)
+child = int(pidf.read_text()) if pidf.exists() and pidf.read_text() else 0
+proc.send_signal(__import__("signal").SIGINT)
+try:
+    code = proc.wait(timeout=20)
+except subprocess.TimeoutExpired:
+    proc.kill()
+    code = None
+gone = False
+for _ in range(50):
+    try:
+        os.kill(child, 0)
+    except ProcessLookupError:
+        gone = True
+        break
+    except (PermissionError, OSError):
+        break
+    import time as _t; _t.sleep(0.1)
+check("Ctrl-C (SIGINT) to the runner stops the module it started and exits 143", child > 0 and code == 143 and gone, f"child={child} code={code} gone={gone}")
+
+hang = ("import subprocess, time\nsubprocess.Popen(['sleep', '30'], start_new_session=True)\ntime.sleep(30)\n")
+d8 = project({"test_hang": hang})
+began = __import__("time").monotonic()
+r = run(d8, env={"TEST_PARALLEL_UNIT_LIMIT": "1"})
+took = __import__("time").monotonic() - began
+check("a module past its limit is stopped, counts as a failure, and a grandchild holding its output does not hold the runner",
+      r.returncode == 1 and "test_hang timed out" in r.stdout and took < 25, f"rc={r.returncode} took={took:.0f}s {r.stdout[-200:]}")
 
 # ---------------------------------------------------------------- this repo's tests/map
 mp = ROOT / "tests" / "map"
@@ -155,6 +278,8 @@ if mp.exists():
 modules = {p.stem for p in (ROOT / "tools").glob("test_*.py")} | {"test_selfcheck"}
 own = {p.stem for p in (ROOT / "tools").glob("test_*.py")}
 check("tests/map exists and has rows", bool(rows))
+globs = [l.split()[0] for l in (mp.read_text().splitlines() if mp.exists() else []) if l.strip() and not l.lstrip().startswith("#")]
+check("tests/map has no glob twice (a second row would hide behind the first in this check)", len(globs) == len(set(globs)), repr([g for g in globs if globs.count(g) > 1]))
 check("every module a map row names exists", bool(rows) and all(m in modules or m == "*" for ms in rows.values() for m in ms),
       repr(sorted({m for ms in rows.values() for m in ms} - modules - {"*"})))
 check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",

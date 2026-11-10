@@ -15,6 +15,8 @@ No module named: all of them (meow's --full runs it bare). --shard K/N: the Kth 
 accepted and does nothing, since this runner reuses no earlier result. Each module prints
   [i/N] <module> start
   [i/N] <module> ok|FAIL|FAIL under load (<load>) <seconds>s
+(a module over its time limit ends "[i/N] <module> timed out <seconds>s", as in Cat Herder's runner: no receipt pattern reads that as a
+result, and the run exits 1)
 and, every minute while any runs, "heartbeat: <n> running, longest <module> <s>s". A module that fails while the machine's 1-minute
 load is above its core count is run again alone after the others: "<module> passed alone: a load flake (...)" counts as a pass,
 "<module> failed alone too: a real failure" stays red. The output of each failed module follows, then "Slowest modules:". Exit 0 when
@@ -40,9 +42,10 @@ STOP_GRACE = 5   # seconds a module that hit its limit gets to clean up after SI
 
 def number(name, default):
     try:
-        return float(os.environ.get(name, "")) or default
+        value = float(os.environ.get(name, ""))
     except ValueError:
         return default
+    return value if 0 < value < 7 * 24 * 3600 else default   # zero, negative, nan and inf fall back
 
 
 def modules_here():
@@ -142,7 +145,11 @@ def run_module(module, path, progress, loaded_at_fail=True):
         code = proc.returncode
     except subprocess.TimeoutExpired:
         stop_group(proc)
-        output = (proc.communicate()[0] or "") + "\n(stopped: over the time limit)\n"
+        try:
+            output = (proc.communicate(timeout=STOP_GRACE)[0] or "")
+        except subprocess.TimeoutExpired:   # a grandchild in its own session still holds the pipe open
+            output = ""
+        output += "\n(stopped: over the time limit)\n"
         code = TIMED_OUT
     finally:
         with CHILDREN_LOCK:
@@ -163,8 +170,12 @@ def main(argv=None):
     parser.add_argument("-j", "--jobs", type=positive_int, default=os.cpu_count() or 1, help="modules to run at once")
     parser.add_argument("--shard", type=shard_arg, metavar="K/N", help="run only the Kth of N slices of the sorted modules")
     parser.add_argument("--rerun", action="store_true", help="accepted; this runner reuses no earlier result")
+    parser.add_argument("--tier", help="refused: neckbeard has no test tiers (meow sends it for --live runs)")
     parser.add_argument("modules", nargs="*", metavar="test_module")
     args = parser.parse_args(argv)
+    if args.tier is not None:
+        print("test-parallel: --tier is refused: neckbeard has no test tiers, so there is no functional or live run here", file=sys.stderr)
+        return 2
     known = modules_here()
     unknown = [m for m in args.modules if m not in known]
     if unknown:
@@ -174,13 +185,17 @@ def main(argv=None):
     if args.shard:
         k, n = args.shard
         chosen = chosen[k - 1::n]
-    if not chosen:
-        print("test-parallel: no module to run")
+    if not known:
+        print("test-parallel: no test module found (tools/test_*.py, skills/neckbeard/selfcheck.py)", file=sys.stderr)
+        return 2
+    if not chosen:   # a shard past the last module has nothing to do, and that is a pass
+        print("test-parallel: no module to run in this shard")
         return 0
     # test_selfcheck is the slow one: start it first so it does not end the run alone
     chosen.sort(key=lambda m: (m != "test_selfcheck", m))
-    signal.signal(signal.SIGTERM, lambda *_: (
-        [stop_group(p) for p in list(CHILDREN)], os._exit(143)))
+    # each module runs in a session of its own, so a signal to this runner never reaches it: pass SIGTERM, SIGINT and SIGHUP on
+    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+        signal.signal(sig, lambda *_: ([stop_group(p) for p in list(CHILDREN)], os._exit(143)))
     progress = Progress(len(chosen))
     done = threading.Event()
 
