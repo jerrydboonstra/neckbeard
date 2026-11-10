@@ -224,6 +224,41 @@ got = parse(render(fx("hooks-forms"))[1])
 chk("6. ${CLAUDE_PLUGIN_ROOT}/x.sh arg, bash ${CLAUDE_PLUGIN_ROOT}/x.sh and an unbalanced quote print x.sh, x.sh and <unparsed command>",
     lines(got, "Hooks", "Hooks")[:3] == ["PreToolUse: <unparsed command>", "SessionStart: x.sh", "Stop: x.sh"], lines(got, "Hooks", "Hooks"))
 
+# ---------------------------------------------------------------- hook default forms: ${CLAUDE_PLUGIN_ROOT:-word} and the rest
+got = parse(render(fx("hooks-default-forms"))[1])
+hl = {}
+for l in lines(got, "Hooks", "Hooks"):
+    m = re.match(r"^(\w+)(?: \([^)]*\))?: (.*)$", l)
+    if m and not l.startswith("reaches"):
+        hl[m.group(1)] = m.group(2)
+chk("8. Cat Herder's hook form, \"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend, prints bin/meow, not <unparsed command>", hl.get("SessionEnd") == "bin/meow", hl)
+chk("8. each default form inventory.py expands (:- - := = :? ?) prints its script; :+ and $CLAUDE_PLUGIN_ROOTX stay <unparsed command>; a quoted form after an interpreter prints its script",
+    hl == {"SessionEnd": "bin/meow", "SessionStart": "hooks/a.sh", "Stop": "hooks/b.sh", "PreCompact": "hooks/c.sh", "PostCompact": "hooks/d.sh", "Notification": "hooks/e.sh",
+           "PreToolUse": "hooks/f.sh", "PostToolUse": "<unparsed command>", "SubagentStop": "hooks/h.sh", "UserPromptSubmit": "<unparsed command>"}, hl)
+
+
+def load_expander(path, name):
+    """A function from a script, loaded by path (tools/part1 has no .py name)."""
+    import importlib.machinery, importlib.util
+    modname = "loaded_" + re.sub(r"\W", "_", os.path.basename(path))
+    loader = importlib.machinery.SourceFileLoader(modname, path)
+    mod = importlib.util.module_from_spec(importlib.util.spec_from_loader(modname, loader))
+    loader.exec_module(mod)
+    return getattr(mod, name)
+
+
+FORMS = ["${CLAUDE_PLUGIN_ROOT}/x.sh", "$CLAUDE_PLUGIN_ROOT/x.sh", "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow _hook a", "${CLAUDE_PLUGIN_ROOT:-/opt/x y}/z.sh",
+         "${CLAUDE_PLUGIN_ROOT-w}/a", "${CLAUDE_PLUGIN_ROOT:=w}/a", "${CLAUDE_PLUGIN_ROOT=w}/a", "${CLAUDE_PLUGIN_ROOT:?w}/a", "${CLAUDE_PLUGIN_ROOT?w}/a",
+         "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTX/a", "${CLAUDE_PLUGIN_ROOTX}/a", "${CLAUDE_PLUGIN_ROOT:-${A:-${B}}}/a", "${CLAUDE_PLUGIN_ROOT:-unclosed/a",
+         "a ${CLAUDE_PLUGIN_ROOT}/b $CLAUDE_PLUGIN_ROOT/c", "no variable here", "${CLAUDE_PLUGIN_ROOT:-w}${CLAUDE_PLUGIN_ROOT-v}/a"]
+try:
+    inv = load_expander(INVENTORY, "_expand_plugin_root")
+    mine = load_expander(PART1, "expand_plugin_root")
+    bad = [f for f in FORMS if inv(f, "ROOT") != mine(f, "ROOT")]
+    chk(f"8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's on {len(FORMS)} forms, :+ and ROOTX included", not bad, bad)
+except Exception as e:
+    chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's", False, f"{type(e).__name__}: {e}")
+
 # ---------------------------------------------------------------- Done when 5: the real inventory output, and no read_status
 def real_tree(root):
     """A small plugin: one skill, one hook with an injected file, one MCP server, an agent and a command."""
