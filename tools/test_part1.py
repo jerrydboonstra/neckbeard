@@ -317,6 +317,16 @@ chk("9. 42 candidates in 42 folders: the folder list stops at 15 folders and the
     and (m.group(3), m.group(4)) == ("17", "17") and len(more[0]) < 200, more)
 chk("9. a folder name that holds ', ' and digits cannot forge a count (it is counted under (other)/), and ./dot/z.py counts under dot/ not ./",
     m is not None and "lib 999" not in out and "(other)/ 1" in more[0], more)
+def setp(entries):
+    def edit(d):
+        d["target"]["persistence_candidates"] = entries
+    return edit
+two = [f"e{i:02d}/{n}" for i in range(22) for n in "ab"]
+out = render(variant("persist-ten", setp(two)))[1]
+chk("9. 22 folders of 2 files: 'and 34 more, in: ...' lists 15 folders with 2 each, then 'and 2 other folders (4 files)'",
+    "and 34 more, in: " in out and out.count("/ 2") == 15 and ", and 2 other folders (4 files)" in out, out)
+out = render(variant("persist-ten", setp([f"./dot/f{i:02d}" for i in range(12)])))[1]
+chk("9. files under ./dot/ count under dot/, not ./", "and 2 more, in: dot/ 2\n" in out, out)
 out = render(fx("persist-ten"))[1]
 pl = lines(parse(out), "State it may leave", "Persistence candidates")
 chk("9. 10 candidates print all ten and no more line", len(pl) == 10 and not any("more" in l for l in pl), pl)
