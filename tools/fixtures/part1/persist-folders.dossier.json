@@ -1,0 +1,100 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "persistence_candidates": [
+   "d00/f",
+   "d01/f",
+   "d02/f",
+   "d03/f",
+   "d04/f",
+   "d05/f",
+   "d06/f",
+   "d07/f",
+   "d08/f",
+   "d09/f",
+   "d10/f",
+   "d11/f",
+   "d12/f",
+   "d13/f",
+   "d14/f",
+   "d15/f",
+   "d16/f",
+   "d17/f",
+   "d18/f",
+   "d19/f",
+   "d20/f",
+   "d21/f",
+   "d22/f",
+   "d23/f",
+   "d24/f",
+   "d25/f",
+   "d26/f",
+   "d27/f",
+   "d28/f",
+   "d29/f",
+   "d30/f",
+   "d31/f",
+   "d32/f",
+   "d33/f",
+   "d34/f",
+   "d35/f",
+   "d36/f",
+   "d37/f",
+   "d38/f",
+   "d39/f",
+   "lib 999, x/y.py",
+   "./dot/z.py"
+  ],
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}

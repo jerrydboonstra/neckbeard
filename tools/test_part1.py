@@ -307,6 +307,16 @@ chk("9. 150 persistence candidates print 10 entries (the first 10 by path) and o
 chk("9. the folders are every folder of the rest, the highest count first, then by name; a root file counts under ./",
     more == ["and 140 more, in: lib/ 105, tools/ 25, ./ 10"], more)
 chk("9. the card is at most 13 lines (heading, label, 10 entries, the more line)", len(card_lines(out, "State it may leave")) <= 13, card_lines(out, "State it may leave"))
+out = render(fx("persist-folders"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+more = [l for l in pl if l.startswith("and ")]
+m = re.match(r"^and (\d+) more, in: (.*), and (\d+) other folders \((\d+) files\)$", more[0]) if more else None
+listed = [(a, int(b)) for a, b in re.findall(r"(\S+/) (\d+)", m.group(2))] if m else []
+chk("9. 42 candidates in 42 folders: the folder list stops at 15 folders and the rest are 'and 17 other folders (17 files)'; the counts still sum to 32 and the line stays short",
+    m is not None and len(listed) == 15 and sum(n for _, n in listed) + int(m.group(4)) == int(m.group(1)) == 32
+    and (m.group(3), m.group(4)) == ("17", "17") and len(more[0]) < 200, more)
+chk("9. a folder name that holds ', ' and digits cannot forge a count (it is counted under (other)/), and ./dot/z.py counts under dot/ not ./",
+    m is not None and "lib 999" not in out and "(other)/ 1" in more[0], more)
 out = render(fx("persist-ten"))[1]
 pl = lines(parse(out), "State it may leave", "Persistence candidates")
 chk("9. 10 candidates print all ten and no more line", len(pl) == 10 and not any("more" in l for l in pl), pl)
