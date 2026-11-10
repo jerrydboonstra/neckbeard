@@ -5,7 +5,7 @@ The line shapes meow reads are checked against the regexes in Cat Herder's lib/c
 (MODULE_RESULT, UNIT_START and FINISHED at e150d426bb6f245df96dd7ac4bf4c5e405bbb5d6), copied here as fixed strings: a
 change to the runner that stops a receipt reading it fails here first. Each case runs the real scripts in a throwaway
 project, so the project under test is never this checkout."""
-import os, re, shutil, subprocess, sys, tempfile
+import atexit, os, re, shutil, subprocess, sys, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -13,6 +13,8 @@ MODULE_RESULT = re.compile(r"^\[\d+/\d+\] (\S+) (ok|FAIL under load|FAIL)(?: |$)
 UNIT_START = re.compile(r"^\[\d+/\d+\] (\S+) start(?: |$)")
 FINISHED = re.compile(r"^\[\d+/(\d+)\] \S+ (ok|FAIL) ", re.M)
 failures = []
+TEMPS = []   # every throwaway project, removed at exit so a run leaves no tp-* folder behind
+atexit.register(lambda: [shutil.rmtree(t, ignore_errors=True) for t in TEMPS])
 
 
 def check(name, ok, detail=""):
@@ -24,6 +26,7 @@ def check(name, ok, detail=""):
 def project(modules, selfcheck=None, mapfile=None):
     """A throwaway git project holding this checkout's runner. `modules` maps a module name to its script's text."""
     d = Path(tempfile.mkdtemp(prefix="tp-"))
+    TEMPS.append(d)
     (d / "tools").mkdir()
     for tool in ("test-parallel", "test-changed"):
         if (ROOT / "tools" / tool).exists():
