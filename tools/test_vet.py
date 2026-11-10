@@ -87,7 +87,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -116,7 +116,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
                    TMPDIR=os.path.join(tmp, "t"))
         os.mkdir(env["TMPDIR"])
         before = reader_files()
-        p = subprocess.run([VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
+        p = subprocess.run([vet or VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
         title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
         res = dict(rc=p.returncode, out=p.stdout + p.stderr, calls=calls, report=os.path.exists(out), title=title,
@@ -175,11 +175,25 @@ glance = "## ⚡ At a glance\n\nOne line.\n"
 sec, _, rest = t[len(head):].partition(glance)
 chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
     (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
-chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"- **{h}**" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"### {h}\n" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
 chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")
 chk("part1: with no git commit the section says commit not given", "Commit: commit not given" in r["text"], True)
+# a copy of vet whose tools/part1 fails: the vet dies, says so, and shows part1's own message
+fake = tempfile.mkdtemp()
+try:
+    os.makedirs(os.path.join(fake, "tools"))
+    shutil.copy(VET, os.path.join(fake, "tools", "vet"))
+    for link in ("skills", "examples", ".claude-plugin"):
+        os.symlink(os.path.join(NB, link), os.path.join(fake, link))
+    open(os.path.join(fake, "tools", "part1"), "w").write("#!/bin/sh\necho 'part1: cannot read a dossier' >&2\nexit 2\n")
+    os.chmod(os.path.join(fake, "tools", "part1"), 0o755)
+    r = run("part1-fails", vet=os.path.join(fake, "tools", "vet"))
+finally:
+    shutil.rmtree(fake)
+chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
+    (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
 r = run("part1-missing-heading", report="noglance")
 chk("part1: a report with no At a glance heading fails vet, and the message names it", (r["rc"], "At a glance" in r["out"]), (1, True))
 

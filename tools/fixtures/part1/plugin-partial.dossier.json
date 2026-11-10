@@ -189,6 +189,16 @@
     "path": "/Users/someone/proj/demo/skills/alpha/SKILL.md",
     "source": "skills/alpha/SKILL.md",
     "text": "x"
+   },
+   {
+    "bytes": null,
+    "chars": null,
+    "description": null,
+    "name": "gamma",
+    "path": "/Users/someone/proj/demo/skills/gamma/SKILL.md",
+    "refused": "resolves outside the target tree",
+    "source": "skills/gamma/SKILL.md",
+    "text": null
    }
   ]
  }

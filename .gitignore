@@ -31,8 +31,8 @@ __pycache__/
 !tools/fixtures/read-status/hooks-search-dangling/data/x.json
 !tools/fixtures/read-status/outside-links/sub/link.json
 
-# Fixtures for tools/test_part1.py: dossiers written by hand, and one real one made on a small plugin.
-!tools/fixtures/part1/**
+# Fixtures for tools/test_part1.py: dossiers written by hand, each named by its .dossier.json suffix.
+!tools/fixtures/part1/*.dossier.json
 
 # Evaluations quote the rules they compared against, for the same reason.
 evaluations/

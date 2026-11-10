@@ -1,0 +1,113 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "agents": [
+   {
+    "bytes": 30,
+    "chars": 30,
+    "description": "d",
+    "name": "zeta",
+    "path": "agents/reviewer.md",
+    "source": "agent",
+    "text": "x"
+   },
+   {
+    "bytes": 30,
+    "chars": 30,
+    "description": "d",
+    "name": "beta",
+    "path": "agents/reviewer.md",
+    "source": "agent",
+    "text": "x"
+   }
+  ],
+  "commands": [],
+  "hooks": {
+   "has_hooks": false
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "marketplace": null,
+  "mcp_servers": null,
+  "path": "/Users/someone/proj/demo",
+  "persistence_candidates": [
+   "z.sh",
+   "a.sh"
+  ],
+  "plugin_json": {
+   "description": null,
+   "license": null,
+   "name": "demo",
+   "version": "1.2.0"
+  },
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "not-applicable"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo",
+  "rule_files": [],
+  "skills": [
+   {
+    "bytes": 1200,
+    "chars": 1200,
+    "description": "Does the alpha thing.",
+    "name": "zed",
+    "path": "/Users/someone/proj/demo/skills/alpha/SKILL.md",
+    "source": "skills/alpha/SKILL.md",
+    "text": "x"
+   },
+   {
+    "bytes": 1200,
+    "chars": 1200,
+    "description": "Does the alpha thing.",
+    "name": "alpha",
+    "path": "/Users/someone/proj/demo/skills/alpha/SKILL.md",
+    "source": "skills/alpha/SKILL.md",
+    "text": "x"
+   }
+  ]
+ }
+}

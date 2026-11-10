@@ -1,2 +1,6 @@
 #!/usr/bin/env python3
-# part1-render: not built yet. This stub prints nothing, so tools/test_part1.py fails on the rules, not on a missing file.
+# part1-render: not built yet. This stub prints only the six card headings, so tools/test_part1.py fails on the
+# states each card prints, not on a missing file.
+print("## What it adds\n")
+for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"):
+    print(f"### {h}\n")
