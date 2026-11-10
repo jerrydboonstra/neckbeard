@@ -283,6 +283,79 @@ try:
 except Exception as e:
     chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's", False, f"{type(e).__name__}: {e}")
 
+# ---------------------------------------------------------------- the State it may leave card summarises a long list
+def card_lines(out, heading):
+    """The lines of one card, from its ### heading to the line before the next, blank lines left out."""
+    keep, on = [], False
+    for l in out.split("\n"):
+        if l.startswith("### "):
+            on = l == f"### {heading}"
+            if on:
+                keep.append(l)
+        elif on and l.strip():
+            keep.append(l)
+    return keep
+
+
+out = render(fx("persist-many"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+more = [l for l in pl if l.startswith("and ")]
+folders = re.match(r"^and (\d+) more, in: (.*)$", more[0]) if more else None
+counts = [(m.group(1), int(m.group(2))) for m in re.finditer(r"(\S+/) (\d+)", folders.group(2))] if folders else []
+chk("9. 150 persistence candidates print 10 entries (the first 10 by path) and one 'and 140 more, in: ...' line whose folder counts sum to 140",
+    pl[:10] == [f"lib/f{i:03d}.py" for i in range(10)] and len(pl) == 11 and folders is not None and folders.group(1) == "140" and sum(n for _, n in counts) == 140, pl)
+chk("9. the folders are every folder of the rest, the highest count first, then by name; a root file counts under ./",
+    more == ["and 140 more, in: lib/ 105, tools/ 25, ./ 10"], more)
+chk("9. the card is at most 13 lines (heading, label, 10 entries, the more line)", len(card_lines(out, "State it may leave")) <= 13, card_lines(out, "State it may leave"))
+out = render(fx("persist-folders"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+more = [l for l in pl if l.startswith("and ")]
+m = re.match(r"^and (\d+) more, in: (.*), and (\d+) other folders \((\d+) files\)$", more[0]) if more else None
+listed = [(a, int(b)) for a, b in re.findall(r"(\S+/) (\d+)", m.group(2))] if m else []
+chk("9. 42 candidates in 42 folders: the folder list stops at 15 folders and the rest are 'and 17 other folders (17 files)'; the counts still sum to 32 and the line stays short",
+    m is not None and len(listed) == 15 and sum(n for _, n in listed) + int(m.group(4)) == int(m.group(1)) == 32
+    and (m.group(3), m.group(4)) == ("17", "17") and len(more[0]) < 200, more)
+chk("9. a folder name that holds ', ' and digits cannot forge a count (it is counted under (other)/), and ./dot/z.py counts under dot/ not ./",
+    m is not None and "lib 999" not in out and "(other)/ 1" in more[0], more)
+def setp(entries):
+    def edit(d):
+        d["target"]["persistence_candidates"] = entries
+    return edit
+two = [f"e{i:02d}/{n}" for i in range(22) for n in "ab"]
+out = render(variant("persist-ten", setp(two)))[1]
+chk("9. 22 folders of 2 files: 'and 34 more, in: ...' lists 15 folders with 2 each, then 'and 2 other folders (4 files)'",
+    "and 34 more, in: " in out and out.count("/ 2") == 15 and ", and 2 other folders (4 files)" in out, out)
+out = render(variant("persist-ten", setp([f"./dot/f{i:02d}" for i in range(12)])))[1]
+chk("9. files under ./dot/ count under dot/, not ./", "and 2 more, in: dot/ 2\n" in out, out)
+out = render(fx("persist-ten"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+chk("9. 10 candidates print all ten and no more line", len(pl) == 10 and not any("more" in l for l in pl), pl)
+p = variant("persist-ten", lambda d: d["target"]["persistence_candidates"].append("scripts/s9z.sh"))
+pl = lines(parse(render(p)[1]), "State it may leave", "Persistence candidates")
+chk("9. 11 candidates print ten and 'and 1 more, in: scripts/ 1'", len(pl) == 11 and pl[-1] == "and 1 more, in: scripts/ 1", pl)
+out = render(fx("persist-capped"))[1]
+pl = lines(parse(out), "State it may leave", "Persistence candidates")
+nr = [l for l in pl if l.startswith("not read: ")]
+chk("9. 18 capped files: the not read line names 5 and ends 'and 13 more'",
+    len(nr) == 1 and nr[0].count("read capped") == 5 and nr[0].endswith("; and 13 more") and "c00.sh" in nr[0] and "c04.sh" in nr[0] and "c05.sh" not in nr[0], nr)
+chk("9. a partly read persistence card with its more line is at most 14 lines", len(card_lines(out, "State it may leave")) <= 14, card_lines(out, "State it may leave"))
+def trim(n):
+    def edit(d):
+        d["target"]["read_status"]["persistence_candidates"]["notes"] = d["target"]["read_status"]["persistence_candidates"]["notes"][:n]
+    return edit
+for n, want in ((5, None), (6, "and 1 more")):
+    pl = lines(parse(render(variant("persist-capped", trim(n)))[1]), "State it may leave", "Persistence candidates")
+    nr = [l for l in pl if l.startswith("not read: ")]
+    chk(f"9. {n} capped notes: all named" + (", no 'more'" if want is None else ", then 'and 1 more'"),
+        len(nr) == 1 and nr[0].count("read capped") == 5 and (("more" not in nr[0]) if want is None else nr[0].endswith("; " + want)), nr)
+def many_skills(d):
+    d["target"]["skills"] = [{"name": f"s{i:02d}", "description": "x", "path": f"skills/s{i:02d}/SKILL.md"} for i in range(12)]
+pl = lines(parse(render(variant("plugin-partial", many_skills))[1]), "Injects", "Skills")
+chk("9. 12 skills: the Skills list prints all 12 (a cap inside block() would cut it)", sum(1 for l in pl if re.match(r"s\d\d: ", l)) == 12, pl)
+out = render(fx("plugin-partial"))[1]
+chk("9. a card that is not persistence still prints every entry (the cap is at the persistence call site only)",
+    lines(parse(out), "Injects", "Skills")[0].startswith("alpha: "), lines(parse(out), "Injects", "Skills"))
+
 # ---------------------------------------------------------------- Done when 5: the real inventory output, and no read_status
 def real_tree(root):
     """A small plugin: one skill, one hook with an injected file, one MCP server, an agent and a command."""
