@@ -43,6 +43,7 @@ INLINE_CODE = {"-c", "-e", "-p", "--eval", "--print", "--command"}
 INLINE_LETTERS = set("cep")   # a short-flag cluster such as -lc, -ec, -xc, -Bc carries inline code when it holds one of these
 SCRIPT_LIKE = re.compile(r"/|\.(?:sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|php)$")
 HOME_FORMS = ("~", "$HOME", "${HOME}")
+SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*$")   # what a printed script may be: a name or a relative path
 
 
 def safe(text, root="", cap=200):
@@ -58,9 +59,17 @@ def safe(text, root="", cap=200):
 def words(command):
     """The command's words with any leading NAME=value assignments dropped, or None if it does not parse."""
     try:
-        toks = shlex.split(command) if isinstance(command, str) else None
+        if not isinstance(command, str):
+            return None
+        lex = shlex.shlex(command, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        toks = list(lex)
     except ValueError:
         return None
+    for i, t in enumerate(toks):   # only the first command: stop at ; && | & < > ( )
+        if t and all(c in "();<>|&" for c in t):
+            toks = toks[:i]
+            break
     while toks and (ENV_ASSIGN.match(toks[0]) or os.path.basename(toks[0]) == "env"):
         if os.path.basename(toks[0]) == "env" and not ENV_ASSIGN.match(toks[0]):   # env [-flags] [NAME=value ...] COMMAND: look through it
             toks = toks[1:]
@@ -86,6 +95,9 @@ def script_of(command, root=""):
         for t in toks[1:]:
             if t in INLINE_CODE or (re.match(r"^-[A-Za-z]+$", t) and INLINE_LETTERS & set(t[1:])):
                 return "<unparsed command>"
+            if t == "-m" or re.match(r"^-[A-Za-z]*m$", t):   # python -m MODULE: the module is the script
+                tok = toks[toks.index(t) + 1] if toks.index(t) + 1 < len(toks) else None
+                break
             if not t.startswith("-") and SCRIPT_LIKE.search(t):
                 tok = t
                 break
@@ -95,9 +107,10 @@ def script_of(command, root=""):
         if prefix and tok.startswith(prefix):
             tok = tok[len(prefix):]
             break
-    if re.search(r"\s", tok):   # whatever was chosen must be one word, or it holds an argument
+    tok = os.path.basename(tok) if tok.startswith("/") or tok.split("/")[0] in HOME_FORMS else tok
+    if not SAFE_WORD.match(tok):   # a url, a second command, a quote, an argument: anything but a plain path or name
         return "<unparsed command>"
-    return safe(os.path.basename(tok) if tok.startswith("/") or tok.split("/")[0] in HOME_FORMS else tok)
+    return tok
 
 
 def clean_note(note, root=""):
