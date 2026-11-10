@@ -88,8 +88,12 @@ class _Note(str):
     """One line of a section's read_status notes, "<path relative to the target>: <reason>".
     `level` says how much of the section the line costs: "failed" (the section could not be
     read), "entry" (one entry of it was not read) or "partial" (part of it was left unread,
-    a cap for one)."""
+    a cap for one). A note can carry text from the target, so it is one line of at most 400
+    characters whatever the target wrote."""
     level = "partial"
+
+    def __new__(cls, text):
+        return super().__new__(cls, " ".join(str(text).split())[:400])
 
 
 def _note(notes, text, level="partial"):
@@ -103,6 +107,21 @@ def _note(notes, text, level="partial"):
 
 def _rel(path, root):
     return os.path.relpath(path, root) if os.path.isabs(path) else path
+
+
+def _walk_error(notes, root):
+    """os.walk's onerror: a folder it cannot list is skipped, so say so."""
+    def note(error):
+        _note(notes, f"{os.path.relpath(error.filename, root) if error.filename else '.'}: folder could not be listed")
+    return note
+
+
+def _walk_gaps(notes, dirpath, dirnames, root):
+    """os.walk does not enter a symlinked folder (containment, and no loops), so what is inside one is not read: say so."""
+    if notes is not None:
+        for d in dirnames:
+            if os.path.islink(os.path.join(dirpath, d)):
+                _note(notes, f"{os.path.relpath(os.path.join(dirpath, d), root)}: a symlinked folder, not followed")
 
 
 def read_text(path, limit=READ_LIMIT):
@@ -451,13 +470,14 @@ def find_files(root, names, max_depth=6, notes=None):
     out = []
     root = root.rstrip("/")
     base_depth = root.count(os.sep)
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root, onerror=_walk_error(notes, root)):
         if dirpath.count(os.sep) - base_depth > max_depth:
             if dirnames or filenames:
                 _note(notes, f"{os.path.relpath(dirpath, root)}: not searched, deeper than {max_depth} folders")
             dirnames[:] = []
             continue
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor")]
+        _walk_gaps(notes, dirpath, dirnames, root)
         for fn in filenames:
             if fn in names:
                 out.append(os.path.join(dirpath, fn))
@@ -510,7 +530,7 @@ def resolve_injected_text(hook_file_path, plugin_root, depth=1, notes=None):
     and resolves each against the hook's own directory and the plugin root.
     Anything genuinely dynamic (computed from runtime state) is reported as such."""
     src = read_text(hook_file_path, limit=20_000) or ""
-    if len(src) >= 20_000 and os.path.getsize(hook_file_path) > 20_000:
+    if len(src) >= 20_000 and _within(hook_file_path, plugin_root) and os.path.getsize(hook_file_path) > 20_000:
         _note(notes, f"{os.path.relpath(hook_file_path, plugin_root)}: read capped at 20000 bytes")
     candidates = _literal_path_candidates(src)
     fallback = None
@@ -877,10 +897,11 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
     128 local trees measured read 5,378 JSON files in about 3 seconds."""
     root = root.rstrip("/")
     found, events, reads, stopped_at = [], {}, 0, None
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root, onerror=_walk_error(notes, root)):
         if stopped_at:
             break
         dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
+        _walk_gaps(notes, dirpath, dirnames, root)
         for fn in sorted(filenames):
             if not fn.endswith(".json") or fn in NOT_HOOK_CONFIG:
                 continue
@@ -961,7 +982,7 @@ def marketplace_listing(path, notes=None):
     mp_rel = ".claude-plugin/marketplace.json"
     if not os.path.isfile(mp):
         if os.path.lexists(mp):
-            _note(notes, f"{mp_rel}: a dangling symlink; not read", "failed")
+            _note(notes, f"{mp_rel}: not a readable file (a dangling symlink, or a folder)", "failed")
         return None
     if not _within(mp, path):
         _note(notes, f"{mp_rel}: resolves outside the target tree; not read", "failed")
@@ -992,6 +1013,8 @@ def marketplace_listing(path, notes=None):
                 entry["status"] = "missing from this repository"
         else:
             entry["status"] = "external: fetched from elsewhere, not in this repository"
+        if not isinstance(src, str):
+            _note(notes, f"{mp_rel}: plugin {e.get('name')!r} has no source string, so it was not looked for")
         if entry["status"].startswith(("refused", "missing")):
             _note(notes, f"{mp_rel}: plugin {e.get('name')!r} ({src}): {entry['status']}")
         plugins.append(entry)
@@ -1047,7 +1070,8 @@ def mcp_servers(plugin_json, plugin_root=None, notes=None):
                              "an 'mcpServers' key. First-party examples use this shape "
                              "and the docs describe the wrapped one; treat the list as "
                              "best-effort and open the file")
-                _note(notes, f".mcp.json: {ambiguity}")
+                if "mcpServers" not in raw:   # a wrong-typed mcpServers is noted above, and is not a top-level shape
+                    _note(notes, f".mcp.json: {ambiguity}")
     if not isinstance(servers, dict) or not servers:
         return None
     out = []
@@ -1076,8 +1100,9 @@ def mcp_servers(plugin_json, plugin_root=None, notes=None):
 
 def inventory_persistence(plugin_root, notes=None):
     hits = []
-    for dirpath, dirnames, filenames in os.walk(plugin_root):
+    for dirpath, dirnames, filenames in os.walk(plugin_root, onerror=_walk_error(notes, plugin_root)):
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor", "benchmarks", "tests", "test")]
+        _walk_gaps(notes, dirpath, dirnames, plugin_root)
         for fn in filenames:
             fp = os.path.join(dirpath, fn)
             rel_fp = os.path.relpath(fp, plugin_root)
@@ -1145,13 +1170,14 @@ def skill_companions(sm, root, notes=None):
     # os.walk does not follow directory symlinks, so a skill folder that links to itself
     # cannot loop (a recursive glob does follow them, and ran until killed). It prunes the
     # same directories find_files does, so vendored READMEs do not crowd out the real files.
-    for dirpath, dirnames, filenames in os.walk(base):
+    for dirpath, dirnames, filenames in os.walk(base, onerror=_walk_error(notes, root)):
         if dirpath[len(base):].count(os.sep) >= 6:
             if dirnames:
                 _note(notes, f"{os.path.relpath(dirpath, root)}: companion files below this folder not read, "
                              "deeper than 6 folders")
             dirnames[:] = []
         dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
+        _walk_gaps(notes, dirpath, dirnames, root)
         paths += [os.path.join(dirpath, fn) for fn in sorted(filenames)
                   if fn.endswith(".md") and os.path.abspath(os.path.join(dirpath, fn)) != os.path.abspath(sm)]
     out = []
@@ -1184,7 +1210,7 @@ def plugin_skills(root, notes=None):
     invisible to Claude Code and would otherwise double-count and inflate the
     target's apparent size."""
     return [it for it in (contained_skill(sm, root, notes)
-                          for sm in sorted(glob.glob(os.path.join(root, "skills", "*", "SKILL.md"))))
+                          for sm in sorted(glob.glob(os.path.join(glob.escape(root), "skills", "*", "SKILL.md"))))
             if it]
 
 
@@ -1217,8 +1243,8 @@ def inventory_commands_agents(root, notes=None):
                 _note(section, f"{os.path.relpath(p, root)}: not a readable file (a dangling symlink, or a folder)", "entry")
         return out
     commands = read([p for pat in ("*.md", "*.toml")
-                     for p in glob.glob(os.path.join(root, "commands", pat))], "command")
-    agents = read(glob.glob(os.path.join(root, "agents", "*.md")), "agent")
+                     for p in glob.glob(os.path.join(glob.escape(root), "commands", pat))], "command")
+    agents = read(glob.glob(os.path.join(glob.escape(root), "agents", "*.md")), "agent")
     return commands, agents
 
 
@@ -1250,8 +1276,8 @@ def claude_md_imports(path, root=None, _hop=1, _seen=None, notes=None):
         if not os.path.isfile(cand):
             if os.path.lexists(cand):
                 # a dangling symlink is a file that exists and cannot be read, not "@someone" in prose
-                _note(notes, f"{os.path.relpath(cand, root or os.path.dirname(path))}: import is a dangling "
-                             "symlink; not read", "entry")
+                _note(notes, f"{os.path.relpath(cand, root or os.path.dirname(path))}: import is not a readable "
+                             "file (a dangling symlink, or a folder)", "entry")
             continue  # "@someone" in prose, or a dead import: Claude Code skips it too
         real = os.path.realpath(cand)
         if real in seen:
@@ -1299,7 +1325,7 @@ def target_rule_files(root, notes=None):
     p = os.path.join(root, "CLAUDE.md")
     if not os.path.isfile(p):
         if os.path.lexists(p):
-            _note(notes, "CLAUDE.md: a dangling symlink; not read", "entry")
+            _note(notes, "CLAUDE.md: not a readable file (a dangling symlink, or a folder)", "entry")
         return []
     if not _within(p, root):
         return [{"source": "target-CLAUDE.md", "path": "CLAUDE.md", "text": None,
@@ -1366,7 +1392,7 @@ def inventory_target(path, plugin_name=None):
                               "plugins": [{k: v for k, v in p.items() if k != "dir"}
                                           for p in market["plugins"]]}
         return sub
-    plugin_json_path, manifest_refused = None, None
+    plugin_json_path, manifest_refused, dangling = None, None, None
     for cand in (os.path.join(path, ".claude-plugin", "plugin.json"), os.path.join(path, "plugin.json")):
         if os.path.isfile(cand) and not _within(cand, path):
             manifest_refused = (f"{os.path.relpath(cand, path)} resolves outside the target "
@@ -1376,7 +1402,13 @@ def inventory_target(path, plugin_name=None):
             plugin_json_path = cand
             break
         if os.path.lexists(cand):
-            _note(notes["plugin_json"], f"{os.path.relpath(cand, path)}: a dangling symlink; not read, "
+            dangling = os.path.relpath(cand, path)
+    if dangling:
+        if plugin_json_path:
+            _note(notes["plugin_json"], f"{dangling}: not a readable file (a dangling symlink, or a folder); "
+                                        f"{os.path.relpath(plugin_json_path, path)} was read instead")
+        else:
+            _note(notes["plugin_json"], f"{dangling}: not a readable file (a dangling symlink, or a folder); not read, "
                                         "so this was inventoried as a plain pack", "failed")
     if not plugin_json_path:
         # Generic pack: no plugin manifest, so no canonical layout. Search
@@ -1469,8 +1501,8 @@ def add_read_status(dossier):
     belong to. A note's level sets the state: "failed" makes the section failed; "entry" makes a list
     section failed when no entry of it was read, else partial; any other note makes it partial. A
     section with no note is read. Not-applicable: a rule-file target has every section but rule_files;
-    a generic pack has no plugin_json unless a manifest was refused or dangling; marketplace is absent
-    unless the target has a marketplace.json.
+    a generic pack has no plugin_json unless a manifest was refused or dangling; marketplace is
+    not-applicable unless the target has a marketplace.json.
 
     Every site that turns a failed read or parse, a cap or a wrong-typed value into None, {}, [], "" or
     a skip records a note. They are, with a test each in tools/test_read_status.py:
@@ -1481,6 +1513,7 @@ def add_read_status(dossier):
       SK5 skill_companions -> skills: folders deeper than 6 are not walked
       SK6 find_files -> skills: folders deeper than 6 are not searched (a generic pack)
       SK7 measure -> skills: a SKILL.md over the read limit is cut (key truncated)
+      SK8 find_files -> skills: a symlinked folder is not entered, so a skill inside it is not read
       AG1 inventory_commands_agents -> agents: a dangling symlink or folder named *.md, or a file
           rule_item cannot read, is skipped (entry)
       AG2 inventory_commands_agents -> agents: a file that resolves outside the tree is refused
@@ -1491,13 +1524,14 @@ def add_read_status(dossier):
       RF3 claude_md_imports -> rule_files: an import that is a dangling symlink is skipped (entry); one
           that names no file at all is prose ("@someone") and says nothing
       RF4 claude_md_imports -> rule_files: imports past the 5-hop cap are not followed
-      RF5 with_imports -> rule_files: an import that resolves outside the tree is refused; one
-          rule_item cannot read is dropped (entry)
+      RF5 with_imports -> rule_files: an import that resolves outside the tree is refused (tested); a
+          file or import that rule_item cannot read is dropped with a note (entry; untested, since it
+          takes a file that exists and cannot be opened, and a test may not chmod one)
       RF6 inventory_target -> rule_files: a rule file other than CLAUDE.md follows no imports (key
           imports_not_followed)
       RF7 measure -> rule_files: a rule file over the read limit is cut (key truncated)
-      HK1 inventory_hooks -> hooks: a hooks file that is not valid JSON, or whose events container is
-          the wrong type (key parse_error)
+      HK1 inventory_hooks -> hooks: a hooks file that is not valid JSON, or whose events container, or
+          plugin.json's own hooks value, is the wrong type (key parse_error)
       HK2 inventory_hooks -> hooks: a hooks file that resolves outside the tree (key refused)
       HK3 _merge_hook_list -> hooks: a listed hooks file that is missing, outside or not JSON
       HK4 inventory_hooks -> hooks: plugin.json names a hooks path that is not a file, so the search
@@ -1516,10 +1550,12 @@ def add_read_status(dossier):
           marketplace_note)
       HK13 resolve_injected_text -> hooks: a hook script is read only to 20000 characters
       HK14 hooks_outside_manifest -> hooks: a JSON file over the read limit is not searched
+      HK15 hooks_outside_manifest -> hooks: a JSON file whose size cannot be read (a dangling symlink)
       MC1 mcp_servers -> mcp_servers: .mcp.json exists and does not parse (absent is read, no entries)
       MC2 mcp_servers -> mcp_servers: .mcp.json parses to something that is not an object
       MC3 mcp_servers -> mcp_servers: mcpServers is not an object
       MC4 mcp_servers -> mcp_servers: plugin.json's mcpServers is a path, which is not followed
+      MC8 mcp_servers -> mcp_servers: plugin.json's mcpServers is neither a path nor an object
       MC5 mcp_servers -> mcp_servers: a server entry that is not an object has no command or url
       MC6 mcp_servers -> mcp_servers: servers at the top of .mcp.json are a guess (ambiguity)
       MC7 mcp_servers -> mcp_servers: .mcp.json resolves outside the tree (refused)
@@ -1543,6 +1579,12 @@ def add_read_status(dossier):
       MK4 marketplace_listing -> marketplace: an entry that is not an object is skipped
       MK5 marketplace_listing -> marketplace: an entry whose folder is missing
       MK6 marketplace_listing -> marketplace: an entry that resolves outside the tree
+      MK7 marketplace_listing -> marketplace: marketplace.json resolves outside the tree
+      MK8 marketplace_listing -> marketplace: an entry with no source string was never looked for
+    Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree
+    with os.walk, which skips a folder it cannot list (onerror: "<folder>: folder could not be listed", untested
+    because it takes a folder that exists and cannot be opened, which a test may not chmod) and does not enter
+    a symlinked folder ("<folder>: a symlinked folder, not followed", tested as SK8 below); both make the section partial.
     Not noted: settings_writers re-reads files inventory_persistence just read, so a file it cannot
     read already has a persistence note; the reader's own rules (current_rules), which are
     reader-read-status's; a marketplace entry that is external, which is a choice the manifest makes.
@@ -1550,6 +1592,8 @@ def add_read_status(dossier):
     review: nothing else catches it."""
     private = dossier.pop("_read_notes", None) or {}
     kind, base = dossier.get("kind"), dossier.get("path") or ""
+    if kind == "rule-file":
+        base = os.path.dirname(base)   # an import is named from the folder the rule file sits in
     notes = {s: list(private.get(s) or []) for s in READ_SECTIONS}
 
     def add(section, text, level="partial"):
@@ -1572,7 +1616,7 @@ def add_read_status(dossier):
                 elif comp.get("truncated"):
                     add(section, f"{comp.get('path')}: read capped at {comp.get('read_limit', READ_LIMIT)} bytes")
     for imp in dossier.get("imports_not_followed") or []:
-        add("rule_files", f"{os.path.basename(base)}: import @{imp} not followed (only a CLAUDE.md follows its imports)")
+        add("rule_files", f"{os.path.basename(dossier.get('path') or '')}: import @{imp} not followed (only a CLAUDE.md follows its imports)")
 
     hooks = dossier.get("hooks")
     if isinstance(hooks, dict):
@@ -1593,7 +1637,7 @@ def add_read_status(dossier):
         for n in hooks.get("nested_plugins") or []:
             add("hooks", f"{n}: hooks found in a plugin nested in this directory; inventory it on its own", "failed")
         if hooks.get("search_incomplete"):
-            m = re.search(r" at (\S+)/, before", hooks["search_incomplete"])
+            m = re.search(r" at (.+?)/, before", hooks["search_incomplete"])
             found = hooks.get("has_hooks") in (True, "partial")
             add("hooks", f"{m.group(1) + '/' if m else hooks.get('hooks_file') or 'hooks'}: {hooks['search_incomplete']}",
                 "partial" if found else "failed")
