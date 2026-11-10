@@ -58,7 +58,7 @@ r = run(d, "-j", "2")
 lines = r.stdout.splitlines()
 starts = [UNIT_START.match(l).group(1) for l in lines if UNIT_START.match(l)]
 results = {m.group(1): m.group(2) for l in lines if (m := MODULE_RESULT.match(l))}
-check("a run starts every module, test_*.py plus test_selfcheck (skills/neckbeard/selfcheck.py), one start line each", sorted(starts) == ["test_a", "test_b", "test_c"], repr(starts))
+check("a run starts every module, test_*.py plus test_selfcheck (skills/neckbeard/selfcheck.py), one start line each", sorted(starts) == ["test_a", "test_b", "test_c", "test_selfcheck"], repr(starts))
 check("a passing module ends '[i/N] <module> ok <seconds>s'", results.get("test_a") == "ok" and any(re.fullmatch(r"\[\d+/4\] test_a ok \d+\.\ds", l) for l in lines), repr(lines[:8]))
 check("a failing module ends '[i/N] <module> FAIL <seconds>s' and the run exits 1", results.get("test_b") == "FAIL" and r.returncode == 1, f"{results} rc={r.returncode}")
 check("FINISHED reads every ending line, with the module count as its first group", len(FINISHED.findall(r.stdout)) == 4 and FINISHED.findall(r.stdout)[0][0] == "4", repr(FINISHED.findall(r.stdout)))
@@ -150,12 +150,13 @@ if mp.exists():
             glob, *mods = line.split()
             rows[glob] = mods
 modules = {p.stem for p in (ROOT / "tools").glob("test_*.py")} | {"test_selfcheck"}
+own = {p.stem for p in (ROOT / "tools").glob("test_*.py")}
 check("tests/map exists and has rows", bool(rows))
 check("every module a map row names exists", bool(rows) and all(m in modules or m == "*" for ms in rows.values() for m in ms),
       repr(sorted({m for ms in rows.values() for m in ms} - modules - {"*"})))
 check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",
-      all(rows.get(f"tools/{m}.py") and m in rows[f"tools/{m}.py"] for m in modules if m.startswith("test_")),
-      repr([m for m in modules if m.startswith("test_") and m not in (rows.get(f"tools/{m}.py") or [])]))
+      all(rows.get(f"tools/{m}.py") and m in rows[f"tools/{m}.py"] for m in own),
+      repr([m for m in own if m not in (rows.get(f"tools/{m}.py") or [])]))
 check("tools/vet selects test_vet and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_stability"], repr(rows.get("tools/vet")))
 check("skills/neckbeard/inventory.py selects test_selfcheck", "test_selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
 check("the runner's own files select its test", all("test_test_parallel" in rows.get(f"tools/{f}", []) for f in ("test-parallel", "test-changed")))

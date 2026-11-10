@@ -7,6 +7,7 @@ Issues and pull requests are welcome. neckbeard is small and has a few rules tha
 - **A new check must be seen to fail.** Break the code it guards, run `make check`, watch that case go red, then restore the code. A check nobody has seen fail is a claim, not a check. Say in the pull request how you broke it.
 - **Every read from a target goes through the containment guard** (`_within` in `inventory.py`). The target is untrusted by definition.
 - **Never commit a dossier or an evaluation.** They contain the reader's private rules. The `.gitignore` blocks JSON for this reason.
+- **Run tests through the herd with `tools/test-parallel`.** `meow herd test run <who> --modules test_vet test_selfcheck` (or `--full`, or `--changed BASE`) runs the modules in separate processes and makes the receipt the herd reads. A module is `tools/test_<name>.py`, named `test_<name>`; `skills/neckbeard/selfcheck.py` is `test_selfcheck`. `tests/map` says which modules a changed file selects: a new `tools/test_*.py` adds its own `tools/test_X.py test_X` line there and a line for each source file it covers. `make check` still runs everything with no herd, and the CASE-STUDIES quote check (`tools/excerpts --check`) stays outside the herd run.
 - **A release bumps the version in both manifests**, `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`, and adds a `CHANGELOG.md` entry. Installed copies are cached by version, so a change shipped under an unchanged number never reaches them. `make release` checks this.
 
 ## Merging several branches

@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+"""Run neckbeard's test modules in separate processes, several at a time, printing the lines the herd's `meow herd test run`
+reads. Copied from Cat Herder's tools/test-parallel at e150d426bb6f245df96dd7ac4bf4c5e405bbb5d6 and cut to what neckbeard needs.
+
+A module is a script that exits 0 when it passes: each tools/test_<name>.py, named test_<name>, and skills/neckbeard/selfcheck.py,
+named test_selfcheck (meow accepts only names that start test_). A tools/test_selfcheck.py beside it would be the same name twice,
+so the runner refuses to start.
+
+  tools/test-parallel [-j N] [--shard K/N] [--rerun] [test_module ...]
+
+No module named: all of them (meow's --full runs it bare). --shard K/N: the Kth of N slices of the sorted modules. --rerun is
+accepted and does nothing, since this runner reuses no earlier result. Each module prints
+  [i/N] <module> start
+  [i/N] <module> ok|FAIL|FAIL under load (<load>) <seconds>s
+and, every minute while any runs, "heartbeat: <n> running, longest <module> <s>s". A module that fails while the machine's 1-minute
+load is above its core count is run again alone after the others: "<module> passed alone: a load flake (...)" counts as a pass,
+"<module> failed alone too: a real failure" stays red. The output of each failed module follows, then "Slowest modules:". Exit 0 when
+every module passed, 1 when any failed or timed out, 2 for a bad argument or an unknown module.
+
+Left out of Cat Herder's runner: the test-slot flock (meow's own slot gate wraps each run), the result-reuse store, recorded timings
+and time-based sharding, tiers (--tier and --live are refused), the suite record file (meow records a whole-suite pass itself), the
+preflight, and the load-stretched time limits. Two settings are for this runner's own tests: TEST_PARALLEL_LOAD stands in for the
+1-minute load, TEST_PARALLEL_HEARTBEAT for the seconds between heartbeat lines; TEST_PARALLEL_UNIT_LIMIT is the seconds a module may run."""
+import argparse
+import concurrent.futures
+import os
+import signal
+import subprocess
+import sys
+import threading
+import time
+
+ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+TIMED_OUT = "timed out"
+STOP_GRACE = 5   # seconds a module that hit its limit gets to clean up after SIGTERM before its group is killed
+
+
+def number(name, default):
+    try:
+        return float(os.environ.get(name, "")) or default
+    except ValueError:
+        return default
+
+
+def modules_here():
+    """{module name: script path} for this project."""
+    found = {}
+    tools = os.path.join(ROOT, "tools")
+    for name in sorted(os.listdir(tools)) if os.path.isdir(tools) else []:
+        if name.startswith("test_") and name.endswith(".py"):
+            found[name[:-3]] = os.path.join(tools, name)
+    selfcheck = os.path.join(ROOT, "skills", "neckbeard", "selfcheck.py")
+    if os.path.isfile(selfcheck):
+        if "test_selfcheck" in found:
+            print("test-parallel: test_selfcheck is both tools/test_selfcheck.py and skills/neckbeard/selfcheck.py; "
+                  "rename one so a module name means one script", file=sys.stderr)
+            sys.exit(2)
+        found["test_selfcheck"] = selfcheck
+    return found
+
+
+def shard_arg(text):
+    try:
+        k, n = (int(part) for part in text.split("/"))
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a shard, write it K/N (a shard of the suite, for example 2/4)")
+    if not 1 <= k <= n:
+        raise argparse.ArgumentTypeError(f"shard {text} is outside 1/{n}..{n}/{n}")
+    return k, n
+
+
+def positive_int(text):
+    if not text.isdigit() or int(text) < 1:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a positive number")
+    return int(text)
+
+
+class Progress:
+    def __init__(self, total):
+        self.total, self.started = total, 0
+        self.running = {}   # position: (module, when it started)
+        self.lock = threading.Lock()
+
+    def start(self, module):
+        with self.lock:
+            self.started += 1
+            position = self.started
+            self.running[position] = (module, time.monotonic())
+            print(f"[{position}/{self.total}] {module} start", flush=True)
+            return position
+
+    def heartbeat(self):
+        with self.lock:
+            if not self.running:
+                return None
+            module, began = min(self.running.values(), key=lambda running: running[1])
+            return f"heartbeat: {len(self.running)} running, longest {module} {time.monotonic() - began:.0f}s"
+
+    def finish(self, module, position, status, elapsed):
+        with self.lock:
+            self.running.pop(position, None)
+            print(f"[{position}/{self.total}] {module} {status} {elapsed:.1f}s", flush=True)
+
+
+class Quiet:
+    """A rerun's progress: no lines of its own, the caller prints the verdict."""
+    def start(self, module):
+        return 0
+
+    def finish(self, *args):
+        pass
+
+
+CHILDREN = set()
+CHILDREN_LOCK = threading.Lock()
+
+
+def stop_group(proc):
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+        try:
+            proc.wait(STOP_GRACE)
+        except subprocess.TimeoutExpired:
+            os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def run_module(module, path, progress, loaded_at_fail=True):
+    """(module, returncode or TIMED_OUT, output, seconds, position, under_load text or None)."""
+    position = progress.start(module)
+    began = time.monotonic()
+    proc = subprocess.Popen([sys.executable, path], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, errors="replace", start_new_session=True)
+    with CHILDREN_LOCK:
+        CHILDREN.add(proc)
+    try:
+        output, _ = proc.communicate(timeout=number("TEST_PARALLEL_UNIT_LIMIT", 900))
+        code = proc.returncode
+    except subprocess.TimeoutExpired:
+        stop_group(proc)
+        output = (proc.communicate()[0] or "") + "\n(stopped: over the time limit)\n"
+        code = TIMED_OUT
+    finally:
+        with CHILDREN_LOCK:
+            CHILDREN.discard(proc)
+    elapsed = time.monotonic() - began
+    under = None
+    if code not in (0, TIMED_OUT) and loaded_at_fail:
+        load, cores = number("TEST_PARALLEL_LOAD", 0) or os.getloadavg()[0], os.cpu_count() or 1
+        if load > cores:
+            under = f"load {load:.1f} on {cores} cores"
+    status = "ok" if code == 0 else TIMED_OUT if code == TIMED_OUT else "FAIL" if under is None else f"FAIL under load ({under})"
+    progress.finish(module, position, status, elapsed)
+    return module, code, output, elapsed, position, under
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="test-parallel", description=__doc__.split("\n\n")[0])
+    parser.add_argument("-j", "--jobs", type=positive_int, default=os.cpu_count() or 1, help="modules to run at once")
+    parser.add_argument("--shard", type=shard_arg, metavar="K/N", help="run only the Kth of N slices of the sorted modules")
+    parser.add_argument("--rerun", action="store_true", help="accepted; this runner reuses no earlier result")
+    parser.add_argument("modules", nargs="*", metavar="test_module")
+    args = parser.parse_args(argv)
+    known = modules_here()
+    unknown = [m for m in args.modules if m not in known]
+    if unknown:
+        print(f"test-parallel: no such test module: {' '.join(unknown)}", file=sys.stderr)
+        return 2
+    chosen = sorted(dict.fromkeys(args.modules)) if args.modules else sorted(known)
+    if args.shard:
+        k, n = args.shard
+        chosen = chosen[k - 1::n]
+    if not chosen:
+        print("test-parallel: no module to run")
+        return 0
+    # test_selfcheck is the slow one: start it first so it does not end the run alone
+    chosen.sort(key=lambda m: (m != "test_selfcheck", m))
+    signal.signal(signal.SIGTERM, lambda *_: (
+        [stop_group(p) for p in list(CHILDREN)], os._exit(143)))
+    progress = Progress(len(chosen))
+    done = threading.Event()
+
+    def beat():
+        while not done.wait(number("TEST_PARALLEL_HEARTBEAT", 60)):
+            line = progress.heartbeat()
+            if line:
+                print(line, flush=True)
+    threading.Thread(target=beat, daemon=True).start()
+
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(args.jobs, len(chosen))) as pool:
+        for result in pool.map(lambda m: run_module(m, known[m], progress), chosen):
+            results[result[0]] = result
+    # a module that failed under load runs once more alone; its verdict is the rerun's
+    flakes = []
+    for module in chosen:
+        under = results[module][5]
+        if under is None:
+            continue
+        with progress.lock:
+            progress.running[("rerun", module)] = (module, time.monotonic())   # the heartbeat names it until it ends
+        try:
+            again = run_module(module, known[module], Quiet(), loaded_at_fail=False)
+        finally:
+            with progress.lock:
+                progress.running.pop(("rerun", module), None)
+        results[module] = again
+        if again[1] == 0:
+            flakes.append(module)
+            print(f"{module} passed alone: a load flake ({under})", flush=True)
+        else:
+            print(f"{module} failed alone too: a real failure", flush=True)
+    done.set()
+    failed = [results[m] for m in chosen if results[m][1] != 0]
+    for module, _, output, _, _, _ in failed:
+        print(f"\n===== failure output: {module} =====")
+        if output:
+            sys.stdout.write(output if output.endswith("\n") else output + "\n")
+        else:
+            print("(no output)")
+    timed_out = [r for r in failed if r[1] == TIMED_OUT]
+    if timed_out:
+        print(f"\ntest-parallel: {len(timed_out)} module{'s' if len(timed_out) != 1 else ''} timed out and "
+              f"{'were' if len(timed_out) != 1 else 'was'} stopped, each counted as a failure: "
+              + ", ".join(f"{r[0]} ({r[3]:.0f}s)" for r in timed_out))
+    print("\nSlowest modules:")
+    for module, _, _, elapsed, _, _ in sorted(results.values(), key=lambda r: (-r[3], r[0]))[:10]:
+        print(f"  {module} {elapsed:.1f}s")
+    if flakes:
+        print(f"\n{len(flakes)} that failed while the machine was loaded passed alone, so they count as passed:")
+        for module in flakes:
+            print(f"  {module}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,46 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Which test modules a changed file selects (tools/test-changed reads this). One source glob per line, then the modules it selects.
+# `*` stays in one folder, `**` crosses folders, `?` is one character; a module `*` selects the whole suite. A changed path no line
+# matches selects the whole suite. A module is tools/test_<name>.py, named test_<name>, or test_selfcheck, which runs
+# skills/neckbeard/selfcheck.py. A new tools/test_*.py adds its own `tools/test_X.py test_X` line here, and a line for each source
+# file it covers; tools/test_test_parallel.py fails when a module has none. `make check` and tools/excerpts --check stay outside the herd run.
+#
+# The skill
+skills/neckbeard/inventory.py test_selfcheck test_layout test_mutate_selfcheck test_vet
+skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
+skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability
+# Tools
+tools/vet test_vet test_vet_stability
+tools/vet-repeat test_vet_stability
+tools/vet-stability test_vet_stability
+tools/neckbeard test_layout
+tools/check-no-bin test_layout
+tools/mutate-selfcheck test_mutate_selfcheck
+tools/deploy-host.sh test_deploy
+tools/test-parallel test_test_parallel
+tools/test-changed test_test_parallel
+# Tests
+tools/test_deploy.py test_deploy
+tools/test_layout.py test_layout
+tools/test_mutate_selfcheck.py test_mutate_selfcheck
+tools/test_test_parallel.py test_test_parallel
+tools/test_vet.py test_vet
+tools/test_vet_stability.py test_vet_stability
+tests/map test_test_parallel
+# Manifests, docs and the rest
+.claude-plugin/** test_selfcheck test_vet test_deploy
+Makefile test_deploy
+examples/** test_selfcheck test_vet test_vet_stability
+CHANGELOG.md test_selfcheck
+README.md test_selfcheck test_deploy
+CONTRIBUTING.md test_layout
+CASE-STUDIES.md test_layout
+SECURITY.md test_layout
+ATTRIBUTION.md test_layout
+LICENSE test_layout
+.gitignore test_layout
+.github/** test_layout
+assets/** test_layout

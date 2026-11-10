@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **`tools/test-parallel`, `tools/test-changed` and `tests/map` run neckbeard's tests the way the herd does.** A cut-down copy of Cat Herder's runner runs each `tools/test_*.py` (and `test_selfcheck`, for `selfcheck.py`) in its own process, prints the lines a receipt reads, reruns a failure under load once alone, and takes `--shard K/N`. `test-changed` picks modules from `tests/map` for a diff. `make check` is unchanged.
+
 ## 1.15.0 (2026-10-17)
 
 - **A hook run through `${CLAUDE_PLUGIN_ROOT:-...}` is identified.** Cat Herder runs every hook as `"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow"`, so one hook file serves several hosts, and the inventory, which expanded only `${CLAUDE_PLUGIN_ROOT}` and `$CLAUDE_PLUGIN_ROOT`, listed all three of its hooks as unidentifiable; the judge then read the hook code by hand, differently each run. The shell's default forms (`:-`, `-`, `:=`, `=`, `:?`, `?`, with a word that may hold its own `${...}`) now expand to the plugin root, since Claude Code always sets the variable. `${CLAUDE_PLUGIN_ROOT:+word}` is left alone, and so is `$CLAUDE_PLUGIN_ROOTX`, a different variable that a substring replace used to expand. Cat Herder's hooks now read as found, with their payload not traced (`unresolved_hooks`), since its script builds the text it injects at run time. Five self-check cases, each through the CLI or the call site that identifies a hook's script.

@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+"""Run the test modules tests/map selects for a BASE...HEAD diff. Copied from Cat Herder's tools/test-changed at
+e150d426bb6f245df96dd7ac4bf4c5e405bbb5d6 and cut to neckbeard's map, which has one kind of line.
+
+  tools/test-changed [--list] [--project=DIR] BASE
+
+tests/map: one line per source glob, then the test modules it selects. `*` stays in one folder, `**` crosses folders, `?` is one
+character; a module `*` selects the whole suite; a line starting # is a comment. A changed path no line matches selects the whole
+suite, and says so. --list prints the selection and runs nothing. --project=DIR tests the git top level of DIR (meow passes it
+when it runs its own copy); without it the project is the checkout this file is in. TEST_PARALLEL names another runner in place of
+tools/test-parallel. Left out of Cat Herder's: named lines and units, wording-only diffs, the CI reuse check, tiers."""
+import argparse
+import os
+import re
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+JOBS = 4   # as a cloud receipt runs it; debt: fixed, so a bigger host runs --changed at 4 jobs; upgrade path: read the host's slot cap
+
+
+def project_root(directory):
+    if not directory:
+        return HERE
+    folder = os.path.realpath(directory)
+    top = subprocess.run(["git", "-C", folder, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    return os.path.realpath(top.stdout.strip()) if top.returncode == 0 and top.stdout.strip() else folder
+
+
+def glob_regex(glob):
+    out, i = [], 0
+    while i < len(glob):
+        if glob.startswith("**", i):
+            out.append(".*")
+            i += 2
+        elif glob[i] == "*":
+            out.append("[^/]*")
+            i += 1
+        elif glob[i] == "?":
+            out.append("[^/]")
+            i += 1
+        else:
+            out.append(re.escape(glob[i]))
+            i += 1
+    return re.compile("".join(out))
+
+
+def read_map(root):
+    """[(compiled glob, [modules])] from tests/map, or a message when it can't be read."""
+    path = os.path.join(root, "tests", "map")
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError as error:
+        raise SystemExit(f"test-changed: can't read tests/map: {error.strerror}")
+    rows = []
+    for n, line in enumerate(text.splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        glob, *modules = line.split()
+        if not modules:
+            raise SystemExit(f"test-changed: tests/map line {n} names no module: {line}")
+        rows.append((glob_regex(glob), modules))
+    return rows
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="test-changed", description=__doc__.split("\n\n")[0])
+    parser.add_argument("--list", action="store_true", help="print the selection without running it")
+    parser.add_argument("--project", metavar="DIR", help="test the project at DIR (its git top level), not the checkout this file is in")
+    parser.add_argument("base", help="the base commit for git diff BASE...HEAD")
+    args = parser.parse_args(argv)
+    root = project_root(args.project)
+    if subprocess.run(["git", "-C", root, "rev-parse", "--verify", "-q", f"{args.base}^{{commit}}"], capture_output=True).returncode:
+        parser.exit(2, f"test-changed: {args.base} is not a commit in {os.path.basename(root)}\n")
+    diff = subprocess.run(["git", "-C", root, "diff", "--name-only", f"{args.base}...HEAD"], capture_output=True, text=True)
+    if diff.returncode:
+        parser.exit(2, f"test-changed: git diff {args.base}...HEAD failed: {diff.stderr.strip()}\n")
+    paths = [p for p in diff.stdout.splitlines() if p]
+    rows = read_map(root)
+    modules, uncovered, whole = [], [], []
+    for path in paths:
+        hits = [mods for rx, mods in rows if rx.fullmatch(path)]
+        if not hits:
+            uncovered.append(path)
+        elif any("*" in mods for mods in hits):
+            whole.append(path)
+        else:
+            modules.extend(m for mods in hits for m in mods if m not in modules)
+    by_modules = not uncovered and not whole
+    for path in uncovered:
+        print(f"test-changed: {path} has no tests/map entry")
+    if uncovered:
+        print("test-changed: running the whole suite")
+    for path in whole:
+        print(f"test-changed: {path} selects the whole suite")
+    if by_modules:
+        print(f"test-changed: {' '.join(paths) if paths else '(no changed paths)'}")
+        print(f"test-changed: {' '.join(modules)}")
+    if args.list or (by_modules and not modules):
+        return 0
+    sys.stdout.flush()
+    runner = os.environ.get("TEST_PARALLEL") or os.path.join(root, "tools", "test-parallel")
+    command = ([runner] if os.environ.get("TEST_PARALLEL") else [sys.executable, runner]) + ["-j", str(JOBS)]
+    if by_modules:
+        command.extend(modules)
+    try:
+        return subprocess.run(command, cwd=root).returncode
+    except OSError as error:
+        parser.exit(2, f"test-changed: can't run tools/test-parallel: {error.strerror}\n")
+
+
+if __name__ == "__main__":
+    sys.exit(main())
