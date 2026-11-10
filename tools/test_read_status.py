@@ -8,7 +8,7 @@ Fixtures are trees under tools/fixtures/read-status/<name>/. A fixture with a ba
 key but read_status must still match it. The fixtures that need many files, a big file or a deep folder are
 built in a temporary directory here instead. An unreadable file is always a dangling symlink, never chmod 000
 (it cannot be committed, and it passes under root)."""
-import json, os, re, subprocess, sys, tempfile
+import atexit, json, os, re, shutil, subprocess, sys, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,6 +17,8 @@ FX = ROOT / "tools" / "fixtures" / "read-status"
 SECTIONS = ["skills", "agents", "commands", "rule_files", "hooks", "mcp_servers",
             "persistence_candidates", "plugin_json", "marketplace"]
 EMPTY = tempfile.mkdtemp(prefix="read-status-empty-")
+TEMPS = [EMPTY]   # every throwaway folder, removed at exit so a run leaves none behind
+atexit.register(lambda: [shutil.rmtree(t, ignore_errors=True) for t in TEMPS])
 failures = []
 
 
@@ -57,6 +59,7 @@ def got(target, section, state, *needles):
 def tmp_tree(files):
     """A temporary tree. A str value is a file's text, bytes a binary one, ("->", x) a symlink."""
     d = Path(tempfile.mkdtemp(prefix="read-status-"))
+    TEMPS.append(d)
     for rel, v in files.items():
         p = d / rel
         p.parent.mkdir(parents=True, exist_ok=True)
