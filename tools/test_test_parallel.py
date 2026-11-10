@@ -83,8 +83,9 @@ d5 = project({"test_a": OK, "test_selfcheck": OK}, selfcheck=OK)
 r = run(d5)
 check("tools/test_selfcheck.py beside skills/neckbeard/selfcheck.py: the runner refuses both, exit 2",
       r.returncode == 2 and "test_selfcheck" in r.stderr and "test-parallel:" in r.stderr, f"rc={r.returncode} {r.stderr}")
+names = [UNIT_START.match(l).group(1) for l in run(d).stdout.splitlines() if UNIT_START.match(l)]
 check("a module is named test_<name> (meow refuses any other), including the selfcheck one",
-      all(re.fullmatch(r"test_[A-Za-z0-9_]+", UNIT_START.match(l).group(1)) for l in run(d).stdout.splitlines() if UNIT_START.match(l)))
+      "test_selfcheck" in names and all(re.fullmatch(r"test_[A-Za-z0-9_]+", m) for m in names), repr(names))
 
 # ---------------------------------------------------------------- a failure under load is run again alone
 flaky = ("import os, sys\nm = os.environ['MARK']\nif os.path.exists(m):\n    sys.exit(0)\nopen(m, 'w').close()\nsys.exit(1)\n")
