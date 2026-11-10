@@ -329,6 +329,19 @@ nr = [l for l in pl if l.startswith("not read: ")]
 chk("9. 18 capped files: the not read line names 5 and ends 'and 13 more'",
     len(nr) == 1 and nr[0].count("read capped") == 5 and nr[0].endswith("; and 13 more") and "c00.sh" in nr[0] and "c04.sh" in nr[0] and "c05.sh" not in nr[0], nr)
 chk("9. a partly read persistence card with its more line is at most 14 lines", len(card_lines(out, "State it may leave")) <= 14, card_lines(out, "State it may leave"))
+def trim(n):
+    def edit(d):
+        d["target"]["read_status"]["persistence_candidates"]["notes"] = d["target"]["read_status"]["persistence_candidates"]["notes"][:n]
+    return edit
+for n, want in ((5, None), (6, "and 1 more")):
+    pl = lines(parse(render(variant("persist-capped", trim(n)))[1]), "State it may leave", "Persistence candidates")
+    nr = [l for l in pl if l.startswith("not read: ")]
+    chk(f"9. {n} capped notes: all named" + (", no 'more'" if want is None else ", then 'and 1 more'"),
+        len(nr) == 1 and nr[0].count("read capped") == 5 and (("more" not in nr[0]) if want is None else nr[0].endswith("; " + want)), nr)
+def many_skills(d):
+    d["target"]["skills"] = [{"name": f"s{i:02d}", "description": "x", "path": f"skills/s{i:02d}/SKILL.md"} for i in range(12)]
+pl = lines(parse(render(variant("plugin-partial", many_skills))[1]), "Injects", "Skills")
+chk("9. 12 skills: the Skills list prints all 12 (a cap inside block() would cut it)", sum(1 for l in pl if re.match(r"s\d\d: ", l)) == 12, pl)
 out = render(fx("plugin-partial"))[1]
 chk("9. a card that is not persistence still prints every entry (the cap is at the persistence call site only)",
     lines(parse(out), "Injects", "Skills")[0].startswith("alpha: "), lines(parse(out), "Injects", "Skills"))

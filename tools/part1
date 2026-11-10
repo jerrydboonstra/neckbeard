@@ -205,18 +205,30 @@ PERSIST_SHOWN = 10   # persistence candidates printed in full; the rest become o
 NOTES_SHOWN = 5      # a persistence card's "not read" notes printed in full
 
 
+FOLDERS_SHOWN = 15
+FOLDER_NAME = re.compile(r"[A-Za-z0-9._-]{1,40}\Z")
+
+
 def cap_entries(entries):
     """(the first PERSIST_SHOWN entries by path, the tail lines): past that, one line counting the rest by folder (the
-    first path segment with a slash, or ./ for a file at the root), the biggest folder first, then by name."""
+    first path segment with a slash, or ./ for a file at the root), the biggest folder first, then by name. At most
+    FOLDERS_SHOWN folders are named, the rest counted; a folder name that is not plain (spaces, commas, long) counts
+    as (other)/, so a path cannot write text into the line."""
     entries = sorted(entries)
     if len(entries) <= PERSIST_SHOWN:
         return entries, []
     rest = entries[PERSIST_SHOWN:]
     count = {}
     for e in rest:
-        folder = e.split("/", 1)[0] + "/" if "/" in e else "./"
+        e = e[2:] if e.startswith("./") else e
+        folder = e.split("/", 1)[0] if "/" in e else None
+        folder = "./" if folder is None else (folder + "/" if FOLDER_NAME.match(folder) else "(other)/")
         count[folder] = count.get(folder, 0) + 1
-    where = ", ".join(f"{f} {n}" for f, n in sorted(count.items(), key=lambda kv: (-kv[1], kv[0])))
+    ranked = sorted(count.items(), key=lambda kv: (-kv[1], kv[0]))
+    where = ", ".join(f"{f} {n}" for f, n in ranked[:FOLDERS_SHOWN])
+    if len(ranked) > FOLDERS_SHOWN:
+        left = ranked[FOLDERS_SHOWN:]
+        where += f", and {len(left)} other folders ({sum(n for _, n in left)} files)"
     return entries[:PERSIST_SHOWN], [f"and {len(rest)} more, in: {where}"]
 
 
