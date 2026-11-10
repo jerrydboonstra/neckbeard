@@ -1,0 +1,268 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Capture skill header: command lookup and session naming, all queue mechanics."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "The capture procedure and its item levels are the plugin's own queue workflow."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Queue-and-claim-before-editing is tied to meow claims."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue session is a queue-specific roundup procedure."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Riffing mode holds that nothing is built, merged or released on an unread reply, which safety.md rules 1 and 3 already require."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Pairs, hikes, handoffs and introspection are the plugin's own workflow mechanics."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role file, all roster and queue mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Opens the handoff role with when a session hands off; queue mechanics only."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Retiring-side handoff steps run on meow herd handoff."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Staying-side handoff checks run on meow herd handoff."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "New-session handoff steps tied to the meow brief and roster."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps, Cat Herder's own wording."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role preamble, filled from pair templates."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup template for a pair."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "Reviewer procedure is tied to meow, but the restructure-versus-behaviour rule is general."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "It lapses when what it covers changes.",
+   "why": "Reviewer limits are queue mechanics, but the scoped, lapsing approval rule is general."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Start and stop rules for a pair's reviewer session."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Write \"I claim X; the failure I fear is Y\", then try to produce Y.",
+   "why": "The verifier checklist is tied to meow, but its fear-the-failure step is a general review habit the reader lacks."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Never ask the reviewer to run it for you: that would pass a refused action to another session.",
+   "why": "The worker procedure is queue mechanics, but passing a refused action to another session is a general hazard the reader does not name."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Build-rigor builder rules mostly repeat engineering.md rules 1, 2 and 5, but the validation rule is not in the reader."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder's optional cat voice and persona, which is voice only."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Queue setup and lookup mechanics; its stop-before-writing-to-main rule is covered by safety.md rule 2."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Queue working procedure; its read-back before an irreversible guessed command is covered by safety.md rule 5."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard block format is Cat Herder's own reporting shape."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "A single example ledger bullet, text that only illustrates the question ledger."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered.",
+   "why": "Ledger mechanics are tied to meow ask, but the skipped-question rule is general."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "quote": "",
+   "why": "The /meow command runs one quoted meow call; it works as shipped and is tied to the plugin's tool."
+  }
+ ]
+}

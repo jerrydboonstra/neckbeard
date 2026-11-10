@@ -1,0 +1,14 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat an action on the model's own judgement, which could include destructive actions (rm -rf, force-push) that the rule forbids without an explicit go-ahead in the conversation, and it has no limit such as 'only if non-destructive'."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, so it could run a destructive action (rm -rf, force-push) that the rule says needs the user's explicit go-ahead."
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "agents": [],
+ "commands": [],
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": false,
+ "kind": "generic-pack",
+ "manifest_refused": ".claude-plugin/plugin.json resolves outside the target tree; not read, so this was inventoried as a plain pack",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "readme_excerpt": null,
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

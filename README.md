@@ -46,6 +46,8 @@ One page per plugin, answer first. This is the top of a real report, [ponytail](
 
 The full report goes on to list every conflict with the rule it breaks, everything already covered, what is worth keeping, what the plugin installs, and a patch to copy. **[See the gallery](examples/README.md)**: eight public plugins and skill packs, including this one, all against the same sample reader.
 
+Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
+
 ## Install it. It adds one skill and nothing else.
 
 Requires Claude Code and Python 3.11 or later (standard library only), plus `git` if you point it at a git URL. Tested on macOS and, in CI, Linux.
@@ -74,7 +76,7 @@ That gap is the point. A tool that catches plugins for running in the background
 Ask Claude to "vet this plugin" or "should I install X". From a clone, you can also run the inventory directly:
 
 ```bash
-bin/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
+tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
 ```
 
 `<target>` is one of:

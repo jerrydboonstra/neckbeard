@@ -1,0 +1,29 @@
+{
+ "agents": [],
+ "commands": [],
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": false,
+ "kind": "generic-pack",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "readme_excerpt": null,
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": [
+  {
+   "bytes": 52,
+   "chars": 52,
+   "companion_files": [],
+   "description": "A fixture skill.",
+   "name": "a",
+   "path": "<ROOT>/skills/a/SKILL.md",
+   "source": "skills/a/SKILL.md",
+   "text": "---\nname: a\ndescription: A fixture skill.\n---\nBody.\n",
+   "user_invocable": true
+  }
+ ]
+}

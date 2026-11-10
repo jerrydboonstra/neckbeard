@@ -1,0 +1,44 @@
+{
+ "agents": [],
+ "commands": [],
+ "declares_agents_in_manifest": false,
+ "declares_hooks_in_manifest": false,
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": true,
+ "kind": "plugin",
+ "mcp_servers": {
+  "count": 2,
+  "note": "this reports the declaration, not the tool surface. A local-process server runs on your machine; what it exposes needs a live MCP call.",
+  "servers": [
+   {
+    "args": null,
+    "command": "x",
+    "name": "good",
+    "transport": "local-process",
+    "url": null
+   },
+   {
+    "args": null,
+    "command": null,
+    "name": "bad",
+    "transport": "local-process",
+    "url": null
+   }
+  ],
+  "source": ".mcp.json"
+ },
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "plugin_json": {
+  "description": null,
+  "license": null,
+  "name": "mcp-server-not-object",
+  "version": "1.0.0"
+ },
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

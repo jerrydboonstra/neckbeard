@@ -1,0 +1,2 @@
+# Entries are one line each and their order does not matter, so two branches that each add one keep both.
+CHANGELOG.md merge=union

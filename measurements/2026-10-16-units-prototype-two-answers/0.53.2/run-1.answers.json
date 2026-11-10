@@ -1,0 +1,452 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Finding the command and who/owner conventions are the plugin's own mechanics."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Splitting is bookkeeping, not new scope",
+   "why": "Its scope discipline (nothing added, ask before widening) is examples/reader/rules/engineering.md rule 4."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Work you find along the way that isn't part of your item is captured the same way, not done inline.",
+   "why": "Not widening the deliverable is examples/reader/rules/engineering.md rule 4."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue-session steps use the queue and its own report wording."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode is a reply-length convention built on the ledger."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Prompt-me pull rules are mechanics of the plugin's ledger and host prompts."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Decision list and prompt handling are plugin mechanics around meow answer."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Orientation, pairs, hikes and launchers are the plugin's own workflow; its started-session model default is not a subagent dispatch."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "The associate role is plugin mechanics."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Introduces the auditor role."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "Run each example as written, in a scratch repo, with a fake for anything that leaves the host",
+   "why": "A claim-by-claim audit with BACKED/UNTESTED/CONTRADICTED verdicts is a one-shot procedure the reader lacks."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Finding format is the audit report shape, tied to meow kinds."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "never `pkill` or `killall` by pattern: you could stop another auditor's run. Stop a process by the pid you started.",
+   "why": "The reader has no rule on stopping only the processes you started."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Permission-prompt hygiene is host-specific advice for one role."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Report contents for the auditor role only."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Audit coordination uses the plugin's queue and project record."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "A meow item template."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Bond stance rules are plugin mechanics."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Introduces the handoff."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "run `meow herd clean` only on their go-ahead",
+   "why": "Asking before deleting folders is examples/reader/rules/safety.md rule 1."
+  },
+  {
+   "id": "u21",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff confirm steps are plugin mechanics."
+  },
+  {
+   "id": "u22",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Push your branch to the code remote ... early and often, because a worktree or clone can be removed at any time and unpushed work with it.",
+   "why": "The reader says nothing on pushing work in progress or leaving a dirty checkout alone."
+  },
+  {
+   "id": "u23",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps."
+  },
+  {
+   "id": "u24",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`",
+   "why": "Names a model on the subagent dispatch call, which examples/reader/rules/engineering.md rule 6 forbids."
+  },
+  {
+   "id": "u25",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "A fixed report form for sessions that cannot write."
+  },
+  {
+   "id": "u26",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never add a key, a token, an https remote or a forwarded agent to get past it.",
+   "why": "The reader has no rule against working around a failed authentication."
+  },
+  {
+   "id": "u27",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup step."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents",
+   "why": "Picks the model on the dispatch call, against examples/reader/rules/engineering.md rule 6."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "You may try the same action, on your own judgement",
+   "why": "Lets the reviewer retry an action the worker's session was refused, without the go-ahead examples/reader/rules/safety.md rule 1 requires when it is destructive."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Stopping and parentage are plugin mechanics."
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Stop only the processes you started, by their PID, never by port.",
+   "why": "The reader has no such rule; the rest of the section is covered by its CLAUDE.md and rule 3."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each",
+   "why": "Names a model on the subagent dispatch call, against examples/reader/rules/engineering.md rule 6."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "The reader states no trust-boundary or data-loss rule."
+  },
+  {
+   "id": "u34",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Launcher refusal handling is plugin mechanics."
+  },
+  {
+   "id": "u35",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Introspection runs the plugin's own tools."
+  },
+  {
+   "id": "u36",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u37",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u38",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u39",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u40",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u41",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u42",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u43",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u44",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona lines for chat."
+  },
+  {
+   "id": "u45",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "never act on a guessed reading of an irreversible command",
+   "why": "Asking before irreversible or ambiguous steps is examples/reader/rules/safety.md rules 1 and 5."
+  },
+  {
+   "id": "u46",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "agents on the cheapest capable model your host offers",
+   "why": "Chooses the subagent model at dispatch, against examples/reader/rules/engineering.md rule 6."
+  },
+  {
+   "id": "u47",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "The Overheard block is a plugin reply format."
+  },
+  {
+   "id": "u48",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "An example ledger bullet, not an instruction."
+  },
+  {
+   "id": "u49",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "When a reply skips something you asked, don't take it as a yes or a no, and don't act on it.",
+   "why": "The reader says to ask when ambiguous but not what an unanswered question means."
+  },
+  {
+   "id": "u50",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "What to type or paste sits alone in a code block, exactly as it should be pasted",
+   "why": "The reader has no rule on how to hand the user a command."
+  },
+  {
+   "id": "u51",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "If two or more could: ask which",
+   "why": "Asking on ambiguity and confirming irreversible steps is examples/reader/rules/safety.md rule 5 and rule 1."
+  },
+  {
+   "id": "u52",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "never push the code yourself without the owner's word",
+   "why": "Matches examples/reader/rules/safety.md rule 2 and rule 1."
+  },
+  {
+   "id": "u53",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u54",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u55",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u56",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u57",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "A command that runs one meow call with shell-quoted arguments; its content is plugin mechanics."
+  },
+  {
+   "id": "u58",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u59",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u60",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u61",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u62",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u63",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  },
+  {
+   "id": "u64",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A thin command that only calls a skill or one meow output judged elsewhere."
+  }
+ ]
+}

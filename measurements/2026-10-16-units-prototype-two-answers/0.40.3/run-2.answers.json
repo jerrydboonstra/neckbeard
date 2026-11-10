@@ -1,0 +1,235 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pure queue mechanics: finding the meow command and session naming."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Its split-without-adding-scope rule is examples/reader/rules/engineering.md rule 4; the rest is queue mechanics."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue-and-claim before editing is the plugin's own workflow."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue session only queues what a session was tracking, using meow."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode shortens replies and files ideas; all tied to meow."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Orchestration of pairs, hikes and launchers; the opus default governs sessions the plugin starts, not the subagent dispatch call that engineering.md rule 6 covers, so no conflict."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Opening line of the handoff procedure."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Retiring-session steps using meow herd handoff."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Staying-session steps using meow herd handoff."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "New-session steps and branch naming for the herd."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plain-word status lines for handoff steps."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer preamble and placeholders."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer clone setup template."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "Review rule to keep refactors apart from behaviour changes is general and absent from the reader's rules."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer limits and message handling specific to the pair."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pair stop and retire mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Reverting the change to watch the test fail is examples/reader/rules/engineering.md rule 3; citing what was checked matches the reader's CLAUDE.md answer style."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Worker procedure around meow, branches and pairs."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Reader rules cover reuse, root cause and debt markers but not this guard or stopping only your own processes by PID."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice persona intro."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Toggle for the cat voice."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat names persona."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice lines for capture."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice goodbye line."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice lines for handoffs."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice wording rule."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Its refusal to put queue writes on the code branch and to act on guessed irreversible commands match examples/reader/rules/safety.md rules 2 and 5."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Never using --force unasked and reading back guessed irreversible commands match examples/reader/rules/safety.md rules 1 and 5."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard block format for relaying other sessions."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "One example ledger bullet, no rule."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "When a reply skips something you asked, don't take it as a yes or a no, and don't act on it.",
+   "why": "Silence is never consent is general and the reader's safety rule 5 only says to ask."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Thin safe wrapper that runs meow with quoted arguments; tied to the tool."
+  }
+ ]
+}

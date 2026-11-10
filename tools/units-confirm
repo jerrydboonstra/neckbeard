@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+"""units-confirm pool|merge: pool conflict candidates from several find passes, and put the confirmed ones into the answers.
+
+units-confirm pool UNITS DOSSIER CANDIDATES FINDS [FINDS ...]
+    FINDS is one find pass's JSON: {"conflicts": [{"id": "u3", "quote": ..., "reader_rule": ...}]}. Pools every
+    candidate into CANDIDATES as {"candidates": [{"cid": "c1", "id", "quote", "reader_rule", "found_in": N}], "dropped": [...]}.
+    A finder's reader_rule is free text and may carry its argument, so it only points: the candidate's reader_rule is
+    the reader rule it points at, copied from the DOSSIER's current_rules ("file: the rule's own text"). A pointer that
+    matches no reader rule drops the candidate.
+    Two candidates in one unit and one reader rule are one when one quote contains the other (case and spacing ignored).
+    A candidate whose quote is not in its unit's text, or whose unit doesn't exist, is dropped: the finder made it up.
+units-confirm merge CANDIDATES CONFIRMATIONS ANSWERS
+    CONFIRMATIONS is {"confirmations": [{"cid": "c1", "conflict": true|false, "why": ...}]}, one per candidate. Rewrites
+    each answer's "conflicts" in ANSWERS to the confirmed candidates of its unit, whatever the judge wrote there, so
+    tools/units-verdict counts only confirmed conflicts. Exit 2 if a candidate has no confirmation.
+Part of the units prototype (verdict-units-confirm); SKILL.md does not know about it yet.
+"""
+import difflib, json, os, re, sys
+
+
+def norm(s):
+    return re.sub(r"\s+", " ", str(s)).strip().lower()
+
+
+def plain(s):
+    """norm() without the markup and list numbers a finder drops or keeps at will"""
+    return norm(re.sub(r"[*`_]|(?m:^\s*(\d+\.|[-*])\s)", " ", str(s)))
+
+
+def rule_blocks(dossier_path):
+    """(label, text, plain text) of every list item or paragraph of the reader's rules"""
+    items = json.load(open(dossier_path, encoding="utf-8")).get("current_rules", {}).get("items", [])
+    out = []
+    for it in items:
+        label, block = os.path.join(*os.path.normpath(it.get("path") or "?").split(os.sep)[-2:]), []
+        for line in str(it.get("text") or "").split("\n") + [""]:
+            if block and (not line.strip() or re.match(r"\s*(\d+\.|[-*])\s", line)):
+                text = re.sub(r"\s+", " ", " ".join(block)).strip()
+                out.append((label, text, plain(text)))
+                block = []
+            if line.strip():
+                block.append(line)
+    return out
+
+
+def resolve(pointer, blocks):
+    """the reader rule a finder's reader_rule points at: the block it shares the longest run of words with"""
+    want, best = plain(pointer), None
+    for label, text, flat in blocks:
+        m = difflib.SequenceMatcher(None, flat, want, autojunk=False).find_longest_match(0, len(flat), 0, len(want))
+        if m.size >= min(30, len(flat)) and len(flat) > 20 and (best is None or m.size > best[0]):
+            best = (m.size, label, text)
+    return best and f"{best[1]}: {best[2]}"
+
+
+def pool(units_path, dossier_path, out, find_paths):
+    blocks = rule_blocks(dossier_path)
+    texts = {u["id"]: norm(u["text"]) for u in json.load(open(units_path, encoding="utf-8"))["units"]}
+    cands, dropped = [], []
+    for n, path in enumerate(find_paths):
+        try:
+            found = json.load(open(path, encoding="utf-8"))["conflicts"]
+            assert isinstance(found, list)
+        except (OSError, ValueError, KeyError, TypeError, AssertionError) as e:
+            print(f"{path}: can't read finds: {e}", file=sys.stderr)
+            continue
+        for c in found:
+            if not (isinstance(c, dict) and c.get("id") and c.get("quote") and c.get("reader_rule")):
+                dropped.append({"pass": n + 1, "why": "not {id, quote, reader_rule}", "candidate": c})
+            elif c["id"] not in texts or norm(c["quote"]) not in texts[c["id"]]:
+                dropped.append({"pass": n + 1, "why": "quote is not in the unit's text", "candidate": c})
+            elif (rule := resolve(c["reader_rule"], blocks)) is None:
+                dropped.append({"pass": n + 1, "why": "reader_rule matches no reader rule", "candidate": c})
+            else:
+                same = next((x for x in cands if x["id"] == c["id"] and x["reader_rule"] == rule and (norm(c["quote"]) in norm(x["quote"]) or norm(x["quote"]) in norm(c["quote"]))), None)
+                if same is None:
+                    cands.append({"id": c["id"], "quote": c["quote"], "reader_rule": rule, "passes": {n}})
+                else:
+                    same["passes"].add(n)
+                    if len(norm(c["quote"])) > len(norm(same["quote"])):
+                        same["quote"] = c["quote"]
+    cands.sort(key=lambda x: int(x["id"][1:]) if x["id"][1:].isdigit() else 0)
+    for i, x in enumerate(cands, 1):
+        x["cid"], x["found_in"] = f"c{i}", len(x.pop("passes"))
+    json.dump({"candidates": cands, "dropped": dropped}, open(out, "w", encoding="utf-8"), indent=1)
+    print(f"{len(cands)} candidates from {len(find_paths)} passes ({len(dropped)} dropped)")
+    return 0
+
+
+def merge(cand_path, conf_path, answers_path):
+    cands = json.load(open(cand_path, encoding="utf-8"))["candidates"]
+    try:
+        confs = {c["cid"]: c for c in json.load(open(conf_path, encoding="utf-8"))["confirmations"]}
+        answers = json.load(open(answers_path, encoding="utf-8"))
+        rows = answers["answers"]
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"can't read: {e}", file=sys.stderr)
+        return 2
+    missing = [c["cid"] for c in cands if c["cid"] not in confs or not isinstance(confs[c["cid"]].get("conflict"), bool)]
+    if missing:
+        print("no usable confirmation for " + ", ".join(missing), file=sys.stderr)
+        return 2
+    kept = [c for c in cands if confs[c["cid"]]["conflict"]]
+    for a in rows:
+        if isinstance(a, dict):
+            a["conflicts"] = [{"quote": c["quote"], "reader_rule": c["reader_rule"]} for c in kept if c["id"] == a.get("id")]
+    json.dump(answers, open(answers_path, "w", encoding="utf-8"), indent=1)
+    print(f"{len(kept)} of {len(cands)} candidates confirmed")
+    return 0
+
+
+def main():
+    a = sys.argv[1:]
+    if len(a) >= 5 and a[0] == "pool":
+        return pool(a[1], a[2], a[3], a[4:])
+    if len(a) == 4 and a[0] == "merge":
+        return merge(a[1], a[2], a[3])
+    print(__doc__.split("\n\n")[0], file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

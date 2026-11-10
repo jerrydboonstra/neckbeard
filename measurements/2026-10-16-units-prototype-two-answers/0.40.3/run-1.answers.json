@@ -1,0 +1,235 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Facts come from the conversation or a file you checked; mark anything else as an assumption.",
+   "why": "General rule for filling in a record, not tied to meow; no reader rule states it."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Work you find along the way that isn't part of your item is captured the same way, not done inline.",
+   "why": "Same as examples/reader/rules/engineering.md rule 4 (scope asked for is the deliverable)."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "General review rule; the reader has no rule on mixed refactor and behaviour changes."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "why": "A refused action may be destructive; examples/reader/rules/safety.md rule 1 needs my explicit go-ahead in this conversation, not a reviewer's judgement."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Stop only the processes you started, by their PID, never by port.",
+   "why": "General process hygiene the reader does not state."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "General coding rule absent from the reader's engineering.md."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Never act on a guessed reading of an irreversible command.",
+   "why": "Covered by examples/reader/rules/safety.md rule 5 (ask when the wrong reading is costly); the rest is queue mechanics."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Never use `--force` on your own",
+   "why": "Covered by examples/reader/rules/safety.md rule 1 and engineering.md rule 4 (say what you would change and let me decide)."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Voice or persona text, or an example with no rule of its own."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered.",
+   "why": "General rule that silence is not a go-ahead; the reader's safety rules do not state it."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own mechanics."
+  }
+ ]
+}

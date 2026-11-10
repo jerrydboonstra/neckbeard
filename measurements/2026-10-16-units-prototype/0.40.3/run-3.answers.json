@@ -1,0 +1,169 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "bucket": "install-skill",
+   "why": "Capture skill's entry rules (find meow, read the repo's rules file, who, leave Cat Herder); it works as shipped and no reader rule or skill files work into a queue."
+  },
+  {
+   "id": "u2",
+   "bucket": "install-skill",
+   "why": "The mid-task capture procedure (one exchange, level by signal, split, duplicate check); it fits reader rule 4 (\"bookkeeping, not new scope\") and the reader has no capture skill."
+  },
+  {
+   "id": "u3",
+   "bucket": "install-skill",
+   "why": "Queue-and-claim before doing asked work, per focus; a workflow of the capture skill with no reader equivalent."
+  },
+  {
+   "id": "u4",
+   "bucket": "install-skill",
+   "why": "Rescue session procedure (read queue, match, add, report counts); one-shot workflow of the capture skill that the reader lacks."
+  },
+  {
+   "id": "u5",
+   "bucket": "install-skill",
+   "why": "Riffing mode keeps replies to a line and builds nothing on unread replies; part of the capture skill and not in any reader rule."
+  },
+  {
+   "id": "u6",
+   "bucket": "install-skill",
+   "why": "The herd skill (pairs, hikes, status footer, launcher rules); its \"Which model a session you start runs on\" starts a session, not a subagent dispatch, so it does not break examples/reader/rules/engineering.md rule 6."
+  },
+  {
+   "id": "u7",
+   "bucket": "install-skill",
+   "why": "Associate role file of the herd skill (declare a domain, answer on the item); works with meow and the reader has nothing like it."
+  },
+  {
+   "id": "u8",
+   "bucket": "dropped",
+   "why": "Two sentences saying when a handoff happens; they only introduce the steps judged in u9 to u12."
+  },
+  {
+   "id": "u9",
+   "bucket": "install-skill",
+   "why": "The retiring-session handoff steps; they ask to \"push anything you haven't\" and run `meow herd clean` only on the owner's go-ahead, so they sit inside examples/reader/rules/safety.md rule 1."
+  },
+  {
+   "id": "u10",
+   "bucket": "install-skill",
+   "why": "The staying member checks the new session's readback before confirming; part of the handoff role and new to the reader."
+  },
+  {
+   "id": "u11",
+   "bucket": "install-skill",
+   "why": "New-session rules (take no items until confirmed, own branch name, never write in the starting directory); part of the handoff role."
+  },
+  {
+   "id": "u12",
+   "bucket": "install-skill",
+   "why": "Fixed chat lines for each handoff step; the handoff role's reporting format, which the reader has no equivalent of."
+  },
+  {
+   "id": "u13",
+   "bucket": "install-skill",
+   "why": "Reviewer role header (independent judge from the queue and commits, rigor, the repo's rules win); template filled by pair start, works as shipped."
+  },
+  {
+   "id": "u14",
+   "bucket": "install-skill",
+   "why": "Reviewer setup step (make a checkout, check the pair, stop); a template part of the reviewer role."
+  },
+  {
+   "id": "u15",
+   "bucket": "install-skill",
+   "why": "The per-review procedure (read note, review the named commits, attack, one verdict); a review workflow the reader's release-notes skill and rules do not cover."
+  },
+  {
+   "id": "u16",
+   "bucket": "install-skill",
+   "why": "Reviewer limits (binding verdict, no edits to the worker's code, \"Never use `--force`\"); tool-specific and stricter than, not against, the reader's rules."
+  },
+  {
+   "id": "u17",
+   "bucket": "install-skill",
+   "why": "How a reviewer is started and stopped (the worker stops the pair, the owner has the last word); pair lifecycle of the herd skill."
+  },
+  {
+   "id": "u18",
+   "bucket": "install-skill",
+   "why": "Rigor-build reviewer checks (\"Does the test pin the claim?\", cite file:line); part of the reviewer role and echoes examples/reader/rules/engineering.md rule 3 without being only that."
+  },
+  {
+   "id": "u19",
+   "bucket": "install-skill",
+   "why": "The worker's pair procedure (claim, branch names, done note, wait, reopen, hike, stop); core of the herd skill. Its \"never run `meow herd clean` on your own\" matches examples/reader/rules/safety.md rule 1."
+  },
+  {
+   "id": "u20",
+   "bucket": "install-skill",
+   "why": "Rigor-build worker rules (raw output in the done note, \"Blocked is a real answer\"); also carries five coding rules that overlap examples/reader/rules/engineering.md rules 1, 2 and 5, and it defers to the project's own debt marker, so no conflict."
+  },
+  {
+   "id": "u21",
+   "bucket": "dropped",
+   "why": "Intro to the voice skill plus a repeat of the find-the-command paragraph; wraps the persona switch."
+  },
+  {
+   "id": "u22",
+   "bucket": "dropped",
+   "why": "/herder only switches the cat voice on or off; a persona setting."
+  },
+  {
+   "id": "u23",
+   "bucket": "dropped",
+   "why": "Cat names and cat-voice wording in chat; persona."
+  },
+  {
+   "id": "u24",
+   "bucket": "dropped",
+   "why": "Cat-voice confirmation lines (\"Mrrp. Boxed.\"); persona."
+  },
+  {
+   "id": "u25",
+   "bucket": "dropped",
+   "why": "One line of voice wording for a cat that leaves; persona."
+  },
+  {
+   "id": "u26",
+   "bucket": "dropped",
+   "why": "Cat-voice handoff lines; persona twin of u12."
+  },
+  {
+   "id": "u27",
+   "bucket": "dropped",
+   "why": "Rules for the voice's euphemisms; persona."
+  },
+  {
+   "id": "u28",
+   "bucket": "install-skill",
+   "why": "The queue skill's setup and conventions (placements, never the code branch, Field Trip, voice-reading rules); it asks before irreversible steps, as examples/reader/rules/safety.md rule 5 wants, and the reader has no queue."
+  },
+  {
+   "id": "u29",
+   "bucket": "install-skill",
+   "why": "Everyday queue operations and the ready check (\"don't build the old version\", \"Never use `--force` on your own\"); works with meow and fits the reader's scope rule 4."
+  },
+  {
+   "id": "u30",
+   "bucket": "install-skill",
+   "why": "The Overheard block and `For you:` line format for relayed messages; a reporting convention of the queue skill the reader lacks."
+  },
+  {
+   "id": "u31",
+   "bucket": "dropped",
+   "why": "A sample ledger entry showing the format; example output only."
+  },
+  {
+   "id": "u32",
+   "bucket": "install-skill",
+   "why": "The question ledger and the rule that a skipped question is \"unread, not answered\"; it agrees with examples/reader/rules/safety.md rule 5 and adds a procedure."
+  },
+  {
+   "id": "u33",
+   "bucket": "install-skill",
+   "why": "The /meow command runs one quoted meow call and prints the output; it works as shipped and the single-quoting stops argument injection."
+  }
+ ]
+}

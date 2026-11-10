@@ -1,0 +1,34 @@
+{
+ "agents": [],
+ "commands": [
+  {
+   "bytes": 37,
+   "chars": 37,
+   "description": "d",
+   "name": "x",
+   "path": "commands/good.md",
+   "source": "command",
+   "text": "---\nname: x\ndescription: d\n---\nText.\n"
+  }
+ ],
+ "declares_agents_in_manifest": false,
+ "declares_hooks_in_manifest": false,
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": true,
+ "kind": "plugin",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "plugin_json": {
+  "description": null,
+  "license": null,
+  "name": "commands-dangling",
+  "version": "1.0.0"
+ },
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

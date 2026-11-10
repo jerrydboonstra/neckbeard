@@ -1,0 +1,26 @@
+{
+ "candidates": [
+  {
+   "id": "u16",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation: deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.\" The permission to repeat a refused action is unlimited; it needs a limit such as \"only if it isn't destructive\".",
+   "cid": "c1",
+   "found_in": 3
+  },
+  {
+   "id": "u19",
+   "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the permission to retry a refused action has no limit, so it covers destructive actions)",
+   "cid": "c2",
+   "found_in": 1
+  },
+  {
+   "id": "u20",
+   "quote": "Use the debt marker the project's own rules name (such as `TODO(debt):`) when they name one, so a reader never has two; otherwise use `# debt:` (`grep -rnE '(#|//) ?debt:'` lists those).",
+   "reader_rule": "rules/engineering.md: \"Leave deliberate shortcuts marked: `TODO(debt):` plus what breaks first and how to fix it.\" The fallback tells the model to write `# debt:` where the reader requires `TODO(debt):`.",
+   "cid": "c3",
+   "found_in": 1
+  }
+ ],
+ "dropped": []
+}

@@ -1,0 +1,34 @@
+{
+ "agents": [],
+ "commands": [],
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": false,
+ "kind": "generic-pack",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "readme_excerpt": null,
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [
+  {
+   "bytes": 24,
+   "chars": 24,
+   "description": null,
+   "name": "CLAUDE",
+   "path": "<ROOT>/CLAUDE.md",
+   "source": "target-CLAUDE.md",
+   "text": "Rules.\n@../_outside.txt\n"
+  },
+  {
+   "imported_from": "<ROOT>/CLAUDE.md",
+   "path": "<FX>/_outside.txt",
+   "refused": "import resolves outside the target tree; not read",
+   "source": "target-CLAUDE.md import",
+   "text": null
+  }
+ ],
+ "skills": []
+}

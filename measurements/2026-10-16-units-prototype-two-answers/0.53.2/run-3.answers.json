@@ -1,0 +1,452 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "the items together cover exactly what was asked, nothing added",
+   "why": "Same as examples/reader/rules/engineering.md rule 4 (the scope asked for is the deliverable)."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "the answers it returned may be the recommended ones, not what the owner picked. Read each answer back in text and ask the owner to confirm",
+   "why": "General rule for any question prompt that was interrupted; no reader rule covers it."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "List every checkable claim in the area",
+   "why": "A claim-by-claim audit (run each example, break the code, give a verdict word) works without meow and the reader has no such skill."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "never `pkill` or `killall` by pattern: you could stop another auditor's run. Stop a process by the pid you started",
+   "why": "General process hygiene the reader does not state."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "one command per call, no `source` followed by `cd`, no `cd` chained into a longer line",
+   "why": "General rule for keeping commands plain under permission prompts; the reader has none."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u21",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u22",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u23",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u24",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`",
+   "why": "Breaks examples/reader/rules/engineering.md rule 6, which forbids overriding a subagent's pinned model on the dispatch call; here the orchestrator dispatches subagents with a model named."
+  },
+  {
+   "id": "u25",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u26",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "If a git fetch or push fails on authentication, stop and report the remote and the error. Never add a key, a token, an https remote or a forwarded agent to get past it.",
+   "why": "General stop rule on auth failure; the reader's safety rules do not cover it."
+  },
+  {
+   "id": "u27",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents",
+   "why": "Breaks examples/reader/rules/engineering.md rule 6: it names a model on a subagent dispatch."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "was a criterion, a test or a threshold changed to make it pass? Read the test diff",
+   "why": "General review check against moved goalposts; the reader only asks that a test be seen to fail."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each",
+   "why": "Breaks examples/reader/rules/engineering.md rule 6: the worker names a model on every subagent dispatch."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Report what you observed, never the verdict.",
+   "why": "General evidence rule for hand-ins ('All 12 tests pass' is an observation); the reader lacks it."
+  },
+  {
+   "id": "u34",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u35",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u36",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u37",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u38",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u39",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u40",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u41",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u42",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u43",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u44",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u45",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "never act on a guessed reading of an irreversible command",
+   "why": "Covered by examples/reader/rules/safety.md rule 5 (ask when the wrong reading is costly)."
+  },
+  {
+   "id": "u46",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers",
+   "why": "Breaks examples/reader/rules/engineering.md rule 6: it picks the subagents' model instead of leaving it to their definition."
+  },
+  {
+   "id": "u47",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u48",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u49",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered.",
+   "why": "General rule: a skipped question is neither yes nor no and is asked again; the reader has no equivalent."
+  },
+  {
+   "id": "u50",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u51",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u52",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin mechanics around the meow queue; nothing general."
+  },
+  {
+   "id": "u53",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u54",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u55",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u56",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u57",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u58",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u59",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u60",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u61",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u62",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u63",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  },
+  {
+   "id": "u64",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text, or a command that only wraps a skill or a meow call judged elsewhere."
+  }
+ ]
+}

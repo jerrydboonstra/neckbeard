@@ -1,0 +1,278 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture mechanics for the plugin's queue; the scope-split point is already examples/reader/rules/engineering.md rule 4.",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u12",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding: reopen with \"split the refactor out\"",
+   "why": "Keeping refactor and behaviour change apart is a general build rule the reader does not state.",
+   "conflicts": []
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": [
+    {
+     "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the permission to retry a refused action is unlimited, so it covers destructive actions)"
+    }
+   ]
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Revert-and-watch-it-fail is examples/reader/rules/engineering.md rule 3, and stating what was checked is examples/reader/CLAUDE.md answers.",
+   "conflicts": []
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": [
+    {
+     "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+     "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the permission is unlimited, so it covers refused destructive actions)"
+    }
+   ]
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "The reader has no rule protecting validation and data-loss handling from simplification; its other coding rules (reuse, root cause, debt marker) are already in force.",
+   "conflicts": []
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona, voice or example text for the herder voice.",
+   "conflicts": []
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Works as shipped; a workflow of the plugin's own queue that the reader lacks; rules are only its mechanics.",
+   "conflicts": []
+  }
+ ]
+}

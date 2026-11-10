@@ -1,0 +1,25 @@
+{
+ "agents": [],
+ "commands": [],
+ "hooks": {
+  "events": {},
+  "has_hooks": "unknown",
+  "hook_registrations": null,
+  "hook_scripts": null,
+  "hooks_reach_subagents": null,
+  "nested_note": "Hooks found inside 1 plugin(s) nested in this directory (inner). Inventory each plugin directory on its own; this directory is not one plugin.",
+  "nested_plugins": [
+   "inner"
+  ]
+ },
+ "is_plugin": false,
+ "kind": "generic-pack",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "readme_excerpt": null,
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

@@ -1,0 +1,44 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch new subagents on `claude-haiku-5-5`, an explicit model choice on the dispatch call that overrides the model each subagent's definition pins, and the reader rule forbids that override."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence permits dispatching haiku subagents with no limit, which is an explicit model override on the dispatch call that the reader rule forbids unless the definition itself pins haiku."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to attempt, on the model's own judgement, an action that may be destructive, while the reader rule forbids destructive actions without the user's explicit go-ahead in the conversation, and the sentence has no limit such as 'only if it isn't destructive'."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which is an explicit model override on the dispatch call, and the rule forbids overriding the model a definition pins."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence names a model (`claude-haiku-5-5`) for the subagent dispatch, which overrides the model the definition pins, while the reader rule forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c6",
+   "conflict": false,
+   "why": "The sentence only restricts what content goes in commit messages (no agent/session/roster names) and does not touch the imperative-subject or 60-character rules, so both can be followed together."
+  },
+  {
+   "cid": "c7",
+   "conflict": false,
+   "why": "The sentence spawns a Haiku verifier without saying to override the model pinned in a definition, so it doesn't forbid or contradict the rule that dispatch calls not override a pinned model."
+  },
+  {
+   "cid": "c8",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on the cheapest capable model, which overrides the model their definitions pin, and the reader rule forbids that override on the dispatch call."
+  }
+ ]
+}

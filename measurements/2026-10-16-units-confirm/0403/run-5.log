@@ -1,0 +1,32 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+33 units, 95547 chars
+3 candidates from 3 passes (0 dropped)
+vet: units: 2 of 3 candidates confirmed
+**Verdict: 🟧 INSTALL WITH CHANGES.** The `units-verdict` tool computed it, and I kept it unchanged.
+
+| | count |
+|---|:--:|
+| Conflicts | 2 |
+| Covered | 1 |
+| New standing | 2 |
+| New skill | 0 |
+| Dropped | 9 |
+
+- **Skills:** 24 of the 33 units are kept.
+- **Conflicts:** u16 (reviewer "Limits") and u19 (worker) both let a refused action be retried "on your own judgement" with no limit. That collides with `examples/reader/rules/safety.md`, so the report asks for a retry that is never destructive.
+- **Covered:** u18 is already covered by `examples/reader/rules/engineering.md` rule 3 (see a test fail).
+- **New standing rules (copy as text):**
+  - u15: a diff that mixes a refactor with a behaviour change is a finding.
+  - u20: never simplify away validation at a trust boundary, data-loss error handling, or a security measure.
+- **Dropped:** u12 and u21–u27 (the herder voice and scripted chat lines), plus u31 (a sample ledger entry).
+
+I could not trace what the three hooks inject, since the dossier lists them as unidentifiable. The report marks the cost as unknown and tells the reader to read them before enabling.
+
+I reread the report and the counts match the grids.
+
+Files are in `measurements/2026-10-16-units-confirm/0403/`:
+- `run-5.md`
+- `run-5.answers.json`
+vet: units: measurements/2026-10-16-units-confirm/0403/run-5.answers.json: INSTALL WITH CHANGES; skills kept 24 of 33; units with a conflict 2; rules 2 / 0 / 1 / 30  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 6 find and confirm calls, $1.44, 78 s of call time; whole vet 113 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0403/run-5.md (judge: own)

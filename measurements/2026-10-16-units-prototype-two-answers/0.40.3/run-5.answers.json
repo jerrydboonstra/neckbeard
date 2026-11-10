@@ -1,0 +1,235 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Intro and command lookup for the capture skill: meow mechanics only."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture procedure (levels, splitting, topics, confirmation) is all tied to the meow queue."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Work you find along the way that isn't part of your item is captured the same way, not done inline.",
+   "why": "examples/reader/rules/engineering.md rule 4 (scope asked for is the deliverable, say what you would change and let me decide) already states the general rule."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue-session procedure is built on meow list and meow ask."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode is a reply-style mode tied to the ledger and meow; nothing general beyond the plugin's mechanics."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pairs, hikes, handoff routing and supervisor inbox are the plugin's own workflow. Its default of starting the reviewer on opus governs a session the plugin starts with meow herd pair start, not a subagent dispatch call, so examples/reader/rules/engineering.md rule 6 (subagents) does not conflict."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role file: roster and queue mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Opening of the handoff procedure; mechanics only."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff steps are all meow herd handoff commands."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff confirm and abandon steps are meow commands."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "New-session handoff steps and clone and branch conventions tied to meow."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed status lines for handoffs; plugin chat format only."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role preamble and rigor switch; plugin mechanics."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer checkout setup from template placeholders."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding: reopen with \"split the refactor out\"",
+   "why": "The reader's rules have nothing on keeping a refactor apart from a behaviour change; it is general, though phrased as a review finding. Its test-fails-without-the-change check is already examples/reader/rules/engineering.md rule 3."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "why": "Reviewer may retry an action the worker's classifier refused with no limit to non-destructive actions; examples/reader/rules/safety.md rule 1 says never run anything destructive without the owner's explicit go-ahead in this conversation, and the refused action may be exactly that."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pair stop and retire mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Stop only the processes you started, by their PID, never by port.",
+   "why": "General safety habit the reader does not state; the rest of the unit (revert the change and watch the test fail, cite claims) is covered by examples/reader/rules/engineering.md rule 3 and examples/reader/CLAUDE.md on giving reasoning with the verdict."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "mark it in a comment as `deprecated(<contract item>): <what replaces it>` ... or turn it into a debt comment that names its ceiling and upgrade path.",
+   "why": "Worker rules on debt comments and capturing off-item work are covered by examples/reader/rules/engineering.md rules 5 and 4; the rest is pair and hike mechanics."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Not in the reader's rules. The other four coding rules duplicate examples/reader/rules/engineering.md rules 1, 2 and 5, and the debt-marker line defers to the project's own TODO(debt): so it does not conflict."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat-voice persona and its translation switch."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Never act on a guessed reading of an irreversible command ... read the exact command back ... and wait for a yes.",
+   "why": "Covered by examples/reader/rules/safety.md rules 1 and 5 (destructive needs explicit go-ahead; ask when ambiguous), and the refusal to put the queue on main matches rule 2; the rest is queue setup mechanics."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Its premise moved, or it's bigger now: don't build the old version. Show the owner the brief, what changed and what you recommend ... and wait.",
+   "why": "Covered by examples/reader/rules/engineering.md rule 4 (do not narrow or widen quietly; let me decide) and examples/reader/rules/safety.md rule 1 for force; the rest is queue commands."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard-block reporting format for the plugin's sessions."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "A single example bullet of the ledger format; only illustrates the section judged in u32."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered ... don't take it as a yes or a no, and don't act on it.",
+   "why": "The reader says to ask when ambiguous but not what a missing answer means; the ledger mechanics around it are the plugin's own."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "The /meow command is a single wrapper that runs meow with quoted arguments; plugin mechanics."
+  }
+ ]
+}

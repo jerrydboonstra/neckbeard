@@ -1,0 +1,1 @@
+{"conflicts": [{"id": "u16", "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.", "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (the permission to retry a refused action has no limit, such as only if it isn't destructive)"}]}

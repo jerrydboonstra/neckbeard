@@ -106,7 +106,13 @@ write(os.path.join(proj, ".claude", "settings.json"),
 chk("project false overrides global true", merge(proj)["alpha@example-market"], False)
 write(os.path.join(proj, ".claude", "settings.local.json"),
       {"enabledPlugins": {"alpha@example-market": True}})
-chk("local true overrides project false", merge(proj)["alpha@example-market"], True)
+# A key the global layer never sets: with alpha, the last layer's True also equals the global True,
+# so a merge that ignored every later layer still passed (found by sabotaging the merge).
+write(os.path.join(proj, ".claude", "settings.json"),
+      {"enabledPlugins": {"alpha@example-market": False, "beta@example-market": True, "delta@example-market": False}})
+write(os.path.join(proj, ".claude", "settings.local.json"),
+      {"enabledPlugins": {"alpha@example-market": True, "delta@example-market": True}})
+chk("local true overrides project false", merge(proj)["delta@example-market"], True)
 
 # Rules discovery must never crash: a malformed settings file is common and is not a
 # reason to abandon the comparison.
@@ -230,6 +236,54 @@ with open(gitnamed, "w") as f:
 code, d = run_cli(gitnamed)
 chk("a rule file whose name ends in .git is read, not cloned",
     (code, d and d["target"]["kind"]), (0, "rule-file"))
+
+# A real, many-rule file, run against the public sample reader as the gallery
+# runs it. Pins today's behaviour before rule files get their own report.
+repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+reader = os.path.join(repo, "examples", "reader")
+agents_md = os.path.join(repo, "examples", "targets", "tvykruta-agents.md")
+out = os.path.join(w, "agents-md.json")
+r = subprocess.run([sys.executable, inventory.__file__, agents_md, "--project-dir", wp, "--out", out],
+                   env=dict(os.environ, CLAUDE_CONFIG_DIR=reader), capture_output=True, text=True)
+ad = json.load(open(out)) if r.returncode == 0 else {}
+t = ad.get("target", {})
+files = t.get("rule_files") or []
+text = files[0].get("text", "") if len(files) == 1 else ""
+chk("a many-rule AGENTS.md is one lossless rule-file item, with nothing to install",
+    (r.returncode, t.get("kind"), len(files), len(t.get("skills") or []), len(t.get("commands") or []),
+     len(t.get("agents") or []), (t.get("hooks") or {}).get("has_hooks"),
+     text.startswith("# Tomas Vykruta's `AGENTS.md` rules"), text.rstrip().endswith("8. Then pick the next system.")),
+    (0, "rule-file", 1, 0, 0, 0, False, True, True))
+# A standalone file is one trust boundary: naming a sibling must not get it read.
+# A CLAUDE.md keeps its imports, because they are part of that format, but still
+# only inside its own folder.
+SIB = "SIBLING_SECRET_5c1e"
+bound = os.path.join(w, "boundary", "inner")
+os.makedirs(bound)
+for fn, body in {"rules.md": "Be careful.\n@notes.md\n", "notes.md": f"{SIB}\n",
+                 "CLAUDE.md": "Team rules.\n@notes.md\n@../outer.md\n"}.items():
+    with open(os.path.join(bound, fn), "w") as f:
+        f.write(body)
+with open(os.path.join(w, "boundary", "outer.md"), "w") as f:
+    f.write("OUTER_MARK_5c1e\n")
+code, d = run_cli(os.path.join(bound, "rules.md"))
+chk("a standalone rules.md does not read the sibling it names, and says so",
+    (code, SIB in json.dumps(d), (d or {}).get("target", {}).get("imports_not_followed")),
+    (0, False, ["notes.md"]))
+code, d = run_cli(os.path.join(bound, "CLAUDE.md"))
+rfs = (d or {}).get("target", {}).get("rule_files") or []
+chk("a CLAUDE.md target follows its own import and refuses one outside its folder",
+    (code, SIB in json.dumps(d), "OUTER_MARK_5c1e" in json.dumps(d), [bool(i.get("refused")) for i in rfs]),
+    (0, True, False, [False, False, True]))
+binf = os.path.join(w, "image.png")
+with open(binf, "wb") as f:
+    f.write(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+code, d = run_cli(binf)
+chk("a binary file is refused with an error, not read as an empty rule file", (code != 0, d), (True, None))
+
+chk("an AGENTS.md run reads only the sample reader's rule files",
+    sorted(os.path.relpath(i["path"], reader) for i in ad.get("current_rules", {}).get("items", [])),
+    ["CLAUDE.md", "rules/engineering.md", "rules/safety.md", "skills/release-notes/SKILL.md"])
 
 # ---------------------------------------------------------------- 4. containment
 MARK = "OUTSIDE_THE_TARGET_7f3a"
@@ -443,6 +497,160 @@ code, d = run_cli(pack("mkt-bad", {".claude-plugin/marketplace.json": "{not json
 chk("a marketplace.json that is not JSON says so",
     (code, ((d or {}).get("target", {}).get("marketplace") or {}).get("parse_error")),
     (0, "marketplace.json is not valid JSON; read it by hand"))
+
+# The shell's default form, as Cat Herder writes it so one hook file serves several
+# hosts. Matching only ${CLAUDE_PLUGIN_ROOT} reported all three of its hooks as
+# unidentifiable, and the judge read the hook code by hand (verdict-stability-runs).
+dflt = pack("root-default", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "dflt", "hooks": ["./hooks/claude.json"]}),
+    "hooks/claude.json": json.dumps({"hooks": {"SessionEnd": [{"hooks": [{"type": "command",
+        "command": "\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend"}]}]}}),
+    "bin/meow": "#!/usr/bin/env python3\nprint(build_text())\n",
+    "skills/x/SKILL.md": "---\nname: x\n---\nDo x.\n"})
+code, d = run_cli(dflt)
+h = (d or {}).get("target", {}).get("hooks", {})
+chk("a hook run as ${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow is found, its payload untraced",
+    (code, h.get("unidentifiable_hooks"), h.get("unresolved_hooks")),
+    (0, None, ["SessionEnd: bin/meow"]))
+# Through _identify_hook_script, the call site, so these fail (None, not a crash)
+# on a tool that does not expand the form. Each names a real file in the target.
+ident = lambda c, r=dflt: (lambda p: p and os.path.relpath(p, r))(
+    inventory._identify_hook_script(c, r))
+chk("each default form of CLAUDE_PLUGIN_ROOT names the script",
+    [ident(c + "/bin/meow x") for c in (
+        "${CLAUDE_PLUGIN_ROOT}", "$CLAUDE_PLUGIN_ROOT", "${CLAUDE_PLUGIN_ROOT:-x}",
+        "${CLAUDE_PLUGIN_ROOT-x y}", "${CLAUDE_PLUGIN_ROOT:=${A:-${B}}}", "${CLAUDE_PLUGIN_ROOT:?unset}",
+        "${CLAUDE_PLUGIN_ROOT:-/etc}")],
+    ["bin/meow"] * 7)
+chk("${CLAUDE_PLUGIN_ROOT:+word} and $CLAUDE_PLUGIN_ROOTS name no script",
+    [ident(c + "/bin/meow") for c in ("${CLAUDE_PLUGIN_ROOT:+w}", "$CLAUDE_PLUGIN_ROOTS")], [None, None])
+chk("an unclosed brace later in the command does not stop an earlier expansion",
+    ident("$CLAUDE_PLUGIN_ROOT/bin/meow ${CLAUDE_PLUGIN_ROOT:-${X}"), "bin/meow")
+spaced = pack("root with space", {"bin/meow": "print(1)\n"})
+chk("a plugin root with a space in its path is not split",
+    ident("\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook x", spaced), "bin/meow")
+
+# ---------------------------------------------------------------- 6. what the judge reads
+# A dossier that leaves out text the judge needs makes it open the files by hand, and two
+# runs then read different text (Cat Herder's report at 178648f8a: 5 conflicts, then 2).
+ev = lambda cmd: {"hooks": {"Stop": [{"hooks": [{"type": "command", "command": cmd}]}]}}
+lst = pack("hooks-list", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "hl", "hooks": ["./hooks/a.json", "./hooks/b.json"]}),
+    "hooks/a.json": json.dumps({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo a"}]}]}}),
+    "hooks/b.json": json.dumps({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "echo b"}]}]}}),
+})
+code, d = run_cli(lst)
+hk = (d or {}).get("target", {}).get("hooks", {})
+chk("plugin.json hooks given as a list of files are all read",
+    (code, hk.get("has_hooks"), sorted(hk.get("events", {}))), (0, True, ["SessionStart", "Stop"]))
+
+code, d = run_cli(pack("hooks-list-missing", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "hm", "hooks": ["./hooks/a.json", "./hooks/gone.json"]}),
+    "hooks/a.json": json.dumps(ev("echo a"))}))
+chk("a hooks list naming a file that is not there is unknown, not a partial answer",
+    (code, ((d or {}).get("target", {}).get("hooks") or {}).get("has_hooks")), (0, "unknown"))
+
+outside = os.path.join(w, "outside-hooks.json")
+with open(outside, "w") as f:
+    f.write(json.dumps(ev("echo " + MARK)))
+code, d = run_cli(pack("hooks-list-outside", {
+    ".claude-plugin/plugin.json": json.dumps({"name": "ho", "hooks": ["../../outside-hooks.json"]})}))
+chk("a hooks list pointing outside the target is refused, and its text stays out",
+    (code, ((d or {}).get("target", {}).get("hooks") or {}).get("has_hooks"), MARK in json.dumps(d)),
+    (0, "unknown", False))
+
+code, d = run_cli(pack("skill-companions", {
+    ".claude-plugin/plugin.json": '{"name": "sc"}',
+    "skills/herd/SKILL.md": "---\nname: herd\ndescription: d\n---\nSee roles/worker.md.\n",
+    "skills/herd/roles/worker.md": "COMPANION_TEXT_ONLY_HERE\n",
+    "skills/quiet/SKILL.md": "---\nname: quiet\ndescription: d\nuser-invocable: false\n---\nBody.\n"}))
+sk = {x["name"]: x for x in (d or {}).get("target", {}).get("skills", [])}
+chk("a skill's other Markdown files are in the dossier with their text",
+    [(c["path"], "COMPANION_TEXT_ONLY_HERE" in (c["text"] or "")) for c in sk.get("herd", {}).get("companion_files", [])],
+    [("skills/herd/roles/worker.md", True)])
+# The target is untrusted: a skill folder that links to itself must not hang the inventory or
+# list one file many times, and vendored folders must not use up the cap.
+loop = pack("skill-loop", {".claude-plugin/plugin.json": '{"name": "sl"}',
+                           "skills/s/SKILL.md": "---\nname: s\ndescription: d\n---\nBody.\n",
+                           "skills/s/r.md": "ROLE_TEXT\n"})
+for ln in ("a", "b"):
+    os.symlink(".", os.path.join(loop, "skills", "s", ln))
+try:
+    r = subprocess.run([sys.executable, inventory.__file__, loop, "--project-dir", wp,
+                        "--out", os.path.join(w, "loop.json")], env=dict(os.environ, CLAUDE_CONFIG_DIR=wh),
+                       capture_output=True, text=True, timeout=30)
+    cf = [c["path"] for c in json.load(open(os.path.join(w, "loop.json")))["target"]["skills"][0]["companion_files"]]
+    chk("a skill folder that links to itself neither hangs nor lists a file twice",
+        (r.returncode, cf), (0, ["skills/s/r.md"]))
+except subprocess.TimeoutExpired:
+    chk("a skill folder that links to itself neither hangs nor lists a file twice", "hung", "finishes")
+
+many = {".claude-plugin/plugin.json": '{"name": "mn"}',
+        "skills/s/SKILL.md": "---\nname: s\ndescription: d\n---\nBody.\n"}
+for i in range(45):
+    many[f"skills/s/scripts/node_modules/p/{i:02d}.md"] = f"vendored {i}\n"
+    many[f"skills/s/refs/{i:02d}.md"] = f"ref {i}\n"
+many["skills/s/zz-role.md"] = "REAL_ROLE\n"
+code, d = run_cli(pack("skill-many", many))
+cf = [(c["path"], c["text"] is not None) for c in (d or {})["target"]["skills"][0]["companion_files"]]
+chk("vendored folders are pruned, and past 40 files the rest are named with no text",
+    (len(cf), sum(t for _, t in cf), any(p.endswith("node_modules/p/00.md") for p, _ in cf),
+     ("skills/s/zz-role.md", True) in cf, cf[-1]),
+    (46, 40, False, True, ("skills/s/refs/44.md", False)))
+chk("user-invocable is read from each skill's frontmatter (default true)",
+    (sk.get("herd", {}).get("user_invocable"), sk.get("quiet", {}).get("user_invocable")), (True, False))
+
+# ---------------------------------------------------------------- 7. frontmatter strict YAML can't read
+# Claude Code is lenient, so the author never sees these; GitHub and stricter agents do.
+fe = inventory.frontmatter_errors
+chk("an unquoted ': ' in a description is flagged, with its line",
+    [(e["line"]) for e in fe("---\nname: x\ndescription: Use when: the user asks\n---\nBody\n")], [3])
+chk("a quoted description with ': ' is fine",
+    fe('---\nname: x\ndescription: "Use when: the user asks"\n---\n'), [])
+chk("a >- block with ': ' inside is fine",
+    fe("---\nname: x\ndescription: >-\n  Use when: the user asks\n  and more\n---\n"), [])
+chk("a continued unquoted value with ': ' is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: Use it\n  when: asked\n---\n")], [4])
+chk("a value that starts with @ is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: @mention people\n---\n")], [3])
+chk("a tab in indentation is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: >-\n\ttabbed\n---\n")], [4])
+chk("an unclosed quote is flagged",
+    [e["line"] for e in fe('---\nname: x\ndescription: "never closed\n---\n')], [3])
+chk("frontmatter that never closes is flagged",
+    [e["line"] for e in fe("---\nname: x\ndescription: d\nBody with no fence\n")], [1])
+chk("a file with no frontmatter has no errors", fe("# Just a rule file\n\nUse when: asked\n"), [])
+
+# What a reviewer found PyYAML rejecting that the first version passed, and a value it wrongly flagged.
+bad = lambda v: [e["line"] for e in fe(f"---\nname: x\ndescription: {v}\n---\n")]
+chk("a value with a trailing comment holding ': ' is valid", bad("foo # bar: baz"), [])
+chk("an apostrophe inside a single-quoted value is flagged", bad("'it's here'"), [3])
+chk("a doubled '' inside a single-quoted value is fine", bad("'it''s here'"), [])
+chk("text after a closing quote is flagged", bad('"foo" bar'), [3])
+chk("a plain value starting with % ! '- ' or '? ' is flagged", [bad(v) for v in ("%x", "!t x", "- x", "? x")], [[3]] * 4)
+chk("text after a block header is flagged, a comment after it is not", (bad("> foo"), bad(">- # c")), ([3], []))
+chk("an unclosed flow collection is flagged, a closed one is not", (bad("[a"), bad("{a: b"), bad("[a, b]")), ([3], [3], []))
+chk("a nested mapping value holding ': ' is flagged",
+    [e["line"] for e in fe("---\nname: x\nmetadata:\n  short: Use when: x\n---\n")], [4])
+chk("a quoted value that runs over two lines is fine",
+    fe('---\nname: x\ndescription: "one\n  two"\n---\n'), [])
+chk("an unclosed quote is not hidden by a later line holding the same quote character (flagged where the stray quote closes it)",
+    [e["line"] for e in fe('---\nname: x\ndescription: "never\nother: say "hi"\n---\n')], [4])
+chk("an anchor on a value is valid YAML and is not flagged", bad("&a text"), [])
+
+code, d = run_cli(pack("fm-bad", {
+    ".claude-plugin/plugin.json": '{"name": "fb"}',
+    "skills/a/SKILL.md": "---\nname: a\ndescription: Use when: asked\n---\nDo a.\n",
+    "skills/b/SKILL.md": "---\nname: b\ndescription: fine\n---\nDo b.\n",
+    "commands/c.md": "---\ndescription: Run it: now\n---\nGo.\n",
+    "agents/d.md": "---\nname: d\ndescription: ok\n---\nYou are d.\n"}))
+t = (d or {}).get("target", {})
+chk("the dossier names each skill, command and agent whose frontmatter fails, and only those",
+    (code,
+     sorted(x["name"] for x in t.get("skills", []) if x.get("frontmatter_errors")),
+     [c["name"] for c in t.get("commands", []) if c.get("frontmatter_errors")],
+     [a["name"] for a in t.get("agents", []) if a.get("frontmatter_errors")]),
+    (0, ["a"], ["c"], []))
 
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)

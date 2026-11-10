@@ -1,0 +1,35 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+64 units, 169706 chars
+8 candidates from 3 passes (0 dropped)
+vet: units: 6 of 8 candidates confirmed
+Verdict: 🟧 INSTALL WITH CHANGES. The `units-verdict` tool computed it and I kept it unchanged. I agree with it.
+
+| | count |
+|---|---|
+| Conflicts | 5 sections (6 sentences) |
+| Covered | 4 |
+| New standing rules | 12 |
+| New skill | 1 |
+| Dropped | 21 |
+
+**Skills kept:** 43 of 64 sections.
+
+**Conflicts:** Four sections name `claude-haiku-5-5` or the "cheapest capable model" on a subagent dispatch, against `examples/reader/rules/engineering.md` rule 6. One section lets a reviewer retry a refused action with no limit, against `examples/reader/rules/safety.md` rule 1. The report asks for the limit: non-destructive actions only.
+
+**Dropped:** the whole `herder` voice skill (u36 to u44), one sample question (u48), and the 11 commands that only point at a skill or a `meow` call. Every conflict sits in a kept section.
+
+**Hooks:** the dossier lists all three as unidentifiable, so I read `lib/cat_herder/hooks.py` by hand. SessionStart injects nothing in a repo without a queue, and none of the hooks reaches subagents (likely, not certain).
+
+**Counts:** I reread the report. The grids match the counts: 5 conflict rows, 4 covered, 13 rules to copy, 43 kept, and 21 dropped ids. The sorted-rules table is not a partition, because a section can appear in more than one row. The report says so.
+
+**New skill:** a claim-by-claim doc audit, proposed as `audit-doc-claims`, taken from the auditor's Method section (u11).
+
+Files are in `measurements/2026-10-16-units-confirm/0532/`:
+- run-2.md
+- run-2.answers.json
+
+## Memory proposals
+None.
+vet: units: measurements/2026-10-16-units-confirm/0532/run-2.answers.json: INSTALL WITH CHANGES; skills kept 43 of 64; units with a conflict 5; rules 12 / 1 / 4 / 47  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 11 find and confirm calls, $2.40, 126 s of call time; whole vet 238 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0532/run-2.md (judge: own)

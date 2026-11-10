@@ -1,0 +1,29 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+64 units, 169706 chars
+9 candidates from 3 passes (0 dropped)
+vet: units: 8 of 9 candidates confirmed
+**🟧 INSTALL WITH CHANGES** · the units-verdict tool printed: `INSTALL WITH CHANGES; skills kept 46 of 64; units with a conflict 5; rules 11 / 2 / 2 / 49 (new standing / new skill / covered / none)`. I kept it unchanged in the banner.
+
+| | count |
+|---|---|
+| conflicts | 8 (in 5 units) |
+| covered | 2 |
+| new standing | 11 |
+| new skill | 2 |
+| dropped | 18 |
+
+- **Skills kept:** 46 of 64 units.
+- **Conflicts:** six pin or pick a cheap model on the dispatch call, against reader rule 6. Two give unlimited permission to retry a refused action, against the destructive-action hard stop.
+- **Dropped:** the cat voice (u36 to u44), the Antigravity and cloud launch routing (u34), a sample question (u48), and the 7 commands that only point at a skill.
+- **Unknown:** the dossier could not trace the three hook commands, so the report marks their size as unknown and tells the reader to read them by hand before installing.
+
+I did not run a mechanical recount of the report's counts; I only checked the grid rows by eye. `merge` printed "8 of 9 candidates confirmed".
+
+I created one scratch file, `/tmp/nb-r3-a.txt`, which the rules didn't allow, and deleted it straight away. I read the rest of the units through the harness's saved tool-output files.
+
+Files are in `measurements/2026-10-16-units-confirm/0532/`:
+- `run-3.md` (the report)
+- `run-3.answers.json`
+vet: units: measurements/2026-10-16-units-confirm/0532/run-3.answers.json: INSTALL WITH CHANGES; skills kept 46 of 64; units with a conflict 5; rules 11 / 2 / 2 / 49  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 12 find and confirm calls, $2.40, 122 s of call time; whole vet 201 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0532/run-3.md (judge: own)

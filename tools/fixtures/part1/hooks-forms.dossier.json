@@ -1,0 +1,85 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "hooks": {
+   "events": {
+    "PreToolUse": [
+     {
+      "command": "\"${CLAUDE_PLUGIN_ROOT}/x.sh",
+      "matcher": null
+     }
+    ],
+    "SessionStart": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT}/x.sh arg",
+      "matcher": null
+     }
+    ],
+    "Stop": [
+     {
+      "command": "bash ${CLAUDE_PLUGIN_ROOT}/x.sh",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": true,
+   "hook_registrations": 3,
+   "hook_scripts": 3,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": null,
+   "hooks_reach_subagents_basis": null,
+   "injected_content": null
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}

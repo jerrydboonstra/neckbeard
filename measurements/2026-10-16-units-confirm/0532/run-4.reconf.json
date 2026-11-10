@@ -1,0 +1,54 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": false,
+   "why": "The sentence only says what the commit message should describe (what changed, not names), which fits within the rule's 'imperative subject, then why' format and does not forbid or require anything the rule governs; its example subject is not even in conflict in a way that the sentence mandates."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents with an explicit model (`claude-haiku-5-5`), which overrides the model their definitions pin, and the reader rule forbids that override on the dispatch call."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence permits dispatching subagents on `claude-haiku-5-5` without limit, which requires a model override on the dispatch call and so breaks the rule that forbids overriding the model a definition pins."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat an action on the model's own judgement, which could include destructive actions (rm -rf, force-push) that the reader rule forbids without explicit go-ahead in the conversation, and it carries no non-destructive limit."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence permits the reviewer, on its own judgement and with no limit, to retry an action that was refused, which could include destructive actions (rm -rf, force-push) that the reader rule forbids without explicit go-ahead in the conversation."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which is an explicit model override on the dispatch call, and the rule says to leave the model to the definition's pin and not override it."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on an explicit model (`claude-haiku-5-5`), which overrides the definition's pinned model, and the reader rule forbids that override on the dispatch call."
+  },
+  {
+   "cid": "c8",
+   "conflict": false,
+   "why": "The sentence only restricts what content goes in commit messages (no agent/session/roster names) and does not contradict the rule's imperative-subject, under-60-characters, then-why format, so both can be satisfied together."
+  },
+  {
+   "cid": "c9",
+   "conflict": false,
+   "why": "The sentence names Haiku as the checker's model but doesn't tell the model to pass a model override on the dispatch call, so it can be met by a subagent definition that pins Haiku, which the rule allows."
+  },
+  {
+   "cid": "c10",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on the 'cheapest capable model', which selects a model on the dispatch call and so overrides the model the subagent's definition pins, which the reader rule forbids."
+  }
+ ]
+}
