@@ -209,7 +209,7 @@ SITES = {
     "MC1": lambda: got(fixture("mcp-malformed"), "mcp_servers", "failed", ".mcp.json"),
     "MC2": lambda: got(fixture("mcp-not-object"), "mcp_servers", "failed", ".mcp.json"),
     "MC3": lambda: got(fixture("mcp-wrong-type"), "mcp_servers", "failed", ".mcp.json", "mcpServers"),
-    "MC4": lambda: got(fixture("mcp-path-string"), "mcp_servers", "failed", "given as a path, not followed", "./servers.json"),
+    "MC4": lambda: got(fixture("mcp-path-string"), "mcp_servers", "failed", "given as a path (./servers.json), not followed"),
     "MC5": lambda: got(fixture("mcp-server-not-object"), "mcp_servers", "partial", ".mcp.json", "bad"),
     "MC6": lambda: got(fixture("mcp-ambiguity"), "mcp_servers", "partial", ".mcp.json", "top level"),
     "MC7": lambda: got(fixture("mcp-refused"), "mcp_servers", "failed", ".mcp.json"),
@@ -261,8 +261,8 @@ check("7. a plugin with nothing wrong: every section read or not-applicable, nev
       all(v.get("state") in ("read", "not-applicable") for v in status(f / "plugin-full").values()) and bool(status(f / "plugin-full")),
       repr(status(f / "plugin-full")))
 check("7. a rule file: every section but rule_files not-applicable",
-      all(status(f / "rulefile-plain").get(s, {}).get("state") == "not-applicable" for s in SECTIONS if s != "rule_files")
-      and status(f / "rulefile-plain").get("rule_files", {}).get("state") == "read", repr(status(f / "rulefile-plain")))
+      all(status(fixture("rulefile-plain")).get(s, {}).get("state") == "not-applicable" for s in SECTIONS if s != "rule_files")
+      and status(fixture("rulefile-plain")).get("rule_files", {}).get("state") == "read", repr(status(fixture("rulefile-plain"))))
 
 print(f"test_read_status: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)

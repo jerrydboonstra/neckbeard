@@ -1,2 +1,2 @@
 #!/bin/sh
-echo hi
+cat "inject.md"
