@@ -1,0 +1,25 @@
+{
+ "hooks": {
+  "has_hooks": false
+ },
+ "imports_not_followed": [
+  "sibling.md"
+ ],
+ "is_plugin": false,
+ "kind": "rule-file",
+ "path": "<ROOT>/rules.md",
+ "requested_target": "<ROOT>/rules.md",
+ "resolved_via": "local-file",
+ "rule_files": [
+  {
+   "bytes": 19,
+   "chars": 19,
+   "description": null,
+   "name": "rules",
+   "path": "<ROOT>/rules.md",
+   "source": "rule-file",
+   "text": "Rules.\n@sibling.md\n"
+  }
+ ],
+ "skills": []
+}

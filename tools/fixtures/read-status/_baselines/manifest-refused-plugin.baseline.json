@@ -1,0 +1,25 @@
+{
+ "agents": [],
+ "commands": [],
+ "declares_agents_in_manifest": false,
+ "declares_hooks_in_manifest": false,
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": true,
+ "kind": "plugin",
+ "manifest_refused": ".claude-plugin/plugin.json resolves outside the target tree; not read, so this was inventoried as a plain pack",
+ "mcp_servers": null,
+ "path": "<ROOT>",
+ "persistence_candidates": [],
+ "plugin_json": {
+  "description": null,
+  "license": null,
+  "name": "manifest-refused-plugin",
+  "version": "1.0.0"
+ },
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}

@@ -1,0 +1,42 @@
+{
+ "agents": [],
+ "commands": [],
+ "declares_agents_in_manifest": false,
+ "declares_hooks_in_manifest": false,
+ "hooks": {
+  "has_hooks": false
+ },
+ "is_plugin": true,
+ "kind": "plugin",
+ "marketplace": {
+  "name": "m",
+  "plugins": [
+   {
+    "name": "a",
+    "source": "./plugins/a",
+    "status": "local"
+   },
+   {
+    "name": "o",
+    "source": "../elsewhere",
+    "status": "refused: resolves outside the target tree"
+   }
+  ],
+  "root": "<ROOT>",
+  "selected": "a",
+  "selected_source": "./plugins/a"
+ },
+ "mcp_servers": null,
+ "path": "<ROOT>/plugins/a",
+ "persistence_candidates": [],
+ "plugin_json": {
+  "description": null,
+  "license": null,
+  "name": "marketplace-entry-outside/plugins/a",
+  "version": "1.0.0"
+ },
+ "requested_target": "<ROOT>",
+ "resolved_via": "local-path",
+ "rule_files": [],
+ "skills": []
+}
