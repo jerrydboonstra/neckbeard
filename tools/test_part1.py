@@ -108,7 +108,7 @@ for name, want in STATES.items():
 seen = {s for w in STATES.values() for s in w.values()}
 chk("1. across the fixtures every state appears", seen == {"entries", "none", "partly read", "not read", "not applicable"}, seen)
 
-rc, out, _ = render(fx("plugin-found"), "--commit", "abc1234")
+rc, out, _ = render(fx("plugin-found"), "--commit", "feed1234")
 got = parse(out)
 chk("1. a skill line: description chars, then the file's bytes and tokens (bytes // 4, with a ~); a capped one says so",
     lines(got, "Injects", "Skills") == ["alpha: description every session (21 chars); the file on demand (1200 bytes, ~300 tokens)",
@@ -122,7 +122,7 @@ chk("1. persistence candidates", lines(got, "State it may leave", "Persistence c
 chk("1. each MCP server: name, transport, a command's basename or a url's scheme and host",
     lines(got, "Reaches outside the session", "MCP servers") == ["files (local-process, node)", "web (http, https://api.example.com)"], lines(got, "Reaches outside the session", "MCP servers"))
 chk("1. source: kind, name and version from plugin.json, the marketplace's name, the commit as given",
-    all(l in out.split("\n") for l in ("- Kind: plugin", "- Name: demo (from plugin.json)", "- Version: 1.2.0 (from plugin.json)", "- Commit: abc1234"))
+    all(l in out.split("\n") for l in ("- Kind: plugin", "- Name: demo (from plugin.json)", "- Version: 1.2.0 (from plugin.json)", "- Commit: feed1234"))
     and lines(got, "Source", "Marketplace") == ["m"], out[-400:])
 chk("1. the footer is the spec's, word for word", out.rstrip("\n").endswith(FOOTER) and out.count(FOOTER) == 1)
 chk("1. no --commit: the commit line says commit not given", "- Commit: commit not given" in render(fx("plugin-found"))[1].split("\n"))
@@ -150,7 +150,7 @@ chk("1. hooks read with an untraced injected text: not read, never none, and the
 every = sorted(f[: -len(".dossier.json")] for f in os.listdir(FX) if f.endswith(".dossier.json") and f != "old-dossier.dossier.json")
 bad = []
 for f in every:
-    a, b = render(fx(f), "--commit", "abc1234"), render(fx(f), "--commit", "abc1234")
+    a, b = render(fx(f), "--commit", "feed1234"), render(fx(f), "--commit", "feed1234")
     if a[1] != b[1] or a[0] != 0:
         bad.append(f"{f}: not identical or exit {a[0]}")
     heads = re.findall(r"^### (.+)$", a[1], re.M)
@@ -164,10 +164,11 @@ chk("2. a fixture whose lists are out of order renders sorted",
 
 # ---------------------------------------------------------------- Done when 4: nothing private in any output
 home = os.path.expanduser("~")
-banned = ["READER-MARKER-7", "/Users/", home, "secretarg", "SECRETARG", "SECRETFLAG", "/v1/secret", "token=abc123", "ENVVALUE-9", "/proj/demo", "--flag"]
+banned = ["READER-MARKER-7", "/Users/", home, "secretarg", "SECRETARG", "SECRETFLAG", "/v1/secret", "token=abc123", "ENVVALUE-9", "/proj/demo", "--flag",
+          "TOPSECRET", "SECRETCODE", "sk-live-999", "abc123", "TOK", "pw@", "8443", "~/", "$HOME", "/secret/"]
 bad = []
 for f in every:
-    out = render(fx(f), "--commit", "abc1234")[1]
+    out = render(fx(f), "--commit", "feed1234")[1]
     bad += [f"{f}: {b}" for b in banned if b in out] + ([f"{f}: no output"] if not out.strip() else [])
 chk("4. no fixture's output holds the reader's rule text, a home path, a hook argument, a url path or query, or an env value", not bad, "; ".join(bad[:4]))
 outside = os.path.join(tmp(), "scripts")
@@ -180,6 +181,34 @@ got = parse(out)
 chk("4. an unidentifiable_hooks note prints as <event>: <script>, without its arguments or its absolute path",
     "not read: hooks/hooks.json: unidentifiable hooks: SessionStart: curl; Stop: thing.sh" in (lines(got, "Hooks", "Hooks") or [""])[-1] or any("unidentifiable hooks: SessionStart: curl; Stop: thing.sh" in l for l in lines(got, "Hooks", "Hooks")),
     lines(got, "Hooks", "Hooks"))
+
+got = parse(render(fx("hooks-hostile-commands"))[1])
+chk("4. hook commands with an env prefix, inline code (-c), a flag's value, a ~ or $HOME path print their script or <unparsed command>, never the arguments",
+    lines(got, "Hooks", "Hooks")[:6] == ["Notification: homehook.sh", "PreToolUse: <unparsed command>", "SessionStart: ./hook.sh", "Stop: <unparsed command>",
+                                         "SubagentStop: script.py", "UserPromptSubmit: envhome.sh"], lines(got, "Hooks", "Hooks"))
+out = render(fx("hostile"))[1]
+got = parse(out)
+allowed = {"## What it adds"} | {f"### {h}" for h in HEADINGS}
+forged = [l for l in out.split("\n") if re.match(r"^(#|>|\|)", l) and l not in allowed]
+chk("4. target strings with newlines, headings, a verdict line, a table row or the At a glance heading forge nothing: six cards, no other heading, quote or table line",
+    not forged and re.findall(r"^### (.+)$", out, re.M) == HEADINGS and out.count("At a glance") <= 6, forged)
+ml = lines(got, "Reaches outside the session", "MCP servers")
+chk("4. MCP servers: a url shows scheme and host only (no userinfo, port, path or query); an env prefix, a list or a bad or non-string url print no secret and do not crash",
+    render(fx("hostile"))[0] == 0 and any(l.startswith("web ") and l.endswith("(http, https://api.example.com)") for l in ml) and "envcmd (local-process, node)" in ml
+    and "listcmd (local-process, command)" in ml and "badurl (http, url)" in ml and "inturl (http, url)" in ml, ml)
+chk("4. an absolute or ~ path in a name, an injected file or a persistence entry prints its basename",
+    "secret-tool: description every session (21 chars); the file on demand (1200 bytes, ~300 tokens)" in lines(got, "Injects", "Skills")
+    and lines(got, "Injects", "Hook-injected text") == ["inject.md: 12 bytes, ~3 tokens"]
+    and {"state.json", "p.json"} <= set(lines(got, "State it may leave", "Persistence candidates")), (lines(got, "Injects", "Skills"), lines(got, "State it may leave", "Persistence candidates")))
+chk("4. an unreadable command is named as not read, with its reason", lines(got, "Subagents and commands", "Commands") == ["cmd: not read: unreadable"], lines(got, "Subagents and commands", "Commands"))
+chk("4. a long target string is cut", all(len(l) < 400 for l in out.split("\n")), max(len(l) for l in out.split("\n")))
+p = variant("plugin-found", lambda d: d["target"]["skills"][0].update(bytes=None))
+chk("4. a skill whose bytes is None is not read, not 0 bytes", "alpha: not read" in lines(parse(render(p)[1]), "Injects", "Skills"), lines(parse(render(p)[1]), "Injects", "Skills"))
+p = variant("plugin-found", lambda d: d["target"]["read_status"]["agents"].update(state="weird"))
+chk("4. a section state the tool does not know prints as not read", state_of(parse(render(p)[1]).get(("Subagents and commands", "Agents"))) == "not read")
+out = render(fx("generic-pack"))[1]
+chk("4. a generic pack is named by its folder, with no version", "- Name: mypack" in out.split("\n") and "- Version: no version" in out.split("\n"), out)
+chk("4. a rule file is named by its basename", "- Name: rules.md" in render(fx("rule-file"))[1].split("\n"))
 
 # ---------------------------------------------------------------- Done when 6: the hook command forms
 got = parse(render(fx("hooks-forms"))[1])
@@ -209,7 +238,7 @@ tree = tmp(); real_tree(tree)
 e = tmp()
 r = subprocess.run([sys.executable, INVENTORY, tree, "--project-dir", e, "--out", os.path.join(e, "d.json")],
                    env={"PATH": os.environ["PATH"], "HOME": e, "CLAUDE_CONFIG_DIR": e}, capture_output=True, text=True)
-rc, out, err = render(os.path.join(e, "d.json"), "--commit", "abc1234") if r.returncode == 0 else (None, "", r.stderr)
+rc, out, err = render(os.path.join(e, "d.json"), "--commit", "feed1234") if r.returncode == 0 else (None, "", r.stderr)
 got = parse(out)
 chk("5. inventory.py's own output for a small plugin renders with exit 0, a state on every line of every card",
     rc == 0 and all((CARDS[l], l) in got and state_of(got[(CARDS[l], l)]) != "missing" for l in CARDS) and len(got) >= len(CARDS), f"{rc} {err[-200:]}\n{out}")
@@ -217,6 +246,7 @@ chk("5. and that plugin reads: its skill, hook, injected file, agent, command an
     (lines(got, "Injects", "Skills") or [""])[0].startswith("a: ") and (lines(got, "Hooks", "Hooks") or [""])[0] == "SessionStart: hooks/run.sh"
     and lines(got, "Injects", "Hook-injected text") and lines(got, "Subagents and commands", "Agents") and lines(got, "Subagents and commands", "Commands")
     and lines(got, "Reaches outside the session", "MCP servers") == ["s (local-process, node)"], out)
+chk("4. the real inventory's output holds no absolute temp path and no home", not any(x in "".join(out) for x in (tree, os.path.realpath(tree), e, home)) and out != "", out)
 d = json.load(open(os.path.join(e, "d.json")))
 del d["target"]["read_status"]
 json.dump(d, open(os.path.join(e, "no-rs.json"), "w"))
@@ -233,7 +263,7 @@ for n, call in regexes.items():
     exec(f"{n} = re.compile({call})", ns)
 bad = []
 for f in every:
-    out = render(fx(f), "--commit", "abc1234")[1]
+    out = render(fx(f), "--commit", "feed1234")[1]
     if ns["VERDICT_RE"].search(out) or ns["COUNT_RE"].search(out) or re.search(r"^## Conflicts", out, re.M) or re.search(r"^\| \| \| \|", out, re.M):
         bad.append(f)
 chk("7. no output matches vet-stability's verdict or count lines, a Conflicts heading or a | | | | row", not bad and len(regexes) == 2, bad)

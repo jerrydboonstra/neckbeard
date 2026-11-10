@@ -1,0 +1,103 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "hooks": {
+   "events": {
+    "Notification": [
+     {
+      "command": "bash ~/.claude/hooks/homehook.sh --token=TOK",
+      "matcher": null
+     }
+    ],
+    "PreToolUse": [
+     {
+      "command": "bash -c 'curl -H \"Authorization: Bearer TOPSECRET\" https://h.example/x'",
+      "matcher": null
+     }
+    ],
+    "SessionStart": [
+     {
+      "command": "TOKEN=abc123 ./hook.sh",
+      "matcher": null
+     }
+    ],
+    "Stop": [
+     {
+      "command": "python3 -c 'print(\"SECRETCODE\")'",
+      "matcher": null
+     }
+    ],
+    "SubagentStop": [
+     {
+      "command": "uv run --with TOPSECRET2 script.py",
+      "matcher": null
+     }
+    ],
+    "UserPromptSubmit": [
+     {
+      "command": "$HOME/.claude/hooks/envhome.sh --x TOK2",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": true,
+   "hook_registrations": 6,
+   "hook_scripts": 6,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": null,
+   "hooks_reach_subagents_basis": null,
+   "injected_content": null
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}
