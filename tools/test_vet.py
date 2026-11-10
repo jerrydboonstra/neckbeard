@@ -195,10 +195,10 @@ def vet_with_part1(script):
         shutil.rmtree(fake)
 
 
-r = vet_with_part1("#!/bin/sh\necho 'part1: cannot read a dossier' >&2\nexit 2\n")
+r = vet_with_part1("import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
 chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
     (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
-r = vet_with_part1("#!/bin/sh\nprintf '## What it adds\\n\\n## \\342\\232\\241 At a glance\\n'\n")
+r = vet_with_part1("print('## What it adds\\n\\n## \\u26a1 At a glance')\n")
 chk("part1: a section that holds the At a glance heading itself fails vet", (r["rc"], "At a glance" in r["out"]), (1, True))
 r = run("part1-missing-heading", report="noglance")
 chk("part1: a report with no At a glance heading fails vet, and the message names it", (r["rc"], "At a glance" in r["out"]), (1, True))
