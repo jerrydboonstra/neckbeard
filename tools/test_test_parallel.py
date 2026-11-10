@@ -58,7 +58,7 @@ r = run(d, "-j", "2")
 lines = r.stdout.splitlines()
 starts = [UNIT_START.match(l).group(1) for l in lines if UNIT_START.match(l)]
 results = {m.group(1): m.group(2) for l in lines if (m := MODULE_RESULT.match(l))}
-check("a run starts every module, test_*.py plus selfcheck, one start line each", sorted(starts) == ["selfcheck", "test_a", "test_b", "test_c"], repr(starts))
+check("a run starts every module, test_*.py plus test_selfcheck (skills/neckbeard/selfcheck.py), one start line each", sorted(starts) == ["test_a", "test_b", "test_c"], repr(starts))
 check("a passing module ends '[i/N] <module> ok <seconds>s'", results.get("test_a") == "ok" and any(re.fullmatch(r"\[\d+/4\] test_a ok \d+\.\ds", l) for l in lines), repr(lines[:8]))
 check("a failing module ends '[i/N] <module> FAIL <seconds>s' and the run exits 1", results.get("test_b") == "FAIL" and r.returncode == 1, f"{results} rc={r.returncode}")
 check("FINISHED reads every ending line, with the module count as its first group", len(FINISHED.findall(r.stdout)) == 4 and FINISHED.findall(r.stdout)[0][0] == "4", repr(FINISHED.findall(r.stdout)))
@@ -67,17 +67,24 @@ check("the run closes with 'Slowest modules:'", "\nSlowest modules:" in r.stdout
 check("a run of passing modules exits 0", run(project({"test_a": OK}), "-j", "1").returncode == 0)
 
 # ---------------------------------------------------------------- choosing modules
-r = run(d, "test_a", "selfcheck")
-check("named modules are the only ones run", sorted(UNIT_START.match(l).group(1) for l in r.stdout.splitlines() if UNIT_START.match(l)) == ["selfcheck", "test_a"], r.stdout[:200])
+r = run(d, "test_a", "test_selfcheck")
+check("named modules are the only ones run", sorted(UNIT_START.match(l).group(1) for l in r.stdout.splitlines() if UNIT_START.match(l)) == ["test_a", "test_selfcheck"], r.stdout[:200])
 r = run(d, "test_nope")
 check("an unknown module exits 2 and says 'no such test module'", r.returncode == 2 and "no such test module: test_nope" in r.stderr, f"rc={r.returncode} {r.stderr}")
 shard_runs = [run(d, "--shard", f"{k}/3") for k in (1, 2, 3)]
 parts = [sorted(UNIT_START.match(l).group(1) for l in s.stdout.splitlines() if UNIT_START.match(l)) for s in shard_runs]
-check("--shard K/N: the shards together run every module once", sorted(sum(parts, [])) == ["selfcheck", "test_a", "test_b", "test_c"], repr(parts))
+check("--shard K/N: the shards together run every module once", sorted(sum(parts, [])) == ["test_a", "test_b", "test_c", "test_selfcheck"], repr(parts))
 r = run(d, "--shard", "4/3")
 check("--shard K/N: bad shard exits 2 and says so", r.returncode == 2 and "test-parallel:" in r.stderr and "shard" in r.stderr, r.stderr)
 r = run(d, "--tier", "functional")
 check("an option meow sends only to a project with tiers (--tier) is refused, exit 2", r.returncode == 2 and "test-parallel:" in r.stderr, r.stderr)
+
+d5 = project({"test_a": OK, "test_selfcheck": OK}, selfcheck=OK)
+r = run(d5)
+check("tools/test_selfcheck.py beside skills/neckbeard/selfcheck.py: the runner refuses both, exit 2",
+      r.returncode == 2 and "test_selfcheck" in r.stderr and "test-parallel:" in r.stderr, f"rc={r.returncode} {r.stderr}")
+check("a module is named test_<name> (meow refuses any other), including the selfcheck one",
+      all(re.fullmatch(r"test_[A-Za-z0-9_]+", UNIT_START.match(l).group(1)) for l in run(d).stdout.splitlines() if UNIT_START.match(l)))
 
 # ---------------------------------------------------------------- a failure under load is run again alone
 flaky = ("import os, sys\nm = os.environ['MARK']\nif os.path.exists(m):\n    sys.exit(0)\nopen(m, 'w').close()\nsys.exit(1)\n")
@@ -123,6 +130,9 @@ check("--changed: a path with no map line selects the whole suite and says so",
       "other.txt has no tests/map entry" in r.stdout and "running the whole suite" in r.stdout, r.stdout)
 r = sh([sys.executable, str(d3 / "tools" / "test-changed"), "--list", "no-such-commit"], d3)
 check("--changed: a base that is not a commit exits 2 and says so", r.returncode == 2 and "test-changed:" in r.stderr, f"rc={r.returncode} {r.stderr}")
+r = sh([sys.executable, str(d3 / "tools" / "test-changed"), f"--project={d3}", "--list", base], ROOT)
+check("--project=DIR (the form meow passes) is read, and the project's own map and diff are used",
+      r.returncode == 0 and "test-changed:" in r.stdout, f"rc={r.returncode} {r.stdout} {r.stderr}")
 (d3 / "src" / "b.py").write_text("changed b\n")
 sh(["git", "add", "-A"], d3)
 sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "b"], d3)
@@ -138,7 +148,7 @@ if mp.exists():
         if line.strip() and not line.lstrip().startswith("#"):
             glob, *mods = line.split()
             rows[glob] = mods
-modules = {p.stem for p in (ROOT / "tools").glob("test_*.py")} | {"selfcheck"}
+modules = {p.stem for p in (ROOT / "tools").glob("test_*.py")} | {"test_selfcheck"}
 check("tests/map exists and has rows", bool(rows))
 check("every module a map row names exists", bool(rows) and all(m in modules or m == "*" for ms in rows.values() for m in ms),
       repr(sorted({m for ms in rows.values() for m in ms} - modules - {"*"})))
@@ -146,7 +156,7 @@ check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",
       all(rows.get(f"tools/{m}.py") and m in rows[f"tools/{m}.py"] for m in modules if m.startswith("test_")),
       repr([m for m in modules if m.startswith("test_") and m not in (rows.get(f"tools/{m}.py") or [])]))
 check("tools/vet selects test_vet and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_stability"], repr(rows.get("tools/vet")))
-check("skills/neckbeard/inventory.py selects selfcheck", "selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
+check("skills/neckbeard/inventory.py selects test_selfcheck", "test_selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
 check("the runner's own files select its test", all("test_test_parallel" in rows.get(f"tools/{f}", []) for f in ("test-parallel", "test-changed")))
 d4 = project({"test_vet": OK}, mapfile=mp.read_text() if mp.exists() else "")
 (d4 / "tools" / "vet").write_text("#!/bin/sh\n")
