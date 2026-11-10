@@ -1,0 +1,195 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "agents": [
+   {
+    "bytes": 30,
+    "chars": 30,
+    "description": "d",
+    "name": "reviewer",
+    "path": "agents/reviewer.md",
+    "source": "agent",
+    "text": "x"
+   }
+  ],
+  "commands": [
+   {
+    "bytes": 30,
+    "chars": 30,
+    "description": "d",
+    "name": "ship",
+    "path": "commands/ship.md",
+    "source": "command",
+    "text": "x"
+   }
+  ],
+  "hooks": {
+   "events": {
+    "PreToolUse": [
+     {
+      "command": "/Users/someone/proj/demo/hooks/guard.sh",
+      "matcher": "Bash"
+     }
+    ],
+    "SessionStart": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh --flag secretarg",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": true,
+   "hook_registrations": 2,
+   "hook_scripts": 2,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": false,
+   "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+   "injected_bytes_total_estimate": 80,
+   "injected_content": [
+    {
+     "bytes": 80,
+     "file": "hooks/inject.md"
+    }
+   ]
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "marketplace": {
+   "name": "m",
+   "plugins": [
+    {
+     "name": "demo",
+     "source": "./",
+     "status": "local"
+    }
+   ],
+   "root": "/Users/someone/proj/demo",
+   "selected": "demo",
+   "selected_source": "./"
+  },
+  "mcp_servers": {
+   "count": 2,
+   "note": "this reports the declaration",
+   "servers": [
+    {
+     "args": [
+      "server.js"
+     ],
+     "command": "/usr/local/bin/node",
+     "env": {
+      "API_KEY": "ENVVALUE-9"
+     },
+     "name": "files",
+     "transport": "local-process",
+     "url": null
+    },
+    {
+     "args": [],
+     "command": null,
+     "name": "web",
+     "transport": "http",
+     "url": "https://api.example.com/v1/secret?token=abc123"
+    }
+   ],
+   "source": ".mcp.json"
+  },
+  "path": "/Users/someone/proj/demo",
+  "persistence_candidates": [
+   "scripts/install.sh"
+  ],
+  "plugin_json": {
+   "description": null,
+   "license": null,
+   "name": "demo",
+   "version": "1.2.0"
+  },
+  "read_status": {
+   "agents": {
+    "notes": [
+     "agents: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "commands": {
+    "notes": [
+     "commands: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "hooks": {
+    "notes": [
+     "hooks: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "marketplace": {
+    "notes": [
+     "marketplace: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "mcp_servers": {
+    "notes": [
+     "mcp_servers: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "persistence_candidates": {
+    "notes": [
+     "persistence_candidates: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "plugin_json": {
+    "notes": [
+     "plugin_json: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "rule_files": {
+    "notes": [
+     "rule_files: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   },
+   "skills": {
+    "notes": [
+     "skills: one entry could not be read (dangling symlink)"
+    ],
+    "state": "partial"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo",
+  "rule_files": [
+   {
+    "bytes": 400,
+    "chars": 400,
+    "description": null,
+    "name": "CLAUDE",
+    "path": "/Users/someone/proj/demo/CLAUDE.md",
+    "source": "target-CLAUDE.md",
+    "text": "x"
+   }
+  ],
+  "skills": [
+   {
+    "bytes": 1200,
+    "chars": 1200,
+    "description": "Does the alpha thing.",
+    "name": "alpha",
+    "path": "/Users/someone/proj/demo/skills/alpha/SKILL.md",
+    "source": "skills/alpha/SKILL.md",
+    "text": "x"
+   }
+  ]
+ }
+}

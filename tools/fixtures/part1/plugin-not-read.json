@@ -1,0 +1,91 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "agents": [],
+  "commands": [],
+  "hooks": {
+   "events": {},
+   "has_hooks": "unknown",
+   "hook_registrations": null,
+   "hook_scripts": null,
+   "hooks_reach_subagents": null,
+   "injected_content": null,
+   "injected_content_note": "hook payloads cannot be traced"
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "marketplace": null,
+  "mcp_servers": null,
+  "path": "/Users/someone/proj/demo",
+  "persistence_candidates": [],
+  "plugin_json": null,
+  "read_status": {
+   "agents": {
+    "notes": [
+     "agents: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "commands": {
+    "notes": [
+     "commands: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "hooks": {
+    "notes": [
+     "hooks: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "marketplace": {
+    "notes": [
+     "marketplace: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "mcp_servers": {
+    "notes": [
+     "mcp_servers: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "persistence_candidates": {
+    "notes": [
+     "persistence_candidates: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "plugin_json": {
+    "notes": [
+     "plugin_json: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "rule_files": {
+    "notes": [
+     "rule_files: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   },
+   "skills": {
+    "notes": [
+     "skills: could not be read (not valid JSON)"
+    ],
+    "state": "failed"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo",
+  "rule_files": [],
+  "skills": []
+ }
+}

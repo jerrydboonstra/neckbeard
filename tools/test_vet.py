@@ -55,9 +55,11 @@ if "CONFIRM CALL" in prompt:
 out = re.search(r"REPORT FILE \(the only file you create\): (\S+)", prompt).group(1)
 target = re.search(r"checked out at (\S+)", prompt).group(1).rstrip(",")
 mode = os.environ.get("FAKE_REPORT", "good")
-body = {"good": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n",
+GLANCE = "\n## ⚡ At a glance\n\nOne line.\n"
+body = {"good": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE,
+        "noglance": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n## Details\n\nText.\n",
         "noverdict": "# 🔍 demo\n\nNo banner here.\n",
-        "leak": "> ## 🟩 INSTALL · fine\n> Read " + target + "/skills/demo/SKILL.md.\n"}.get(mode)
+        "leak": "> ## 🟩 INSTALL · fine\n> Read " + target + "/skills/demo/SKILL.md.\n" + GLANCE}.get(mode)
 if body is not None:
     open(out, "w").write("# 🔍 demo 1.0.0\n\n" + body)
 m = re.search(r"Write the answers to (\S+) as JSON", prompt)
@@ -85,7 +87,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no"):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -100,6 +102,11 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         if remote:
             for c in (["init", "-q"], ["remote", "add", "origin", remote]):
                 subprocess.run(["git", *c], cwd=target, check=True)
+        sha = ""
+        if commit:
+            for c in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"]):
+                subprocess.run(["git", *c], cwd=target, check=True)
+            sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=target, capture_output=True, text=True).stdout.strip()
         out = os.path.join(tmp, "out", "report.md")
         log = os.path.join(tmp, "claude.log")
         # a cloud container rewrites git@github.com: to https itself through GIT_CONFIG_*, which would hide vet's own rewrite
@@ -113,7 +120,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
         title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
         res = dict(rc=p.returncode, out=p.stdout + p.stderr, calls=calls, report=os.path.exists(out), title=title,
-                   reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
+                   text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
         if os.environ.get("VERBOSE"):
             print(case, res)
         return res
@@ -159,6 +166,22 @@ chk("pool: a quote that is not in the unit is dropped before any confirm call", 
 chk("cost: the vet prints calls and dollars", "units cost: 3 find and confirm calls, $0.03" in r["out"], True)
 r = run("no-units")
 chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)[0]["prompt"], False)
+
+# 0c. part 1 ("What it adds", tools/part1) goes in the report immediately before At a glance, and nothing else moves
+r = run("part1", commit=True)
+t = r["text"]
+head = "# 🔍 demo 1.0.0 · vetted against the sample reader\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n"
+glance = "## ⚡ At a glance\n\nOne line.\n"
+sec, _, rest = t[len(head):].partition(glance)
+chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
+    (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
+chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"- **{h}**" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
+chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
+r = run("part1-no-commit")
+chk("part1: with no git commit the section says commit not given", "Commit: commit not given" in r["text"], True)
+r = run("part1-missing-heading", report="noglance")
+chk("part1: a report with no At a glance heading fails vet, and the message names it", (r["rc"], "At a glance" in r["out"]), (1, True))
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
 r = run("web")

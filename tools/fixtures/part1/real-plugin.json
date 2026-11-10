@@ -1,0 +1,137 @@
+{
+ "current_rules": {
+  "items": [],
+  "project_root": "<TMP>"
+ },
+ "target": {
+  "agents": [
+   {
+    "bytes": 38,
+    "chars": 38,
+    "description": "d",
+    "name": "ag",
+    "path": "agents/ag.md",
+    "source": "agent",
+    "text": "---\nname: ag\ndescription: d\n---\nText.\n"
+   }
+  ],
+  "commands": [
+   {
+    "bytes": 37,
+    "chars": 37,
+    "description": "d",
+    "name": "c",
+    "path": "commands/c.md",
+    "source": "command",
+    "text": "---\nname: c\ndescription: d\n---\nText.\n"
+   }
+  ],
+  "declares_agents_in_manifest": false,
+  "declares_hooks_in_manifest": false,
+  "hooks": {
+   "events": {
+    "SessionStart": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": true,
+   "hook_registrations": 1,
+   "hook_scripts": 1,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": false,
+   "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+   "injected_bytes_total_estimate": null,
+   "injected_content": null,
+   "injected_content_note": "1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.",
+   "unresolved_hooks": [
+    "SessionStart: hooks/run.sh"
+   ]
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "mcp_servers": {
+   "count": 1,
+   "note": "this reports the declaration, not the tool surface. A local-process server runs on your machine; what it exposes needs a live MCP call.",
+   "servers": [
+    {
+     "args": [
+      "x.js"
+     ],
+     "command": "node",
+     "name": "s",
+     "transport": "local-process",
+     "url": null
+    }
+   ],
+   "source": ".mcp.json"
+  },
+  "path": "<ROOT>",
+  "persistence_candidates": [],
+  "plugin_json": {
+   "description": null,
+   "license": null,
+   "name": "real",
+   "version": "2.0.0"
+  },
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [
+     "hooks/hooks.json: unresolved hooks: SessionStart: hooks/run.sh",
+     "hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand."
+    ],
+    "state": "partial"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "not-applicable"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "<ROOT>",
+  "resolved_via": "local-path",
+  "rule_files": [],
+  "skills": [
+   {
+    "bytes": 49,
+    "chars": 49,
+    "companion_files": [],
+    "description": "A real skill.",
+    "name": "a",
+    "path": "<ROOT>/skills/a/SKILL.md",
+    "source": "skills/a/SKILL.md",
+    "text": "---\nname: a\ndescription: A real skill.\n---\nBody.\n",
+    "user_invocable": true
+   }
+  ]
+ }
+}

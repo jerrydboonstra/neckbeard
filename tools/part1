@@ -1,0 +1,2 @@
+#!/usr/bin/env python3
+# part1-render: not built yet. This stub prints nothing, so tools/test_part1.py fails on the rules, not on a missing file.
