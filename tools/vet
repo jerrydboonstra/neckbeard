@@ -12,8 +12,10 @@
 #      rules and nothing else; that needs a login from the environment, as a web session has. Where it can't log
 #      in that way (a Mac keeps its login with the default config), it falls back to --judge own, the caller's
 #      own config, and says so: the judge is told to ignore those instructions but still starts with them
-#   4. check the report: it exists, carries a verdict, and names no local path; set its title line, which
-#      says the verdict is against the sample reader
+#   4. check the report: it exists, carries a verdict and a title line; put tools/part1's "What it adds" (what the target
+#      injects, reaches and leaves behind, read from the dossier, with no reference to the reader) immediately before its
+#      "## ⚡ At a glance" (the report fails if that line is missing); set its title line, which says the verdict is
+#      against the sample reader; and check it names no local path
 # --units (a prototype, verdict-prototype-units): number the target's sections with tools/rule-units, have the judge
 # answer every one by the written tests in tools/vet-units.md, and take the verdict from tools/units-verdict. Keeps
 # OUT's stem .units.json and .answers.json beside the report; fails when the answers or the banner don't match.
@@ -35,6 +37,27 @@ plugin_version() { python3 -c 'import json,sys
 for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
     try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
     except Exception: pass' "$1"; }
+
+# insert_part1 REPORT DOSSIER COMMIT: put tools/part1's "## What it adds" immediately before the report's "## ⚡ At a glance"
+insert_part1() {
+  local section=$work/part1.md
+  if [ -n "$3" ]; then
+    python3 "$nb/tools/part1" "$2" --commit "$3" >"$section" 2>"$work/part1.err"
+  else
+    python3 "$nb/tools/part1" "$2" >"$section" 2>"$work/part1.err"
+  fi || { cat "$work/part1.err" >&2; die "part 1 could not be rendered"; }
+  python3 - "$1" "$section" <<'PYEOF' || die "$1 has no '## ⚡ At a glance' line to put \"What it adds\" before"
+import sys
+glance = "## \u26a1 At a glance\n"
+text = open(sys.argv[1], encoding="utf-8").read()
+if ("\n" + text).count("\n" + glance) != 1:
+    sys.exit(1)
+text = ("\n" + text).replace("\n" + glance, "\n" + open(sys.argv[2], encoding="utf-8").read() + "\n" + glance, 1)[1:]
+if ("\n" + text).count("\n" + glance) != 1:   # the section must not hold the heading itself
+    sys.exit(1)
+open(sys.argv[1], "w", encoding="utf-8").write(text)
+PYEOF
+}
 
 if [ "${1:-}" = --check ]; then
   [ $# -eq 3 ] || usage
@@ -233,6 +256,7 @@ PYEOF
 fi
 # the title says whose rules these are; a judge started with its own rules has been seen to write "your rules"
 case $(head -n 1 "$out") in "# 🔍 "*) ;; *) die "$out has no 🔍 title line" ;; esac
+insert_part1 "$out" "$dossier" "$commit"
 python3 - "$out" "$title" <<'EOF'
 import sys
 lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
