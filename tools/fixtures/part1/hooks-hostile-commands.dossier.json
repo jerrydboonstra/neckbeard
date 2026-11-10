@@ -18,9 +18,39 @@
       "matcher": null
      }
     ],
+    "PermissionRequest": [
+     {
+      "command": "python3 -Bc 'import os; print(1)/x.py'",
+      "matcher": null
+     }
+    ],
+    "PostToolUse": [
+     {
+      "command": "/usr/bin/env bash ${CLAUDE_PLUGIN_ROOT}/x.sh",
+      "matcher": null
+     }
+    ],
+    "PostToolUseFailure": [
+     {
+      "command": "env FOO=x ./x.sh",
+      "matcher": null
+     }
+    ],
+    "PreCompact": [
+     {
+      "command": "bash -ec '${CLAUDE_PLUGIN_ROOT}/x.sh --token SECRETARG'",
+      "matcher": null
+     }
+    ],
     "PreToolUse": [
      {
       "command": "bash -c 'curl -H \"Authorization: Bearer TOPSECRET\" https://h.example/x'",
+      "matcher": null
+     }
+    ],
+    "SessionEnd": [
+     {
+      "command": "bash -lc '/opt/x/run.sh SECRETARG'",
       "matcher": null
      }
     ],
@@ -33,6 +63,12 @@
     "Stop": [
      {
       "command": "python3 -c 'print(\"SECRETCODE\")'",
+      "matcher": null
+     }
+    ],
+    "SubagentStart": [
+     {
+      "command": "sh -xc \"curl https://h/ -d SECRETARG\"",
       "matcher": null
      }
     ],
@@ -50,8 +86,8 @@
     ]
    },
    "has_hooks": true,
-   "hook_registrations": 6,
-   "hook_scripts": 6,
+   "hook_registrations": 12,
+   "hook_scripts": 12,
    "hooks_file": "hooks/hooks.json",
    "hooks_reach_subagents": null,
    "hooks_reach_subagents_basis": null,

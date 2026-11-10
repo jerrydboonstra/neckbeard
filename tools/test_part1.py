@@ -183,9 +183,11 @@ chk("4. an unidentifiable_hooks note prints as <event>: <script>, without its ar
     lines(got, "Hooks", "Hooks"))
 
 got = parse(render(fx("hooks-hostile-commands"))[1])
-chk("4. hook commands with an env prefix, inline code (-c), a flag's value, a ~ or $HOME path print their script or <unparsed command>, never the arguments",
-    lines(got, "Hooks", "Hooks")[:6] == ["Notification: homehook.sh", "PreToolUse: <unparsed command>", "SessionStart: ./hook.sh", "Stop: <unparsed command>",
-                                         "SubagentStop: script.py", "UserPromptSubmit: envhome.sh"], lines(got, "Hooks", "Hooks"))
+chk("4. hook commands with an env prefix, inline code (-c, and -lc -ec -xc -Bc), a flag's value, a ~ or $HOME path print their script or <unparsed command>, never the arguments; env is looked through",
+    lines(got, "Hooks", "Hooks")[:11] == ["Notification: homehook.sh", "PermissionRequest: <unparsed command>", "PostToolUse: x.sh", "PostToolUseFailure: ./x.sh",
+                                          "PreCompact: <unparsed command>", "PreToolUse: <unparsed command>", "SessionEnd: <unparsed command>", "SessionStart: ./hook.sh",
+                                          "Stop: <unparsed command>", "SubagentStart: <unparsed command>", "SubagentStop: script.py"]
+    and lines(got, "Hooks", "Hooks")[11] == "UserPromptSubmit: envhome.sh", lines(got, "Hooks", "Hooks"))
 out = render(fx("hostile"))[1]
 got = parse(out)
 allowed = {"## What it adds"} | {f"### {h}" for h in HEADINGS}
