@@ -13,7 +13,7 @@ skills/neckbeard/inventory.py test_selfcheck test_layout test_mutate_selfcheck t
 skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
 skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability
 # Tools
-tools/vet test_units test_vet test_vet_stability
+tools/vet test_vet test_vet_stability
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
 tools/rule-units test_units
