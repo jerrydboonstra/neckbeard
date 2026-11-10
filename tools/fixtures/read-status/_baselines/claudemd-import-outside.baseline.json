@@ -24,7 +24,7 @@
   },
   {
    "imported_from": "<ROOT>/CLAUDE.md",
-   "path": "/Users/jerryobex/runs/nb/s/worker-n/tools/fixtures/read-status/_outside.txt",
+   "path": "<FX>/_outside.txt",
    "refused": "import resolves outside the target tree; not read",
    "source": "target-CLAUDE.md import",
    "text": null

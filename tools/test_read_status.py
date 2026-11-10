@@ -4,7 +4,7 @@ does not apply. Every case runs inventory.py as a command, with HOME, CLAUDE_CON
 all set to one empty directory, so no reader's rule text is ever read or compared.
 
 Fixtures are trees under tools/fixtures/read-status/<name>/. A fixture with a baseline has its dossier from
-8ac500d's inventory.py in _baselines/<name>.baseline.json (the fixture's real path written as <ROOT>): every
+8ac500d's inventory.py in _baselines/<name>.baseline.json (the fixture's real path written as <ROOT>, the fixtures folder's as <FX>): every
 key but read_status must still match it. The fixtures that need many files, a big file or a deep folder are
 built in a temporary directory here instead. An unreadable file is always a dangling symlink, never chmod 000
 (it cannot be committed, and it passes under root)."""
@@ -96,7 +96,9 @@ for base in sorted((FX / "_baselines").glob("*.baseline.json")):
         bad.append(f"{name}: read_status sections {sorted(rs) if isinstance(rs, dict) else rs!r}")
     if "_read_notes" in target:
         bad.append(f"{name}: _read_notes left in the dossier")
-    text = json.dumps(target).replace(json.dumps(os.path.realpath(FX / name))[1:-1], "<ROOT>")
+    text = json.dumps(target)
+    for real, mark in ((os.path.realpath(FX / name), "<ROOT>"), (os.path.realpath(FX), "<FX>")):
+        text = text.replace(json.dumps(real)[1:-1], mark)
     if json.loads(text) != json.loads(base.read_text()):
         bad.append(f"{name}: a key other than read_status differs from the baseline")
 check("5. every fixture with a baseline: nine sections, no _read_notes, every other key unchanged", not bad, "; ".join(bad[:4]))
@@ -167,7 +169,7 @@ def search_cap():
         except Exception as e:  # red until add_read_status exists
             return False, repr(e)
         rs = dos.get("read_status", {}).get("hooks", {})
-        out.append((rs.get("state"), expect, "search" in " ".join(rs.get("notes") or [])))
+        out.append((rs.get("state"), expect, "b/: " in " ".join(rs.get("notes") or [])))
     return all(s == e and n for s, e, n in out), repr(out)
 
 
@@ -194,22 +196,22 @@ SITES = {
     "HK2": lambda: got(fixture("hooks-refused"), "hooks", "failed", "_outside.json"),
     "HK3": lambda: got(fixture("hooks-list-missing"), "hooks", "failed", "hooks/nope.json"),
     "HK4": lambda: got(fixture("hooks-path-missing"), "hooks", "failed", "hooks/nope.json", "plugin.json"),
-    "HK5": lambda: got(fixture("hooks-malformed-entry"), "hooks", "partial", "Stop"),
+    "HK5": lambda: got(fixture("hooks-malformed-entry"), "hooks", "partial", "hooks/hooks.json", "Stop"),
     "HK6": lambda: got(fixture("hooks-untraced"), "hooks", "partial", "hooks/run.sh"),
     "HK7": lambda: got(fixture("hooks-nonstring-command"), "hooks", "failed", "hooks/hooks.json", "command"),
     "HK8": lambda: got(fixture("outside-links"), "hooks", "partial", "sub/link.json"),
     "HK9": lambda: got(fixture("hooks-search-bad-json"), "hooks", "partial", "data/broken.json"),
     "HK10": search_cap,
-    "HK11": lambda: got(fixture("nested-plugins"), "hooks", "failed", "inner"),
-    "HK12": lambda: got(fixture("marketplace-multi"), "hooks", "failed", "marketplace listing"),
+    "HK11": lambda: got(fixture("nested-plugins"), "hooks", "failed", "inner: "),
+    "HK12": lambda: got(fixture("marketplace-multi"), "hooks", "failed", ".claude-plugin/marketplace.json", "marketplace listing"),
     "HK13": gen_big_hook_script,
     "HK14": gen_big_json,
     "MC1": lambda: got(fixture("mcp-malformed"), "mcp_servers", "failed", ".mcp.json"),
     "MC2": lambda: got(fixture("mcp-not-object"), "mcp_servers", "failed", ".mcp.json"),
     "MC3": lambda: got(fixture("mcp-wrong-type"), "mcp_servers", "failed", ".mcp.json", "mcpServers"),
     "MC4": lambda: got(fixture("mcp-path-string"), "mcp_servers", "failed", "given as a path, not followed", "./servers.json"),
-    "MC5": lambda: got(fixture("mcp-server-not-object"), "mcp_servers", "partial", "bad"),
-    "MC6": lambda: got(fixture("mcp-ambiguity"), "mcp_servers", "partial", "top level"),
+    "MC5": lambda: got(fixture("mcp-server-not-object"), "mcp_servers", "partial", ".mcp.json", "bad"),
+    "MC6": lambda: got(fixture("mcp-ambiguity"), "mcp_servers", "partial", ".mcp.json", "top level"),
     "MC7": lambda: got(fixture("mcp-refused"), "mcp_servers", "failed", ".mcp.json"),
     "PS1": lambda: got(fixture("outside-links"), "persistence_candidates", "partial", "sub/run.sh"),
     "PS2": gen_big_plain_file,
@@ -222,9 +224,9 @@ SITES = {
     "MK1": lambda: got(fixture("marketplace-pack-broken"), "marketplace", "failed", "marketplace.json"),
     "MK2": lambda: got(fixture("marketplace-root-broken"), "marketplace", "failed", "marketplace.json"),
     "MK3": lambda: got(fixture("marketplace-dangling"), "marketplace", "failed", "marketplace.json"),
-    "MK4": lambda: got(fixture("marketplace-entries"), "marketplace", "partial", "oops"),
-    "MK5": lambda: got(fixture("marketplace-entries"), "marketplace", "partial", "gone"),
-    "MK6": lambda: got(fixture("marketplace-entry-outside"), "marketplace", "partial", "elsewhere"),
+    "MK4": lambda: got(fixture("marketplace-entries"), "marketplace", "partial", ".claude-plugin/marketplace.json", "oops"),
+    "MK5": lambda: got(fixture("marketplace-entries"), "marketplace", "partial", ".claude-plugin/marketplace.json", "gone"),
+    "MK6": lambda: got(fixture("marketplace-entry-outside"), "marketplace", "partial", ".claude-plugin/marketplace.json", "elsewhere"),
 }
 sys.path.insert(0, str(INVENTORY.parent))
 try:
@@ -245,12 +247,12 @@ for sid, fn in SITES.items():
 # ---------------------------------------------------------------- Done when 7
 f = FX
 check("7. a marketplace_note (a marketplace listing several plugins): hooks failed",
-      *got(f / "marketplace-multi", "hooks", "failed", "marketplace listing"))
-check("7. an ambiguity (servers at the top of .mcp.json): mcp_servers partial", *got(f / "mcp-ambiguity", "mcp_servers", "partial", "top level"))
+      *got(f / "marketplace-multi", "hooks", "failed", ".claude-plugin/marketplace.json", "marketplace listing"))
+check("7. an ambiguity (servers at the top of .mcp.json): mcp_servers partial", *got(f / "mcp-ambiguity", "mcp_servers", "partial", ".mcp.json", "top level"))
 check("7. manifest_refused on a plugin: plugin_json partial", *got(f / "manifest-refused-plugin", "plugin_json", "partial", "plugin.json"))
 check("7. manifest_refused on a generic pack: plugin_json failed", *got(f / "manifest-refused-pack", "plugin_json", "failed", "plugin.json"))
 check("7. a truncated skill: skills partial", *gen_big_skill())
-check("7. malformed_entries: hooks partial", *got(f / "hooks-malformed-entry", "hooks", "partial", "Stop"))
+check("7. malformed_entries: hooks partial", *got(f / "hooks-malformed-entry", "hooks", "partial", "hooks/hooks.json", "Stop"))
 check("7. a broken marketplace.json at a plugin root: marketplace failed", *got(f / "marketplace-root-broken", "marketplace", "failed", "marketplace.json"))
 check("7. a generic pack with no manifest: plugin_json and marketplace not-applicable",
       all(status(f / "pack-plain").get(s, {}).get("state") == "not-applicable" for s in ("plugin_json", "marketplace")),
