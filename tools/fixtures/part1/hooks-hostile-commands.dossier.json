@@ -36,6 +36,12 @@
       "matcher": null
      }
     ],
+    "PostCompact": [
+     {
+      "command": "bash -x ; ./second.sh",
+      "matcher": null
+     }
+    ],
     "PostToolUse": [
      {
       "command": "/usr/bin/env bash ${CLAUDE_PLUGIN_ROOT}/x.sh",
@@ -116,8 +122,8 @@
     ]
    },
    "has_hooks": true,
-   "hook_registrations": 17,
-   "hook_scripts": 17,
+   "hook_registrations": 18,
+   "hook_scripts": 18,
    "hooks_file": "hooks/hooks.json",
    "hooks_reach_subagents": null,
    "hooks_reach_subagents_basis": null,

@@ -192,9 +192,9 @@ UNP = "<unparsed command>"
 chk("4. hook commands with an env prefix, inline code (-c, and -lc -ec -xc -Bc), a flag's value, a ~ or $HOME path print their script or <unparsed command>, never the arguments; env is looked through",
     hl == {"Notification": "homehook.sh", "PermissionRequest": UNP, "PostToolUse": "x.sh", "PostToolUseFailure": "./x.sh", "PreCompact": UNP, "PreToolUse": UNP,
            "SessionEnd": UNP, "SessionStart": "./hook.sh", "Stop": UNP, "SubagentStart": UNP, "SubagentStop": "script.py", "UserPromptSubmit": "envhome.sh",
-           "Elicitation": UNP, "ElicitationResult": UNP, "Setup": "x.sh", "TaskCompleted": "./a.sh", "TeammateIdle": "http.server"}, hl)
-chk("4. a url as the script (deno run, npx), a second command after ; or &&, and python -m print no url, query, argument or second command",
-    all(hl.get(e) == w for e, w in (("Elicitation", UNP), ("ElicitationResult", UNP), ("Setup", "x.sh"), ("TaskCompleted", "./a.sh"), ("TeammateIdle", "http.server"))), hl)
+           "Elicitation": UNP, "ElicitationResult": UNP, "Setup": "x.sh", "TaskCompleted": "./a.sh", "TeammateIdle": "http.server", "PostCompact": UNP}, hl)
+chk("4. a url as the script (deno run, npx), a second command after ; or &&, and python -m print no url, query, argument or second command (an interpreter with no script of its own in the first command never takes a later command's)",
+    all(hl.get(e) == w for e, w in (("Elicitation", UNP), ("ElicitationResult", UNP), ("Setup", "x.sh"), ("TaskCompleted", "./a.sh"), ("TeammateIdle", "http.server"), ("PostCompact", UNP))), hl)
 out = render(fx("hostile"))[1]
 got = parse(out)
 allowed = {"## What it adds"} | {f"### {h}" for h in HEADINGS}
