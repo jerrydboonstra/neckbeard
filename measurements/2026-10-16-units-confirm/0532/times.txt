@@ -1,0 +1,9 @@
+run 1 exit 1 58 s
+run 2 exit 0 239 s
+run 3 exit 0 201 s
+run 4 exit 1 67 s
+run 5 exit 0 234 s
+done
+run 1 (redo) exit 0 161 s
+run 4 (redo) exit 0 201 s
+redone

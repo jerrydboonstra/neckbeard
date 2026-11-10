@@ -1,0 +1,19 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat any action on the model's own judgement, including destructive ones the reader rule forbids without explicit go-ahead, and it has no limit such as 'only if it isn't destructive'."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, so it could run a destructive action (rm -rf, force-push) that the rule says needs explicit go-ahead in this conversation."
+  },
+  {
+   "cid": "c3",
+   "conflict": false,
+   "why": "The sentence defers to the project's own named marker (such as `TODO(debt):`) when one exists, so it requires the same marker as the reader rule and only falls back to `# debt:` when the project names none."
+  }
+ ]
+}

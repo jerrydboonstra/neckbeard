@@ -1,0 +1,16 @@
+5 reports
+  vet-rep/run-1.md: COPY RULES, SKIP PLUGIN; 3 / 9 / 7 / 1 / 12  (conflicts / covered / new standing / new skill / dropped)
+    note: 3 conflict rows but 1 distinct rules; findings against one rule are counted once
+  vet-rep/run-2.md: COPY RULES, SKIP PLUGIN; 3 / 7 / 4 / 1 / 19  (conflicts / covered / new standing / new skill / dropped)
+  vet-rep/run-3.md: COPY RULES, SKIP PLUGIN; 3 / 9 / 5 / 1 / 15  (conflicts / covered / new standing / new skill / dropped)
+    note: 3 conflict rows but 2 distinct rules; findings against one rule are counted once
+  vet-rep/run-4.md: COPY RULES, SKIP PLUGIN; 4 / 11 / 5 / 1 / 30  (conflicts / covered / new standing / new skill / dropped)
+    note: 4 conflict rows but 1 distinct rules; findings against one rule are counted once
+  vet-rep/run-5.md: COPY RULES, SKIP PLUGIN; 4 / 7 / 4 / 1 / 6  (conflicts / covered / new standing / new skill / dropped)
+    note: 4 conflict rows but 3 distinct rules; findings against one rule are counted once
+verdicts: COPY RULES, SKIP PLUGIN in 5 of 5
+  conflict found in 5 of 5: rules/engineering.md rule 6
+  conflict found in 2 of 5: rules/safety.md rule 5
+  conflict found in 2 of 5: rules/engineering.md rule 4
+  conflict found in 1 of 5: rules/engineering.md rule 7
+NOT stable: the reports disagree

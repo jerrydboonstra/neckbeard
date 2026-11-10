@@ -1,0 +1,49 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "why": "The sentence dispatches subagents on an explicit model (`claude-haiku-5-5`), which overrides the model their definitions pin, and the rule forbids that override on the dispatch call."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence permits dispatching `claude-haiku-5-5` subagents without limit, which sets a model on the dispatch call, and the reader rule forbids overriding the model a subagent definition pins."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to repeat a refused action on the model's own judgement, which includes destructive actions that the reader rule says need explicit go-ahead in this conversation, and it has no limit such as 'only if it isn't destructive'."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence gives the reviewer unlimited permission to retry a refused action on its own judgement, which could include destructive actions the rule forbids without the user's explicit go-ahead; it needs a limit such as 'only if not destructive'."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, an explicit model override on the dispatch call, which the rule forbids, since subagents should run on the model their definition pins."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents explicitly on `claude-haiku-5-5`, which overrides the model their definition pins, and the reader rule forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch a Haiku subagent, which sets the model on the dispatch call and so overrides the model the subagent's definition pins, and rule 6 forbids that."
+  },
+  {
+   "cid": "c8",
+   "conflict": false,
+   "why": "The sentence only forbids agent, session or roster names in commit messages and asks for change-based wording, which is compatible with an imperative subject under 60 characters followed by why, so no situation requires doing what the rule forbids."
+  },
+  {
+   "cid": "c9",
+   "conflict": true,
+   "why": "Telling the model to dispatch agents on 'the cheapest capable model your host offers' directs it to pick a model on the dispatch call, which overrides the model the agent definition pins and which the reader rule forbids."
+  }
+ ]
+}

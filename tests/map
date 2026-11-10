@@ -16,6 +16,10 @@ skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability
 tools/vet test_vet test_vet_stability
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
+tools/rule-units test_units
+tools/units-verdict test_units
+tools/units-confirm test_units test_vet
+tools/vet-*.md test_units test_vet
 tools/neckbeard test_layout
 tools/check-no-bin test_layout
 tools/mutate-selfcheck test_mutate_selfcheck
@@ -27,6 +31,7 @@ tools/test_deploy.py test_deploy
 tools/test_layout.py test_layout
 tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_test_parallel.py test_test_parallel
+tools/test_units.py test_units
 tools/test_vet.py test_vet
 tools/test_vet_stability.py test_vet_stability
 tests/map test_test_parallel

@@ -1,0 +1,32 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+64 units, 169706 chars
+10 candidates from 3 passes (0 dropped)
+vet: units: 8 of 10 candidates confirmed
+The report and answers are written. I ran the merge and verdict tools and used the verdict unchanged.
+
+**Verdict: 🟧 INSTALL WITH CHANGES** (tool output: skills kept 43 of 64, 5 units with a conflict, rules 8 / 2 / 2 / 52)
+
+Counts:
+- **Conflicts:** 8 confirmed, in 5 units. Six collide with engineering rule 6 (the `claude-haiku-5-5` / "cheapest capable model" lines), and two collide with safety rule 1 (retrying a refused action on its own judgement).
+- **Covered:** 2 (u31, u46).
+- **New standing:** 8 (u13, u14, u26, u28, u29, u32, u33, u50).
+- **New skill:** 2 (u11, u25).
+- **Dropped:** 21 (the herder voice, u36 to u44, and the 12 commands, u53 to u64). The other 43 skill sections are kept.
+
+Two things in the report are unknown. The three hooks all call `bin/meow _hook`, so the dossier couldn't trace them. I read the hook code by hand: SessionStart prints role lines and the queue's recorded rules and answers, only in a repo with a queue, but I couldn't size it. The dossier also flags 97 scripts with file-write patterns that I didn't trace, so the full list of paths the plugin writes is unknown.
+
+The conflicts grid has one row per confirmed conflict (8), not one per unit (5), so its rows match the count.
+
+Files are in `measurements/2026-10-16-units-confirm/0532/`:
+- `run-4.md`
+- `run-4.answers.json`
+
+## Memory proposals
+- name: neckbeard-units-quote-length
+  type: feedback
+  fact: In the units prototype the answers file `quote` must be a substring of the unit text, so a script that asserts this catches typos. The report wants shorter phrases than the answers quote.
+  why: This avoids writing quotes from memory that don't match the unit.
+  evidence: My answers script asserted every quote against the unit text on 2026-10-16, and the report shortened them.
+vet: units: measurements/2026-10-16-units-confirm/0532/run-4.answers.json: INSTALL WITH CHANGES; skills kept 43 of 64; units with a conflict 5; rules 8 / 2 / 2 / 52  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 13 find and confirm calls, $2.44, 137 s of call time; whole vet 201 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0532/run-4.md (judge: own)

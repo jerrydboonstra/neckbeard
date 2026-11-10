@@ -1,0 +1,553 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "1. List every checkable claim in the area",
+   "why": "A one-shot method for falsifying a doc: list claims, run each example, break the code, give BACKED/UNTESTED/CONTRADICTED; worth a small skill of the reader's own.",
+   "conflicts": []
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "never `pkill` or `killall` by pattern",
+   "why": "Stop only the processes you started, by pid; the reader has no rule on killing processes.",
+   "conflicts": []
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Keep each command plain: one command per call",
+   "why": "A general habit for permission-prompting hosts that the reader does not state.",
+   "conflicts": []
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u21",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u22",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u23",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u24",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": [
+    {
+     "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`, one lens each, at the handed-in tip.",
+     "reader_rule": "reader rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\""
+    }
+   ]
+  },
+  {
+   "id": "u25",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "Reply with a section headed `## Report`",
+   "why": "A fixed report form (outcome, base sha, patch, commands run) for a session that cannot write; the git patch part is tool-independent.",
+   "conflicts": []
+  },
+  {
+   "id": "u26",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never add a key, a token, an https remote or a forwarded agent to get past it.",
+   "why": "Stop and report on a git auth failure; the reader's safety rules cover secrets in output but not this.",
+   "conflicts": []
+  },
+  {
+   "id": "u27",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "Keep refactors and behaviour changes in separate changes; the reader's rule 4 on scope does not say this.",
+   "conflicts": [
+    {
+     "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents at it and confirm each finding yourself.",
+     "reader_rule": "reader rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\""
+    }
+   ]
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "It lapses when what it covers changes.",
+   "why": "An owner's go-ahead covers only what it named and expires when that changes; the reader's rule 1 requires a go-ahead but not this limit.",
+   "conflicts": [
+    {
+     "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "reader rules/safety.md rule 1: \"Never run anything destructive without my explicit go-ahead in this conversation\""
+    }
+   ]
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Citing what was checked and watching the test fail are already in examples/reader/rules/engineering.md rule 3 and examples/reader/CLAUDE.md (\"saying what was checked\").",
+   "conflicts": []
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never ask the reviewer to run it for you: that would pass a refused action to another session.",
+   "why": "Do not launder a refused action through another session; the reader has nothing on this.",
+   "conflicts": [
+    {
+     "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+     "reader_rule": "reader rules/safety.md rule 1: \"Never run anything destructive without my explicit go-ahead in this conversation\""
+    },
+    {
+     "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each: correctness, tests, docs and help, trust boundaries.",
+     "reader_rule": "reader rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\""
+    },
+    {
+     "quote": "send three subagents on `claude-haiku-5-5` at the passages you drafted, one lens each",
+     "reader_rule": "reader rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\""
+    },
+    {
+     "quote": "one more read-only Haiku checks each docs or CHANGELOG line you added against the code",
+     "reader_rule": "engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\""
+    }
+   ]
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "The reader's engineering rules have no guard against simplifying away validation or error handling.",
+   "conflicts": []
+  },
+  {
+   "id": "u34",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u35",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u36",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u37",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u38",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u39",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u40",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u41",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u42",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u43",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u44",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u45",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u46",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Its stale-brief handling (do not build the old version, show the owner and wait) is examples/reader/rules/engineering.md rule 4; the rest is queue mechanics.",
+   "conflicts": [
+    {
+     "quote": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers, at most 4 at once.",
+     "reader_rule": "reader rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\""
+    }
+   ]
+  },
+  {
+   "id": "u47",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u48",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u49",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u50",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "sits alone in a code block, exactly as it should be pasted, with no prose inside the block and no placeholder left for the owner to fill",
+   "why": "A general rule for asking the user to run something; the reader's answer preferences do not cover it.",
+   "conflicts": []
+  },
+  {
+   "id": "u51",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u52",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Only the plugin's own queue, pair and session mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u53",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u54",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u55",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u56",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u57",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u58",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u59",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u60",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u61",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u62",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u63",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u64",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice, or a thin wrapper over a skill judged elsewhere.",
+   "conflicts": []
+  }
+ ]
+}

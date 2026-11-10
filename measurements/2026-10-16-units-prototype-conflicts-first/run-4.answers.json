@@ -1,0 +1,246 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Capture preamble: finding meow, rules file and who; plugin mechanics only."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "why": "Capture procedure; its split rule says the scope asked for stays the deliverable, which examples/reader/rules/engineering.md rule 4 already states."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Queue-and-claim before editing is tied to meow."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Rescue session is a meow procedure."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Riffing mode is tied to the ledger and meow replies."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Herd orchestration is almost all meow mechanics."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Associate role is meow roster mechanics."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Says when a handoff happens; part of the handoff procedure."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Handoff steps for the retiring session, all meow commands."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Steps for the staying member, all meow commands."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Steps for the new session; branch naming and clone rules tied to the tool."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Fixed chat lines for handoffs."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Reviewer preamble and rigor switch."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Reviewer setup template."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "conflicts": [
+    {
+     "quote": "`meow accept <id> {{REVIEWER}}` when it's right",
+     "reader_rule": "examples/reader/CLAUDE.md: \"Give the reasoning with the verdict\""
+    }
+   ],
+   "rules": "new-standing",
+   "why": "Review procedure; the split-the-refactor finding is a general working rule the reader lacks.",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding"
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "why": "Reviewer limits; the relayed-answer lapse rule is general.",
+   "quote": "It lapses when what it covers changes."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Stop and retire mechanics."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "why": "Verifier checklist for rigor: build; checking whether a test or threshold was changed to make it pass is not in the reader's rules.",
+   "quote": "was a criterion, a test or a threshold changed to make it pass? Read the test diff."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "why": "Worker procedure, mostly meow; the refused-action rule is general.",
+   "quote": "Never ask the reviewer to run it for you: that would pass a refused action to another session."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "why": "Builder rules; four of the five coding rules repeat engineering.md rules 1, 2 and 5, but validation at trust boundaries is not stated there.",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure."
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Voice skill intro and a repeat of the meow lookup."
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Switch for the cat voice, a persona."
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Cat names, persona."
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Cat-voice capture lines."
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "One sentence of persona."
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Cat-voice handoff lines."
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Voice euphemism rule, persona."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "why": "Queue setup, Field Trip and voice-dictation rules; the read-back before an irreversible guess is covered by examples/reader/rules/safety.md rule 5 (ask when a wrong reading is costly)."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "duplicate",
+   "why": "Queue commands; stopping to show the owner when a brief's premise moved is examples/reader/rules/engineering.md rule 4, and no --force on your own matches the safety hard stops."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Overheard block format, tied to the tool."
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "conflicts": [],
+   "rules": "none",
+   "why": "One example ledger row inside the overheard example."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "new-standing",
+   "why": "Ledger rules; the unread-is-not-a-yes rule is general.",
+   "quote": "When a reply skips something you asked, don't take it as a yes or a no, and don't act on it."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "conflicts": [],
+   "rules": "none",
+   "why": "Slash command that runs meow with shell-quoted arguments; nothing general."
+  }
+ ]
+}

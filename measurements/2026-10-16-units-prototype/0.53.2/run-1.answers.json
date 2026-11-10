@@ -1,0 +1,324 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "bucket": "install-skill",
+   "why": "Part of the capture skill: queues new work with the plugin's own meow command in one exchange, which no reader rule or skill does."
+  },
+  {
+   "id": "u2",
+   "bucket": "install-skill",
+   "why": "Capture skill's core procedure (pick idea/scoped/ready from the owner's signal, split, place, confirm); its 'never queue without their say-so' agrees with the reader rules, and nothing in the reader covers it."
+  },
+  {
+   "id": "u3",
+   "bucket": "install-skill",
+   "why": "Capture skill rule that a session asked for file-changing work queues and claims it first; reader has no equivalent."
+  },
+  {
+   "id": "u4",
+   "bucket": "install-skill",
+   "why": "Capture skill's rescue-session procedure ('queue everything unfinished'), plugin workflow the reader lacks."
+  },
+  {
+   "id": "u5",
+   "bucket": "install-skill",
+   "why": "Capture skill's riffing mode ('One line per idea') for an owner who is not reading replies; reader has nothing like it."
+  },
+  {
+   "id": "u6",
+   "bucket": "install-skill",
+   "why": "Capture skill's prompt-me pull, which gives open questions as a tap list; works with meow and has no reader counterpart."
+  },
+  {
+   "id": "u7",
+   "bucket": "install-skill",
+   "why": "Section the capture skill prints for prompt-me (recommend first, decision list, record answers); same skill, same reasoning."
+  },
+  {
+   "id": "u8",
+   "bucket": "install-skill",
+   "why": "The herd skill's dispatcher for pairs, hikes, handoffs and scaling; its session-start model default ('start the reviewer ... on opus') governs launching a session, not a subagent dispatch, so it does not meet the reader's subagent rule."
+  },
+  {
+   "id": "u9",
+   "bucket": "install-skill",
+   "why": "Associate role of the herd skill (domain, answer on the item); no reader equivalent."
+  },
+  {
+   "id": "u10",
+   "bucket": "install-skill",
+   "why": "Auditor role intro in the herd skill: 'try to prove a document ... wrong' at a pinned sha; reader has no audit procedure."
+  },
+  {
+   "id": "u11",
+   "bucket": "install-skill",
+   "why": "Auditor method (break the code, see a test fail, verdict BACKED/UNTESTED/CONTRADICTED) extends the reader's 'seen to fail' idea to doc claims, so it is not covered."
+  },
+  {
+   "id": "u12",
+   "bucket": "install-skill",
+   "why": "Auditor findings format and triage classes in the herd skill; reader has none."
+  },
+  {
+   "id": "u13",
+   "bucket": "install-skill",
+   "why": "Auditor hard rules ('No fixes', 'No pushes', scratch repos with HOME redirected) are safe and consistent with the reader's safety rules."
+  },
+  {
+   "id": "u14",
+   "bucket": "install-skill",
+   "why": "Auditor prompt-hygiene rules (one plain command per call); part of the same role and not in the reader."
+  },
+  {
+   "id": "u15",
+   "bucket": "install-skill",
+   "why": "Auditor report shape returned as the final message; part of the role."
+  },
+  {
+   "id": "u16",
+   "bucket": "install-skill",
+   "why": "Coordinator's checklist for running an audit (pin sha, one auditor per surface, merge, triage); reader has nothing similar."
+  },
+  {
+   "id": "u17",
+   "bucket": "install-skill",
+   "why": "Falsify item template that files one audit per area through meow add; part of the auditor role."
+  },
+  {
+   "id": "u18",
+   "bucket": "install-skill",
+   "why": "Bond role: two sessions review each other 'same bar'; herd skill content with no reader counterpart."
+  },
+  {
+   "id": "u19",
+   "bucket": "install-skill",
+   "why": "Handoff role intro in the herd skill, saying when a session hands off."
+  },
+  {
+   "id": "u20",
+   "bucket": "install-skill",
+   "why": "Retiring side of the handoff procedure; the reader has no handoff process."
+  },
+  {
+   "id": "u21",
+   "bucket": "install-skill",
+   "why": "Staying side of the handoff (read the readback, confirm or abandon); herd skill content."
+  },
+  {
+   "id": "u22",
+   "bucket": "install-skill",
+   "why": "New-session side of the handoff, including branch and checkout hygiene; herd skill content."
+  },
+  {
+   "id": "u23",
+   "bucket": "install-skill",
+   "why": "Plain-voice chat lines for each handoff step, part of the herd skill's handoff role."
+  },
+  {
+   "id": "u24",
+   "bucket": "conflict",
+   "why": "Tells the orchestrator to 'send 3 or 4 new read-only subagents on `claude-haiku-5-5`', which passes a model on the dispatch call and breaks examples/reader/rules/engineering.md rule 6 ('Do not override it on the dispatch call'); the advisor-thread line starts a session on Fable and is a different situation."
+  },
+  {
+   "id": "u25",
+   "bucket": "install-skill",
+   "why": "Fixed '## Report' form for a session that cannot write (patch against a base); reader has no such form."
+  },
+  {
+   "id": "u26",
+   "bucket": "install-skill",
+   "why": "Reviewer role header (identity, rigor, version check, repo rules file); its 'Never add a key, a token, an https remote' line is an auth rule the reader lacks but sits inside the herd skill."
+  },
+  {
+   "id": "u27",
+   "bucket": "dropped",
+   "why": "Only a placeholder ({{SETUP}}, {{WORKDIR}}) that pair show fills in; no instruction of its own."
+  },
+  {
+   "id": "u28",
+   "bucket": "conflict",
+   "why": "Tells the reviewer it 'may send your own swarm of read-only `claude-haiku-5-5` subagents', naming a model on the dispatch, which breaks examples/reader/rules/engineering.md rule 6 ('Do not override it on the dispatch call'); the rest of the review procedure is sound."
+  },
+  {
+   "id": "u29",
+   "bucket": "install-skill",
+   "why": "Reviewer limits (binding verdict, no edits to the worker's code, queue-for-yourself, 'Never use `--force`'); consistent with the reader and absent from it."
+  },
+  {
+   "id": "u30",
+   "bucket": "install-skill",
+   "why": "Rules for who started the reviewer and how it stops; herd skill content."
+  },
+  {
+   "id": "u31",
+   "bucket": "install-skill",
+   "why": "Reviewer's rigor-build checklist ('Cite every claim you accept', 'Name the failure you fear'); extends the reader's test rule and is not in force."
+  },
+  {
+   "id": "u32",
+   "bucket": "conflict",
+   "why": "Tells the worker to 'Send 3 or 4 subagents on `claude-haiku-5-5`' and later 'three subagents on `claude-haiku-5-5`', setting the model on each dispatch against examples/reader/rules/engineering.md rule 6; its commit-subject example ('pairs.md: the nested-thread sentence reworded') is also not the imperative form of rule 7."
+  },
+  {
+   "id": "u33",
+   "bucket": "install-skill",
+   "why": "Worker's rigor-build rules (raw output in the done note, 'Blocked is a real answer'); the five coding rules inside repeat the reader's reuse, root-cause and debt rules but the unit as a whole adds more."
+  },
+  {
+   "id": "u34",
+   "bucket": "install-skill",
+   "why": "Section that handles a refused Antigravity or cloud launch (owner-paste, 'never add it yourself'); part of the herd skill."
+  },
+  {
+   "id": "u35",
+   "bucket": "install-skill",
+   "why": "Orchestrator's run-end procedure (supervisor inbox, introspection, retrospection, footer line); herd skill content using the plugin's tools."
+  },
+  {
+   "id": "u36",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u37",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u38",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u39",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u40",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u41",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u42",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u43",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u44",
+   "bucket": "dropped",
+   "why": "Voice and persona text of the herder skill (cat names, treat bag, kittens), not a working rule."
+  },
+  {
+   "id": "u45",
+   "bucket": "install-skill",
+   "why": "Core of the queue skill: finding meow, repo rules file, who, session ids, field trip pointer; no reader rule covers a work queue."
+  },
+  {
+   "id": "u46",
+   "bucket": "conflict",
+   "why": "Grooming step 3 says 'Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers', choosing the model at dispatch against examples/reader/rules/engineering.md rule 6 ('Do not override it on the dispatch call')."
+  },
+  {
+   "id": "u47",
+   "bucket": "install-skill",
+   "why": "Queue skill's Overheard block and 'For you:' line for relaying another session's words; no reader counterpart."
+  },
+  {
+   "id": "u48",
+   "bucket": "dropped",
+   "why": "One example ledger line ('remote') used as a sample in the skill, not an instruction."
+  },
+  {
+   "id": "u49",
+   "bucket": "install-skill",
+   "why": "Queue skill's 'Staying reasonable': every question on the ledger, ledger ends the reply, a skipped question is 'unread, not answered'; reader has nothing like it."
+  },
+  {
+   "id": "u50",
+   "bucket": "install-skill",
+   "why": "Asks section of the queue skill: numbered ask blocks stored with meow asks; reader lacks it."
+  },
+  {
+   "id": "u51",
+   "bucket": "install-skill",
+   "why": "Field Trip phone rules and 'Never act on a guessed reading of an irreversible command', in the queue skill; agrees with the reader's safety rules and adds more."
+  },
+  {
+   "id": "u52",
+   "bucket": "install-skill",
+   "why": "Queue setup procedure (three questions, private placement, 'never push the code yourself without the owner's word'); queue skill content."
+  },
+  {
+   "id": "u53",
+   "bucket": "dropped",
+   "why": "Thin command that points at the queue/capture skill's 'My asks'; judged in u50."
+  },
+  {
+   "id": "u54",
+   "bucket": "dropped",
+   "why": "Thin command that runs meow status board; wraps the herd skill."
+  },
+  {
+   "id": "u55",
+   "bucket": "dropped",
+   "why": "Thin command that points at the queue skill's grooming; the model-choice conflict is judged in u46."
+  },
+  {
+   "id": "u56",
+   "bucket": "dropped",
+   "why": "Thin command that points at the herd skill's hike."
+  },
+  {
+   "id": "u57",
+   "bucket": "install-skill",
+   "why": "The /meow command runs one meow call with every word single-quoted ('Nothing else goes on the line'), a safe passthrough that works as shipped and that no reader rule does."
+  },
+  {
+   "id": "u58",
+   "bucket": "dropped",
+   "why": "Thin command that points at the queue skill's 'what's next'."
+  },
+  {
+   "id": "u59",
+   "bucket": "dropped",
+   "why": "Thin command that points at the capture skill's 'queue that'."
+  },
+  {
+   "id": "u60",
+   "bucket": "dropped",
+   "why": "Thin command that points at the capture skill's prompt me."
+  },
+  {
+   "id": "u61",
+   "bucket": "dropped",
+   "why": "Thin command that points at the capture skill's rescue session."
+  },
+  {
+   "id": "u62",
+   "bucket": "dropped",
+   "why": "Thin command that runs meow show --md; wraps the queue skill."
+  },
+  {
+   "id": "u63",
+   "bucket": "dropped",
+   "why": "Thin command that runs meow status; wraps the herd skill."
+  },
+  {
+   "id": "u64",
+   "bucket": "dropped",
+   "why": "Thin command that points at the herd skill's timeline."
+  }
+ ]
+}

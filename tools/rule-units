@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""rule-units DOSSIER OUT: number the target's rule units, so every vet run judges the same items.
+
+A unit is one section of one instruction file the dossier carries for the target: each skill, its companion files
+(roles, sections), each command, agent and rule file, split at its #, ## and ### headings. Frontmatter is left out,
+so the skill's description is in no unit (the judge reads it in the dossier), and a section with no text under its heading is skipped.
+Writes OUT as {"units": [{"id": "u1", "file": ..., "heading": ..., "chars": N, "text": ...}, ...]} and prints the
+count. Part of the units prototype (verdict-prototype-units); SKILL.md does not know about it yet.
+"""
+import json, re, sys
+
+HEADING = re.compile(r"^(#{1,3}) +(.+?)\s*$")
+
+
+def sections(text):
+    text = re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S)
+    heading, body, fence = "(top)", [], False
+    for line in text.split("\n"):
+        if line.lstrip().startswith("```"):
+            fence = not fence
+        m = None if fence else HEADING.match(line)
+        if m:
+            yield heading, "\n".join(body).strip()
+            heading, body = m.group(2), []
+        else:
+            body.append(line)
+    yield heading, "\n".join(body).strip()
+
+
+def files(target):
+    for kind in ("skills", "commands", "agents", "rule_files"):
+        for item in target.get(kind) or []:
+            if item.get("text"):
+                yield item.get("source") or item.get("path"), item["text"]
+            companions = item.get("companion_files") or []
+            if isinstance(companions, str):
+                companions = []
+            for c in companions:
+                if c.get("text"):
+                    yield c.get("path"), c["text"]
+
+
+def main():
+    if len(sys.argv) != 3:
+        sys.exit("usage: rule-units DOSSIER OUT")
+    target = json.load(open(sys.argv[1], encoding="utf-8"))["target"]
+    units = []
+    for source, text in files(target):
+        for heading, body in sections(text):
+            if body:
+                units.append({"id": f"u{len(units) + 1}", "file": source, "heading": heading, "chars": len(body), "text": body})
+    json.dump({"units": units}, open(sys.argv[2], "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    print(f"{len(units)} units, {sum(u['chars'] for u in units)} chars")
+
+
+if __name__ == "__main__":
+    main()

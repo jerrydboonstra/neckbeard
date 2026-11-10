@@ -1,0 +1,27 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+33 units, 95547 chars
+3 candidates from 3 passes (0 dropped)
+vet: units: 2 of 3 candidates confirmed
+**Verdict: 🟧 INSTALL WITH CHANGES.** This is the verdict `units-verdict` computed, and I agree with it. The report is at `run-2.md` in the run folder, and the answers file is `run-2.answers.json` beside it.
+
+**Counts: conflicts 2 / covered 2 / new standing 4 / new skill 0 / dropped 9.** The 24 other units are skill sections kept as shipped.
+
+- **Conflicts:** u16 (reviewer "Limits") and u19 (worker role) let a retry of a refused action happen "on its own judgement". That collides with `examples/reader/rules/safety.md` rule 1, which bars destructive actions without a go-ahead. The report asks the plugin for a limit: retry only if the action is not destructive and the owner has not approved it.
+- **Covered:** u28 (`safety.md` rule 5) and u29 (`engineering.md` rule 4).
+- **New standing rules to copy:**
+  - u15: keep a refactor apart from a behaviour change.
+  - u18: check whether a test or criterion was loosened to make a test pass.
+  - u20: never simplify away validation, data-loss handling or security measures.
+  - u32: a question the owner skipped is unread, not answered.
+- **Dropped:** u21 to u27 (the herder skill's cat voice), u31 (a sample ledger line) and u33 (the `/meow` wrapper).
+- **Cost:** nothing is injected at session start. The three hooks fire only after a compaction or at session end, and none reaches subagents. I found no refused reads.
+
+The merge step confirmed 2 of the 3 candidate conflicts. The third (u20, the `# debt:` fallback) was not confirmed, so it is not in the report.
+
+The report has no em dashes. I reread it, and each count matches its grid.
+
+## Memory proposals
+None.
+vet: units: measurements/2026-10-16-units-confirm/0403/run-2.answers.json: INSTALL WITH CHANGES; skills kept 24 of 33; units with a conflict 2; rules 4 / 0 / 2 / 27  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 6 find and confirm calls, $1.35, 70 s of call time; whole vet 147 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0403/run-2.md (judge: own)

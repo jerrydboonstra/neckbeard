@@ -1,0 +1,452 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "new-skill-text",
+   "quote": "Give each claim one verdict word: BACKED, UNTESTED, CONTRADICTED, UNTESTABLE",
+   "why": "A one-shot procedure for auditing a doc's claims against code with break-the-code checks, independent of meow; worth a small skill."
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "never `pkill` or `killall` by pattern: you could stop another auditor's run. Stop a process by the pid you started.",
+   "why": "General process hygiene the reader does not state."
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u21",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u22",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u23",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u24",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`, one lens each",
+   "why": "Names a model on the subagent dispatch call, which examples/reader/rules/engineering.md rule 6 forbids (\"Do not override it on the dispatch call\"); both govern a subagent dispatch."
+  },
+  {
+   "id": "u25",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u26",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never add a key, a token, an https remote or a forwarded agent to get past it.",
+   "why": "A stop-and-report rule for failed git authentication; the reader's safety rules cover secrets in output, not this."
+  },
+  {
+   "id": "u27",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "you may send your own swarm of read-only `claude-haiku-5-5` subagents at it",
+   "why": "Names a model on the subagent dispatch, against examples/reader/rules/engineering.md rule 6 (subagents run on the model their definition pins)."
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Revert the change in your scratch copy and watch the test fail",
+   "why": "Covered by examples/reader/rules/engineering.md rule 3 (a test is not done until it has been seen to fail)."
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "conflict",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each",
+   "why": "The worker swarm and wording swarm dispatch subagents with an explicit model, against examples/reader/rules/engineering.md rule 6."
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Not in the reader's rules; the other coding rules there are covered by engineering.md rules 1, 2 and 5."
+  },
+  {
+   "id": "u34",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u35",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u36",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u37",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u38",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u39",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u40",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u41",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u42",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u43",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u44",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Persona and voice text for the cat-name voice."
+  },
+  {
+   "id": "u45",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u46",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u47",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u48",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u49",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u50",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u51",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u52",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin queue and herd mechanics; nothing general beyond the plugin tool."
+  },
+  {
+   "id": "u53",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u54",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u55",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u56",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u57",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u58",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u59",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u60",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u61",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u62",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u63",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  },
+  {
+   "id": "u64",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Slash command that only wraps a skill or the meow CLI judged elsewhere."
+  }
+ ]
+}

@@ -13,6 +13,8 @@ __pycache__/
 *.json
 !.claude-plugin/plugin.json
 !.claude-plugin/marketplace.json
+# A measurement's raw data is its evidence: the units prototype's per-run answers and unit lists.
+!measurements/**/*.json
 
 # Evaluations quote the rules they compared against, for the same reason.
 evaluations/

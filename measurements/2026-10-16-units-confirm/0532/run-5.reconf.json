@@ -1,0 +1,54 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": false,
+   "why": "The sentence gives an example of a commit message that says what changed (a short subject-style line) and does not conflict with imperative-subject, under-60-character, then-why; it does not forbid or require anything the rule governs."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, an explicit model override on the dispatch call, which the reader rule forbids because subagents should run on the model their definition pins."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence permits dispatching `claude-haiku-5-5` subagents without limit, and an explicit model on the dispatch call overrides the model the subagent definition pins, which rule 6 forbids."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence gives unlimited permission to attempt an action on the model's own judgement, which could include destructive actions the reader rule forbids without explicit go-ahead in the conversation, and it has no limit such as 'only if non-destructive'."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, which could include destructive actions (rm -rf, force-push) that the rule forbids without explicit go-ahead in the conversation."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which is an explicit model override on the dispatch call that the rule says not to make, and the sentence gives no limit that would keep it clear of that rule."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which sets the model on the dispatch call, and the reader rule forbids overriding the model a definition pins."
+  },
+  {
+   "cid": "c8",
+   "conflict": true,
+   "why": "The sentence has the model dispatch a subagent as a Haiku, which reads as choosing the model at the dispatch call, and that overrides the model the agent's definition pins, which the rule forbids."
+  },
+  {
+   "cid": "c9",
+   "conflict": false,
+   "why": "The sentence only restricts what names may appear in a commit message and says to describe what changed, which is compatible with an imperative subject under 60 characters followed by why, and it neither forbids nor requires anything the reader rule governs."
+  },
+  {
+   "cid": "c10",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on the cheapest capable model, which overrides the model a subagent's definition pins, and the rule forbids overriding it on the dispatch call."
+  }
+ ]
+}

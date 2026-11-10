@@ -1,0 +1,278 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture skill intro and command lookup; all meow mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Its splitting rule says the scope asked for stays the deliverable, which examples/reader/rules/engineering.md rule 4 already states; the rest is meow mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "",
+   "why": "Work found along the way is captured, not done inline: examples/reader/rules/engineering.md rule 4 (scope asked is the deliverable) covers the general rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue session procedure works only through meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode is about reply style around the queue, tied to meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Pair, hike and launcher orchestration through meow; no general rule beyond the tool.",
+   "conflicts": []
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "One-sentence intro to the handoff steps.",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff steps through meow herd handoff.",
+   "conflicts": []
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Handoff confirm steps through meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "New-session handoff steps and branch naming tied to the roster.",
+   "conflicts": []
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps.",
+   "conflicts": []
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role header and meow lookup.",
+   "conflicts": []
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup template.",
+   "conflicts": []
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding",
+   "why": "Keeping a refactor apart from a behaviour change is a general working rule the reader does not state; the test-fails-without-change check is already engineering.md rule 3.",
+   "conflicts": []
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "name exactly what it covers (the item, the commit, the wording) and say when the owner gave it. It lapses when what it covers changes.",
+   "why": "An owner's go-ahead is scoped to what it named and lapses when that changes; the reader's safety.md asks for a go-ahead but does not scope it.",
+   "conflicts": [
+    {
+     "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation: deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.\""
+    }
+   ]
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Stopping and retiring a reviewer session through meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "was a criterion, a test or a threshold changed to make it pass?",
+   "why": "Reading the test diff for a relaxed criterion is a general review rule the reader lacks.",
+   "conflicts": []
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "attack it yourself first. A reviewer doesn't replace that.",
+   "why": "Self-review before hand-off is general; the rest of the worker flow is meow mechanics.",
+   "conflicts": [
+    {
+     "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+     "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation: deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.\""
+    }
+   ]
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "The reader has no rule protecting validation and error handling from simplification; the other four coding rules are covered by engineering.md rules 1, 2 and 5.",
+   "conflicts": []
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat Herder voice and persona text.",
+   "conflicts": []
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue setup and lookup through meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Its premise moved, or it's bigger now: don't build the old version.",
+   "why": "Re-reading a stale brief against later commits before starting is general; the reader's rule 4 on scope does not cover a brief that went stale.",
+   "conflicts": []
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard-block format for relaying sessions, tied to the herd.",
+   "conflicts": []
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Only an example ledger entry; describes something judged elsewhere.",
+   "conflicts": []
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A question the owner skipped is unread, not answered.",
+   "why": "Silence is never a yes; the reader's safety.md rule 5 says to ask but not what to do when the question goes unanswered.",
+   "conflicts": []
+  },
+  {
+   "id": "u33",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Thin wrapper that runs meow; wraps something judged elsewhere.",
+   "conflicts": []
+  }
+ ]
+}

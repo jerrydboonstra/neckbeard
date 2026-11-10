@@ -1,0 +1,54 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": false,
+   "why": "The sentence only says what the commit message should describe (what changed, not names) and does not contradict the imperative-subject, under-60-characters, then-why format, so it is not forbidden by or opposed to the rule."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, an explicit model override on the dispatch call, which rule 6 forbids whenever the subagent definition pins a model."
+  },
+  {
+   "cid": "c3",
+   "conflict": true,
+   "why": "The sentence permits dispatching `claude-haiku-5-5` subagents without limit, which names a model on the dispatch call and so overrides the model each subagent definition pins, which the rule forbids."
+  },
+  {
+   "cid": "c4",
+   "conflict": true,
+   "why": "The sentence grants unlimited permission to retry an action on the model's own judgement, which could include destructive actions the reader rule forbids without explicit go-ahead in the conversation, and it carries no limit such as 'only if not destructive'."
+  },
+  {
+   "cid": "c5",
+   "conflict": true,
+   "why": "The sentence lets the reviewer retry an action previously refused, on its own judgement and with no limit, so it could run a destructive action without the user's explicit go-ahead in this conversation."
+  },
+  {
+   "cid": "c6",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which overrides the model the subagent definitions pin, and rule 6 forbids overriding it on the dispatch call."
+  },
+  {
+   "cid": "c7",
+   "conflict": true,
+   "why": "The sentence dispatches subagents with an explicit model (`claude-haiku-5-5`), which overrides the model their definitions pin, and that is exactly what rule 6 forbids on the dispatch call."
+  },
+  {
+   "cid": "c8",
+   "conflict": false,
+   "why": "The sentence governs what content goes in commit messages (no agent/session/roster names), while the rule governs subject format (imperative, under 60 characters, then why), so both can be followed together and nothing is forbidden or required against the other."
+  },
+  {
+   "cid": "c9",
+   "conflict": true,
+   "why": "Specifying a Haiku checker means choosing the subagent's model at dispatch, which overrides the model its definition pins, and rule 6 forbids that override."
+  },
+  {
+   "cid": "c10",
+   "conflict": true,
+   "why": "The sentence tells the model to dispatch subagents on \"the cheapest capable model your host offers,\" which means choosing a model on the dispatch call and overriding the model each agent definition pins, as rule 6 forbids."
+  }
+ ]
+}

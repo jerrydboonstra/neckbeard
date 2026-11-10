@@ -1,0 +1,34 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+64 units, 169706 chars
+10 candidates from 3 passes (0 dropped)
+vet: units: 8 of 10 candidates confirmed
+**Verdict: 🟧 INSTALL WITH CHANGES** (the computed verdict, unchanged). The report and the answers file are written. The merge and verdict tools ran, and I checked the report's grid counts against its sections.
+
+| | count |
+|---|---|
+| conflicts (units; 8 sentences) | 5 |
+| covered | 5 |
+| new standing | 9 |
+| new skill | 2 |
+| dropped | 22 |
+
+- **Skills kept:** 42 of 64 units.
+- **Conflicts:** u24, u28, u29, u32 and u46.
+  - Four units name a model such as `claude-haiku-5-5`, or "the cheapest capable model", on a dispatch call.
+  - Two units, u29 and u32, let a session retry a refused action on its own judgement, with no limit.
+- **Covered:** u28 and u46 appear in both the conflicts and covered grids, because the two answers are judged separately.
+- **Dropped:** the herder voice units, one sample ledger entry, and the 12 command wrappers.
+
+**Hooks:** I read `lib/cat_herder/hooks.py` because the dossier couldn't trace the three hooks. SessionStart prints a short rules block only in a repo that has a queue. I did not measure the size of that block.
+
+**Stray files:** I wrote two scratch files outside the two allowed ones, `/tmp/part3.txt` and `/tmp/mk_answers.py`. I deleted both before finishing.
+
+Files are in `measurements/2026-10-16-units-confirm/0532/`:
+- run-5.md
+- run-5.answers.json
+
+## Memory proposals
+None.
+vet: units: measurements/2026-10-16-units-confirm/0532/run-5.answers.json: INSTALL WITH CHANGES; skills kept 42 of 64; units with a conflict 5; rules 9 / 2 / 5 / 48  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 13 find and confirm calls, $2.52, 135 s of call time; whole vet 234 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0532/run-5.md (judge: own)

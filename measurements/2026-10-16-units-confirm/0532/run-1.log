@@ -1,0 +1,31 @@
+vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it
+64 units, 169706 chars
+9 candidates from 3 passes (0 dropped)
+vet: units: 8 of 9 candidates confirmed
+Verdict: 🟧 INSTALL WITH CHANGES. It is the verdict `units-verdict` printed, unchanged.
+
+| Bucket | Count |
+|---|---|
+| conflicts | 5 units (8 confirmed conflicts) |
+| covered | 0 |
+| new standing | 7 units (6 distinct rules) |
+| new skill | 2 |
+| dropped | 22 |
+
+- **Kept:** 42 of the 64 sections as skills.
+- **Conflicts:** u24, u28, u29, u32 and u46. Six of the eight collide with the reader's "Subagents run on the model their definition pins" rule over a pinned `claude-haiku-5-5` or "cheapest capable model" on dispatch. The other two let a session retry a refused action on its own judgement, which runs against the reader's destructive-action stop. The unlimited retry has no limit; the report asks for "only if it isn't destructive".
+- **New standing:** the authentication-failure rule (in u26 and u32), and rules from u13, u28, u29, u31 and u33. Examples are "Silence alone is not a hang" and "Report what you observed, never the verdict".
+- **New skill:** u11 (the claim audit) and u25 (the read-only `## Report` reply).
+- **Dropped:** u36 to u44 (the cat voice), u48 (a sample ledger entry), and u53 to u64 (the commands that wrap skills).
+- **Hooks:** the three hooks (`SessionStart`, `PreCompact`, `SessionEnd`) run `bin/meow`, and the dossier could not trace what they inject. The report marks that cost as unknown.
+
+I reread the report. The numbered grid rows (5 conflicts, 9 rules to copy, 42 kept) match the counts. It has no em dashes and no local paths.
+
+I wrote one thing besides the report: `run-1.answers.json`, which `units-confirm merge` updated. The merge printed "8 of 9 candidates confirmed".
+
+Files are in measurements/2026-10-16-units-confirm/0532:
+- run-1.md
+- run-1.answers.json
+vet: units: measurements/2026-10-16-units-confirm/0532/run-1.answers.json: INSTALL WITH CHANGES; skills kept 42 of 64; units with a conflict 5; rules 7 / 2 / 0 / 55  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 12 find and confirm calls, $2.39, 137 s of call time; whole vet 161 s (the report pass is not in the dollars)
+vet: report measurements/2026-10-16-units-confirm/0532/run-1.md (judge: own)

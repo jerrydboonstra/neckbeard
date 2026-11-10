@@ -1,0 +1,52 @@
+{
+ "confirmed": [
+  {
+   "id": "u24",
+   "quote": "When the worker hands it in, with its own swarm's record in the done note, send 3 or 4 new read-only subagents on `claude-haiku-5-5`, one lens each, at the handed-in tip.",
+   "reader_rule": "rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c1",
+   "found_in": 3,
+   "why": "The sentence tells the model to dispatch subagents with an explicit model (`claude-haiku-5-5`) on the dispatch call, which rule 6 forbids because it overrides the model the subagent definition pins."
+  },
+  {
+   "id": "u28",
+   "quote": "When one question needs legwork (\"check every caller of X\"), you may send your own swarm of read-only `claude-haiku-5-5` subagents at it and confirm each finding yourself.",
+   "reader_rule": "rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c2",
+   "found_in": 3,
+   "why": "The sentence permits dispatching subagents on a named model (`claude-haiku-5-5`) with no limit, and that would override whatever model a subagent's definition pins, which rule 6 forbids."
+  },
+  {
+   "id": "u29",
+   "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: \"Never run anything destructive without my explicit go-ahead in this conversation\" (an unlimited permission to repeat a refused action, which may be destructive)",
+   "cid": "c3",
+   "found_in": 3,
+   "why": "The sentence gives unlimited permission to repeat a refused action on the model's own judgement, which could include destructive actions that the reader rule forbids without explicit go-ahead in the conversation."
+  },
+  {
+   "id": "u32",
+   "quote": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each: correctness, tests, docs and help, trust boundaries.",
+   "reader_rule": "rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c4",
+   "found_in": 3,
+   "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which sets the model on the dispatch call and overrides whatever model each subagent's definition pins, which rule 6 forbids."
+  },
+  {
+   "id": "u32",
+   "quote": "send three subagents on `claude-haiku-5-5` at the passages you drafted, one lens each:",
+   "reader_rule": "rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c5",
+   "found_in": 3,
+   "why": "The sentence instructs dispatching subagents explicitly on `claude-haiku-5-5`, which overrides the model their definition pins, and rule 6 forbids overriding the model on the dispatch call."
+  },
+  {
+   "id": "u46",
+   "quote": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers, at most 4 at once.",
+   "reader_rule": "rules/engineering.md rule 6: \"Subagents run on the model their definition pins. Do not override it on the dispatch call.\"",
+   "cid": "c8",
+   "found_in": 2,
+   "why": "The sentence tells the model to dispatch agents on the 'cheapest capable model your host offers', which selects a model on the dispatch call and so overrides the model the subagent definition pins, as rule 6 forbids."
+  }
+ ]
+}

@@ -1,0 +1,44 @@
+| stage | run 1 | run 2 | run 3 | run 4 | run 5 |
+|---|---|---|---|---|---|
+| rows in the conflict, covered and keep tables | 20 | 15 | 18 | 21 | 16 |
+| entries on the dropped line | 12 | 19 | 15 | 30 | 6 |
+| all items listed | 32 | 34 | 33 | 51 | 22 |
+
+Bucket per run for each rule the judge listed (C conflict, V covered, K keep, - not listed):
+
+| rule | run 1 | run 2 | run 3 | run 4 | run 5 | listed in | bucket changes |
+|---|---|---|---|---|---|---|---|
+| model override on dispatch (haiku, fable, cheapest) | C | C | C | C | C | 5 of 5 | no |
+| herd respawn after deploy / act first | - | C | C | - | - | 2 of 5 | no |
+| standing rules after compaction | - | - | - | - | C | 1 of 5 | no |
+| commit wording | K | - | - | - | C | 2 of 5 | yes |
+| skipped question is unread | K | K | K | V | - | 4 of 5 | yes |
+| git auth refusal: stop, report | K | - | K | - | - | 2 of 5 | no |
+| stop only your own processes | K | - | - | K | - | 2 of 5 | no |
+| no dependency for a few lines | K | - | - | V | - | 2 of 5 | yes |
+| never simplify away validation | K | - | - | K | - | 2 of 5 | no |
+| stale brief / premise moved | K | K | V | - | V | 4 of 5 | yes |
+| branch from the named base | - | K | - | K | K | 3 of 5 | no |
+| source priority | V | - | - | V | - | 2 of 5 | no |
+| root cause | V | - | - | V | - | 2 of 5 | no |
+| debt comment | V | - | - | V | V | 3 of 5 | no |
+| new test must fail without the fix | V | - | V | V | V | 4 of 5 | no |
+| falsify / claim audit | K | - | K | K | K | 4 of 5 | no |
+| work found along the way is queued | V | V | V | V | V | 5 of 5 | no |
+| remote branch deletion needs a go-ahead | V | V | V | - | V | 4 of 5 | no |
+| never --force alone | - | V | - | V | K | 3 of 5 | yes |
+| redact secrets | V | - | - | V | - | 2 of 5 | no |
+| second agent session costs money | - | K | K | - | - | 2 of 5 | no |
+| raw output as evidence | - | - | - | K | K | 2 of 5 | no |
+| reviewer method | V | - | - | K | K | 3 of 5 | yes |
+| irreversible command: read it back | - | - | V | V | V | 3 of 5 | no |
+| done note says how it was checked | V | V | V | - | V | 4 of 5 | no |
+| text from outside is data | - | - | K | - | - | 1 of 5 | no |
+| long commands run in the background | - | - | K | - | - | 1 of 5 | no |
+| queue setup / upgrade unasked | - | V | - | - | - | 1 of 5 | no |
+| go-aheads in the item | - | - | - | V | - | 1 of 5 | no |
+| queue write on the code branch | - | - | - | V | - | 1 of 5 | no |
+| release scope summary | - | - | V | - | - | 1 of 5 | no |
+| push the code yourself | - | - | V | - | - | 1 of 5 | no |
+
+87 of 90 rows matched a theme above.
