@@ -28,36 +28,68 @@ Field (under target) -> label (card), the section whose read_status gives its st
 
 A hooks section read with injected_content null and an injected_content_note prints the note as not read, never none.
 An entry with `refused`, or with bytes and text both None, prints `<name>: not read`. Notes are cleaned before they
-print: a hook command in one becomes its script (script_of), any other absolute path its basename."""
+print: a hook command in one becomes its script (script_of), any other absolute or ~ path its basename. Every string
+taken from the dossier is put on one line, cut at 200 characters (400 for a note), and has absolute and ~ paths cut to their
+basenames, so a target cannot forge a heading, a verdict line or a table row, or put a path in the report."""
 import json, os, re, shlex, sys
 from urllib.parse import urlsplit
 
 INTERPRETERS = {"bash", "sh", "zsh", "python", "python3", "node", "uv", "uvx", "npx", "deno"}
 FOOTER = ('Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; '
           'where the inventory fell back to a character count, "bytes" counts characters.')
-ABS_PATH = re.compile(r"(?<![\w/.~$}])/[\w.@+-]+(?:/[\w.@+-]+)+")
+ABS_PATH = re.compile(r"(?:~|\$HOME|\$\{HOME\})(?:/[\w.@+-]+)+|(?<![\w/.~$}])/[\w.@+-]+(?:/[\w.@+-]+)+")
+ENV_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+INLINE_CODE = {"-c", "-e", "-p", "--eval", "--print"}
+SCRIPT_LIKE = re.compile(r"/|\.(?:sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|php)$")
+HOME_FORMS = ("~", "$HOME", "${HOME}")
+
+
+def safe(text, root="", cap=200):
+    """A string from the dossier as printed: one line, absolute and ~ paths cut to their basenames, cut at CAP characters."""
+    text = "" if text is None else str(text)
+    text = re.sub(r"[\x00-\x1f\x7f\s]+", " ", text).strip()
+    if root:
+        text = text.replace(root.rstrip("/") + "/", "")
+    text = ABS_PATH.sub(lambda m: os.path.basename(m.group(0)), text)
+    return text if len(text) <= cap else text[: cap - 1] + "\u2026"
+
+
+def words(command):
+    """The command's words with any leading NAME=value assignments dropped, or None if it does not parse."""
+    try:
+        toks = shlex.split(command) if isinstance(command, str) else None
+    except ValueError:
+        return None
+    while toks and ENV_ASSIGN.match(toks[0]):
+        toks = toks[1:]
+    return toks or None
 
 
 def script_of(command, root=""):
-    """The script a hook command runs, with no arguments: skip an interpreter to its next non-flag token, strip
-    ${CLAUDE_PLUGIN_ROOT}/ or the target path, print what is still absolute as its basename."""
-    try:
-        toks = shlex.split(command) if isinstance(command, str) else []
-    except ValueError:
-        return "<unparsed command>"
+    """The script a hook command runs, with no arguments: drop NAME=value prefixes; skip an interpreter to the next token
+    that looks like a script (a path or a known extension), and give up (<unparsed command>) on inline code (-c, -e) or
+    when none does; strip ${CLAUDE_PLUGIN_ROOT}/ or the target path; print what is still absolute or ~ as its basename."""
+    toks = words(command)
     if not toks:
         return "<unparsed command>"
     tok = toks[0]
     if os.path.basename(tok) in INTERPRETERS:
-        rest = [t for t in toks[1:] if not t.startswith("-")]
-        if not rest:
+        if len(toks) == 1:
             return os.path.basename(tok)
-        tok = rest[0]
+        tok = None
+        for t in toks[1:]:
+            if t in INLINE_CODE:
+                return "<unparsed command>"
+            if not t.startswith("-") and SCRIPT_LIKE.search(t):
+                tok = t
+                break
+        if tok is None:
+            return "<unparsed command>"
     for prefix in ("${CLAUDE_PLUGIN_ROOT}/", "$CLAUDE_PLUGIN_ROOT/", root.rstrip("/") + "/" if root else None):
         if prefix and tok.startswith(prefix):
             tok = tok[len(prefix):]
             break
-    return os.path.basename(tok) if tok.startswith("/") else tok
+    return safe(os.path.basename(tok) if tok.startswith("/") or tok.split("/")[0] in HOME_FORMS else tok)
 
 
 def clean_note(note, root=""):
@@ -71,10 +103,7 @@ def clean_note(note, root=""):
             e = re.match(r"^([A-Z][A-Za-z]+): (.*)$", it, re.S)
             fixed.append(f"{e.group(1)}: {script_of(e.group(2), root)}" if e else it)
         note = m.group(1) + "; ".join(fixed)
-    note = str(note).replace("\n", " ")
-    if root:
-        note = note.replace(root.rstrip("/") + "/", "")
-    return ABS_PATH.sub(lambda m: os.path.basename(m.group(0)), note)
+    return safe(note, root, 400)
 
 
 def toks(n):
@@ -89,6 +118,8 @@ def block(label, section, entries, root, tail=()):
         return [f"- {label}: not applicable"]
     if state == "failed":
         return [f"- {label}: not read" + (": " + "; ".join(notes) if notes else "")]
+    if state not in ("read", "partial"):
+        return [f"- {label}: not read: unknown state {safe(state)}"]
     entries = sorted(entries)
     if state == "partial":
         return ([f"- {label}: partly read"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail]
@@ -98,76 +129,102 @@ def block(label, section, entries, root, tail=()):
     return [f"- {label}:"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail]
 
 
-def name_of(e):
-    return e.get("name") or os.path.basename(e.get("source") or e.get("path") or "") or "(unnamed)"
+def as_list(v):
+    return v if isinstance(v, list) else []
+
+
+def name_of(e, root=""):
+    if not isinstance(e, dict):
+        return "(unreadable entry)"
+    return safe(e.get("name") or os.path.basename(str(e.get("source") or e.get("path") or "")) or "(unnamed)", root)
 
 
 def unread(e):
-    return bool(e.get("refused")) or (e.get("bytes") is None and e.get("text") is None)
+    return not isinstance(e, dict) or bool(e.get("refused")) or e.get("bytes") is None
 
 
-def not_read(e):
-    return f"{name_of(e)}: not read" + (f": {e['refused']}" if e.get("refused") else "")
+def not_read(e, root=""):
+    return f"{name_of(e, root)}: not read" + (f": {safe(e['refused'], root)}" if isinstance(e, dict) and e.get("refused") else "")
+
+
+def first_word(command):
+    """An MCP server command's first word (its program), or 'command' when it has none."""
+    w = words(command)
+    return safe(os.path.basename(w[0])) if w else "command"
 
 
 def render(d, commit):
     t = d["target"]
-    root = t.get("path") or ""
+    root = t.get("path") if isinstance(t.get("path"), str) else ""
     rs = t["read_status"]
-    sec = lambda name: (rs.get(name, {}).get("state", "failed"),
-                        rs.get(name, {}).get("notes") or (["no read_status for this section"] if name not in rs else []))
+    sec = lambda name: (rs[name].get("state") if isinstance(rs.get(name), dict) else "failed",
+                        as_list(rs[name].get("notes")) if isinstance(rs.get(name), dict) else ["no read_status for this section"])
     capped = lambda e: " (read capped)" if e.get("truncated") else ""
     hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
 
     skills = []
-    for s in t.get("skills") or []:
+    for s in as_list(t.get("skills")):
         if unread(s):
-            skills.append(not_read(s))
+            skills.append(not_read(s, root))
         else:
-            b = s["bytes"] if s.get("bytes") is not None else 0
-            skills.append(f"{name_of(s)}: description every session ({len(s.get('description') or '')} chars); "
-                          f"the file on demand ({toks(b)}){capped(s)}")
+            skills.append(f"{name_of(s, root)}: description every session ({len(str(s.get('description') or ''))} chars); "
+                          f"the file on demand ({toks(s['bytes'])}){capped(s)}")
     rules = []
-    for r in t.get("rule_files") or []:
-        p = r.get("path") or ""
+    for r in as_list(t.get("rule_files")):
+        if unread(r):
+            rules.append(not_read(r, root))
+            continue
+        p = str(r.get("path") or "")
         rel = os.path.basename(p) if t.get("kind") == "rule-file" or not root or not p.startswith(root.rstrip("/") + "/") else os.path.relpath(p, root)
-        rules.append(not_read(r) if unread(r) else f"{rel or name_of(r)}: every session ({toks(r['bytes'])}){capped(r)}")
-    injected = [f"{i['file']}: {toks(i['bytes'])}" for i in hooks.get("injected_content") or [] if i.get("bytes") is not None]
+        rules.append(f"{safe(rel) or name_of(r, root)}: every session ({toks(r['bytes'])}){capped(r)}")
+    injected = [f"{safe(i.get('file'), root)}: {toks(i['bytes'])}" for i in as_list(hooks.get("injected_content"))
+                if isinstance(i, dict) and isinstance(i.get("bytes"), int)]
     hsec = sec("hooks")
     if hsec[0] == "read" and hooks.get("injected_content") is None and hooks.get("injected_content_note"):
         hsec = ("failed", [hooks["injected_content_note"]])
     events = []
-    for event, cmds in (hooks.get("events") or {}).items():
-        for c in cmds if isinstance(cmds, list) else []:
+    ev = hooks.get("events")
+    for event, cmds in (ev.items() if isinstance(ev, dict) else []):
+        for c in as_list(cmds):
             m = c.get("matcher") if isinstance(c, dict) else None
-            events.append(f"{event}{f' ({m})' if m else ''}: {script_of(c.get('command') if isinstance(c, dict) else None, root)}")
+            events.append(f"{safe(event)}{f' ({safe(m)})' if m else ''}: {script_of(c.get('command') if isinstance(c, dict) else None, root)}")
     reach = hooks.get("hooks_reach_subagents")
     basis = hooks.get("hooks_reach_subagents_basis")
-    reach_line = "reaches subagents: " + ("unknown" if reach is None else json.dumps(reach) + (f" ({basis})" if basis else ""))
-    agents = [not_read(a) if unread(a) else name_of(a) for a in t.get("agents") or []]
-    commands = [not_read(c) if unread(c) else name_of(c) for c in t.get("commands") or []]
-    persist = [p if isinstance(p, str) else str(p.get("path") or p.get("file") or p) for p in t.get("persistence_candidates") or []]
-    persist = [os.path.basename(p) if p.startswith("/") and not (root and p.startswith(root.rstrip("/") + "/")) else p[len(root.rstrip("/")) + 1:] if root and p.startswith(root.rstrip("/") + "/") else p for p in persist]
+    reach_line = "reaches subagents: " + ("unknown" if reach is None else safe(json.dumps(reach)) + (f" ({safe(basis)})" if basis else ""))
+    agents = [not_read(a, root) if unread(a) else name_of(a, root) for a in as_list(t.get("agents"))]
+    commands = [not_read(c, root) if unread(c) else name_of(c, root) for c in as_list(t.get("commands"))]
+    persist = [safe(p if isinstance(p, str) else p.get("path") or p.get("file") if isinstance(p, dict) else "(unreadable entry)", root) or "(unnamed)"
+               for p in as_list(t.get("persistence_candidates"))]
     servers = []
-    for s in ((t.get("mcp_servers") or {}).get("servers") or []):
+    mcp = t.get("mcp_servers") if isinstance(t.get("mcp_servers"), dict) else {}
+    for s in as_list(mcp.get("servers")):
+        if not isinstance(s, dict):
+            servers.append("(unreadable entry)")
+            continue
         how = ""
-        if s.get("url"):
-            u = urlsplit(s["url"])
-            how = f"{u.scheme}://{u.hostname}" if u.scheme and u.hostname else "url"
+        url = s.get("url")
+        if url:
+            try:
+                u = urlsplit(url) if isinstance(url, str) else None
+                host = u.hostname if u else None
+            except ValueError:
+                u = host = None
+            how = f"{safe(u.scheme)}://{safe(host)}" if u and u.scheme and host else "url"
         elif s.get("command"):
-            how = os.path.basename(shlex.split(s["command"])[0]) if _splits(s["command"]) else "command"
-        servers.append(f"{name_of(s)} ({', '.join(x for x in (s.get('transport'), how) if x)})")
+            how = first_word(s["command"])
+        servers.append(f"{name_of(s, root)} ({', '.join(x for x in (safe(s.get('transport')), how) if x)})")
     pj = t.get("plugin_json") if isinstance(t.get("plugin_json"), dict) else {}
-    kind = t.get("kind") or "unknown"
+    kind = safe(t.get("kind")) or "unknown"
+    rf = as_list(t.get("rule_files"))
     if pj.get("name"):
-        name = f"{pj['name']} (from plugin.json)"
-    elif kind == "rule-file" and t.get("rule_files"):
-        name = os.path.basename(t["rule_files"][0].get("path") or "") or name_of(t["rule_files"][0])
+        name = f"{safe(pj['name'], root)} (from plugin.json)"
+    elif kind == "rule-file" and rf and isinstance(rf[0], dict):
+        name = safe(os.path.basename(str(rf[0].get("path") or ""))) or name_of(rf[0], root)
     else:
-        name = os.path.basename(root.rstrip("/")) or "unknown"
-    version = f"{pj['version']} (from plugin.json)" if pj.get("version") else "no version"
+        name = safe(os.path.basename(root.rstrip("/"))) or "unknown"
+    version = f"{safe(pj['version'], root)} (from plugin.json)" if pj.get("version") else "no version"
     mk = t.get("marketplace")
-    mk_entries = [str(mk.get("name") or "(unnamed)")] if isinstance(mk, dict) and mk else []
+    mk_entries = [safe(mk.get("name") or "(unnamed)", root)] if isinstance(mk, dict) and mk else []
 
     out = ["## What it adds", "", "### Injects"]
     out += block("Skills", sec("skills"), skills, root)
@@ -180,15 +237,8 @@ def render(d, commit):
     out += ["", "### Source", f"- Kind: {kind}", f"- Name: {name}", f"- Version: {version}"]
     out += block("plugin.json", sec("plugin_json"), ["name and version, shown above"] if pj else [], root)
     out += block("Marketplace", sec("marketplace"), mk_entries, root)
-    out += [f"- Commit: {commit or 'commit not given'}", "", FOOTER]
+    out += [f"- Commit: {safe(commit) if commit else 'commit not given'}", "", FOOTER]
     return "\n".join(out) + "\n"
-
-
-def _splits(command):
-    try:
-        return bool(shlex.split(command))
-    except ValueError:
-        return False
 
 
 def main(argv):
@@ -213,7 +263,12 @@ def main(argv):
     if not isinstance(t, dict) or not isinstance(t.get("read_status"), dict):
         print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
         return 2
-    sys.stdout.write(render(d, commit))
+    try:
+        text = render(d, commit)
+    except Exception as e:   # a dossier shape this tool does not know: fail, and vet stops, rather than print a card that may be wrong
+        print(f"part1: could not render this dossier ({type(e).__name__}: {safe(e, cap=200)})", file=sys.stderr)
+        return 2
+    sys.stdout.write(text)
     return 0
 
 

@@ -180,20 +180,26 @@ chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")
 chk("part1: with no git commit the section says commit not given", "Commit: commit not given" in r["text"], True)
-# a copy of vet whose tools/part1 fails: the vet dies, says so, and shows part1's own message
-fake = tempfile.mkdtemp()
-try:
-    os.makedirs(os.path.join(fake, "tools"))
-    shutil.copy(VET, os.path.join(fake, "tools", "vet"))
-    for link in ("skills", "examples", ".claude-plugin"):
-        os.symlink(os.path.join(NB, link), os.path.join(fake, link))
-    open(os.path.join(fake, "tools", "part1"), "w").write("#!/bin/sh\necho 'part1: cannot read a dossier' >&2\nexit 2\n")
-    os.chmod(os.path.join(fake, "tools", "part1"), 0o755)
-    r = run("part1-fails", vet=os.path.join(fake, "tools", "vet"))
-finally:
-    shutil.rmtree(fake)
+# a copy of vet with a tools/part1 that fails, or that prints a heading of its own: vet dies and says so
+def vet_with_part1(script):
+    fake = tempfile.mkdtemp()
+    try:
+        os.makedirs(os.path.join(fake, "tools"))
+        shutil.copy(VET, os.path.join(fake, "tools", "vet"))
+        for link in ("skills", "examples", ".claude-plugin"):
+            os.symlink(os.path.join(NB, link), os.path.join(fake, link))
+        open(os.path.join(fake, "tools", "part1"), "w").write(script)
+        os.chmod(os.path.join(fake, "tools", "part1"), 0o755)
+        return run("part1-fake", vet=os.path.join(fake, "tools", "vet"))
+    finally:
+        shutil.rmtree(fake)
+
+
+r = vet_with_part1("#!/bin/sh\necho 'part1: cannot read a dossier' >&2\nexit 2\n")
 chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
     (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
+r = vet_with_part1("#!/bin/sh\nprintf '## What it adds\\n\\n## \\342\\232\\241 At a glance\\n'\n")
+chk("part1: a section that holds the At a glance heading itself fails vet", (r["rc"], "At a glance" in r["out"]), (1, True))
 r = run("part1-missing-heading", report="noglance")
 chk("part1: a report with no At a glance heading fails vet, and the message names it", (r["rc"], "At a glance" in r["out"]), (1, True))
 

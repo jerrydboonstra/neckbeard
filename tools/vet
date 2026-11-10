@@ -53,6 +53,8 @@ text = open(sys.argv[1], encoding="utf-8").read()
 if ("\n" + text).count("\n" + glance) != 1:
     sys.exit(1)
 text = ("\n" + text).replace("\n" + glance, "\n" + open(sys.argv[2], encoding="utf-8").read() + "\n" + glance, 1)[1:]
+if ("\n" + text).count("\n" + glance) != 1:   # the section must not hold the heading itself
+    sys.exit(1)
 open(sys.argv[1], "w", encoding="utf-8").write(text)
 PYEOF
 }
