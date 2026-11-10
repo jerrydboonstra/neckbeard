@@ -39,11 +39,12 @@ FOOTER = ('Load timing is how Claude Code loads skills, not measured here. Token
           'where the inventory fell back to a character count, "bytes" counts characters.')
 ABS_PATH = re.compile(r"(?:~|\$HOME|\$\{HOME\})(?:/[\w.@+-]+)+|(?<![\w/.~$}])/[\w.@+-]+(?:/[\w.@+-]+)+")
 ENV_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+MAX_COMMAND = 4000   # characters of a hook command that script_of will parse
 INLINE_CODE = {"-c", "-e", "-p", "--eval", "--print", "--command"}
 INLINE_LETTERS = set("cep")   # a short-flag cluster such as -lc, -ec, -xc, -Bc carries inline code when it holds one of these
 SCRIPT_LIKE = re.compile(r"/|\.(?:sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|php)$")
 HOME_FORMS = ("~", "$HOME", "${HOME}")
-SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*$")   # what a printed script may be: a name or a relative path
+SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")   # what a printed script may be: a name or a relative path
 
 
 def expand_plugin_root(s, plugin_root):
@@ -68,9 +69,8 @@ def expand_plugin_root(s, plugin_root):
         if j < 0:
             break
         k = j + len(head)
-        rest = s[k:]
-        op = next((o for o in (":-", ":=", ":?", "-", "=", "?") if rest.startswith(o)), None)
-        if not rest.startswith("}") and op is None:
+        op = next((o for o in (":-", ":=", ":?", "-", "=", "?") if s.startswith(o, k)), None)   # in place: slicing the rest of a long command per reference is quadratic
+        if not s.startswith("}", k) and op is None:
             out.append(s[i:k])
             i = k
             continue
@@ -129,6 +129,8 @@ def script_of(command, root=""):
     """The script a hook command runs, with no arguments: drop NAME=value prefixes; skip an interpreter to the next token
     that looks like a script (a path or a known extension), and give up (<unparsed command>) on inline code (-c, -e, or a
     cluster such as -lc), when none does, or when the token holds whitespace; look through env; strip ${CLAUDE_PLUGIN_ROOT}/ or the target path; print what is still absolute or ~ as its basename."""
+    if isinstance(command, str) and len(command) > MAX_COMMAND:   # shlex is slow on a huge token; no script call is this long
+        return "<unparsed command>"
     if isinstance(command, str):   # before the split, so a default word holding spaces stays one token
         command = expand_plugin_root(command, "${CLAUDE_PLUGIN_ROOT}")
     toks = words(command)
@@ -165,11 +167,11 @@ def clean_note(note, root=""):
     then the target path dropped and every other absolute path cut to its basename."""
     m = re.match(r"^(.*?\b(?:unidentifiable|unresolved) hooks: )(.*)$", str(note), re.S)
     if m:
-        items = re.split(r"; (?=[A-Z][A-Za-z]+: )", m.group(2))
+        items = re.split(r"; (?=\w+: )", m.group(2))
         fixed = []
         for it in items:
-            e = re.match(r"^([A-Z][A-Za-z]+): (.*)$", it, re.S)
-            fixed.append(f"{e.group(1)}: {script_of(e.group(2), root)}" if e else it)
+            e = re.match(r"^(\w+): (.*)$", it, re.S)
+            fixed.append(f"{e.group(1)}: {script_of(e.group(2), root)}" if e else "<unparsed command>")
         note = m.group(1) + "; ".join(fixed)
     return safe(note, root, 400)
 

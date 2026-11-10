@@ -249,7 +249,7 @@ import time
 slow = "${CLAUDE_PLUGIN_ROOTX" * 100000   # 2 MB, 100,000 look-alike references that are not expanded: slicing the rest of the string for each is quadratic
 p = variant("plugin-found", lambda d: d["target"]["hooks"]["events"].update(Stop=[{"matcher": None, "command": slow}]))
 t0 = time.time(); rc = render(p)[0]; took = time.time() - t0
-chk("8. a 2 MB hook command with 100,000 plugin-root look-alikes renders in under 3 seconds (no quadratic scan)", rc == 0 and took < 3, f"rc={rc} {took:.1f}s")
+chk("8. a 2 MB hook command with 100,000 plugin-root look-alikes renders in under 3 seconds (a long command is refused before shlex reads it)", rc == 0 and took < 3, f"rc={rc} {took:.1f}s")
 
 
 def load_expander(path, name):
@@ -266,6 +266,11 @@ FORMS = ["${CLAUDE_PLUGIN_ROOT}/x.sh", "$CLAUDE_PLUGIN_ROOT/x.sh", "${CLAUDE_PLU
          "${CLAUDE_PLUGIN_ROOT-w}/a", "${CLAUDE_PLUGIN_ROOT:=w}/a", "${CLAUDE_PLUGIN_ROOT=w}/a", "${CLAUDE_PLUGIN_ROOT:?w}/a", "${CLAUDE_PLUGIN_ROOT?w}/a",
          "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTX/a", "${CLAUDE_PLUGIN_ROOTX}/a", "${CLAUDE_PLUGIN_ROOT:-${A:-${B}}}/a", "${CLAUDE_PLUGIN_ROOT:-unclosed/a",
          "a ${CLAUDE_PLUGIN_ROOT}/b $CLAUDE_PLUGIN_ROOT/c", "no variable here", "${CLAUDE_PLUGIN_ROOT:-w}${CLAUDE_PLUGIN_ROOT-v}/a"]
+try:
+    t0 = time.time(); load_expander(PART1, "expand_plugin_root")("${CLAUDE_PLUGIN_ROOTX" * 100000, "ROOT"); took = time.time() - t0
+    chk("8. tools/part1's plugin-root expansion scans a 2 MB command with 100,000 look-alike references in under 2 seconds (no quadratic slicing)", took < 2, f"{took:.1f}s")
+except Exception as e:
+    chk("8. tools/part1's plugin-root expansion is fast on a long command", False, f"{type(e).__name__}: {e}")
 try:
     inv = load_expander(INVENTORY, "_expand_plugin_root")
     mine = load_expander(PART1, "expand_plugin_root")
