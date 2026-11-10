@@ -242,6 +242,10 @@ p = variant("plugin-found", lambda d: d["target"]["read_status"]["hooks"].update
 out = render(p)[1]
 chk("8. an unidentifiable_hooks item whose event name is not a plain capitalised word still prints no argument or url",
     "SECRET9" not in out and "--token" not in out and "h.example" not in out, [l for l in out.split("\n") if "unidentifiable" in l])
+p = variant("plugin-found", lambda d: d["target"]["read_status"]["hooks"].update(state="partial", notes=["hooks/hooks.json: unidentifiable hooks: ${CLAUDE_PLUGIN_ROOT}/x.sh --token SECRET9"]))
+out = render(p)[1]
+chk("8. an unidentifiable_hooks item with no event name at all prints <unparsed command>, never the command",
+    "SECRET9" not in out and "--token" not in out and "unidentifiable hooks: <unparsed command>" in out, [l for l in out.split("\n") if "unidentifiable" in l])
 p = variant("plugin-found", lambda d: d["target"]["hooks"]["events"].update(Stop=[{"matcher": None, "command": '"hooks/a.sh\n"'}]))
 got = parse(render(p)[1])
 chk("8. a quoted newline in a hook command cannot split the printed line", "  - Stop: <unparsed command>" in "\n".join("  - " + l for l in lines(got, "Hooks", "Hooks")), lines(got, "Hooks", "Hooks"))
