@@ -13,12 +13,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 INVENTORY = ROOT / "skills" / "neckbeard" / "inventory.py"
-FX = ROOT / "tools" / "fixtures" / "read-status"
+FX_SRC = ROOT / "tools" / "fixtures" / "read-status"
 SECTIONS = ["skills", "agents", "commands", "rule_files", "hooks", "mcp_servers",
             "persistence_candidates", "plugin_json", "marketplace"]
 EMPTY = tempfile.mkdtemp(prefix="read-status-empty-")
 TEMPS = [EMPTY]   # every throwaway folder, removed at exit so a run leaves none behind
 atexit.register(lambda: [shutil.rmtree(t, ignore_errors=True) for t in TEMPS])
+# The fixtures run from a copy with each <name>.fx renamed to <name>: committed as hooks.json or install.sh,
+# this repo's own inventory would find the fixtures' hooks (neckbeard inventorying itself would no longer say
+# it has none).
+FX = Path(tempfile.mkdtemp(prefix="read-status-fx-")) / "read-status"
+TEMPS.append(str(FX.parent))
+shutil.copytree(FX_SRC, FX, symlinks=True)
+for _p in sorted(FX.rglob("*.fx")):
+    _p.rename(_p.with_suffix(""))
 failures = []
 
 
@@ -100,7 +108,8 @@ for base in sorted((FX / "_baselines").glob("*.baseline.json")):
     if "_read_notes" in target:
         bad.append(f"{name}: _read_notes left in the dossier")
     text = json.dumps(target)
-    for real, mark in ((os.path.realpath(FX / name), "<ROOT>"), (os.path.realpath(FX), "<FX>")):
+    for real, mark in ((os.path.realpath(FX / name), "<ROOT>"), (str(FX / name), "<ROOT>"),
+                       (os.path.realpath(FX), "<FX>"), (str(FX), "<FX>")):   # a temp folder may be a symlinked path (macOS /var)
         text = text.replace(json.dumps(real)[1:-1], mark)
     if json.loads(text) != json.loads(base.read_text()):
         bad.append(f"{name}: a key other than read_status differs from the baseline")
@@ -109,6 +118,17 @@ for crash in ("hooks-nonstring-command", "plugin-json-list"):
     if set(rs) != set(SECTIONS):
         bad.append(f"{crash}: read_status sections {sorted(rs)}")
 check("5. every fixture with a baseline: nine sections, no _read_notes, every other key unchanged", not bad, "; ".join(bad[:4]))
+
+# neckbeard's own tree is a target too (the marketplace ships it whole): its fixtures must not change what
+# its inventory says. A hook config or install script committed under its real name here would.
+def self_inventory(tree):
+    t = dossier(tree)["target"]
+    return t.get("hooks"), json.dumps(t.get("persistence_candidates"))
+
+
+_h, _p = self_inventory(ROOT)
+check("5. this repo's own tree: no hooks, and no fixture among the persistence candidates",
+      _h == {"has_hooks": False} and "read-status" not in _p, f"{_h!r} {'read-status' in _p}")
 
 # ---------------------------------------------------------------- Done when 6: one test per site
 # add_read_status's docstring lists every site as "<id> <function> -> <section>: <what>". The ids there and the
