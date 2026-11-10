@@ -1346,6 +1346,8 @@ def inventory_target(path, plugin_name=None):
     # because the plugins that carry them were not read.
     notes = {s: [] for s in READ_SECTIONS}
     market = marketplace_listing(path, notes["marketplace"])
+    if market is not None:
+        notes["_marketplace_seen"] = True  # a plugin's dossier has no marketplace key to show it
     local = [p for p in (market or {}).get("plugins", []) if p.get("status") == "local"]
     if plugin_name is not None:
         chosen = next((p for p in local if p.get("name") == plugin_name), None)
@@ -1604,7 +1606,7 @@ def add_read_status(dossier):
     else:
         if kind == "generic-pack" and not notes["plugin_json"]:
             na.add("plugin_json")
-        if not (dossier.get("marketplace") or notes["marketplace"]):
+        if not (dossier.get("marketplace") or notes["marketplace"] or private.get("_marketplace_seen")):
             na.add("marketplace")
     status = {}
     for section in READ_SECTIONS:

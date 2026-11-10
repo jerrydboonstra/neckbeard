@@ -254,6 +254,7 @@ check("7. manifest_refused on a generic pack: plugin_json failed", *got(f / "man
 check("7. a truncated skill: skills partial", *gen_big_skill())
 check("7. malformed_entries: hooks partial", *got(f / "hooks-malformed-entry", "hooks", "partial", "hooks/hooks.json", "Stop"))
 check("7. a broken marketplace.json at a plugin root: marketplace failed", *got(f / "marketplace-root-broken", "marketplace", "failed", "marketplace.json"))
+check("7. a plugin with a valid marketplace.json at its root: marketplace read", *got(f / "plugin-with-marketplace", "marketplace", "read"))
 check("7. a generic pack with no manifest: plugin_json and marketplace not-applicable",
       all(status(f / "pack-plain").get(s, {}).get("state") == "not-applicable" for s in ("plugin_json", "marketplace")),
       repr(status(f / "pack-plain").get("plugin_json")))
