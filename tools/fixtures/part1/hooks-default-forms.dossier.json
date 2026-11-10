@@ -1,0 +1,127 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "hooks": {
+   "events": {
+    "Notification": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT:?missing}/hooks/e.sh",
+      "matcher": null
+     }
+    ],
+    "PostCompact": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT=/opt/x}/hooks/d.sh",
+      "matcher": null
+     }
+    ],
+    "PostToolUse": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT:+word}/hooks/g.sh",
+      "matcher": null
+     }
+    ],
+    "PreCompact": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT:=/opt/x}/hooks/c.sh",
+      "matcher": null
+     }
+    ],
+    "PreToolUse": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT?missing}/hooks/f.sh",
+      "matcher": null
+     }
+    ],
+    "SessionEnd": [
+     {
+      "command": "\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend",
+      "matcher": null
+     }
+    ],
+    "SessionStart": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT:-/opt/x}/hooks/a.sh",
+      "matcher": null
+     }
+    ],
+    "Stop": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOT-/opt/x}/hooks/b.sh",
+      "matcher": null
+     }
+    ],
+    "SubagentStop": [
+     {
+      "command": "bash \"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/h.sh\" arg",
+      "matcher": null
+     }
+    ],
+    "UserPromptSubmit": [
+     {
+      "command": "${CLAUDE_PLUGIN_ROOTX}/x.sh",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": true,
+   "hook_registrations": 10,
+   "hook_scripts": 10,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": null,
+   "hooks_reach_subagents_basis": null,
+   "injected_content": null
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}

@@ -165,7 +165,7 @@ chk("2. a fixture whose lists are out of order renders sorted",
 # ---------------------------------------------------------------- Done when 4: nothing private in any output
 home = os.path.expanduser("~")
 banned = ["READER-MARKER-7", "/Users/", home, "secretarg", "SECRETARG", "SECRETFLAG", "/v1/secret", "token=abc123", "ENVVALUE-9", "/proj/demo", "--flag",
-          "host.example", "TOPSECRET", "SECRETCODE", "sk-live-999", "abc123", "TOK", "pw@", "8443", "~/", "$HOME", "/secret/"]
+          "host.example", "SECRET9", "TOPSECRET", "SECRETCODE", "sk-live-999", "abc123", "TOK", "pw@", "8443", "~/", "$HOME", "/secret/"]
 bad = []
 for f in every:
     out = render(fx(f), "--commit", "feed1234")[1]
@@ -223,6 +223,65 @@ chk("4. a rule file is named by its basename", "- Name: rules.md" in render(fx("
 got = parse(render(fx("hooks-forms"))[1])
 chk("6. ${CLAUDE_PLUGIN_ROOT}/x.sh arg, bash ${CLAUDE_PLUGIN_ROOT}/x.sh and an unbalanced quote print x.sh, x.sh and <unparsed command>",
     lines(got, "Hooks", "Hooks")[:3] == ["PreToolUse: <unparsed command>", "SessionStart: x.sh", "Stop: x.sh"], lines(got, "Hooks", "Hooks"))
+
+# ---------------------------------------------------------------- hook default forms: ${CLAUDE_PLUGIN_ROOT:-word} and the rest
+got = parse(render(fx("hooks-default-forms"))[1])
+hl = {}
+for l in lines(got, "Hooks", "Hooks"):
+    m = re.match(r"^(\w+)(?: \([^)]*\))?: (.*)$", l)
+    if m and not l.startswith("reaches"):
+        hl[m.group(1)] = m.group(2)
+chk("8. Cat Herder's hook form, \"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend, prints bin/meow, not <unparsed command>", hl.get("SessionEnd") == "bin/meow", hl)
+chk("8. each default form inventory.py expands (:- - := = :? ?) prints its script; :+ and $CLAUDE_PLUGIN_ROOTX stay <unparsed command>; a quoted form after an interpreter prints its script",
+    hl == {"SessionEnd": "bin/meow", "SessionStart": "hooks/a.sh", "Stop": "hooks/b.sh", "PreCompact": "hooks/c.sh", "PostCompact": "hooks/d.sh", "Notification": "hooks/e.sh",
+           "PreToolUse": "hooks/f.sh", "PostToolUse": "<unparsed command>", "SubagentStop": "hooks/h.sh", "UserPromptSubmit": "<unparsed command>"}, hl)
+
+
+p = variant("plugin-found", lambda d: d["target"]["read_status"]["hooks"].update(state="partial", notes=[
+    "hooks/hooks.json: unidentifiable hooks: _hook: ${CLAUDE_PLUGIN_ROOT}/x.sh --token SECRET9; 9lives: curl https://h.example/p?SECRET9"]))
+out = render(p)[1]
+chk("8. an unidentifiable_hooks item whose event name is not a plain capitalised word still prints no argument or url",
+    "SECRET9" not in out and "--token" not in out and "h.example" not in out, [l for l in out.split("\n") if "unidentifiable" in l])
+p = variant("plugin-found", lambda d: d["target"]["read_status"]["hooks"].update(state="partial", notes=["hooks/hooks.json: unidentifiable hooks: ${CLAUDE_PLUGIN_ROOT}/x.sh --token SECRET9"]))
+out = render(p)[1]
+chk("8. an unidentifiable_hooks item with no event name at all prints <unparsed command>, never the command",
+    "SECRET9" not in out and "--token" not in out and "unidentifiable hooks: <unparsed command>" in out, [l for l in out.split("\n") if "unidentifiable" in l])
+p = variant("plugin-found", lambda d: d["target"]["hooks"]["events"].update(Stop=[{"matcher": None, "command": '"hooks/a.sh\n"'}]))
+got = parse(render(p)[1])
+chk("8. a quoted newline in a hook command cannot split the printed line", "  - Stop: <unparsed command>" in "\n".join("  - " + l for l in lines(got, "Hooks", "Hooks")), lines(got, "Hooks", "Hooks"))
+import time
+slow = "${CLAUDE_PLUGIN_ROOTX" * 100000   # 2 MB, 100,000 look-alike references that are not expanded: slicing the rest of the string for each is quadratic
+p = variant("plugin-found", lambda d: d["target"]["hooks"]["events"].update(Stop=[{"matcher": None, "command": slow}]))
+t0 = time.time(); rc = render(p)[0]; took = time.time() - t0
+chk("8. a 2 MB hook command with 100,000 plugin-root look-alikes renders in under 3 seconds (a long command is refused before shlex reads it)", rc == 0 and took < 3, f"rc={rc} {took:.1f}s")
+
+
+def load_expander(path, name):
+    """A function from a script, loaded by path (tools/part1 has no .py name)."""
+    import importlib.machinery, importlib.util
+    modname = "loaded_" + re.sub(r"\W", "_", os.path.basename(path))
+    loader = importlib.machinery.SourceFileLoader(modname, path)
+    mod = importlib.util.module_from_spec(importlib.util.spec_from_loader(modname, loader))
+    loader.exec_module(mod)
+    return getattr(mod, name)
+
+
+FORMS = ["${CLAUDE_PLUGIN_ROOT}/x.sh", "$CLAUDE_PLUGIN_ROOT/x.sh", "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow _hook a", "${CLAUDE_PLUGIN_ROOT:-/opt/x y}/z.sh",
+         "${CLAUDE_PLUGIN_ROOT-w}/a", "${CLAUDE_PLUGIN_ROOT:=w}/a", "${CLAUDE_PLUGIN_ROOT=w}/a", "${CLAUDE_PLUGIN_ROOT:?w}/a", "${CLAUDE_PLUGIN_ROOT?w}/a",
+         "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTX/a", "${CLAUDE_PLUGIN_ROOTX}/a", "${CLAUDE_PLUGIN_ROOT:-${A:-${B}}}/a", "${CLAUDE_PLUGIN_ROOT:-unclosed/a",
+         "a ${CLAUDE_PLUGIN_ROOT}/b $CLAUDE_PLUGIN_ROOT/c", "no variable here", "${CLAUDE_PLUGIN_ROOT:-w}${CLAUDE_PLUGIN_ROOT-v}/a"]
+try:
+    t0 = time.time(); load_expander(PART1, "expand_plugin_root")("${CLAUDE_PLUGIN_ROOTX" * 100000, "ROOT"); took = time.time() - t0
+    chk("8. tools/part1's plugin-root expansion scans a 2 MB command with 100,000 look-alike references in under 2 seconds (no quadratic slicing)", took < 2, f"{took:.1f}s")
+except Exception as e:
+    chk("8. tools/part1's plugin-root expansion is fast on a long command", False, f"{type(e).__name__}: {e}")
+try:
+    inv = load_expander(INVENTORY, "_expand_plugin_root")
+    mine = load_expander(PART1, "expand_plugin_root")
+    bad = [f for f in FORMS if inv(f, "ROOT") != mine(f, "ROOT")]
+    chk(f"8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's on {len(FORMS)} forms, :+ and ROOTX included", not bad, bad)
+except Exception as e:
+    chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's", False, f"{type(e).__name__}: {e}")
 
 # ---------------------------------------------------------------- Done when 5: the real inventory output, and no read_status
 def real_tree(root):

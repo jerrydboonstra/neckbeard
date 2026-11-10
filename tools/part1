@@ -39,11 +39,56 @@ FOOTER = ('Load timing is how Claude Code loads skills, not measured here. Token
           'where the inventory fell back to a character count, "bytes" counts characters.')
 ABS_PATH = re.compile(r"(?:~|\$HOME|\$\{HOME\})(?:/[\w.@+-]+)+|(?<![\w/.~$}])/[\w.@+-]+(?:/[\w.@+-]+)+")
 ENV_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+MAX_COMMAND = 4000   # characters of a hook command that script_of will parse
 INLINE_CODE = {"-c", "-e", "-p", "--eval", "--print", "--command"}
 INLINE_LETTERS = set("cep")   # a short-flag cluster such as -lc, -ec, -xc, -Bc carries inline code when it holds one of these
 SCRIPT_LIKE = re.compile(r"/|\.(?:sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|php)$")
 HOME_FORMS = ("~", "$HOME", "${HOME}")
-SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*$")   # what a printed script may be: a name or a relative path
+SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")   # what a printed script may be: a name or a relative path
+
+
+def expand_plugin_root(s, plugin_root):
+    """A copy of inventory.py's _expand_plugin_root, kept equal to it by tools/test_part1.py. tools/part1 passes the
+    literal ${CLAUDE_PLUGIN_ROOT} as the root, so the prefix strip in script_of then runs on every form.
+    Replace every reference to CLAUDE_PLUGIN_ROOT in a hook command with the
+    plugin root: $CLAUDE_PLUGIN_ROOT, ${CLAUDE_PLUGIN_ROOT}, and the shell's
+    default forms ${CLAUDE_PLUGIN_ROOT:-word}, ${...-word}, ${...:=word},
+    ${...=word}, ${...:?word} and ${...?word}, whose word may itself hold ${...}. Claude Code always sets the
+    variable, so each of those forms is its value and the word never runs.
+    Cat Herder writes "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow" so one
+    hook file serves several hosts; matching only the plain forms reported all
+    three of its hooks as unidentifiable. ${...:+word} (word when set) is left
+    alone: its value is the word, not the root. So is $CLAUDE_PLUGIN_ROOTX, a
+    different variable (1.14.0 and earlier expanded it, by a substring replace). The scan
+    does not read quotes, so a quoted } inside the word ends it early and the
+    hook reads as unidentifiable: an unknown, never a false all-clear."""
+    head = "${CLAUDE_PLUGIN_ROOT"
+    out, i = [], 0
+    while True:
+        j = s.find(head, i)
+        if j < 0:
+            break
+        k = j + len(head)
+        op = next((o for o in (":-", ":=", ":?", "-", "=", "?") if s.startswith(o, k)), None)   # in place: slicing the rest of a long command per reference is quadratic
+        if not s.startswith("}", k) and op is None:
+            out.append(s[i:k])
+            i = k
+            continue
+        # Find the closing brace of this ${...}, counting nested ${ ... }.
+        depth, m = 1, k
+        while m < len(s) and depth:
+            if s.startswith("${", m):
+                depth, m = depth + 1, m + 2
+                continue
+            if s[m] == "}":
+                depth -= 1
+            m += 1
+        if depth:
+            break
+        out.append(s[i:j] + plugin_root)
+        i = m
+    s = "".join(out) + s[i:]
+    return re.sub(r"\$CLAUDE_PLUGIN_ROOT(?![A-Za-z0-9_])", lambda _: plugin_root, s)
 
 
 def safe(text, root="", cap=200):
@@ -84,6 +129,10 @@ def script_of(command, root=""):
     """The script a hook command runs, with no arguments: drop NAME=value prefixes; skip an interpreter to the next token
     that looks like a script (a path or a known extension), and give up (<unparsed command>) on inline code (-c, -e, or a
     cluster such as -lc), when none does, or when the token holds whitespace; look through env; strip ${CLAUDE_PLUGIN_ROOT}/ or the target path; print what is still absolute or ~ as its basename."""
+    if isinstance(command, str) and len(command) > MAX_COMMAND:   # shlex is slow on a huge token; no script call is this long
+        return "<unparsed command>"
+    if isinstance(command, str):   # before the split, so a default word holding spaces stays one token
+        command = expand_plugin_root(command, "${CLAUDE_PLUGIN_ROOT}")
     toks = words(command)
     if not toks:
         return "<unparsed command>"
@@ -118,11 +167,11 @@ def clean_note(note, root=""):
     then the target path dropped and every other absolute path cut to its basename."""
     m = re.match(r"^(.*?\b(?:unidentifiable|unresolved) hooks: )(.*)$", str(note), re.S)
     if m:
-        items = re.split(r"; (?=[A-Z][A-Za-z]+: )", m.group(2))
+        items = re.split(r"; (?=\w+: )", m.group(2))
         fixed = []
         for it in items:
-            e = re.match(r"^([A-Z][A-Za-z]+): (.*)$", it, re.S)
-            fixed.append(f"{e.group(1)}: {script_of(e.group(2), root)}" if e else it)
+            e = re.match(r"^(\w+): (.*)$", it, re.S)
+            fixed.append(f"{e.group(1)}: {script_of(e.group(2), root)}" if e else "<unparsed command>")
         note = m.group(1) + "; ".join(fixed)
     return safe(note, root, 400)
 
