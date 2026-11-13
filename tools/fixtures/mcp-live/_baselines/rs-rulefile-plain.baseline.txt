@@ -1,0 +1,66 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "hooks": {
+      "has_hooks": false
+    },
+    "is_plugin": false,
+    "kind": "rule-file",
+    "path": "<ROOT>",
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "commands": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "not-applicable"
+      }
+    },
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-file",
+    "rule_files": [
+      {
+        "bytes": 19,
+        "chars": 19,
+        "description": null,
+        "name": "rules",
+        "path": "<ROOT>",
+        "source": "rule-file",
+        "text": "A plain rule file.\n"
+      }
+    ],
+    "skills": []
+  }
+}

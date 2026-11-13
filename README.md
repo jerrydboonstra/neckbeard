@@ -77,6 +77,7 @@ Ask Claude to "vet this plugin" or "should I install X". From a clone, you can a
 
 ```bash
 tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
+tools/neckbeard <target> --live-mcp NAME [--out FILE]
 ```
 
 `<target>` is one of:
@@ -88,7 +89,9 @@ tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
 
 `--project-dir` (default: cwd) is where rule discovery starts. `--extra-rules` adds a file or directory the discovery would otherwise miss.
 
-It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. It writes nothing else.
+`--live-mcp NAME` is a separate, explicit trust decision. For one local stdio server declared by the target, Neckbeard starts its target-owned entrypoint, initializes MCP, and lists the advertised tools, resources, resource templates, and prompts. It records metadata and schemas only: it never calls a tool, reads a resource, expands a prompt, opens a browser, or performs a login. Remote servers, shell snippets, package runners, missing or outside-tree entrypoints, unbounded output, and hung servers fail closed. Declared environment values are passed only to that isolated process and are redacted from the dossier, even if the server echoes one back (a value of four characters or more wherever it appears, a shorter one only where a whole string equals it).
+
+It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
 
 **A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo ignores every `.json` except its two manifests, for precisely this reason.
 
@@ -112,7 +115,7 @@ Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itsel
 - Every hook event it registers, and whether `SubagentStart` is one of them.
 - What each hook injects, where a static read can work that out. It follows one hop of local `require()` and rebuilds `path.join(__dirname, ...)` literals.
 - Anything its scripts write to disk outside your project.
-- Any **MCP server** the manifest declares, with its name, command and transport. The declaration only: what a server actually exposes is knowable only by speaking MCP to it, which this does not do.
+- Any **MCP server** the manifest declares, with its name, command and transport. This remains declaration-only by default. With the explicit `--live-mcp NAME` option, one contained local stdio server can also be initialized and asked only for its advertised metadata.
 
 No manifest means a plain pack of rules: neckbeard searches wider for skills, and still checks for hooks, because a directory can carry `hooks/hooks.json` with no manifest at all. A single file works too: point it at someone's `CLAUDE.md` and it compares that file's rules against yours.
 

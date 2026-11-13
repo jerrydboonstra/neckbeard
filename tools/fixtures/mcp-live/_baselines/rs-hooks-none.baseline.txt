@@ -1,0 +1,69 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": null,
+    "skipped": "The target carries no classifiable item (no skill, hook, command, agent or rule file), so there is nothing for the classification step to compare against and your rule files were not read. Anything the target still needs looked at -- unresolved hooks, an MCP server, persistence -- is reported above, and reading it does not need your rules."
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "declares_agents_in_manifest": false,
+    "declares_hooks_in_manifest": false,
+    "hooks": {
+      "has_hooks": false
+    },
+    "is_plugin": true,
+    "kind": "plugin",
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "plugin_json": {
+      "description": null,
+      "license": null,
+      "name": "hooks-none",
+      "version": "1.0.0"
+    },
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "read"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "read"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": []
+  }
+}

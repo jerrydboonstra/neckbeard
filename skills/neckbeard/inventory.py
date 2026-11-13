@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 
+
 HOME = os.path.expanduser("~")
 CLAUDE_HOME = os.environ.get("CLAUDE_CONFIG_DIR", os.path.join(HOME, ".claude"))
 
@@ -1592,6 +1593,17 @@ def add_read_status(dossier):
       MK6 marketplace_listing -> marketplace: an entry that resolves outside the tree
       MK7 marketplace_listing -> marketplace: marketplace.json resolves outside the tree
       MK8 marketplace_listing -> marketplace: an entry with no source string was never looked for
+      LV1 add_live_mcp -> mcp_servers: --live-mcp names a server the target does not declare, or its
+          declaration cannot be read (cause: target-fault when the target does not declare it or declares
+          it wrongly, since the manifest lacks what was asked for; tool-limit when its manifest or .mcp.json
+          resolves outside the tree)
+      LV2 add_live_mcp -> mcp_servers: the live read was refused (a remote transport, a shell, eval or
+          module command, an entrypoint or argument outside the tree, an unsafe environment name: tool-limit,
+          neckbeard declined to run it; a declaration with no command, args that are not a list or an env that is
+          not strings, or a command or entrypoint the declaration names that is missing or
+          not executable: target-fault)
+      LV3 add_live_mcp -> mcp_servers: the live read failed, or one of its lists did (a hang or a byte bound: tool-limit; a malformed or wrong
+          reply, an error reply, a server that exits: target-fault)
     Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree
     with os.walk, which skips a folder it cannot list (onerror: "<folder>: folder could not be listed", untested
     because it takes a folder that exists and cannot be opened, which a test may not chmod) and does not enter
@@ -1851,6 +1863,34 @@ def classifiable_items(target_dossier):
     return n
 
 
+def add_live_mcp(target_dossier, path, name, timeout, max_bytes, max_pages=16, max_items=500):
+    """--live-mcp NAME: put the server's live surface on its mcp_servers entry as `live`. Called in main()
+    before add_read_status, so the notes it records (on target["_read_notes"]["mcp_servers"], through
+    _note) are folded into read_status. The live root is the target's own folder: for a marketplace
+    listing, the chosen plugin's folder. A refusal or a failed read (status "refused" or "error") keeps
+    its status and message on `live` and adds a note naming the server (LV1 to LV3 below, in
+    add_read_status's list). A name the target does not declare has no entry to carry `live`: it is
+    a note too."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # a caller that loads this file by path
+    from mcp_live import find_declaration, inventory_live_mcp, refusal_cause   # only a --live-mcp run needs it
+    notes = (target_dossier.get("_read_notes") or {}).get("mcp_servers")
+    root = target_dossier.get("path") or path
+    declaration, refusal = find_declaration(root, name)
+    if refusal:
+        _note(notes, f"live MCP server {name!r}: {refusal}", cause="tool-limit" if refusal_cause(refusal) == "tool-limit" else "target-fault")   # LV1
+        return
+    live = inventory_live_mcp(root, declaration, timeout=max(0.1, timeout), max_bytes=max(1024, max_bytes),
+                               max_pages=max(1, max_pages), max_items=max(1, max_items))
+    status = live.get("status")
+    if status == "refused":
+        _note(notes, f"live MCP server {name!r}: refused: {live.get('refusal')}", cause="target-fault" if live.get("cause") == "target-fault" else "tool-limit")   # LV2
+    elif status != "ok":   # "error": the read failed; "partial": a list failed and the rest stands
+        _note(notes, f"live MCP server {name!r}: {live.get('error')}", cause="tool-limit" if live.get("cause") == "tool-limit" else "target-fault")   # LV3
+    for entry in (target_dossier.get("mcp_servers") or {}).get("servers") or []:
+        if entry.get("name") == name:
+            entry["live"] = live
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("target")
@@ -1859,11 +1899,22 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--plugin", help="when the target is a marketplace listing several "
                                      "plugins, the one to inventory")
+    ap.add_argument("--live-mcp", metavar="NAME", help="opt in to initialization and "
+                    "metadata-only inventory of one declared local stdio MCP server")
+    ap.add_argument("--live-mcp-timeout", type=float, default=8.0,
+                    help=argparse.SUPPRESS)
+    ap.add_argument("--live-mcp-max-bytes", type=int, default=1_000_000,
+                    help=argparse.SUPPRESS)
+    ap.add_argument("--live-mcp-max-pages", type=int, default=16, help=argparse.SUPPRESS)
+    ap.add_argument("--live-mcp-max-items", type=int, default=500, help=argparse.SUPPRESS)
     args = ap.parse_args()
 
     with tempfile.TemporaryDirectory(prefix="neckbeard-") as tmp:
         path, resolution = resolve_target(args.target, tmp)
         target_dossier = inventory_target(path, args.plugin)
+        if args.live_mcp:
+            add_live_mcp(target_dossier, path, args.live_mcp, args.live_mcp_timeout, args.live_mcp_max_bytes,
+                         args.live_mcp_max_pages, args.live_mcp_max_items)
         add_read_status(target_dossier)
         target_dossier["resolved_via"] = resolution
         target_dossier["requested_target"] = args.target

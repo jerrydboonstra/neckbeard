@@ -36,9 +36,9 @@ def check(name, ok, detail=""):
         failures.append(name)
 
 
-def dossier(target):
+def dossier(target, *extra):
     env = {"PATH": os.environ["PATH"], "HOME": EMPTY, "CLAUDE_CONFIG_DIR": EMPTY}
-    r = subprocess.run([sys.executable, str(INVENTORY), str(target), "--project-dir", EMPTY],
+    r = subprocess.run([sys.executable, str(INVENTORY), str(target), "--project-dir", EMPTY, *extra],
                        env=env, capture_output=True, text=True)
     if r.returncode:
         return {"error": r.stderr[-400:]}
@@ -50,16 +50,16 @@ def fixture(name):
     return d / "rules.md" if name.startswith("rulefile-") else d
 
 
-def status(target):
-    d = dossier(target)
+def status(target, *extra):
+    d = dossier(target, *extra)
     if "error" in d:
         return {"_error": d["error"]}
     return d["target"].get("read_status") or {}
 
 
-def got(target, section, state, *needles):
-    """True when the section has this state and every needle appears in one of its notes."""
-    rs = status(target).get(section) or {}
+def got(target, section, state, *needles, extra=()):
+    """True when the section has this state and every needle appears in one of its notes. EXTRA is more inventory.py arguments."""
+    rs = status(target, *extra).get(section) or {}
     notes = " | ".join(rs.get("notes") or [])
     return rs.get("state") == state and all(n in notes for n in needles), f"{section}: {rs!r}"
 
@@ -216,6 +216,17 @@ def search_cap():
     return all(s == e and n for s, e, n in out), repr(out)
 
 
+def site_causes(target, section, *extra):
+    return (status(target, *extra).get(section) or {}).get("causes")
+
+
+def live_tree(mode, url=False):
+    """A plugin folder with the fixture MCP server (tools/fixtures/mcp-live/server.py) declared as `s`, or as a remote url."""
+    cfg = {"url": "https://example.com/mcp"} if url else {"command": sys.executable, "args": ["server.py"], "env": {"MODE": mode}}
+    return tmp_tree({"server.py": (ROOT / "tools" / "fixtures" / "mcp-live" / "server.py").read_text(),
+                     ".mcp.json": json.dumps({"mcpServers": {"s": cfg}})})
+
+
 SITES = {
     "SK1": lambda: got(fixture("skill-unreadable"), "skills", "partial", "skills/b/SKILL.md"),
     "SK2": lambda: got(fixture("refused-entries"), "skills", "failed", "skills/x/SKILL.md", "resolves outside the target tree"),
@@ -256,6 +267,9 @@ SITES = {
     "MC4": lambda: got(fixture("mcp-path-string"), "mcp_servers", "failed", "given as a path (./servers.json), not followed"),
     "MC5": lambda: got(fixture("mcp-server-not-object"), "mcp_servers", "partial", ".mcp.json", "bad"),
     "MC6": lambda: got(fixture("mcp-ambiguity"), "mcp_servers", "partial", ".mcp.json", "top level"),
+    "LV1": lambda: site_causes(live_tree("normal"), "mcp_servers", "--live-mcp", "nonesuch") == ["target-fault"] and got(live_tree("normal"), "mcp_servers", "partial", "'nonesuch'", "not declared", extra=("--live-mcp", "nonesuch")),
+    "LV2": lambda: site_causes(live_tree("normal", url=True), "mcp_servers", "--live-mcp", "s") == ["tool-limit"] and got(live_tree("normal", url=True), "mcp_servers", "partial", "'s'", "refused: remote MCP transports", extra=("--live-mcp", "s")),
+    "LV3": lambda: site_causes(live_tree("bad-json"), "mcp_servers", "--live-mcp", "s") == ["target-fault"] and got(live_tree("bad-json"), "mcp_servers", "partial", "'s'", "malformed JSON", extra=("--live-mcp", "s")),
     "MC8": gen_mcp_list,
     "MC7": lambda: got(fixture("mcp-refused"), "mcp_servers", "failed", ".mcp.json"),
     "PS1": lambda: got(fixture("outside-links"), "persistence_candidates", "partial", "sub/run.sh"),
@@ -345,8 +359,8 @@ check("7. a rule file: every section but rule_files not-applicable",
 CAUSES = {"tool-limit", "target-fault"}
 
 
-def causes_of(target, section):
-    return (status(target).get(section) or {}).get("causes")
+def causes_of(target, section, *extra):
+    return (status(target, *extra).get(section) or {}).get("causes")
 
 
 check("C1. a malformed .mcp.json: mcp_servers.causes is ['target-fault']",

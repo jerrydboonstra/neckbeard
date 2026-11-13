@@ -9,9 +9,10 @@
 # file it covers; tools/test_test_parallel.py fails when a module has no row of its own; the reviewer checks the rows for the source files it covers. `make check` and tools/excerpts --check stay outside the herd run.
 #
 # The skill
-skills/neckbeard/inventory.py test_selfcheck test_layout test_mutate_selfcheck test_vet test_read_status
+skills/neckbeard/inventory.py test_selfcheck test_layout test_mutate_selfcheck test_vet test_read_status test_mcp_live
+skills/neckbeard/mcp_live.py test_mcp_live test_selfcheck test_read_status
 skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
-skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability
+skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability test_mcp_live
 # Tools
 tools/vet test_vet test_vet_stability
 tools/part1 test_part1
@@ -30,6 +31,8 @@ tools/test-changed test_test_parallel
 # Tests
 tools/test_deploy.py test_deploy
 tools/test_layout.py test_layout
+tools/test_mcp_live.py test_mcp_live
+tools/fixtures/mcp-live/** test_mcp_live test_read_status
 tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_part1.py test_part1
 tools/fixtures/part1/** test_part1

@@ -1,0 +1,123 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "hooks": {
+      "has_hooks": false
+    },
+    "is_plugin": false,
+    "kind": "generic-pack",
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "read"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "rule_files": {
+        "notes": [
+          "a5.md: its imports are not followed past 5 hops"
+        ],
+        "state": "partial"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "readme_excerpt": null,
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [
+      {
+        "bytes": 7,
+        "chars": 7,
+        "description": null,
+        "name": "CLAUDE",
+        "path": "<ROOT>/CLAUDE.md",
+        "source": "target-CLAUDE.md",
+        "text": "@a1.md\n"
+      },
+      {
+        "bytes": 7,
+        "chars": 7,
+        "description": null,
+        "imported_from": "<ROOT>/CLAUDE.md",
+        "name": "a1",
+        "path": "<ROOT>/a1.md",
+        "source": "target-CLAUDE.md import",
+        "text": "@a2.md\n"
+      },
+      {
+        "bytes": 7,
+        "chars": 7,
+        "description": null,
+        "imported_from": "<ROOT>/a1.md",
+        "name": "a2",
+        "path": "<ROOT>/a2.md",
+        "source": "target-CLAUDE.md import",
+        "text": "@a3.md\n"
+      },
+      {
+        "bytes": 7,
+        "chars": 7,
+        "description": null,
+        "imported_from": "<ROOT>/a2.md",
+        "name": "a3",
+        "path": "<ROOT>/a3.md",
+        "source": "target-CLAUDE.md import",
+        "text": "@a4.md\n"
+      },
+      {
+        "bytes": 7,
+        "chars": 7,
+        "description": null,
+        "imported_from": "<ROOT>/a3.md",
+        "name": "a4",
+        "path": "<ROOT>/a4.md",
+        "source": "target-CLAUDE.md import",
+        "text": "@a5.md\n"
+      },
+      {
+        "bytes": 7,
+        "chars": 7,
+        "description": null,
+        "imported_from": "<ROOT>/a4.md",
+        "name": "a5",
+        "path": "<ROOT>/a5.md",
+        "source": "target-CLAUDE.md import",
+        "text": "@a6.md\n"
+      }
+    ],
+    "skills": []
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "hooks": {
+      "events": {},
+      "has_hooks": "unknown",
+      "hook_registrations": null,
+      "hook_scripts": null,
+      "hooks_reach_subagents": null,
+      "marketplace_note": "This is a marketplace listing 2 plugins (a, b); each carries its own hooks and none was inventoried. Run again with --plugin NAME for each one you would install."
+    },
+    "is_plugin": false,
+    "kind": "generic-pack",
+    "marketplace": {
+      "name": "m",
+      "plugins": [
+        {
+          "name": "a",
+          "source": "./plugins/a",
+          "status": "local"
+        },
+        {
+          "name": "b",
+          "source": "./plugins/b",
+          "status": "local"
+        }
+      ]
+    },
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [
+          ".claude-plugin/marketplace.json: This is a marketplace listing 2 plugins (a, b); each carries its own hooks and none was inventoried. Run again with --plugin NAME for each one you would install."
+        ],
+        "state": "failed"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "read"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "readme_excerpt": null,
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": []
+  }
+}
