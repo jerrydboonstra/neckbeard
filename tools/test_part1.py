@@ -79,6 +79,8 @@ def state_of(entry):
     for s in ("none", "partly read", "not read", "not applicable"):
         if rest == s or rest.startswith(s + ":"):
             return s
+    if rest.startswith(("neckbeard did not read: ", "broken in the plugin: ")):   # a failed section names its cause in place of `not read:`
+        return "not read"
     return "entries" if rest == "" else rest
 
 
@@ -408,6 +410,50 @@ for f in every:
     if ns["VERDICT_RE"].search(out) or ns["COUNT_RE"].search(out) or re.search(r"^## Conflicts", out, re.M) or re.search(r"^\| \| \| \|", out, re.M):
         bad.append(f)
 chk("7. no output matches vet-stability's verdict or count lines, a Conflicts heading or a | | | | row", not bad and len(regexes) == 2, bad)
+
+# ---------------------------------------------------------------- note-cause: the report says whose limit each note is
+def with_notes(section, notes, causes, state="partial"):
+    def edit(d):
+        d["target"]["read_status"][section] = {"state": state, "notes": notes, "causes": causes}
+    return edit
+
+
+both = variant("plugin-partial", with_notes("agents", ["agents/a.md: read capped at 200000 bytes", "agents/b.md: not valid JSON"], ["tool-limit", "target-fault"]))
+al = lines(parse(render(both)[1]), "Subagents and commands", "Agents")
+chk("C4. one tool-limit and one target-fault note: 'neckbeard did not read:' line, then 'broken in the plugin:' line, each its own line",
+    al[-2:] == ["neckbeard did not read: agents/a.md: read capped at 200000 bytes", "broken in the plugin: agents/b.md: not valid JSON"], al)
+only = variant("plugin-partial", with_notes("agents", ["agents/a.md: read capped at 200000 bytes"], ["tool-limit"]))
+al = lines(parse(render(only)[1]), "Subagents and commands", "Agents")
+chk("C4. only tool-limit notes: no 'broken' line", al[-1] == "neckbeard did not read: agents/a.md: read capped at 200000 bytes" and not any(l.startswith("broken in the plugin") for l in al), al)
+fl = variant("plugin-partial", with_notes("agents", ["agents/a.md: could not be read", "agents/b.md: not valid JSON"], ["tool-limit", "target-fault"], "failed"))
+chk("C4. a failed section prints both on the label's line, in place of 'not read: <notes>'",
+    parse(render(fl)[1]).get(("Subagents and commands", "Agents"), ("", []))[0] ==
+    "neckbeard did not read: agents/a.md: could not be read; broken in the plugin: agents/b.md: not valid JSON",
+    parse(render(fl)[1]).get(("Subagents and commands", "Agents")))
+
+old = variant("plugin-partial", lambda d: d["target"]["read_status"]["agents"].update(notes=["agents/a.md: x", "agents/b.md: y"]))
+al = lines(parse(render(old)[1]), "Subagents and commands", "Agents")
+chk("C4. a section with no causes list (an old dossier) prints today's single 'not read:' line", al[-1] == "not read: agents/a.md: x; agents/b.md: y", al)
+bad = variant("plugin-partial", with_notes("agents", ["agents/a.md: x"], ["bogus"]))
+al = lines(parse(render(bad)[1]), "Subagents and commands", "Agents")
+chk("C4. an unknown cause value falls back to the plain 'not read:' line, never a wrong attribution", al[-1] == "not read: agents/a.md: x", al)
+many = variant("persist-capped", lambda d: d["target"]["read_status"]["persistence_candidates"].update(causes=["tool-limit"] * len(d["target"]["read_status"]["persistence_candidates"]["notes"])))
+pl = lines(parse(render(many)[1]), "State it may leave", "Persistence candidates")
+nr = [l for l in pl if l.startswith("neckbeard did not read: ")]
+chk("C4. 18 tool-limit notes on the persistence card: one 'neckbeard did not read:' line, 5 named, ending 'and 13 more'",
+    len(nr) == 1 and nr[0].count("read capped") == 5 and nr[0].endswith("; and 13 more"), pl)
+
+# end to end: inventory.py's own causes reach the card (the cases above feed causes in by hand)
+tree = tmp(); real_tree(tree)
+open(os.path.join(tree, ".mcp.json"), "w").write("{not json")
+open(os.path.join(tree, "agents", "big.md"), "w").write("---\nname: big\ndescription: d\n---\n" + "x" * 250_000)
+e = tmp()
+r = subprocess.run([sys.executable, INVENTORY, tree, "--project-dir", e, "--out", os.path.join(e, "d.json")],
+                   env={"PATH": os.environ["PATH"], "HOME": e, "CLAUDE_CONFIG_DIR": e}, capture_output=True, text=True)
+got = parse(render(os.path.join(e, "d.json"))[1]) if r.returncode == 0 else {}
+chk("C4. real inventory output: a malformed .mcp.json prints 'broken in the plugin:' on the MCP line, a capped agent 'neckbeard did not read:'",
+    "broken in the plugin: .mcp.json" in (got.get(("Reaches outside the session", "MCP servers")) or ("", []))[0]
+    and any(l.startswith("neckbeard did not read: agents/big.md") for l in lines(got, "Subagents and commands", "Agents")), (r.stderr[-200:], got))
 
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
