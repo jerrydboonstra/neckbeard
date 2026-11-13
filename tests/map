@@ -12,7 +12,7 @@
 skills/neckbeard/inventory.py test_selfcheck test_layout test_mutate_selfcheck test_vet test_read_status test_mcp_live
 skills/neckbeard/mcp_live.py test_mcp_live test_selfcheck test_read_status
 skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
-skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability
+skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability test_mcp_live
 # Tools
 tools/vet test_vet test_vet_stability
 tools/part1 test_part1

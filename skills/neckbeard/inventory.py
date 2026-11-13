@@ -1597,7 +1597,7 @@ def add_read_status(dossier):
           declaration cannot be read
       LV2 add_live_mcp -> mcp_servers: the live read was refused (a remote transport, a shell, eval or
           module command, an entrypoint or argument outside the tree, an unsafe environment name)
-      LV3 add_live_mcp -> mcp_servers: the live read failed (a hang, a byte bound, a malformed reply)
+      LV3 add_live_mcp -> mcp_servers: the live read failed, or one of its lists did (a hang, a byte bound, a malformed reply)
     Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree
     with os.walk, which skips a folder it cannot list (onerror: "<folder>: folder could not be listed", untested
     because it takes a folder that exists and cannot be opened, which a test may not chmod) and does not enter
@@ -1878,7 +1878,7 @@ def add_live_mcp(target_dossier, path, name, timeout, max_bytes, max_pages=16, m
     status = live.get("status")
     if status == "refused":
         _note(notes, f"live MCP server {name!r}: refused: {live.get('refusal')}")   # LV2
-    elif status != "ok":
+    elif status != "ok":   # "error": the read failed; "partial": a list failed and the rest stands
         _note(notes, f"live MCP server {name!r}: {live.get('error')}")   # LV3
     for entry in (target_dossier.get("mcp_servers") or {}).get("servers") or []:
         if entry.get("name") == name:

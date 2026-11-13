@@ -175,7 +175,7 @@ check("3. the server's request log holds only initialize and the four list calls
 # ---------------------------------------------------------------- 4. a declared value echoed back
 blob = json.dumps(d)
 check("4. a declared environment value echoed in metadata and stderr is not in the dossier",
-      (SECRET in blob, "<redacted>" in blob, "stderr_excerpt" in live), (False, True, True))
+      (SECRET in blob, "stderr_excerpt" in live, live.get("instructions")), (False, True, "credential=<redacted>"))
 
 # ---------------------------------------------------------------- 5. a server that fails
 bad = servers({"hanging": ("hanging", {}), "malformed": ("bad-json", {}), "oversized": ("oversized", {})})
@@ -208,24 +208,52 @@ shapes = {"url": {"url": "https://example.com/mcp"},
           "python -c": {"command": sys.executable, "args": ["-c", "import server"]},
           "python -m": {"command": sys.executable, "args": ["-m", "server"]},
           "node -e": {"command": "node", "args": ["-e", "require('./server.py')"]},
-          "outside-tree entrypoint": {"command": sys.executable, "args": [str(outer / "outside.py")]}}
+          "outside-tree entrypoint": {"command": sys.executable, "args": [str(outer / "outside.py")]},
+          "python -c attached to its code": {"command": sys.executable, "args": ["-copen('pwned', 'w')", "server.py"]},
+          "python option cluster holding c": {"command": sys.executable, "args": ["-Ic", "open('pwned', 'w')", "server.py"]},
+          "an attached short flag naming an outside file": {"command": sys.executable, "args": ["server.py", "-f/etc/passwd"]},
+          "a bare ..": {"command": sys.executable, "args": ["server.py", ".."]},
+          "a file:// URL outside": {"command": sys.executable, "args": ["server.py", "--src=file:///etc/passwd"]},
+          "node --eval=": {"command": "node", "args": ["--eval=1", "server.py"]},
+          "a relative interpreter outside the tree": {"command": "../../../../../../../../../../../../bin/sh", "args": ["server.py"]}}
 for label, cfg in shapes.items():
     p = tmpdir()
     shutil.copy(SERVER, p / "server.py")
     (p / ".mcp.json").write_text(json.dumps({"mcpServers": {"s": cfg}}))
     d, r = run(p, "--live-mcp", "s")
     e = entry(d, "s").get("live") or {}
-    started = (p / "calls.log").exists() or (outer / "calls.log").exists()
+    started = any((x / n).exists() for x in (p, outer) for n in ("calls.log", "started.log", "pwned"))
     check(f"6. {label}: refused, no process started, and a note names the server and the reason",
           (r.returncode, e.get("status"), started, any("'s'" in n and "refused:" in n for n in notes(d).get("notes") or [])),
           (0, "refused", False, True))
     (outer / "calls.log").unlink(missing_ok=True)
-for var in ("LD_FOO", "DYLD_FOO", "PYTHONPATH"):
+for var in ("LD_FOO", "DYLD_FOO", "PYTHONPATH", "PYTHONUSERBASE", "BASH_FUNC_f%%"):
     p = servers({"s": ("normal", {var: "x"})})
     d, r = run(p, "--live-mcp", "s")
     e = entry(d, "s").get("live") or {}
     check(f"6. a declared process-control variable ({var}) is refused before anything runs",
           (e.get("status"), calls(p), var in (e.get("refusal") or "")), ("refused", None, True))
+
+# a list that fails after initialize leaves the run partial, with a note
+hp = servers({"s": ("hang-tools", {})})
+d, r = run(hp, "--live-mcp", "s", "--live-mcp-timeout", "1")
+e = entry(d, "s").get("live") or {}
+check("5. a server that hangs on tools/list: live status partial, and a note naming the server",
+      (r.returncode, e.get("status"), notes(d).get("state"), any("'s'" in n and "tools" in n for n in notes(d).get("notes") or [])),
+      (0, "partial", "partial", True))
+pg = servers({"s": ("pinger", {})})
+t0 = time.monotonic()
+d, r = run(pg, "--live-mcp", "s", "--live-mcp-timeout", "2")
+check("5. a server that never reads and floods requests: the run still ends inside its time bound",
+      (r.returncode, time.monotonic() - t0 < 8.0, (entry(d, "s").get("live") or {}).get("status")), (0, True, "error"))
+np_ = tmpdir()
+shutil.copy(SERVER, np_ / "server.py")
+(np_ / ".claude-plugin").mkdir()
+(np_ / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": "x", "mcpServers": "./servers.json"}))
+(np_ / ".mcp.json").write_text(json.dumps({"mcpServers": {"s": {"command": sys.executable, "args": ["server.py"]}}}))
+d, r = run(np_, "--live-mcp", "s")
+check("a manifest mcpServers that is not an object: the dossier reads no server, so none is run",
+      (r.returncode, calls(np_), any("not an object" in n for n in notes(d).get("notes") or [])), (0, None, True))
 
 # ---------------------------------------------------------------- 7. deceptive metadata
 dp = servers({"normal": ("normal", {}), "deceptive": ("deceptive", {})})

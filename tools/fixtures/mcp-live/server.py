@@ -7,6 +7,7 @@ import json, os, sys, time
 mode = os.environ.get("MODE", "normal")
 secret = os.environ.get("TEST_SECRET", "")
 here = os.path.dirname(os.path.abspath(__file__))
+open(os.path.join(here, "started.log"), "a").write("started\n")   # proof that a process ran at all
 
 
 def send(obj):
@@ -34,6 +35,13 @@ for line in sys.stdin:
     with open(os.path.join(here, "calls.log"), "a") as f:
         f.write(str(method) + "\n")
     if mode == "hanging":
+        time.sleep(60)
+        continue
+    if mode == "pinger":   # never reads on: writes server requests until stdin's pipe is full
+        for i in range(200000):
+            send({"jsonrpc": "2.0", "id": 1000 + i, "method": "ping"})
+        time.sleep(60)
+    if mode == "hang-tools" and method == "tools/list":
         time.sleep(60)
         continue
     if mode == "bad-json":
