@@ -91,17 +91,22 @@ class _Note(str):
     a cap for one). A note can carry text from the target, so it is one line of at most 400
     characters whatever the target wrote."""
     level = "partial"
+    cause = None   # "tool-limit" (neckbeard's limit) or "target-fault" (the plugin's), set by _note and add
 
     def __new__(cls, text):
         return super().__new__(cls, " ".join(str(text).split())[:400])
 
 
-def _note(notes, text, level="partial"):
+def _note(notes, text, level="partial", *, cause):
     """Record a read that did not go through, on the list a caller passed. A caller that
-    passed none (the reader side's discovery among them) sees nothing change."""
+    passed none (the reader side's discovery among them) sees nothing change. `cause` is required:
+    "tool-limit" when the gap is neckbeard's (a cap, a depth limit, a refused path, a file it could not
+    open, a thing it does not follow or trace), "target-fault" when the plugin is at fault (a file that
+    does not parse, the wrong type, a dangling link, a path the manifest names that is not there)."""
     if notes is not None:
         n = _Note(text)
         n.level = level
+        n.cause = cause
         notes.append(n)
 
 
@@ -112,7 +117,7 @@ def _rel(path, root):
 def _walk_error(notes, root):
     """os.walk's onerror: a folder it cannot list is skipped, so say so."""
     def note(error):
-        _note(notes, f"{os.path.relpath(error.filename, root) if error.filename else '.'}: folder could not be listed")
+        _note(notes, f"{os.path.relpath(error.filename, root) if error.filename else '.'}: folder could not be listed", cause="tool-limit")
     return note
 
 
@@ -121,7 +126,7 @@ def _walk_gaps(notes, dirpath, dirnames, root):
     if notes is not None:
         for d in dirnames:
             if os.path.islink(os.path.join(dirpath, d)):
-                _note(notes, f"{os.path.relpath(os.path.join(dirpath, d), root)}: a symlinked folder, not followed")
+                _note(notes, f"{os.path.relpath(os.path.join(dirpath, d), root)}: a symlinked folder, not followed", cause="tool-limit")
 
 
 def read_text(path, limit=READ_LIMIT):
@@ -473,7 +478,7 @@ def find_files(root, names, max_depth=6, notes=None):
     for dirpath, dirnames, filenames in os.walk(root, onerror=_walk_error(notes, root)):
         if dirpath.count(os.sep) - base_depth > max_depth:
             if dirnames or filenames:
-                _note(notes, f"{os.path.relpath(dirpath, root)}: not searched, deeper than {max_depth} folders")
+                _note(notes, f"{os.path.relpath(dirpath, root)}: not searched, deeper than {max_depth} folders", cause="tool-limit")
             dirnames[:] = []
             continue
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor")]
@@ -531,7 +536,7 @@ def resolve_injected_text(hook_file_path, plugin_root, depth=1, notes=None):
     Anything genuinely dynamic (computed from runtime state) is reported as such."""
     src = read_text(hook_file_path, limit=20_000) or ""
     if len(src) >= 20_000 and _within(hook_file_path, plugin_root) and os.path.getsize(hook_file_path) > 20_000:
-        _note(notes, f"{os.path.relpath(hook_file_path, plugin_root)}: read capped at 20000 bytes")
+        _note(notes, f"{os.path.relpath(hook_file_path, plugin_root)}: read capped at 20000 bytes", cause="tool-limit")
     candidates = _literal_path_candidates(src)
     fallback = None
     for c, confident in candidates:
@@ -661,7 +666,7 @@ def inventory_hooks(plugin_root, plugin_json, notes=None):
                 hooks_path = default
         if not hooks_path or not os.path.isfile(hooks_path):
             if hooks_ref:
-                _note(notes, f"plugin.json: hooks path {hooks_ref} in plugin.json not found", "failed")
+                _note(notes, f"plugin.json: hooks path {hooks_ref} in plugin.json not found", "failed", cause="target-fault")
             # Not where Claude Code would load them from, which is not the same
             # as nowhere. See hooks_outside_manifest().
             return hooks_outside_manifest(plugin_root, notes=notes)
@@ -779,7 +784,7 @@ def _parse_events(events, rel, plugin_root, notes=None):
                 cmd = h.get("command", "")
                 if not isinstance(cmd, str):
                     _note(notes, f"{rel}: {event}: hook command is {type(cmd).__name__}, expected a string; "
-                                 "this hook was not read", "failed")
+                                 "this hook was not read", "failed", cause="target-fault")
                     continue
                 cmds.append({"matcher": group.get("matcher"), "command": cmd})
                 base = cmd.rstrip('"').split("/")[-1].strip('"')
@@ -909,13 +914,13 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
             rel_fp = os.path.relpath(fp, root)
             try:
                 if not _within(fp, root):
-                    _note(notes, f"{rel_fp}: resolves outside the target tree; not searched for hooks")
+                    _note(notes, f"{rel_fp}: resolves outside the target tree; not searched for hooks", cause="tool-limit")
                     continue
                 if os.path.getsize(fp) > READ_LIMIT:
-                    _note(notes, f"{rel_fp}: over {READ_LIMIT} bytes; not searched for hooks")
+                    _note(notes, f"{rel_fp}: over {READ_LIMIT} bytes; not searched for hooks", cause="tool-limit")
                     continue
             except OSError:
-                _note(notes, f"{rel_fp}: could not be read; not searched for hooks")
+                _note(notes, f"{rel_fp}: could not be read; not searched for hooks", cause="tool-limit")
                 continue
             if reads >= max_reads:
                 stopped_at = os.path.relpath(dirpath, root)
@@ -923,7 +928,7 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
             reads += 1
             data = read_json(fp)
             if data is None:
-                _note(notes, f"{rel_fp}: not valid JSON; not searched for hooks")
+                _note(notes, f"{rel_fp}: not valid JSON; not searched for hooks", cause="target-fault")
             got = _hook_events_in(data)
             if got:
                 found.append(os.path.relpath(fp, root))
@@ -982,22 +987,22 @@ def marketplace_listing(path, notes=None):
     mp_rel = ".claude-plugin/marketplace.json"
     if not os.path.isfile(mp):
         if os.path.lexists(mp):
-            _note(notes, f"{mp_rel}: not a readable file (a dangling symlink, or a folder)", "failed")
+            _note(notes, f"{mp_rel}: not a readable file (a dangling symlink, or a folder)", "failed", cause="target-fault")
         return None
     if not _within(mp, path):
-        _note(notes, f"{mp_rel}: resolves outside the target tree; not read", "failed")
+        _note(notes, f"{mp_rel}: resolves outside the target tree; not read", "failed", cause="tool-limit")
         return {"refused": "marketplace.json resolves outside the target tree; not read",
                 "plugins": []}
     data = read_json(mp)
     entries = data.get("plugins") if isinstance(data, dict) else None
     if not isinstance(entries, list):
         why = "is not valid JSON" if data is None else "has no list of plugins"
-        _note(notes, f"{mp_rel}: {why}; read it by hand", "failed")
+        _note(notes, f"{mp_rel}: {why}; read it by hand", "failed", cause="target-fault")
         return {"parse_error": f"marketplace.json {why}; read it by hand", "plugins": []}
     plugins = []
     for e in entries:
         if not isinstance(e, dict):
-            _note(notes, f"{mp_rel}: entry {str(e)[:60]!r} is not an object; skipped")
+            _note(notes, f"{mp_rel}: entry {str(e)[:60]!r} is not an object; skipped", cause="target-fault")
             continue
         src = e.get("source")
         entry = {"name": e.get("name"), "source": src}
@@ -1014,9 +1019,9 @@ def marketplace_listing(path, notes=None):
         else:
             entry["status"] = "external: fetched from elsewhere, not in this repository"
         if not isinstance(src, str):
-            _note(notes, f"{mp_rel}: plugin {e.get('name')!r} has no source string, so it was not looked for")
+            _note(notes, f"{mp_rel}: plugin {e.get('name')!r} has no source string, so it was not looked for", cause="target-fault")
         if entry["status"].startswith(("refused", "missing")):
-            _note(notes, f"{mp_rel}: plugin {e.get('name')!r} ({src}): {entry['status']}")
+            _note(notes, f"{mp_rel}: plugin {e.get('name')!r} ({src}): {entry['status']}", cause="tool-limit" if entry["status"].startswith("refused") else "target-fault")
         plugins.append(entry)
     return {"name": data.get("name"), "plugins": plugins}
 
@@ -1033,9 +1038,9 @@ def mcp_servers(plugin_json, plugin_root=None, notes=None):
     ambiguity = None
     if servers and not isinstance(servers, dict):
         if isinstance(servers, str):
-            _note(notes, f"plugin.json: mcpServers given as a path ({servers}), not followed", "failed")
+            _note(notes, f"plugin.json: mcpServers given as a path ({servers}), not followed", "failed", cause="tool-limit")
         else:
-            _note(notes, f"plugin.json: mcpServers is a {type(servers).__name__}, expected an object", "failed")
+            _note(notes, f"plugin.json: mcpServers is a {type(servers).__name__}, expected an object", "failed", cause="target-fault")
 
     # A plugin may instead ship .mcp.json at its root, which Claude Code loads.
     # Reading only the inline manifest key misses this path entirely --
@@ -1044,18 +1049,18 @@ def mcp_servers(plugin_json, plugin_root=None, notes=None):
     if not servers and plugin_root:
         dot = os.path.join(plugin_root, ".mcp.json")
         if os.path.lexists(dot) and not _within(dot, plugin_root):
-            _note(notes, ".mcp.json: resolves outside the target tree; not read", "failed")
+            _note(notes, ".mcp.json: resolves outside the target tree; not read", "failed", cause="tool-limit")
             return {"source": ".mcp.json", "servers": None,
                     "refused": ".mcp.json resolves outside the target tree; not read"}
         raw = read_json(dot)
         if os.path.lexists(dot):
             if raw is None:
-                _note(notes, ".mcp.json: not valid JSON; read it by hand", "failed")
+                _note(notes, ".mcp.json: not valid JSON; read it by hand", "failed", cause="target-fault")
             elif not isinstance(raw, dict):
-                _note(notes, f".mcp.json: is a {type(raw).__name__}, expected an object", "failed")
+                _note(notes, f".mcp.json: is a {type(raw).__name__}, expected an object", "failed", cause="target-fault")
             elif "mcpServers" in raw and not isinstance(raw["mcpServers"], dict):
                 _note(notes, f".mcp.json: mcpServers is a {type(raw['mcpServers']).__name__}, "
-                             "expected an object", "failed")
+                             "expected an object", "failed", cause="target-fault")
         if isinstance(raw, dict) and raw:
             source = ".mcp.json"
             if isinstance(raw.get("mcpServers"), dict):
@@ -1071,13 +1076,13 @@ def mcp_servers(plugin_json, plugin_root=None, notes=None):
                              "and the docs describe the wrapped one; treat the list as "
                              "best-effort and open the file")
                 if "mcpServers" not in raw:   # a wrong-typed mcpServers is noted above, and is not a top-level shape
-                    _note(notes, f".mcp.json: {ambiguity}")
+                    _note(notes, f".mcp.json: {ambiguity}", cause="tool-limit")
     if not isinstance(servers, dict) or not servers:
         return None
     out = []
     for name, cfg in servers.items():
         if not isinstance(cfg, dict):
-            _note(notes, f"{source}: server {name!r} is not an object, so its command and url were not read")
+            _note(notes, f"{source}: server {name!r} is not an object, so its command and url were not read", cause="target-fault")
         cfg = cfg if isinstance(cfg, dict) else {}
         out.append({
             "name": name,
@@ -1107,7 +1112,7 @@ def inventory_persistence(plugin_root, notes=None):
             fp = os.path.join(dirpath, fn)
             rel_fp = os.path.relpath(fp, plugin_root)
             if not _within(fp, plugin_root):
-                _note(notes, f"{rel_fp}: resolves outside the target tree; not scanned")
+                _note(notes, f"{rel_fp}: resolves outside the target tree; not scanned", cause="tool-limit")
                 continue
             if not fn.endswith(SCRIPT_EXTS):
                 # Keep extension-less files (hooks/session-start and friends),
@@ -1116,17 +1121,17 @@ def inventory_persistence(plugin_root, notes=None):
                     continue
                 try:
                     if os.path.getsize(fp) > 200_000:
-                        _note(notes, f"{rel_fp}: over 200000 bytes; not scanned")
+                        _note(notes, f"{rel_fp}: over 200000 bytes; not scanned", cause="tool-limit")
                         continue
                 except OSError:
-                    _note(notes, f"{rel_fp}: could not be read; not scanned")
+                    _note(notes, f"{rel_fp}: could not be read; not scanned", cause="tool-limit")
                     continue
             text = read_text(fp, limit=50_000)
             if text is None:
-                _note(notes, f"{rel_fp}: could not be read; not scanned")
+                _note(notes, f"{rel_fp}: could not be read; not scanned", cause="tool-limit")
                 text = ""
             elif len(text) >= 50_000 and os.path.getsize(fp) > 50_000:
-                _note(notes, f"{rel_fp}: read capped at 50000 bytes")
+                _note(notes, f"{rel_fp}: read capped at 50000 bytes", cause="tool-limit")
             for pat in PERSIST_PATTERNS:
                 if pat.search(text):
                     hits.append(os.path.relpath(fp, plugin_root))
@@ -1147,7 +1152,7 @@ def contained_skill(sm, root, notes=None):
                 "refused": "resolves outside the target tree; not read"}
     item = rule_item(os.path.relpath(sm, root), sm)
     if item is None:
-        _note(notes, f"{os.path.relpath(sm, root)}: could not be read", "entry")
+        _note(notes, f"{os.path.relpath(sm, root)}: could not be read", "entry", cause="tool-limit")
     if item:
         fm, _ = split_frontmatter(item["text"])
         # Claude Code treats a skill as user-invocable unless its frontmatter says false.
@@ -1174,7 +1179,7 @@ def skill_companions(sm, root, notes=None):
         if dirpath[len(base):].count(os.sep) >= 6:
             if dirnames:
                 _note(notes, f"{os.path.relpath(dirpath, root)}: companion files below this folder not read, "
-                             "deeper than 6 folders")
+                             "deeper than 6 folders", cause="tool-limit")
             dirnames[:] = []
         dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
         _walk_gaps(notes, dirpath, dirnames, root)
@@ -1190,7 +1195,7 @@ def skill_companions(sm, root, notes=None):
         else:
             text = read_text(p)
             if text is None:
-                _note(notes, f"{rel}: companion file could not be read")
+                _note(notes, f"{rel}: companion file could not be read", cause="tool-limit")
             out.append({"path": rel, "text": text, **(measure(p, text) if text is not None else {})})
     return out
 
@@ -1227,7 +1232,7 @@ def inventory_commands_agents(root, notes=None):
         section = notes[source + "s"] if notes is not None else None
         for p in sorted(paths):
             if not os.path.isfile(p):
-                _note(section, f"{os.path.relpath(p, root)}: not a readable file (a dangling symlink, or a folder)", "entry")
+                _note(section, f"{os.path.relpath(p, root)}: not a readable file (a dangling symlink, or a folder)", "entry", cause="target-fault")
                 continue
             if not _within(p, root):
                 out.append({"source": source, "path": os.path.relpath(p, root),
@@ -1240,7 +1245,7 @@ def inventory_commands_agents(root, notes=None):
                 it["path"] = os.path.relpath(p, root)
                 out.append(it)
             else:
-                _note(section, f"{os.path.relpath(p, root)}: not a readable file (a dangling symlink, or a folder)", "entry")
+                _note(section, f"{os.path.relpath(p, root)}: not a readable file (a dangling symlink, or a folder)", "entry", cause="target-fault")
         return out
     commands = read([p for pat in ("*.md", "*.toml")
                      for p in glob.glob(os.path.join(glob.escape(root), "commands", pat))], "command")
@@ -1277,7 +1282,7 @@ def claude_md_imports(path, root=None, _hop=1, _seen=None, notes=None):
             if os.path.lexists(cand):
                 # a dangling symlink is a file that exists and cannot be read, not "@someone" in prose
                 _note(notes, f"{os.path.relpath(cand, root or os.path.dirname(path))}: import is not a readable "
-                             "file (a dangling symlink, or a folder)", "entry")
+                             "file (a dangling symlink, or a folder)", "entry", cause="target-fault")
             continue  # "@someone" in prose, or a dead import: Claude Code skips it too
         real = os.path.realpath(cand)
         if real in seen:
@@ -1291,7 +1296,7 @@ def claude_md_imports(path, root=None, _hop=1, _seen=None, notes=None):
             out.extend(claude_md_imports(cand, root, _hop + 1, seen, notes))
         elif notes is not None and claude_md_imports(cand, root, _hop + 1, set(seen)):
             _note(notes, f"{os.path.relpath(cand, root or os.path.dirname(path))}: its imports are not "
-                         f"followed past {IMPORT_MAX_HOPS} hops")
+                         f"followed past {IMPORT_MAX_HOPS} hops", cause="tool-limit")
     return out
 
 
@@ -1302,7 +1307,7 @@ def with_imports(source, path, root=None, notes=None):
     if it:
         items.append(it)
     else:
-        _note(notes, f"{os.path.relpath(path, root or os.path.dirname(path))}: could not be read", "entry")
+        _note(notes, f"{os.path.relpath(path, root or os.path.dirname(path))}: could not be read", "entry", cause="tool-limit")
     for p, parent, refused in claude_md_imports(path, root, notes=notes):
         if refused:
             items.append({"source": f"{source} import", "path": p, "imported_from": parent,
@@ -1313,7 +1318,7 @@ def with_imports(source, path, root=None, notes=None):
             imp["imported_from"] = parent
             items.append(imp)
         else:
-            _note(notes, f"{os.path.relpath(p, root or os.path.dirname(path))}: import could not be read", "entry")
+            _note(notes, f"{os.path.relpath(p, root or os.path.dirname(path))}: import could not be read", "entry", cause="tool-limit")
     return items
 
 
@@ -1325,7 +1330,7 @@ def target_rule_files(root, notes=None):
     p = os.path.join(root, "CLAUDE.md")
     if not os.path.isfile(p):
         if os.path.lexists(p):
-            _note(notes, "CLAUDE.md: not a readable file (a dangling symlink, or a folder)", "entry")
+            _note(notes, "CLAUDE.md: not a readable file (a dangling symlink, or a folder)", "entry", cause="target-fault")
         return []
     if not _within(p, root):
         return [{"source": "target-CLAUDE.md", "path": "CLAUDE.md", "text": None,
@@ -1406,10 +1411,10 @@ def inventory_target(path, plugin_name=None):
     if dangling:
         if plugin_json_path:
             _note(notes["plugin_json"], f"{dangling}: not a readable file (a dangling symlink, or a folder); "
-                                        f"{os.path.relpath(plugin_json_path, path)} was read instead")
+                                        f"{os.path.relpath(plugin_json_path, path)} was read instead", cause="target-fault")
         else:
             _note(notes["plugin_json"], f"{dangling}: not a readable file (a dangling symlink, or a folder); not read, "
-                                        "so this was inventoried as a plain pack", "failed")
+                                        "so this was inventoried as a plain pack", "failed", cause="target-fault")
     if not plugin_json_path:
         # Generic pack: no plugin manifest, so no canonical layout. Search
         # broadly for skills.
@@ -1462,7 +1467,7 @@ def inventory_target(path, plugin_name=None):
     plugin_json = read_json(plugin_json_path)
     if not isinstance(plugin_json, dict):
         why = "is not valid JSON" if plugin_json is None else f"is a {type(plugin_json).__name__}, expected an object"
-        _note(notes["plugin_json"], f"{os.path.relpath(plugin_json_path, path)}: {why}", "failed")
+        _note(notes["plugin_json"], f"{os.path.relpath(plugin_json_path, path)}: {why}", "failed", cause="target-fault")
         plugin_json = {}
     return {
         "kind": "plugin",
@@ -1488,9 +1493,11 @@ def add_read_status(dossier):
     read, failed or does not apply, so a reader of the dossier can tell an empty section from one that
     could not be read. Called once, in main(), right after inventory_target.
 
-    Shape: {section: {"state": "read" | "partial" | "failed" | "not-applicable", "notes": [str]}} for
+    Shape: {section: {"state": "read" | "partial" | "failed" | "not-applicable", "notes": [str], "causes": [str]}} for
     skills, agents, commands, rule_files, hooks, mcp_servers, persistence_candidates, plugin_json and
-    marketplace. A note reads "<path relative to the target>: <reason>". Every other key of the dossier
+    marketplace. A note reads "<path relative to the target>: <reason>". `causes` is a list as long as `notes`,
+    each "tool-limit" (neckbeard's limit) or "target-fault" (the plugin's); both _note and add take it as a
+    required keyword, and tools/test_read_status.py scans the source so a site without one fails. Every other key of the dossier
     is as it was; this only adds.
 
     Where the notes come from. Each site below records its own note on the list inventory_target passed
@@ -1596,9 +1603,10 @@ def add_read_status(dossier):
         base = os.path.dirname(base)   # an import is named from the folder the rule file sits in
     notes = {s: list(private.get(s) or []) for s in READ_SECTIONS}
 
-    def add(section, text, level="partial"):
+    def add(section, text, level="partial", *, cause):
         n = _Note(text)
         n.level = level
+        n.cause = cause
         notes[section].append(n)
 
     for section in ("skills", "agents", "commands", "rule_files"):
@@ -1607,42 +1615,42 @@ def add_read_status(dossier):
                 continue
             rel = _rel(entry.get("path") or entry.get("source") or section, base) if base else (entry.get("path") or section)
             if entry.get("refused"):
-                add(section, f"{rel}: {entry['refused']}", "entry")
+                add(section, f"{rel}: {entry['refused']}", "entry", cause="tool-limit")
             if entry.get("truncated"):
-                add(section, f"{rel}: read capped at {entry.get('read_limit', READ_LIMIT)} bytes")
+                add(section, f"{rel}: read capped at {entry.get('read_limit', READ_LIMIT)} bytes", cause="tool-limit")
             for comp in entry.get("companion_files") or []:
                 if comp.get("refused") or comp.get("skipped"):
-                    add(section, f"{comp.get('path')}: {comp.get('refused') or comp.get('skipped')}")
+                    add(section, f"{comp.get('path')}: {comp.get('refused') or comp.get('skipped')}", cause="tool-limit")
                 elif comp.get("truncated"):
-                    add(section, f"{comp.get('path')}: read capped at {comp.get('read_limit', READ_LIMIT)} bytes")
+                    add(section, f"{comp.get('path')}: read capped at {comp.get('read_limit', READ_LIMIT)} bytes", cause="tool-limit")
     for imp in dossier.get("imports_not_followed") or []:
-        add("rule_files", f"{os.path.basename(dossier.get('path') or '')}: import @{imp} not followed (only a CLAUDE.md follows its imports)")
+        add("rule_files", f"{os.path.basename(dossier.get('path') or '')}: import @{imp} not followed (only a CLAUDE.md follows its imports)", cause="tool-limit")
 
     hooks = dossier.get("hooks")
     if isinstance(hooks, dict):
         hf = hooks.get("hooks_file") or "hooks"
         if hooks.get("parse_error"):
-            add("hooks", f"{hf}: {hooks['parse_error']}", "failed")
+            add("hooks", f"{hf}: {hooks['parse_error']}", "failed", cause="target-fault")
         if hooks.get("refused"):
-            add("hooks", f"{hf}: {hooks['refused']}", "failed")
+            add("hooks", f"{hf}: {hooks['refused']}", "failed", cause="tool-limit")
         for m in hooks.get("malformed_entries") or []:
-            add("hooks", f"{hf}: {m}")
+            add("hooks", f"{hf}: {m}", cause="target-fault")
         for key in ("unresolved_hooks", "unidentifiable_hooks"):
             if hooks.get(key):
-                add("hooks", f"{hf}: {key.split('_')[0]} hooks: " + "; ".join(hooks[key]))
+                add("hooks", f"{hf}: {key.split('_')[0]} hooks: " + "; ".join(hooks[key]), cause="tool-limit")
         if hooks.get("injected_content_note"):
-            add("hooks", f"{hf}: {hooks['injected_content_note']}")
+            add("hooks", f"{hf}: {hooks['injected_content_note']}", cause="tool-limit")
         if hooks.get("marketplace_note"):
-            add("hooks", f".claude-plugin/marketplace.json: {hooks['marketplace_note']}", "failed")
+            add("hooks", f".claude-plugin/marketplace.json: {hooks['marketplace_note']}", "failed", cause="tool-limit")
         for n in hooks.get("nested_plugins") or []:
-            add("hooks", f"{n}: hooks found in a plugin nested in this directory; inventory it on its own", "failed")
+            add("hooks", f"{n}: hooks found in a plugin nested in this directory; inventory it on its own", "failed", cause="tool-limit")
         if hooks.get("search_incomplete"):
             m = re.search(r" at (.+?)/, before", hooks["search_incomplete"])
             found = hooks.get("has_hooks") in (True, "partial")
             add("hooks", f"{m.group(1) + '/' if m else hooks.get('hooks_file') or 'hooks'}: {hooks['search_incomplete']}",
-                "partial" if found else "failed")
+                "partial" if found else "failed", cause="tool-limit")
     if dossier.get("manifest_refused"):
-        add("plugin_json", dossier["manifest_refused"], "partial" if kind == "plugin" else "failed")
+        add("plugin_json", dossier["manifest_refused"], "partial" if kind == "plugin" else "failed", cause="tool-limit")
 
     na = set()
     if kind == "rule-file":
@@ -1665,7 +1673,7 @@ def add_read_status(dossier):
             state = "failed" if listed and read == 0 and any(n.level == "entry" for n in ns) else "partial"
         else:
             state = "read"
-        status[section] = {"state": state, "notes": [str(n) for n in ns]}
+        status[section] = {"state": state, "notes": [str(n) for n in ns], "causes": [n.cause for n in ns]}
     dossier["read_status"] = status
 
 

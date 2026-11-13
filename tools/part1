@@ -8,8 +8,12 @@ dossier are byte-identical. tools/vet puts it in the report just before "## ⚡ 
 Each card is a `### ` heading and each section under it one `- <label>:` line, in the state target.read_status gives:
   read, entries     the label's line, then each entry on its own `  - ` line (no state word)
   read, none        `none`
-  partial           `partly read`, then the entries found, then `  - not read: <notes joined by "; ">` (omitted with no notes)
-  failed            `not read: <notes>`
+  partial           `partly read`, then the entries found, then one `  - ` line per cause that has notes, tool-limit first:
+                    `neckbeard did not read: <tool-limit notes joined by "; ">`, `broken in the plugin: <target-fault notes>`
+                    (read_status.<section>.causes says which; a section with no causes list, an old dossier, prints
+                    `  - not read: <notes>` as before; omitted with no notes)
+  failed            `<the same two phrases joined by "; ">` on the label's line in place of `not read: <notes>` (`not read`
+                    alone with no notes, or with no causes list `not read: <notes>`)
   not-applicable    `not applicable`
 A dossier with no read_status exits 2: without it the card cannot tell "none" from "could not read".
 
@@ -182,20 +186,48 @@ def toks(n):
     return f"{n} bytes, ~{n // 4} tokens"
 
 
-def block(label, section, entries, root, tail=()):
-    """The lines for one section: its state from read_status, its entries when it has them."""
-    state, notes = section
+CAUSES = ("tool-limit", "target-fault")
+CAUSE_WORDS = {"tool-limit": "neckbeard did not read", "target-fault": "broken in the plugin"}
+
+
+def by_cause(notes, causes, cap=None):
+    """[(words, [notes])] for the notes whose cause is known, tool-limit first, or None when the section has no valid
+    causes list (an old dossier): the caller then prints the notes as one `not read:` list. `cap` limits each group to its
+    first `cap` notes, then `and N more`."""
+    if not isinstance(causes, list) or len(causes) != len(notes) or not set(causes) <= set(CAUSES):
+        return None
+    groups = []
+    for c in CAUSES:
+        ns = [n for n, k in zip(notes, causes) if k == c]
+        if cap and len(ns) > cap:
+            ns = ns[:cap] + [f"and {len(ns) - cap} more"]
+        if ns:
+            groups.append((CAUSE_WORDS[c], ns))
+    return groups
+
+
+def block(label, section, entries, root, tail=(), cap=None):
+    """The lines for one section: its state from read_status, its entries when it has them. A note carries its cause:
+    `neckbeard did not read: <tool-limit notes>` first, then `broken in the plugin: <target-fault notes>`, each its own
+    `  - ` line under a partly read section, both on the label's line (joined by "; ") in a failed one."""
+    state, notes, *rest = section
+    causes = rest[0] if rest else None
     notes = [clean_note(n, root) for n in notes]
+    groups = by_cause(notes, causes, cap)
+    if groups is None and cap and len(notes) > cap:
+        notes = notes[:cap] + [f"and {len(notes) - cap} more"]
     if state == "not-applicable":
         return [f"- {label}: not applicable"]
     if state == "failed":
+        if groups:
+            return [f"- {label}: " + "; ".join(f"{w}: {'; '.join(ns)}" for w, ns in groups)]
         return [f"- {label}: not read" + (": " + "; ".join(notes) if notes else "")]
     if state not in ("read", "partial"):
         return [f"- {label}: not read: unknown state {safe(state)}"]
     entries = sorted(entries)
     if state == "partial":
-        return ([f"- {label}: partly read"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail]
-                + ([f"  - not read: {'; '.join(notes)}"] if notes else []))
+        unread = [f"  - {w}: {'; '.join(ns)}" for w, ns in groups] if groups is not None else ([f"  - not read: {'; '.join(notes)}"] if notes else [])
+        return [f"- {label}: partly read"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail] + unread
     if not entries:
         return [f"- {label}: none"]
     return [f"- {label}:"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail]
@@ -261,7 +293,8 @@ def render(d, commit):
     root = t.get("path") if isinstance(t.get("path"), str) else ""
     rs = t["read_status"]
     sec = lambda name: (rs[name].get("state") if isinstance(rs.get(name), dict) else "failed",
-                        as_list(rs[name].get("notes")) if isinstance(rs.get(name), dict) else ["no read_status for this section"])
+                        as_list(rs[name].get("notes")) if isinstance(rs.get(name), dict) else ["no read_status for this section"],
+                        rs[name].get("causes") if isinstance(rs.get(name), dict) else None)
     capped = lambda e: " (read capped)" if e.get("truncated") else ""
     hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
 
@@ -284,7 +317,7 @@ def render(d, commit):
                 if isinstance(i, dict) and isinstance(i.get("bytes"), int)]
     hsec = sec("hooks")
     if hsec[0] == "read" and hooks.get("injected_content") is None and hooks.get("injected_content_note"):
-        hsec = ("failed", [hooks["injected_content_note"]])
+        hsec = ("failed", [hooks["injected_content_note"]], ["tool-limit"])
     events = []
     ev = hooks.get("events")
     for event, cmds in (ev.items() if isinstance(ev, dict) else []):
@@ -335,11 +368,8 @@ def render(d, commit):
     out += block("Hook-injected text", hsec, injected, root)
     out += ["", "### Hooks"] + block("Hooks", sec("hooks"), events, root, tail=[reach_line])
     out += ["", "### Subagents and commands"] + block("Agents", sec("agents"), agents, root) + block("Commands", sec("commands"), commands, root)
-    pstate, pnotes = sec("persistence_candidates")
-    if len(pnotes) > NOTES_SHOWN:
-        pnotes = pnotes[:NOTES_SHOWN] + [f"and {len(pnotes) - NOTES_SHOWN} more"]
     shown, ptail = cap_entries(persist)
-    out += ["", "### State it may leave"] + block("Persistence candidates", (pstate, pnotes), shown, root, tail=ptail)
+    out += ["", "### State it may leave"] + block("Persistence candidates", sec("persistence_candidates"), shown, root, tail=ptail, cap=NOTES_SHOWN)
     out += ["", "### Reaches outside the session"] + block("MCP servers", sec("mcp_servers"), servers, root)
     out += ["", "### Source", f"- Kind: {kind}", f"- Name: {name}", f"- Version: {version}"]
     out += block("plugin.json", sec("plugin_json"), ["name and version, shown above"] if pj else [], root)

@@ -79,6 +79,8 @@ def state_of(entry):
     for s in ("none", "partly read", "not read", "not applicable"):
         if rest == s or rest.startswith(s + ":"):
             return s
+    if rest.startswith(("neckbeard did not read: ", "broken in the plugin: ")):   # a failed section names its cause in place of `not read:`
+        return "not read"
     return "entries" if rest == "" else rest
 
 
@@ -428,6 +430,18 @@ chk("C4. a failed section prints both on the label's line, in place of 'not read
     parse(render(fl)[1]).get(("Subagents and commands", "Agents"), ("", []))[0] ==
     "neckbeard did not read: agents/a.md: could not be read; broken in the plugin: agents/b.md: not valid JSON",
     parse(render(fl)[1]).get(("Subagents and commands", "Agents")))
+
+old = variant("plugin-partial", lambda d: d["target"]["read_status"]["agents"].update(notes=["agents/a.md: x", "agents/b.md: y"]))
+al = lines(parse(render(old)[1]), "Subagents and commands", "Agents")
+chk("C4. a section with no causes list (an old dossier) prints today's single 'not read:' line", al[-1] == "not read: agents/a.md: x; agents/b.md: y", al)
+bad = variant("plugin-partial", with_notes("agents", ["agents/a.md: x"], ["bogus"]))
+al = lines(parse(render(bad)[1]), "Subagents and commands", "Agents")
+chk("C4. an unknown cause value falls back to the plain 'not read:' line, never a wrong attribution", al[-1] == "not read: agents/a.md: x", al)
+many = variant("persist-capped", lambda d: d["target"]["read_status"]["persistence_candidates"].update(causes=["tool-limit"] * len(d["target"]["read_status"]["persistence_candidates"]["notes"])))
+pl = lines(parse(render(many)[1]), "State it may leave", "Persistence candidates")
+nr = [l for l in pl if l.startswith("neckbeard did not read: ")]
+chk("C4. 18 tool-limit notes on the persistence card: one 'neckbeard did not read:' line, 5 named, ending 'and 13 more'",
+    len(nr) == 1 and nr[0].count("read capped") == 5 and nr[0].endswith("; and 13 more"), pl)
 
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
