@@ -233,6 +233,16 @@ for label, cfg in shapes.items():
           (r.returncode, e.get("status"), started, any("'s'" in n and "refused:" in n for n in notes(d).get("notes") or []), causes(d)),
           (0, "refused", False, True, ["tool-limit"]))
     (outer / "calls.log").unlink(missing_ok=True)
+for label, cfg in {"no command": {"args": ["server.py"]}, "args that are not a list": {"command": sys.executable, "args": "server.py"},
+                   "a missing entrypoint": {"command": sys.executable, "args": ["gone.py"]},
+                   "a missing command": {"command": "./nope"}}.items():
+    p = tmpdir()
+    shutil.copy(SERVER, p / "server.py")
+    (p / ".mcp.json").write_text(json.dumps({"mcpServers": {"s": cfg}}))
+    d, r = run(p, "--live-mcp", "s")
+    check(f"6. {label}: refused, nothing started, and the note's cause is target-fault",
+          (r.returncode, (entry(d, "s").get("live") or {}).get("status"), calls(p), causes(d)[-1:] if causes(d) else None),
+          (0, "refused", None, ["target-fault"]))
 for var in ("LD_FOO", "DYLD_FOO", "PYTHONPATH", "PYTHONUSERBASE", "BASH_FUNC_f%%"):
     p = servers({"s": ("normal", {var: "x"})})
     d, r = run(p, "--live-mcp", "s")
@@ -259,7 +269,7 @@ shutil.copy(SERVER, np_ / "server.py")
 (np_ / ".mcp.json").write_text(json.dumps({"mcpServers": {"s": {"command": sys.executable, "args": ["server.py"]}}}))
 d, r = run(np_, "--live-mcp", "s")
 check("a manifest mcpServers that is not an object: the dossier reads no server, so none is run; cause target-fault",
-      (r.returncode, calls(np_), any("not an object" in n for n in notes(d).get("notes") or []), causes(d)[-1:]),
+      (r.returncode, calls(np_), any("not an object" in n for n in notes(d).get("notes") or []), (causes(d) or [])[-1:]),
       (0, None, True, ["target-fault"]))
 
 # ---------------------------------------------------------------- 7. deceptive metadata

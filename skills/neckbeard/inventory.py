@@ -1600,7 +1600,8 @@ def add_read_status(dossier):
       LV2 add_live_mcp -> mcp_servers: the live read was refused (a remote transport, a shell, eval or
           module command, an entrypoint or argument outside the tree, an unsafe environment name: tool-limit,
           neckbeard declined to run it; a declaration with no command, args that are not a list or an env that is
-          not strings: target-fault)
+          not strings, or a command or entrypoint the declaration names that is missing or
+          not executable: target-fault)
       LV3 add_live_mcp -> mcp_servers: the live read failed, or one of its lists did (a hang or a byte bound: tool-limit; a malformed or wrong
           reply, an error reply, a server that exits: target-fault)
     Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree

@@ -63,9 +63,12 @@ class LiveMcpError(Exception):
 
 # A refusal is neckbeard declining to run something unsafe ("tool-limit", as note-cause defines it), except where
 # the declaration itself is broken (no command, args that are not a list, an env that is not strings, a server that is
-# not an object or not declared): that is the target's fault.
+# not an object or not declared, a command or entrypoint the manifest names that is not there or cannot run): that is
+# the target's fault.
 _TARGET_FAULT_REFUSALS = ("local MCP declaration has no command", "MCP args must be a list", "MCP env must be",
-                          "plugin.json's mcpServers is not an object", "MCP server ")
+                          "plugin.json's mcpServers is not an object", "MCP server ",
+                          "interpreter declaration has no target-owned entrypoint", "the declared entrypoint is missing",
+                          "the declared command is missing", "the declared command is not executable")
 
 
 def refusal_cause(reason):
@@ -180,8 +183,10 @@ def safe_argv(root, config):
         if not entry:
             return None, "interpreter declaration has no target-owned entrypoint"
         entry_path = entry if os.path.isabs(entry) else os.path.join(root, entry)
-        if not _within(entry_path, root) or not os.path.isfile(entry_path):
-            return None, "interpreter entrypoint resolves outside the target tree or is missing"
+        if not _within(entry_path, root):
+            return None, "interpreter entrypoint resolves outside the target tree"
+        if not os.path.isfile(entry_path):
+            return None, "the declared entrypoint is missing from the target"
         if os.sep in command and not os.path.isabs(command) and \
                 not _within(os.path.join(root, command), root):
             return None, "interpreter path resolves outside the target tree"
@@ -191,10 +196,12 @@ def safe_argv(root, config):
             return None, "declared interpreter is not available"
     else:
         executable = command if os.path.isabs(command) else os.path.join(root, command)
-        if not _within(executable, root) or not os.path.isfile(executable):
+        if not _within(executable, root):
             return None, "command must be a target-owned executable or an allowed interpreter"
+        if not os.path.isfile(executable):
+            return None, "the declared command is missing from the target"
         if not os.access(executable, os.X_OK):
-            return None, "target-owned command is not executable"
+            return None, "the declared command is not executable"
 
     for arg in args:
         for path_part in _arg_paths(arg):

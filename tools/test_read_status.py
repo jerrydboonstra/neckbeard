@@ -216,6 +216,10 @@ def search_cap():
     return all(s == e and n for s, e, n in out), repr(out)
 
 
+def site_causes(target, section, *extra):
+    return (status(target, *extra).get(section) or {}).get("causes")
+
+
 def live_tree(mode, url=False):
     """A plugin folder with the fixture MCP server (tools/fixtures/mcp-live/server.py) declared as `s`, or as a remote url."""
     cfg = {"url": "https://example.com/mcp"} if url else {"command": sys.executable, "args": ["server.py"], "env": {"MODE": mode}}
@@ -263,9 +267,9 @@ SITES = {
     "MC4": lambda: got(fixture("mcp-path-string"), "mcp_servers", "failed", "given as a path (./servers.json), not followed"),
     "MC5": lambda: got(fixture("mcp-server-not-object"), "mcp_servers", "partial", ".mcp.json", "bad"),
     "MC6": lambda: got(fixture("mcp-ambiguity"), "mcp_servers", "partial", ".mcp.json", "top level"),
-    "LV1": lambda: got(live_tree("normal"), "mcp_servers", "partial", "'nonesuch'", "not declared", extra=("--live-mcp", "nonesuch")),
-    "LV2": lambda: got(live_tree("normal", url=True), "mcp_servers", "partial", "'s'", "refused: remote MCP transports", extra=("--live-mcp", "s")),
-    "LV3": lambda: got(live_tree("bad-json"), "mcp_servers", "partial", "'s'", "malformed JSON", extra=("--live-mcp", "s")),
+    "LV1": lambda: site_causes(live_tree("normal"), "mcp_servers", "--live-mcp", "nonesuch") == ["target-fault"] and got(live_tree("normal"), "mcp_servers", "partial", "'nonesuch'", "not declared", extra=("--live-mcp", "nonesuch")),
+    "LV2": lambda: site_causes(live_tree("normal", url=True), "mcp_servers", "--live-mcp", "s") == ["tool-limit"] and got(live_tree("normal", url=True), "mcp_servers", "partial", "'s'", "refused: remote MCP transports", extra=("--live-mcp", "s")),
+    "LV3": lambda: site_causes(live_tree("bad-json"), "mcp_servers", "--live-mcp", "s") == ["target-fault"] and got(live_tree("bad-json"), "mcp_servers", "partial", "'s'", "malformed JSON", extra=("--live-mcp", "s")),
     "MC8": gen_mcp_list,
     "MC7": lambda: got(fixture("mcp-refused"), "mcp_servers", "failed", ".mcp.json"),
     "PS1": lambda: got(fixture("outside-links"), "persistence_candidates", "partial", "sub/run.sh"),
@@ -355,8 +359,8 @@ check("7. a rule file: every section but rule_files not-applicable",
 CAUSES = {"tool-limit", "target-fault"}
 
 
-def causes_of(target, section):
-    return (status(target).get(section) or {}).get("causes")
+def causes_of(target, section, *extra):
+    return (status(target, *extra).get(section) or {}).get("causes")
 
 
 check("C1. a malformed .mcp.json: mcp_servers.causes is ['target-fault']",
