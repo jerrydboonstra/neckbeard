@@ -48,6 +48,8 @@ Or do all of it in one command from this repo: `tools/vet <path-to-target> <repo
 
 ## Keep your plugin's published report current
 
+`tools/vet <path-to-target> <report.md> --facts` writes the facts report instead: what the target adds (the same "What it adds" section, written by `tools/part1` from the dossier), with no reader, no verdict and no model call, so it needs only python3 and no login. Its title says "what it adds" and its header line is the one a judged report carries, so `tools/vet --check` reads it the same way. `--facts` takes `--repo` and no other option.
+
 If your plugin publishes a neckbeard report, a release can leave it vetting an older version. `tools/vet --check REPORT TARGET` catches that: it compares the version in the report's header with the one in your `plugin.json` and fails when they differ. It needs only python3, no Claude and no login, so it fits in CI. As a GitHub Actions job, with the neckbeard tag pinned:
 
 ```yaml
