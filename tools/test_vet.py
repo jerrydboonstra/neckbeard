@@ -296,12 +296,28 @@ sys.exit(97)
 r = run("facts", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("facts: written, exit 0, claude never called", (r["rc"], r["report"], r["calls"]), (0, True, []))
 chk("facts: title line", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 what it adds")
-chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "\U0001F7E9", "sample reader")], [False] * 4)
+chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "sample reader", "\U0001F7E5", "\U0001F7E7", "\U0001F7E8", "\U0001F7E9")], [False] * 7)
 chk("facts: closing line", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
-chk("facts: carries part 1", "What it adds" in r["text"].split("\n", 1)[1], True)
+chk("facts: carries part 1", "\n## What it adds\n" in r["text"], True)
 chk("facts: temp folder removed", r["temp_left"], [])
 r2 = run("facts-again", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("facts: twice on one day, byte-identical", r["text"], r2["text"])
+# claude need not be on PATH at all: a PATH holding only the tools vet itself uses
+def facts_without_claude():
+    tmp = tempfile.mkdtemp()
+    try:
+        bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
+        for tool in ("bash", "python3", "git", "sed", "date", "grep", "mktemp", "dirname", "basename", "mv", "rm", "mkdir", "cat", "cp", "tr", "head", "sort", "env"):
+            if shutil.which(tool):
+                os.symlink(shutil.which(tool), os.path.join(bindir, tool))
+        target = os.path.join(tmp, "demo"); os.makedirs(os.path.join(target, ".claude-plugin"))
+        json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
+        out = os.path.join(tmp, "out.md")
+        p = subprocess.run([VET, target, out, "--facts"], env={"PATH": bindir, "HOME": tmp, "TMPDIR": tmp}, capture_output=True, text=True)
+        return p.returncode, os.path.exists(out), "claude" in (p.stdout + p.stderr)
+    finally:
+        shutil.rmtree(tmp)
+chk("facts: runs with no claude on PATH", facts_without_claude(), (0, True, False))
 def facts_check(version):
     tmp = tempfile.mkdtemp()
     try:

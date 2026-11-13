@@ -24,8 +24,8 @@
 # --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
 # folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
 # what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
-# It takes --repo; with --judge, --model, --units or --note it is a usage error.
-# Exit 0 only when the report passed every check. Kept out of bin/, which a plugin puts on every session's PATH.
+# It takes --repo; with --judge, --model, --units or --note it is a usage error. Blank lines separate the four parts.
+# Exit 0 only when the report passed every check (--facts has one: it names no local path, checked before OUT is written). Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
 # Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
@@ -174,11 +174,12 @@ if [ "$facts" = yes ]; then
     echo
     echo "No reader's rules were read: this report lists facts only and carries no verdict."
   } >"$work/facts.md" || die "part 1 could not be rendered"
-  mv "$work/facts.md" "$out"
+  # the local-path check runs before OUT is written, so a report that names one never lands there
   for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
     [ "$p" = / ] && continue
-    grep -qF -- "$p" "$out" && die "$out names a local path ($p); fix it by hand or rerun"
+    grep -qF -- "$p" "$work/facts.md" && die "the facts report names a local path ($p), so $out was not written"
   done
+  mv "$work/facts.md" "$out"
   echo "vet: facts report $out"
   exit 0
 fi
