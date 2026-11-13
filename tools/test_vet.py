@@ -396,6 +396,12 @@ try:
     chk("reader: the Baseline block sits under the judge's header line", (h["rc"], hl[2].startswith("`") and " \u00b7 neckbeard " in hl[2], hl[3], hl[4].startswith("Baseline: readerdir \u00b7 4 rule files")), (0, True, "", True))
     chk("reader: that report carries one header line and one Baseline", (sum(1 for l in hl if " \u00b7 neckbeard " in l), sum(1 for l in hl if l.startswith("Baseline: "))), (1, 1))
     chk("reader: --check passes on it", facts_check_text(h["text"], "1.0.0"), 0)
+    # a non-default folder that happens to be named "the sample reader" is still not the default
+    os.makedirs(os.path.join(tmp, "named"))
+    named = reader_copy(os.path.join(tmp, "named"), "the sample reader")
+    rn = run("named-like-default", extra=("--reader", named))
+    pn = [l for c in judge(rn) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
+    chk("reader: a folder named like the default gets the non-default paragraph and citation", (len(pn), "](" not in pn[0], "examples/reader/..." in "\n".join(c["prompt"] for c in judge(rn)), "rule files (fingerprint %s)" % fp(rn) in pn[0]), (1, True, False, True))
     # a path-only change (one rule file renamed) changes the fingerprint too
     moved = reader_copy(tmp, "moved")
     os.rename(os.path.join(moved, "rules", "safety.md"), os.path.join(moved, "rules", "safe.md"))
