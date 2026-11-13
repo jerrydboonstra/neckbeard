@@ -50,11 +50,11 @@ def run(target, *extra, inventory=INVENTORY, env_extra=None):
     return (json.loads(r.stdout) if r.returncode == 0 else {"_error": r.stderr[-400:]}), r
 
 
-def servers(decls):
+def servers(decls, command=None):
     """A plugin folder: the fixture server, and .mcp.json declaring each of DECLS, {name: (mode, extra env)}."""
     d = tmpdir()
     shutil.copy(SERVER, d / "server.py")
-    cfg = {n: {"command": sys.executable, "args": ["server.py"], "env": {"MODE": m, **e}} for n, (m, e) in decls.items()}
+    cfg = {n: {"command": command or sys.executable, "args": ["server.py"], "env": {"MODE": m, **e}} for n, (m, e) in decls.items()}
     (d / ".mcp.json").write_text(json.dumps({"mcpServers": cfg}))
     return d
 
@@ -83,7 +83,7 @@ def calls(d):
 def static_packs():
     """Name -> folder. Declarations of every shape a live run meets, never run here."""
     out = {"live-pack": servers({"normal": ("normal", {"TEST_SECRET": SECRET}), "hanging": ("hanging", {}),
-                                 "oversized": ("oversized", {}), "paged": ("paged", {})})}
+                                 "oversized": ("oversized", {}), "paged": ("paged", {})}, command="python3")}   # never run here, and the same on every host
     d = tmpdir()
     (d / ".claude-plugin").mkdir()
     (d / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": "inline", "mcpServers": {

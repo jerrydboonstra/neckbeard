@@ -20,7 +20,7 @@
           "args": [
             "server.py"
           ],
-          "command": "/opt/homebrew/opt/python@3.15/bin/python3.15",
+          "command": "python3",
           "name": "normal",
           "transport": "local-process",
           "url": null
@@ -29,7 +29,7 @@
           "args": [
             "server.py"
           ],
-          "command": "/opt/homebrew/opt/python@3.15/bin/python3.15",
+          "command": "python3",
           "name": "hanging",
           "transport": "local-process",
           "url": null
@@ -38,7 +38,7 @@
           "args": [
             "server.py"
           ],
-          "command": "/opt/homebrew/opt/python@3.15/bin/python3.15",
+          "command": "python3",
           "name": "oversized",
           "transport": "local-process",
           "url": null
@@ -47,7 +47,7 @@
           "args": [
             "server.py"
           ],
-          "command": "/opt/homebrew/opt/python@3.15/bin/python3.15",
+          "command": "python3",
           "name": "paged",
           "transport": "local-process",
           "url": null

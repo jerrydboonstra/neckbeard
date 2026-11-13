@@ -17,10 +17,10 @@
 
 ### Reaches outside the session
 - MCP servers:
-  - hanging (local-process, python3.15)
-  - normal (local-process, python3.15)
-  - oversized (local-process, python3.15)
-  - paged (local-process, python3.15)
+  - hanging (local-process, python3)
+  - normal (local-process, python3)
+  - oversized (local-process, python3)
+  - paged (local-process, python3)
 
 ### Source
 - Kind: generic-pack
