@@ -89,7 +89,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -101,6 +101,10 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
         open(os.path.join(target, "skills", "demo", "SKILL.md"), "w").write(
             "---\nname: demo\ndescription: A demo skill.\n---\n\nAlways run the tests before you commit.\n")
+        if version:
+            json.dump({"name": "demo", "version": version}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
+        if setup:
+            setup(target)
         if remote:
             for c in (["init", "-q"], ["remote", "add", "origin", remote]):
                 subprocess.run(["git", *c], cwd=target, check=True)
@@ -123,7 +127,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         p = subprocess.run([vet or VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
         title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
-        res = dict(rc=p.returncode, out=p.stdout + p.stderr, calls=calls, report=os.path.exists(out), title=title,
+        res = dict(rc=p.returncode, out=p.stdout + p.stderr, stdout=p.stdout, outpath=out, calls=calls, report=os.path.exists(out), title=title,
                    text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
         if os.environ.get("VERBOSE"):
             print(case, res)
@@ -427,6 +431,69 @@ try:
     chk("reader: --facts with --reader is a usage error", run("facts-reader", extra=("--facts", "--reader", a), fake_body=NO_CLAUDE)["rc"], 2)
 finally:
     shutil.rmtree(tmp)
+
+# 10. the badge line: stdout's last line when --facts writes OUT
+LOGO = open(os.path.join(HERE, "badge-logo"), encoding="utf-8").read().strip()
+def badge_of(res):
+    lines = [l for l in res["stdout"].split("\n") if l.strip()]
+    return lines[-1] if lines else ""
+def big_skill(target):   # a SKILL.md past the read limit: the skills section is read in part
+    open(os.path.join(target, "skills", "demo", "SKILL.md"), "a").write("x" * 250000 + "\n")
+def bad_mcp(target):     # an .mcp.json that is not JSON: the mcp_servers section failed
+    open(os.path.join(target, ".mcp.json"), "w").write("{not json")
+for case, setup, state, colour in (("read", None, "read in full", "brightgreen"), ("partial", big_skill, "partly read", "yellow"), ("failed", bad_mcp, "something unread", "red")):
+    b = run("badge-" + case, extra=("--facts",), fake_body=NO_CLAUDE, setup=setup)
+    msg = "1.0.0%20%C2%B7%20" + state.replace(" ", "%20")
+    want_url = "https://img.shields.io/badge/neckbeard%20report-" + msg + "-" + colour + "?logo=" + LOGO
+    chk("badge: " + case + " reads " + state + ", " + colour, (b["rc"], badge_of(b).startswith("[![neckbeard report: 1.0.0 \u00b7 " + state + "](" + want_url + ")]")), (0, True))
+chk("badge: linked to OUT's path as given", badge_of(b).endswith("](" + b["outpath"] + ")"), True)
+tmp = tempfile.mkdtemp()
+try:
+    os.makedirs(os.path.join(tmp, ".claude-plugin"))
+    json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(tmp, ".claude-plugin", "plugin.json"), "w"))
+    rel = subprocess.run([VET, ".", "docs/neckbeard-report.md", "--facts"], cwd=tmp, capture_output=True, text=True)
+    odd = subprocess.run([VET, ".", "my docs/r(1).md", "--facts"], cwd=tmp, capture_output=True, text=True)
+    chk("badge: spaces and parens in OUT are escaped in the link", (odd.returncode, odd.stdout.rstrip("\n").endswith("](my%20docs/r%281%29.md)")), (0, True))
+    chk("badge: a relative OUT stays relative in the link", (rel.returncode, rel.stdout.rstrip("\n").endswith("](docs/neckbeard-report.md)")), (0, True))
+finally:
+    shutil.rmtree(tmp)
+chk("badge: the report path line moved to stderr", ("vet: facts report " in b["stdout"], "vet: facts report " in b["out"]), (False, True))
+b = run("badge-escape", extra=("--facts",), fake_body=NO_CLAUDE, version="1.2.3-rc_1")
+chk("badge: a version 1.2.3-rc_1 is escaped 1.2.3--rc__1", "badge/neckbeard%20report-1.2.3--rc__1%20%C2%B7%20read%20in%20full-brightgreen?logo=" in badge_of(b), True)
+chk("badge: the judged path prints no badge", "img.shields.io" in run("badge-judged")["stdout"], False)
+
+# 11. make report-check: the tagged report must name the tagged version
+def report_check(report_version, tag_after=False):
+    tmp = tempfile.mkdtemp()
+    try:
+        for d in (".claude-plugin", "docs", "tools"):
+            os.makedirs(os.path.join(tmp, d))
+        shutil.copy(os.path.join(NB, "Makefile"), tmp)
+        shutil.copy(VET, os.path.join(tmp, "tools", "vet"))
+        json.dump({"name": "demo", "version": "1.2.0"}, open(os.path.join(tmp, ".claude-plugin", "plugin.json"), "w"))
+        open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
+            "# \U0001F50D demo %s \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo %s\n" % (report_version, report_version))
+        git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=tmp, check=True, capture_output=True)
+        git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "x"); git("tag", "-a", "v1.2.0", "-m", "x")
+        # the working tree is made right after the tag: the check must read the tagged tree, not this one
+        open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
+            "# \U0001F50D demo 1.2.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.2.0\n")
+        p = subprocess.run(["make", "--no-print-directory", "report-check"], cwd=tmp, capture_output=True, text=True)
+        return p.returncode, p.stdout + p.stderr
+    finally:
+        shutil.rmtree(tmp)
+rc, out = report_check("1.1.0")
+chk("report-check: a tagged report naming an older version fails, though the working tree is right", (rc != 0, "vets 1.1.0" in out), (True, True))
+rc, out = report_check("1.2.0")
+chk("report-check: a tagged report naming the tagged version passes", rc, 0)
+makefile = open(os.path.join(NB, "Makefile"), encoding="utf-8").read()
+release = makefile.split("\nrelease:", 1)[1].split("\ndeploy:", 1)[0]
+chk("release runs report-check before any push, and stops when it fails", (bool(re.search(r"^\t@\$\(MAKE\) --no-print-directory report-check \|\| \{ [^}]*exit 1; \}$", release, re.M)), release.find("report-check") < release.find("git push")), (True, True))
+readme = open(os.path.join(NB, "README.md"), encoding="utf-8").read()
+chk("README: the neckbeard badge links the published report, with the logo the code uses", ("[![neckbeard report: " in readme, "](docs/neckbeard-report.md)" in readme, "logo=" + LOGO in readme), (True, True, True))
+chk("the logo is URL-encoded: none of + & # ( ) [ ] = or a space raw", [c for c in "+&#()[]= " if c in LOGO], [])
+b = run("badge-precedence", extra=("--facts",), fake_body=NO_CLAUDE, setup=lambda t: (big_skill(t), bad_mcp(t)))
+chk("badge: a partial and a failed section give red, not yellow", "-red?logo=" in badge_of(b), True)
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)

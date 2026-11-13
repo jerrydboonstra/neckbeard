@@ -1,5 +1,7 @@
 # 🔍 neckbeard 1.12.7 · vetted against the sample reader's rules
 
+**A demo, not neckbeard's published report.** This is a fit report: neckbeard 1.12.7 judged against the sample reader's rules, kept to show what a local run prints. neckbeard's published report, with no reader and no verdict, is [docs/neckbeard-report.md](../docs/neckbeard-report.md).
+
 > ## 🟩 INSTALL · add the one skill, change no rules
 > No hooks, no agents, no subagent reach: it costs about 270 tokens of skill description each session and loads its 13.8 KB body only when invoked. Nothing it carries conflicts with the reader's rules, and two of its rules repeat ones the reader already runs. The reader has no way to vet a plugin, so the skill itself is the one new thing.
 >

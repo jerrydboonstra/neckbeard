@@ -19,7 +19,9 @@ VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugi
 	help \
 	mutate \
 	release \
-	release-notes
+	release-notes \
+	report \
+	report-check
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -37,6 +39,14 @@ mutate: ## break inventory.py a few hundred ways and list the self-check cases n
 excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
 	$(PYTHON) tools/excerpts
 
+report: ## regenerate docs/neckbeard-report.md, neckbeard's own published report (no reader, no verdict, no model call), and print its badge line
+	tools/vet . docs/neckbeard-report.md --facts --repo https://github.com/jerrydboonstra/neckbeard
+
+report-check: ## fail unless the report in the tagged tree names the tagged version (a tag set before the report commit is refused)
+	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "report-check: no tag v$(VERSION)"; exit 1; }
+	@d=$$(mktemp -d) && trap '[ -n "$$d" ] && rm -rf "$$d"' EXIT && git archive "v$(VERSION)" | tar -x -C "$$d" && \
+	  tools/vet --check "$$d/docs/neckbeard-report.md" "$$d"
+
 release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Release will carry
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d' | grep . >/dev/null || { echo "release: CHANGELOG.md has no entry for $(VERSION)" >&2; exit 1; }
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d'
@@ -48,6 +58,7 @@ release: check ## push main and the version tag to every remote, fast-forward on
 	@grep -q '"version": "$(VERSION)"' .claude-plugin/marketplace.json || { echo "release: marketplace.json does not say $(VERSION)"; exit 1; }
 	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "release: no tag v$(VERSION); run: git tag -a v$(VERSION) -m 'neckbeard $(VERSION)'"; exit 1; }
 	@git merge-base --is-ancestor "v$(VERSION)" HEAD || { echo "release: v$(VERSION) is not on main"; exit 1; }
+	@$(MAKE) --no-print-directory report-check || { echo "release: the report in v$(VERSION) is stale; make report, commit, and tag again"; exit 1; }
 	@for r in $(REMOTES); do \
 	  echo "== $$r"; \
 	  git push "$$r" main "v$(VERSION)" || { echo "release: $$r refused a fast-forward. Never force from here."; exit 1; }; \

@@ -15,6 +15,7 @@ skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
 skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_stability test_mcp_live
 # Tools
 tools/vet test_vet test_vet_stability
+tools/badge-logo test_vet
 tools/part1 test_part1
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
@@ -45,7 +46,8 @@ tools/test_vet_stability.py test_vet_stability
 tests/map test_test_parallel
 # Manifests, docs and the rest
 .claude-plugin/** test_selfcheck test_vet test_deploy
-Makefile test_deploy
+Makefile test_deploy test_vet
+docs/** test_vet
 examples/** test_selfcheck test_vet test_vet_stability
 CHANGELOG.md test_selfcheck
 README.md test_selfcheck test_deploy

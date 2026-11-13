@@ -13,6 +13,8 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ### Inventory
 
 - **`inventory.py T --live-mcp NAME` lists what a local MCP server declares, and only that.** It starts one checked-in stdio server, initializes it and lists its MCP tools (with input and output schemas and annotations), resources, resource templates and prompts. It never calls an MCP tool, reads a resource, gets a prompt, opens a browser or logs in. Without the flag nothing changes. The result is the server's entry in `mcp_servers` gaining a `live` key; a refusal or a failed read (a hang, a byte bound, a malformed reply) keeps its status on `live` and adds a note naming the server to `read_status.mcp_servers`. The server runs with a temporary home and only the environment its declaration names, a remote transport, a shell, eval or module command and an outside-tree entrypoint are refused, and time, bytes, pages, items and depth are bounded. Its text is untrusted data, and a declared environment value is scrubbed from it.
+- **`tools/vet --facts` prints a badge line, and neckbeard publishes its own facts report.** The line is the last line of stdout: label "neckbeard report", message "<version> · <read state>" (read in full, brightgreen; partly read, yellow; something unread, red, from the dossier's read states alone), linked to the report. `docs/neckbeard-report.md` is neckbeard's report on itself and its README badge links it. `examples/neckbeard.md` is now labelled as the demo of a fit report.
+- **`make report` regenerates that report, and `make release` refuses a tag whose report names another version.** `make report-check` reads the report from the tagged tree, so a tag set before the report commit is refused.
 
 ## 1.16.0 (2026-11-10)
 
