@@ -9,7 +9,7 @@ FAKE_LOGIN=default logs in only with the default one, as a Mac does.
 
     python3 tools/test_vet.py
 """
-import json, os, shutil, subprocess, sys, tempfile
+import json, os, re, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.dirname(HERE)
@@ -60,6 +60,8 @@ body = {"good": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE,
         "noglance": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n## Details\n\nText.\n",
         "noverdict": "# 🔍 demo\n\nNo banner here.\n",
         "leak": "> ## 🟩 INSTALL · fine\n> Read " + target + "/skills/demo/SKILL.md.\n" + GLANCE}.get(mode)
+if mode == "header":   # a judge that wrote the header line it was given
+    body = re.search(r"Header line to use: (.*)", prompt).group(1) + "\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE
 if body is not None:
     open(out, "w").write("# 🔍 demo 1.0.0\n\n" + body)
 m = re.search(r"Write the answers to (\S+) as JSON", prompt)
@@ -171,7 +173,7 @@ chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)
 
 # 0c. part 1 ("What it adds", tools/part1) goes in the report immediately before At a glance, and nothing else moves
 r = run("part1", commit=True)
-t = r["text"]
+t = re.sub(r"\n`\d{4}-\d\d-\d\d` \u00b7 neckbeard [^\n]*\n\nBaseline: .*?</details>\n", "", r["text"], count=1, flags=re.S)   # the baseline block is tools/vet's own, tested below
 head = "# 🔍 demo 1.0.0 · vetted against the sample reader\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n"
 glance = "## ⚡ At a glance\n\nOne line.\n"
 sec, _, rest = t[len(head):].partition(glance)
@@ -320,6 +322,15 @@ def facts_without_claude():
     finally:
         shutil.rmtree(tmp)
 chk("facts: runs with no claude on PATH", facts_without_claude(), (0, True, False))
+def facts_check_text(text, version):
+    tmp = tempfile.mkdtemp()
+    try:
+        target = os.path.join(tmp, "demo"); os.makedirs(os.path.join(target, ".claude-plugin"))
+        json.dump({"name": "demo", "version": version}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
+        report = os.path.join(tmp, "report.md"); open(report, "w", encoding="utf-8").write(text)
+        return subprocess.run([VET, "--check", report, target], capture_output=True, text=True).returncode
+    finally:
+        shutil.rmtree(tmp)
 def facts_check(version):
     tmp = tempfile.mkdtemp()
     try:
@@ -345,6 +356,77 @@ want = [l.split("Header line to use: ", 1)[1] for c in judge(j) for l in c["prom
 got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 neckbeard " in l]
 chk("facts and judged header lines are equal", (len(want), got), (1, want))
 chk("judged title still says vetted", j["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
+
+# 9. --reader and the baseline line
+BASELINE = re.compile(r"^Baseline: (.+) \u00b7 (\d+) rule files \u00b7 (\d+) bytes \u00b7 sha256 ([0-9a-f]{12})$", re.M)
+DEFAULT_READER = os.path.join(NB, "examples", "reader")
+
+def reader_copy(parent, name="myreader", edit=None):
+    dest = os.path.join(parent, name)
+    shutil.copytree(DEFAULT_READER, dest)
+    if edit:
+        path = os.path.join(dest, "rules", "safety.md")
+        open(path, "ab").write(edit)
+    return dest
+
+r = run("baseline-default")
+m = BASELINE.search(r["text"])
+chk("baseline: default reader names the sample reader, 4 rule files, a 12-hex fingerprint", (m.group(1), m.group(2)) if m else None, ("the sample reader", str(len(reader_files()))))
+chk("baseline: byte total is the files' own", int(m.group(3)) if m else None, sum(os.path.getsize(os.path.join(DEFAULT_READER, f)) for f in reader_files()))
+chk("baseline: the file list is a details block of relative paths", [w in r["text"] for w in ("<details><summary>Rule files</summary>", "- `rules/safety.md`", "</details>")], [True] * 3)
+chk("baseline: the title still says the sample reader", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
+
+tmp = tempfile.mkdtemp()
+try:
+    os.makedirs(os.path.join(tmp, "one")); os.makedirs(os.path.join(tmp, "two", "deeper"))
+    a = reader_copy(os.path.join(tmp, "one"), "readerdir")
+    b = reader_copy(os.path.join(tmp, "two", "deeper"), "readerdir")
+    c = reader_copy(tmp, "changed", edit=b" ")
+    ra, rb, rc_ = (run("fp", extra=("--reader", d)) for d in (a, b, c))
+    fp = lambda x: (BASELINE.search(x["text"]) or [None] * 5)[4]
+    chk("reader: two paths, one fingerprint", (fp(ra) is not None, fp(ra) == fp(rb)), (True, True))
+    chk("reader: one byte changed, a different fingerprint", fp(rc_) not in (None, fp(ra)), True)
+    chk("reader: label is the folder's basename", BASELINE.search(ra["text"]).group(1) if BASELINE.search(ra["text"]) else None, "readerdir")
+    chk("reader: title names the label", ra["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against readerdir")
+    leaks = [x for d in (a, os.path.dirname(a)) for x in (d, os.path.realpath(d))]   # macOS prints /private/var for /var
+    chk("reader: no absolute path of the folder in the report", ([x for x in leaks if x in ra["text"] + ra["out"]], ra["rc"]), ([], 0))
+    # a judge that wrote its header line: the Baseline goes right under it, and --check reads the report
+    h = run("judge-header", extra=("--reader", a), report="header")
+    hl = h["text"].split("\n")
+    chk("reader: the Baseline block sits under the judge's header line", (h["rc"], hl[2].startswith("`") and " \u00b7 neckbeard " in hl[2], hl[3], hl[4].startswith("Baseline: readerdir \u00b7 4 rule files")), (0, True, "", True))
+    chk("reader: that report carries one header line and one Baseline", (sum(1 for l in hl if " \u00b7 neckbeard " in l), sum(1 for l in hl if l.startswith("Baseline: "))), (1, 1))
+    chk("reader: --check passes on it", facts_check_text(h["text"], "1.0.0"), 0)
+    # a non-default folder that happens to be named "the sample reader" is still not the default
+    os.makedirs(os.path.join(tmp, "named"))
+    named = reader_copy(os.path.join(tmp, "named"), "the sample reader")
+    rn = run("named-like-default", extra=("--reader", named))
+    pn = [l for c in judge(rn) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
+    chk("reader: a folder named like the default gets the non-default paragraph and citation", (len(pn), "](" not in pn[0], "examples/reader/..." in "\n".join(c["prompt"] for c in judge(rn)), "rule files (fingerprint %s)" % fp(rn) in pn[0]), (1, True, False, True))
+    # a path-only change (one rule file renamed) changes the fingerprint too
+    moved = reader_copy(tmp, "moved")
+    os.rename(os.path.join(moved, "rules", "safety.md"), os.path.join(moved, "rules", "safe.md"))
+    chk("reader: a renamed rule file, a different fingerprint", fp(run("fp-moved", extra=("--reader", moved))) not in (None, fp(ra)), True)
+    # the default named on the command line is still the sample reader
+    d = run("explicit-default", extra=("--reader", DEFAULT_READER))
+    chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", "the sample reader", True))
+    # vet --check reads a judged report that carries the Baseline block
+    chk("reader: --check passes on a judged report with a Baseline block", facts_check_text(ra["text"], "1.0.0"), 0)
+    prompt = [l for c in judge(ra) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
+    want = "Verdict is relative to readerdir's 4 rule files (fingerprint %s), not a judgment of the plugin's quality." % fp(ra)
+    chk("reader: the verdict paragraph names the label, count and fingerprint, and links nothing", (len(prompt), want in prompt[0] and "](" not in prompt[0]), (1, True))
+    default_prompt = [l for c in judge(r) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
+    chk("reader: the default verdict paragraph is unchanged", "Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment" in default_prompt[0], True)
+    # a reader with no rule files: the facts report, no claude call, exit 0
+    empty = os.path.join(tmp, "emptyreader"); os.mkdir(empty)
+    open(os.path.join(empty, "notes.txt"), "w").write("not a rule file\n")
+    e = run("empty-reader", extra=("--reader", empty), fake_body=NO_CLAUDE)
+    chk("reader: no rule files gives the facts report, no claude call, exit 0", (e["rc"], e["calls"], e["title"], "no rule files" in e["out"]), (0, [], "# \U0001F50D demo 1.0.0 \u00b7 what it adds", True))
+    chk("reader: that report has no baseline and no verdict", ("Baseline:" in e["text"], "vetted against" in e["text"]), (False, False))
+    chk("reader: a missing folder is an error", run("no-reader", extra=("--reader", os.path.join(tmp, "nope")))["rc"], 1)
+    chk("reader: an empty --reader is a usage error", run("empty-arg", extra=("--reader", ""), fake_body=NO_CLAUDE)["rc"], 2)
+    chk("reader: --facts with --reader is a usage error", run("facts-reader", extra=("--facts", "--reader", a), fake_body=NO_CLAUDE)["rc"], 2)
+finally:
+    shutil.rmtree(tmp)
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)

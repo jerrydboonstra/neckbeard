@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--facts]: vet one plugin against the sample reader, headless,
+# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts]: vet one plugin against the sample reader, headless,
 # and write the report to OUT. This is the gallery method in one command, for a plugin that publishes its report
 # and wants to rebuild it, say in a Claude Code web session on its own repo:
 #   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
@@ -21,10 +21,17 @@
 # OUT's stem .units.json and .answers.json beside the report; fails when the answers or the banner don't match.
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
+# --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The header
+# then gains a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
+# fingerprint of their relative paths and contents) with the relative paths in a <details> block; tools/vet writes it after the
+# judge has, never the judge. The label is "the sample reader" for the default, else the folder's name, and the title and the
+# "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
+# (one stderr line says why, exit 0), with no claude needed. The reader is the config folder of the judge's session, so its
+# settings.json hooks run: vet only readers you trust.
 # --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
 # folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
 # what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
-# It takes --repo; with --judge, --model, --units or --note it is a usage error. Blank lines separate the four parts.
+# It takes --repo; with --judge, --model, --units, --note or --reader it is a usage error. Blank lines separate the four parts.
 # Exit 0 only when the report passed every check (--facts has one: it names no local path, checked before OUT is written). Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
@@ -32,7 +39,7 @@
 # has no header to read.
 set -u
 usage() {
-  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--facts]" >&2
+  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts]" >&2
   echo "       --facts takes only --repo" >&2
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
@@ -83,13 +90,14 @@ for line in open(sys.argv[1], encoding="utf-8"):
 fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2; shift 2
-judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no readerdir=""
 while [ $# -gt 0 ]; do case $1 in
   --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
   --model) [ $# -ge 2 ] || usage; model=$2; judgeflags=yes; shift 2 ;;
   --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
   --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
   --units) units=yes; judgeflags=yes; shift ;;
+  --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
   --facts) facts=yes; shift ;;
   *) usage ;;
 esac; done
@@ -100,8 +108,13 @@ nb=$(cd "$(dirname "$0")/.." && pwd -P)
 target=$(cd "$target" && pwd -P)
 mkdir -p "$(dirname "$out")" || die "can't make the folder for $out"
 out=$(cd "$(dirname "$out")" && pwd -P)/$(basename "$out")
-[ "$facts" = yes ] || command -v claude >/dev/null || die "no claude on PATH"
 command -v python3 >/dev/null || die "no python3 on PATH"
+
+default_reader=$(cd "$nb/examples/reader" && pwd -P)
+[ -z "$readerdir" ] || [ -d "$readerdir" ] || die "--reader $readerdir is not a folder"
+[ -z "$readerdir" ] && readerdir=$default_reader || readerdir=$(cd "$readerdir" && pwd -P)
+label="the sample reader" is_default=yes
+[ "$readerdir" = "$default_reader" ] || { label=$(basename "$readerdir") is_default=no; }   # not by name: a folder may be called "the sample reader"
 
 # 1. a throwaway reader and an empty project, removed however this exits
 work=$(mktemp -d "${TMPDIR:-/tmp}/neckbeard-vet.XXXXXX") || die "mktemp failed"
@@ -110,7 +123,7 @@ reader=$work/reader project=$work/project
 if [ "$facts" = yes ]; then
   mkdir "$reader" "$project" || die "couldn't make the empty config folder"
 else
-  cp -R "$nb/examples/reader" "$reader" && mkdir "$project" || die "couldn't copy the sample reader"
+  cp -R "$readerdir" "$reader" && mkdir "$project" || die "couldn't copy the reader ($label)"
 fi
 reader=$(cd "$reader" && pwd -P) project=$(cd "$project" && pwd -P)
 
@@ -129,13 +142,43 @@ if rules:
     sys.exit(1)
 EOF
 else
-python3 - "$dossier" "$reader" <<'EOF' || die "the dossier read rules from outside the sample reader"
+python3 - "$dossier" "$reader" <<'EOF'
 import json, os, sys
 rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
 paths = [r.get("path") or "" for r in rules]
 root = os.path.realpath(sys.argv[2]) + os.sep
-sys.exit(0 if paths and all(os.path.realpath(p).startswith(root) for p in paths) else 1)
+if not paths:
+    sys.exit(3)   # no rule files: the facts report, below
+sys.exit(0 if all(os.path.realpath(p).startswith(root) for p in paths) else 1)
 EOF
+  case $? in
+    0) ;;
+    3) # nothing to vet against: start again as --facts, with a fresh empty folder and a fresh inventory
+       echo "vet: $label has no rule files, so there is no verdict to give; writing the facts report instead" >&2
+       rm -rf "$work"; trap - EXIT
+       exec "$0" "$target" "$out" --facts ${repo:+--repo "$repo"} ;;
+    *) die "the dossier read rules from outside $label" ;;
+  esac
+  command -v claude >/dev/null || die "no claude on PATH"
+  # the baseline: what the verdict is relative to, from the rule files the inventory listed
+  baseline_file=$work/baseline.md
+  read -r nfiles nbytes fingerprint < <(python3 - "$dossier" "$reader" "$label" "$baseline_file" <<'EOF'
+import hashlib, json, os, sys
+rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
+root = os.path.realpath(sys.argv[2])
+rows = sorted((os.path.relpath(os.path.realpath(r["path"]), root), r["path"]) for r in rules)
+h, total = hashlib.sha256(), 0
+for rel, path in rows:
+    data = open(path, "rb").read()
+    total += len(data)
+    h.update(rel.encode("utf-8") + b"\0" + data + b"\0")
+fp = h.hexdigest()[:12]
+with open(sys.argv[4], "w", encoding="utf-8") as f:
+    f.write(f"\nBaseline: {sys.argv[3]} \u00b7 {len(rows)} rule files \u00b7 {total} bytes \u00b7 sha256 {fp}\n\n<details><summary>Rule files</summary>\n\n")
+    f.write("".join(f"- `{rel}`\n" for rel, _ in rows) + "\n</details>\n")
+print(len(rows), total, fp)
+EOF
+) || die "couldn't compute the baseline"
 fi
 
 # 3. the judge (--facts has none)
@@ -144,7 +187,7 @@ if [ "$facts" = no ] && [ "$judge" = auto ]; then
     judge=reader
   else
     judge=own
-    echo "vet: the judge can't log in with the sample reader as its config folder here, so it runs with your own config and is told to ignore it" >&2
+    echo "vet: the judge can't log in with $label as its config folder here, so it runs with your own config and is told to ignore it" >&2
   fi
 fi
 version=$(plugin_version "$target")
@@ -161,6 +204,7 @@ source=$name
 header_lines() {
   echo "# 🔍 ${name##*/}${version:+ $version} · $title_tail"
   echo "\`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}"
+  [ -z "${baseline_file:-}" ] || cat "$baseline_file"   # the judged report's third part; --facts has none
 }
 if [ "$facts" = yes ]; then
   title_tail="what it adds"
@@ -183,25 +227,32 @@ if [ "$facts" = yes ]; then
   echo "vet: facts report $out"
   exit 0
 fi
-title_tail="vetted against the sample reader"
+title_tail="vetted against $label"
 title=$(header_lines | sed -n 1p) header=$(header_lines | sed -n 2p)
+if [ "$is_default" = yes ]; then
+  reader_noun="the sample reader" reader_cite="examples/reader/... paths, never by the folder above"
+  verdict_text="Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
+else
+  reader_noun="the reader $label" reader_cite="their path inside the reader (for example rules/safety.md), never by the folder above"
+  verdict_text="Verdict is relative to $label's $nfiles rule files (fingerprint $fingerprint), not a judgment of the plugin's quality."
+fi
 prompt=$work/prompt.md
 cat > "$prompt" <<EOF
-Vet one plugin with neckbeard against the SAMPLE READER and write the report.
+Vet one plugin with neckbeard against ${reader_noun/the sample reader/the SAMPLE READER} and write the report.
 
 TARGET: $name${version:+ $version}, checked out at $target${commit:+ (commit $commit)}.
-DOSSIER (already built, read-only): $dossier. It was built with the sample reader as the config folder and an empty project, so current_rules is exactly the sample reader's files, under $reader. Those are the only rules already in force. Ignore every other instruction file in your own context (any CLAUDE.md, memory or skill you were started with): they are not the reader's.
+DOSSIER (already built, read-only): $dossier. It was built with $reader_noun as the config folder and an empty project, so current_rules is exactly $reader_noun's files, under $reader. Those are the only rules already in force. Ignore every other instruction file in your own context (any CLAUDE.md, memory or skill you were started with): they are not the reader's.
 METHOD: $nb/skills/neckbeard/SKILL.md. Step 1 is done (the dossier). Follow Steps 2 to 4 as written, using the report shape in Step 3 exactly.
 REPORT FILE (the only file you create): $out
 
 Header line to use: $header
 Title line to use: $title
-Put this paragraph in the verdict block, after the summary: "${note:+$note }Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
+Put this paragraph in the verdict block, after the summary: "${note:+$note }$verdict_text"
 
 Rules:
-- Read only the target, the dossier, the method and the sample reader. Judge from those and form your own view: if the target ships an earlier neckbeard report, treat it as documentation, not as an answer.
+- Read only the target, the dossier, the method and $reader_noun. Judge from those and form your own view: if the target ships an earlier neckbeard report, treat it as documentation, not as an answer.
 - Write nothing except the REPORT FILE. Edit nothing else. No git commands that change anything.
-- Cite reader rules as examples/reader/... paths, never by the folder above. Quote rules only as short phrases. Name no local path in the report: nothing under $target, $work or a home folder; cite the target's files by their path inside the target.
+- Cite reader rules as $reader_cite. Quote rules only as short phrases. Name no local path in the report: nothing under $target, $work or a home folder; cite the target's files by their path inside the target.
 - Plain prose: no em dashes, one line per paragraph, counts that match the grids, the Key line on one line. Reread the report once it is written and fix any count that doesn't match.
 
 Reply with the verdict line and the counts (conflicts / covered / new standing / new skill / dropped).
@@ -314,7 +365,18 @@ if lines[0] != sys.argv[2]:
     lines[0] = sys.argv[2]
     open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
 EOF
-for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
+# the baseline goes in by tools/vet, after the header line the judge wrote (after the title when it wrote none)
+python3 - "$out" "$header" "$baseline_file" <<'EOF'
+import sys
+lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
+block = open(sys.argv[3], encoding="utf-8").read().rstrip("\n").split("\n")
+if sys.argv[2] in lines:
+    lines[lines.index(sys.argv[2]) + 1:lines.index(sys.argv[2]) + 1] = block
+else:   # the judge wrote no header line, so vet writes it, where vet --check reads it (line 3)
+    lines[1:1] = ["", sys.argv[2]] + block
+open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
+EOF
+for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do
   [ "$p" = / ] && continue
   grep -qF -- "$p" "$out" && die "$out names a local path ($p); fix it by hand or rerun"
 done
