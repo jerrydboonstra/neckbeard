@@ -4,13 +4,13 @@
 - Skills: none
 - Rule files: none
 - Hook-injected text: partly read
-  - not read: hooks/hooks.json: unresolved hooks: SessionStart: hooks/run.sh; hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.
+  - not read: hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.; hooks/hooks.json: unresolved hooks: SessionStart: hooks/run.sh
 
 ### Hooks
 - Hooks: partly read
   - SessionStart: hooks/run.sh
   - reaches subagents: false (no event known to fire in a subagent)
-  - not read: hooks/hooks.json: unresolved hooks: SessionStart: hooks/run.sh; hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.
+  - not read: hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.; hooks/hooks.json: unresolved hooks: SessionStart: hooks/run.sh
 
 ### Subagents and commands
 - Agents: none

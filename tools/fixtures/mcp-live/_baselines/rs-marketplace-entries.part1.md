@@ -26,7 +26,7 @@
   - name and version, shown above
 - Marketplace: partly read
   - m
-  - not read: .claude-plugin/marketplace.json: plugin 'gone' (./plugins/gone): missing from this repository; .claude-plugin/marketplace.json: entry 'oops' is not an object; skipped
+  - not read: .claude-plugin/marketplace.json: entry 'oops' is not an object; skipped; .claude-plugin/marketplace.json: plugin 'gone' (./plugins/gone): missing from this repository
 - Commit: commit not given
 
 Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.

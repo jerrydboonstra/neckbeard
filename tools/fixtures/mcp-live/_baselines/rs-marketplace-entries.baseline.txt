@@ -56,8 +56,8 @@
       },
       "marketplace": {
         "notes": [
-          ".claude-plugin/marketplace.json: plugin 'gone' (./plugins/gone): missing from this repository",
-          ".claude-plugin/marketplace.json: entry 'oops' is not an object; skipped"
+          ".claude-plugin/marketplace.json: entry 'oops' is not an object; skipped",
+          ".claude-plugin/marketplace.json: plugin 'gone' (./plugins/gone): missing from this repository"
         ],
         "state": "partial"
       },

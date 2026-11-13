@@ -7,7 +7,7 @@ each request it gets to calls.log beside it (a notification is not a request). E
 
 Point 2 (the flag off changes nothing) is a guard, not a test that fails first: it compares the dossier of every read-status
 fixture and of the packs built here with the dossier 4bece13's inventory.py wrote (the empty config folder written <EMPTY>) (tools/fixtures/mcp-live/_baselines/), with
-every read_status.*.causes removed from both sides, and tools/part1's output on each. To write the baselines again from another
+every read_status.*.causes removed from both sides and each section's notes sorted, and tools/part1's output on each. To write the baselines again from another
 inventory.py: tools/test_mcp_live.py --baselines /path/to/inventory.py."""
 import atexit, json, os, shutil, subprocess, sys, tempfile, time
 from pathlib import Path
@@ -32,7 +32,7 @@ LISTS = ["initialize", "tools/list", "resources/list", "resources/templates/list
 def check(name, got, want=True):
     """Passes when GOT equals WANT. Printing what it got on a failure is the log line a red run shows."""
     ok = got == want
-    print(("ok   " if ok else "FAIL ") + name + ("" if ok else f"  got {str(got)[:160]}"))
+    print(("ok   " if ok else "FAIL ") + name + ("" if ok else f"  got {str(got)[:1500]}"))
     if not ok:
         failures.append(name)
 
@@ -115,6 +115,7 @@ def normal(obj, folder, fx):
     for s in (t.get("read_status") or {}).values():
         if isinstance(s, dict):
             s.pop("causes", None)
+            s["notes"] = sorted(s.get("notes") or [])   # the order a folder is walked in is the filesystem's: another host, another order
     text = json.dumps(obj, indent=2, sort_keys=True)
     for real, mark in ((os.path.realpath(EMPTY), "<EMPTY>"), (EMPTY, "<EMPTY>"), (os.path.realpath(folder), "<ROOT>"), (str(folder), "<ROOT>"),
                        (os.path.realpath(fx), "<FX>"), (str(fx), "<FX>")):

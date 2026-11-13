@@ -17,7 +17,7 @@
 
 ### State it may leave
 - Persistence candidates: partly read
-  - not read: sub/run.sh: resolves outside the target tree; not scanned; sub/link.json: resolves outside the target tree; not scanned
+  - not read: sub/link.json: resolves outside the target tree; not scanned; sub/run.sh: resolves outside the target tree; not scanned
 
 ### Reaches outside the session
 - MCP servers: none

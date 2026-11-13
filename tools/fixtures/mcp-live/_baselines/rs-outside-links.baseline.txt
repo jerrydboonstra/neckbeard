@@ -40,8 +40,8 @@
       },
       "persistence_candidates": {
         "notes": [
-          "sub/run.sh: resolves outside the target tree; not scanned",
-          "sub/link.json: resolves outside the target tree; not scanned"
+          "sub/link.json: resolves outside the target tree; not scanned",
+          "sub/run.sh: resolves outside the target tree; not scanned"
         ],
         "state": "partial"
       },
