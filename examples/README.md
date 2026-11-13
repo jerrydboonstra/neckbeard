@@ -50,6 +50,8 @@ Or do all of it in one command from this repo: `tools/vet <path-to-target> <repo
 
 `tools/vet <path-to-target> <report.md> --facts` writes the facts report instead: what the target adds (the same "What it adds" section, written by `tools/part1` from the dossier), with no reader, no verdict and no model call, so it needs only python3 and no login. Its title says "what it adds" and its header line is the one a judged report carries, so `tools/vet --check` reads it the same way. `--facts` takes `--repo` and no other option.
 
+`tools/vet --reader DIR` vets against your own rules instead of the sample reader. DIR is laid out as a Claude config folder (a `CLAUDE.md`, `rules/`, `skills/`). The report's header then carries a `Baseline:` line naming the folder, how many rule files the inventory read in it, their bytes and a 12-character fingerprint of their relative paths and contents, so the same rules in another folder give the same fingerprint, and a list of the relative paths. The title and the verdict paragraph name the folder too, and print no path of it. If the inventory finds no rule files in DIR there is nothing to judge against: vet prints why and writes the `--facts` report instead.
+
 If your plugin publishes a neckbeard report, a release can leave it vetting an older version. `tools/vet --check REPORT TARGET` catches that: it compares the version in the report's header with the one in your `plugin.json` and fails when they differ. It needs only python3, no Claude and no login, so it fits in CI. As a GitHub Actions job, with the neckbeard tag pinned:
 
 ```yaml
