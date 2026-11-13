@@ -319,8 +319,11 @@ for name, folder in fxs.items():
         missing.append(name)
         continue
     d, r = run(folder)
-    if normal(d, folder, fx) != b.read_text():
+    got_text = normal(d, folder, fx)
+    if got_text != b.read_text():
         bad_names.append(name)
+        import difflib   # the first differing lines, so a failure on another host says what differs
+        bad_names.append("".join(list(difflib.unified_diff(b.read_text().splitlines(1), got_text.splitlines(1), n=0))[2:8]))
     if part1_of(d, folder) != (BASE / f"{name}.part1.md").read_text():
         bad_names.append(name + " (part1)")
 for p in sorted(P1_SRC.glob("*.dossier.json")):
