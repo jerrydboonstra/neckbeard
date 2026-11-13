@@ -87,7 +87,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -115,6 +115,8 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
                    PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report, FAKE_UNITS=units, FAKE_FINDS=finds, FAKE_CONFIRM=confirm,
                    TMPDIR=os.path.join(tmp, "t"))
         os.mkdir(env["TMPDIR"])
+        if rules_above:   # the dossier looks up from the throwaway project for a CLAUDE.md, and finds this one
+            open(os.path.join(env["TMPDIR"], "CLAUDE.md"), "w").write("Always run the tests before you commit.\n")
         before = reader_files()
         p = subprocess.run([vet or VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
@@ -334,6 +336,8 @@ for flags in (["--units"], ["--judge", "reader"], ["--model", "opus"], ["--note"
     chk("facts with " + flags[0] + ": usage", (u["rc"], "[--facts]" in u["out"], u["report"]), (2, True, False))
 u = run("facts-repo", extra=("--facts", "--repo", "https://github.com/someone/demo"), fake_body=NO_CLAUDE)
 chk("facts: --repo still applies", (u["rc"], "[someone/demo](https://github.com/someone/demo) 1.0.0" in u["text"]), (0, True))
+u = run("facts-rules", extra=("--facts",), fake_body=NO_CLAUDE, rules_above=True)
+chk("facts: a rule file in force is refused, naming it", (u["rc"], u["report"], "the dossier read:" in u["out"] and "CLAUDE.md" in u["out"]), (1, False, True))
 # the group's guard: one header writer, byte for byte
 j = run("judged-header", commit=True)
 f = run("facts-header", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
