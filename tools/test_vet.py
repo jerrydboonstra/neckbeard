@@ -105,7 +105,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         sha = ""
         if commit:
             for c in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"]):
-                subprocess.run(["git", *c], cwd=target, check=True)
+                subprocess.run(["git", *c], cwd=target, check=True, env={**os.environ, "GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"})  # a fixed date, so two targets get one sha
             sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=target, capture_output=True, text=True).stdout.strip()
         out = os.path.join(tmp, "out", "report.md")
         log = os.path.join(tmp, "claude.log")
