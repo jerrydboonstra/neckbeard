@@ -60,6 +60,8 @@ body = {"good": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE,
         "noglance": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n## Details\n\nText.\n",
         "noverdict": "# 🔍 demo\n\nNo banner here.\n",
         "leak": "> ## 🟩 INSTALL · fine\n> Read " + target + "/skills/demo/SKILL.md.\n" + GLANCE}.get(mode)
+if mode == "header":   # a judge that wrote the header line it was given
+    body = re.search(r"Header line to use: (.*)", prompt).group(1) + "\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE
 if body is not None:
     open(out, "w").write("# 🔍 demo 1.0.0\n\n" + body)
 m = re.search(r"Write the answers to (\S+) as JSON", prompt)
@@ -388,6 +390,12 @@ try:
     chk("reader: title names the label", ra["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against readerdir")
     leaks = [x for d in (a, os.path.dirname(a)) for x in (d, os.path.realpath(d))]   # macOS prints /private/var for /var
     chk("reader: no absolute path of the folder in the report", ([x for x in leaks if x in ra["text"] + ra["out"]], ra["rc"]), ([], 0))
+    # a judge that wrote its header line: the Baseline goes right under it, and --check reads the report
+    h = run("judge-header", extra=("--reader", a), report="header")
+    hl = h["text"].split("\n")
+    chk("reader: the Baseline block sits under the judge's header line", (h["rc"], hl[2].startswith("`") and " \u00b7 neckbeard " in hl[2], hl[3], hl[4].startswith("Baseline: readerdir \u00b7 4 rule files")), (0, True, "", True))
+    chk("reader: that report carries one header line and one Baseline", (sum(1 for l in hl if " \u00b7 neckbeard " in l), sum(1 for l in hl if l.startswith("Baseline: "))), (1, 1))
+    chk("reader: --check passes on it", facts_check_text(h["text"], "1.0.0"), 0)
     # a path-only change (one rule file renamed) changes the fingerprint too
     moved = reader_copy(tmp, "moved")
     os.rename(os.path.join(moved, "rules", "safety.md"), os.path.join(moved, "rules", "safe.md"))
