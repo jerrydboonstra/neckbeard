@@ -1876,15 +1876,15 @@ def add_live_mcp(target_dossier, path, name, timeout, max_bytes, max_pages=16, m
     root = target_dossier.get("path") or path
     declaration, refusal = find_declaration(root, name)
     if refusal:
-        _note(notes, f"live MCP server {name!r}: {refusal}", cause=refusal_cause(refusal))   # LV1
+        _note(notes, f"live MCP server {name!r}: {refusal}", cause="tool-limit" if refusal_cause(refusal) == "tool-limit" else "target-fault")   # LV1
         return
     live = inventory_live_mcp(root, declaration, timeout=max(0.1, timeout), max_bytes=max(1024, max_bytes),
                                max_pages=max(1, max_pages), max_items=max(1, max_items))
     status = live.get("status")
     if status == "refused":
-        _note(notes, f"live MCP server {name!r}: refused: {live.get('refusal')}", cause=live.get("cause") or "tool-limit")   # LV2
+        _note(notes, f"live MCP server {name!r}: refused: {live.get('refusal')}", cause="target-fault" if live.get("cause") == "target-fault" else "tool-limit")   # LV2
     elif status != "ok":   # "error": the read failed; "partial": a list failed and the rest stands
-        _note(notes, f"live MCP server {name!r}: {live.get('error')}", cause=live.get("cause") or "target-fault")   # LV3
+        _note(notes, f"live MCP server {name!r}: {live.get('error')}", cause="tool-limit" if live.get("cause") == "tool-limit" else "target-fault")   # LV3
     for entry in (target_dossier.get("mcp_servers") or {}).get("servers") or []:
         if entry.get("name") == name:
             entry["live"] = live
