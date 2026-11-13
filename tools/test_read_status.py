@@ -377,6 +377,9 @@ _defs = [n for n in ast.walk(_tree) if isinstance(n, ast.FunctionDef) and n.name
 _req = lambda d: [a.arg for a, df in zip(d.args.kwonlyargs, d.args.kw_defaults) if a.arg == "cause" and df is None]
 check("C3. _note and the builder's add take cause as a required keyword-only argument (no default)",
       len(_defs) == 2 and all(_req(d) == ["cause"] for d in _defs), repr([ast.dump(d.args) for d in _defs])[:300])
+check("C1. a SKILL.md that is a dangling symlink: cause 'target-fault', the same as a dangling agent or command",
+      causes_of(fixture("skill-unreadable"), "skills") == ["target-fault"] and causes_of(fixture("agents-dangling"), "agents") == ["target-fault"],
+      repr((causes_of(fixture("skill-unreadable"), "skills"), causes_of(fixture("agents-dangling"), "agents"))))
 _mis = []
 for d in sorted(FX.iterdir()):
     if d.name.startswith("_") or (not d.is_dir() and not d.name.startswith("rulefile-")):

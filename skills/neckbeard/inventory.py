@@ -1152,7 +1152,8 @@ def contained_skill(sm, root, notes=None):
                 "refused": "resolves outside the target tree; not read"}
     item = rule_item(os.path.relpath(sm, root), sm)
     if item is None:
-        _note(notes, f"{os.path.relpath(sm, root)}: could not be read", "entry", cause="tool-limit")
+        _note(notes, f"{os.path.relpath(sm, root)}: could not be read", "entry",
+              cause="target-fault" if not os.path.isfile(sm) else "tool-limit")   # a dangling link is the plugin's, a file that will not open is ours
     if item:
         fm, _ = split_frontmatter(item["text"])
         # Claude Code treats a skill as user-invocable unless its frontmatter says false.
@@ -1195,7 +1196,8 @@ def skill_companions(sm, root, notes=None):
         else:
             text = read_text(p)
             if text is None:
-                _note(notes, f"{rel}: companion file could not be read", cause="tool-limit")
+                _note(notes, f"{rel}: companion file could not be read",
+                      cause="target-fault" if not os.path.isfile(p) else "tool-limit")
             out.append({"path": rel, "text": text, **(measure(p, text) if text is not None else {})})
     return out
 
@@ -1307,7 +1309,8 @@ def with_imports(source, path, root=None, notes=None):
     if it:
         items.append(it)
     else:
-        _note(notes, f"{os.path.relpath(path, root or os.path.dirname(path))}: could not be read", "entry", cause="tool-limit")
+        _note(notes, f"{os.path.relpath(path, root or os.path.dirname(path))}: could not be read", "entry",
+              cause="target-fault" if not os.path.isfile(path) else "tool-limit")
     for p, parent, refused in claude_md_imports(path, root, notes=notes):
         if refused:
             items.append({"source": f"{source} import", "path": p, "imported_from": parent,
@@ -1318,7 +1321,8 @@ def with_imports(source, path, root=None, notes=None):
             imp["imported_from"] = parent
             items.append(imp)
         else:
-            _note(notes, f"{os.path.relpath(p, root or os.path.dirname(path))}: import could not be read", "entry", cause="tool-limit")
+            _note(notes, f"{os.path.relpath(p, root or os.path.dirname(path))}: import could not be read", "entry",
+                  cause="target-fault" if not os.path.isfile(p) else "tool-limit")
     return items
 
 
