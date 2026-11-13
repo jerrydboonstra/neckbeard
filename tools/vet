@@ -28,6 +28,9 @@
 # "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
 # (one stderr line says why, exit 0), with no claude needed. The reader is the config folder of the judge's session, so its
 # settings.json hooks run: vet only readers you trust.
+# --facts also prints, as the last line of stdout, one Markdown badge line for OUT (label "neckbeard report", message
+# "<version> · <read state>", coloured by the dossier's read_status: failed gives red "something unread", partial yellow
+# "partly read", else brightgreen "read in full"), linked to OUT's path as given. Its other messages go to stderr.
 # --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
 # folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
 # what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
@@ -89,7 +92,7 @@ for line in open(sys.argv[1], encoding="utf-8"):
   exit 0
 fi
 [ $# -ge 2 ] || usage
-target=$1 out=$2; shift 2
+target=$1 out=$2 out_given=$2; shift 2
 judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no readerdir=""
 while [ $# -gt 0 ]; do case $1 in
   --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
@@ -224,7 +227,24 @@ if [ "$facts" = yes ]; then
     grep -qF -- "$p" "$work/facts.md" && die "the facts report names a local path ($p), so $out was not written"
   done
   mv "$work/facts.md" "$out"
-  echo "vet: facts report $out"
+  echo "vet: facts report $out" >&2
+  # the badge for it, as stdout's last line: the label, the target's version and how much of it was read, from the
+  # dossier's read_status alone (whoever's limit a gap is, it counts)
+  python3 - "$dossier" "$version" "$out_given" "$nb/tools/badge-logo" <<'EOF' || die "couldn't write the badge line"
+import json, sys
+from urllib.parse import quote
+dossier, version, link, logo_file = sys.argv[1:]
+status = json.load(open(dossier)).get("target", {}).get("read_status")
+if not status:
+    sys.exit("the dossier has no read_status")
+states = {v.get("state") for v in status.values()}
+state, colour = (("something unread", "red") if "failed" in states
+                 else ("partly read", "yellow") if "partial" in states else ("read in full", "brightgreen"))
+message = (version + " \u00b7 " if version else "") + state
+shield = quote(message.replace("-", "--").replace("_", "__"), safe="")   # shields.io: "-" and "_" are doubled, the rest percent-encoded
+logo = open(logo_file, encoding="utf-8").read().strip()
+print(f"[![neckbeard report: {message}](https://img.shields.io/badge/neckbeard%20report-{shield}-{colour}?logo={logo})]({link})")
+EOF
   exit 0
 fi
 title_tail="vetted against $label"

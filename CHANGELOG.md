@@ -10,6 +10,8 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 - **`tools/vet TARGET OUT --facts` writes the facts report.** It lists what the target adds (the "What it adds" section), reads no reader's rules, makes no model call and gives no verdict, so it needs only python3. Its title reads `what it adds`, and its header line is built by the same function as the judged report's, so `tools/vet --check` reads it unchanged. With `--judge`, `--model`, `--units` or `--note` it is a usage error.
 - **`tools/vet --reader DIR` vets against a reader of your own, and the report names it.** Every judged report's header gets a `Baseline:` line (the default reader's too) with the folder's name, its rule file count, bytes and a fingerprint that does not depend on where the folder sits, plus a list of the files. The title and the verdict paragraph carry the name, with no path. A reader with no rule files gets the `--facts` report instead, with a line saying why, and exit 0.
+- **`tools/vet --facts` prints a badge line, and neckbeard publishes its own facts report.** The line is the last line of stdout: label "neckbeard report", message "<version> · <read state>" (read in full, brightgreen; partly read, yellow; something unread, red, from the dossier's read states alone), linked to the report. `docs/neckbeard-report.md` is neckbeard's report on itself and its README badge links it. `examples/neckbeard.md` is now labelled as the demo of a fit report.
+- **`make report` regenerates that report, and `make release` refuses a tag whose report names another version.** `make report-check` reads the report from the tagged tree, so a tag set before the report commit is refused.
 
 ## 1.16.0 (2026-11-10)
 
