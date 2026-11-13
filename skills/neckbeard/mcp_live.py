@@ -53,7 +53,23 @@ UNSAFE_ENV = {
 
 
 class LiveMcpError(Exception):
-    pass
+    """A live read that did not go through. `cause` says whose limit it is, as read_status notes do: "tool-limit"
+    when neckbeard's own bound stopped it (time, bytes), "target-fault" when the server or its declaration is at
+    fault (a malformed or wrong reply, an error reply, a server that exits)."""
+    def __init__(self, message, cause="target-fault"):
+        super().__init__(message)
+        self.cause = cause
+
+
+# A refusal is neckbeard declining to run something unsafe ("tool-limit", as note-cause defines it), except where
+# the declaration itself is broken (no command, args that are not a list, an env that is not strings, a server that is
+# not an object or not declared): that is the target's fault.
+_TARGET_FAULT_REFUSALS = ("local MCP declaration has no command", "MCP args must be a list", "MCP env must be",
+                          "plugin.json's mcpServers is not an object", "MCP server ")
+
+
+def refusal_cause(reason):
+    return "target-fault" if str(reason).startswith(_TARGET_FAULT_REFUSALS) else "tool-limit"
 
 
 def _within(path, root):
@@ -322,7 +338,7 @@ class StdioClient:
         while raw:
             remaining = self.deadline - time.monotonic()
             if remaining <= 0:
-                raise LiveMcpError("live inventory timed out")
+                raise LiveMcpError("live inventory timed out", "tool-limit")
             try:
                 _, writable, _ = select.select([], [fd], [], remaining)
                 if writable:
@@ -335,10 +351,10 @@ class StdioClient:
     def _messages(self):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
-            raise LiveMcpError("live inventory timed out")
+            raise LiveMcpError("live inventory timed out", "tool-limit")
         events = self.selector.select(remaining)
         if not events:
-            raise LiveMcpError("live inventory timed out")
+            raise LiveMcpError("live inventory timed out", "tool-limit")
         messages = []
         for key, _ in events:
             try:
@@ -352,7 +368,7 @@ class StdioClient:
                 continue
             self.read_bytes += len(chunk)
             if self.read_bytes > self.max_bytes:
-                raise LiveMcpError("MCP output exceeded the byte limit")
+                raise LiveMcpError("MCP output exceeded the byte limit", "tool-limit")
             if key.data == "stderr":
                 self.stderr_buffer = (self.stderr_buffer + chunk)[-16_384:]
                 continue
@@ -449,16 +465,16 @@ def inventory_live_mcp(root, declaration, timeout=8.0, max_bytes=1_000_000,
         "declared_environment": [{"name": name, "value": "<redacted>"} for name in env_names],
     }
     if refusal:
-        return dict(base, status="refused", refusal=refusal)
+        return dict(base, status="refused", refusal=refusal, cause=refusal_cause(refusal))
     if not isinstance(env_cfg, dict) or not all(isinstance(k, str) and isinstance(v, str)
                                                 for k, v in env_cfg.items()):
-        return dict(base, status="refused", refusal="MCP env must be a string-to-string object")
+        return dict(base, status="refused", refusal="MCP env must be a string-to-string object", cause="target-fault")
     unsafe_env = sorted(k for k in env_cfg if k.upper() in UNSAFE_ENV or
                         k.upper().startswith(("DYLD_", "LD_", "BASH_FUNC_")))
     if unsafe_env:
         return dict(base, status="refused",
                     refusal="process-control environment is not safe to pass: " +
-                            ", ".join(unsafe_env))
+                            ", ".join(unsafe_env), cause="tool-limit")
 
     secrets = [v for v in env_cfg.values() if v]
     base["argv"] = _redacted_argv(argv, secrets)
@@ -504,16 +520,21 @@ def inventory_live_mcp(root, declaration, timeout=8.0, max_bytes=1_000_000,
                                                      count=len(listed["items"]))
                 except LiveMcpError as error:
                     result["surfaces"][label] = {"supported": True, "items": [],
-                                                 "error": str(error)}
+                                                 "error": str(error), "cause": error.cause}
             failed_lists = [f"{k}: {v['error']}" for k, v in result["surfaces"].items() if v.get("error")]
             if failed_lists:   # a list that failed leaves the rest of the inventory standing, but it is not "ok"
                 result["status"] = "partial"
                 result["error"] = "; ".join(failed_lists)
+                # one note for the run: neckbeard's limit when any failed list hit one, else the server's fault
+                result["cause"] = "tool-limit" if any(v.get("cause") == "tool-limit" for v in result["surfaces"].values()) \
+                    else "target-fault"
             if client.stderr_buffer:
                 result["stderr_excerpt"] = client.stderr_buffer.decode("utf-8", "replace")
             return bound_and_scrub(result, secrets)
         except (LiveMcpError, OSError, RecursionError) as error:
-            failed = dict(base, status="error", error=str(error))
+            failed = dict(base, status="error", error=str(error),
+                          cause=error.cause if isinstance(error, LiveMcpError)
+                          else "tool-limit" if isinstance(error, RecursionError) else "target-fault")
             if client and client.stderr_buffer:
                 failed["stderr_excerpt"] = client.stderr_buffer.decode("utf-8", "replace")
             return bound_and_scrub(failed, secrets)

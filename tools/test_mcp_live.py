@@ -70,6 +70,10 @@ def notes(dossier):
     return ((dossier.get("target") or {}).get("read_status") or {}).get("mcp_servers") or {}
 
 
+def causes(d):
+    return notes(d).get("causes")
+
+
 def calls(d):
     p = d / "calls.log"
     return p.read_text().split() if p.exists() else None
@@ -185,20 +189,21 @@ took = time.monotonic() - t0
 e = entry(d, "hanging").get("live") or {}
 check("5. a hanging server: the run ends inside the time bound (8 s, plus 2 s to clean up), measured",
       (r.returncode, took < 10.0, e.get("status"), e.get("error")), (0, True, "error", "live inventory timed out"), )
-check("5. a hanging server: read_status.mcp_servers is partial with a note naming the server",
-      (notes(d).get("state"), any("'hanging'" in n and "timed out" in n for n in notes(d).get("notes") or [])), ("partial", True))
-for name, extra, wanted in [("malformed", [], "MCP server emitted malformed JSON on stdout"),
-                            ("oversized", ["--live-mcp-max-bytes", "2048"], "MCP output exceeded the byte limit")]:
+check("5. a hanging server: read_status.mcp_servers is partial with a note naming the server, cause tool-limit",
+      (notes(d).get("state"), any("'hanging'" in n and "timed out" in n for n in notes(d).get("notes") or []), causes(d)),
+      ("partial", True, ["tool-limit"]))
+for name, extra, wanted, cause in [("malformed", [], "MCP server emitted malformed JSON on stdout", "target-fault"),
+                                   ("oversized", ["--live-mcp-max-bytes", "2048"], "MCP output exceeded the byte limit", "tool-limit")]:
     d, r = run(bad, "--live-mcp", name, *extra)
     e = entry(d, name).get("live") or {}
-    check(f"5. a {name} server: status error on live, and a note naming the server",
+    check(f"5. a {name} server: status error on live, and a note naming the server with cause {cause}",
           (r.returncode, e.get("status"), e.get("error"), notes(d).get("state"),
-           any(f"'{name}'" in n and wanted in n for n in notes(d).get("notes") or [])),
-          (0, "error", wanted, "partial", True))
+           any(f"'{name}'" in n and wanted in n for n in notes(d).get("notes") or []), causes(d)),
+          (0, "error", wanted, "partial", True, [cause]))
 d, r = run(bad, "--live-mcp", "nonesuch")
-check("5. a name the target does not declare: a note, no live key",
+check("5. a name the target does not declare: a note with cause target-fault, no live key",
       (r.returncode, notes(d).get("state"), any("'nonesuch'" in n and "not declared" in n for n in notes(d).get("notes") or []),
-       "live" in entry(d, "normal")), (0, "partial", True, False))
+       "live" in entry(d, "normal"), causes(d)), (0, "partial", True, False, ["target-fault"]))
 
 # ---------------------------------------------------------------- 6. declarations never run
 outer = tmpdir()
@@ -223,9 +228,9 @@ for label, cfg in shapes.items():
     d, r = run(p, "--live-mcp", "s")
     e = entry(d, "s").get("live") or {}
     started = any((x / n).exists() for x in (p, outer) for n in ("calls.log", "started.log", "pwned"))
-    check(f"6. {label}: refused, no process started, and a note names the server and the reason",
-          (r.returncode, e.get("status"), started, any("'s'" in n and "refused:" in n for n in notes(d).get("notes") or [])),
-          (0, "refused", False, True))
+    check(f"6. {label}: refused, no process started, and a note names the server and the reason, cause tool-limit",
+          (r.returncode, e.get("status"), started, any("'s'" in n and "refused:" in n for n in notes(d).get("notes") or []), causes(d)),
+          (0, "refused", False, True, ["tool-limit"]))
     (outer / "calls.log").unlink(missing_ok=True)
 for var in ("LD_FOO", "DYLD_FOO", "PYTHONPATH", "PYTHONUSERBASE", "BASH_FUNC_f%%"):
     p = servers({"s": ("normal", {var: "x"})})
@@ -238,9 +243,9 @@ for var in ("LD_FOO", "DYLD_FOO", "PYTHONPATH", "PYTHONUSERBASE", "BASH_FUNC_f%%
 hp = servers({"s": ("hang-tools", {})})
 d, r = run(hp, "--live-mcp", "s", "--live-mcp-timeout", "1")
 e = entry(d, "s").get("live") or {}
-check("5. a server that hangs on tools/list: live status partial, and a note naming the server",
-      (r.returncode, e.get("status"), notes(d).get("state"), any("'s'" in n and "tools" in n for n in notes(d).get("notes") or [])),
-      (0, "partial", "partial", True))
+check("5. a server that hangs on tools/list: live status partial, and a note naming the server, cause tool-limit",
+      (r.returncode, e.get("status"), notes(d).get("state"), any("'s'" in n and "tools" in n for n in notes(d).get("notes") or []), causes(d)),
+      (0, "partial", "partial", True, ["tool-limit"]))
 pg = servers({"s": ("pinger", {})})
 t0 = time.monotonic()
 d, r = run(pg, "--live-mcp", "s", "--live-mcp-timeout", "2")
@@ -252,8 +257,9 @@ shutil.copy(SERVER, np_ / "server.py")
 (np_ / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": "x", "mcpServers": "./servers.json"}))
 (np_ / ".mcp.json").write_text(json.dumps({"mcpServers": {"s": {"command": sys.executable, "args": ["server.py"]}}}))
 d, r = run(np_, "--live-mcp", "s")
-check("a manifest mcpServers that is not an object: the dossier reads no server, so none is run",
-      (r.returncode, calls(np_), any("not an object" in n for n in notes(d).get("notes") or [])), (0, None, True))
+check("a manifest mcpServers that is not an object: the dossier reads no server, so none is run; cause target-fault",
+      (r.returncode, calls(np_), any("not an object" in n for n in notes(d).get("notes") or []), causes(d)[-1:]),
+      (0, None, True, ["target-fault"]))
 
 # ---------------------------------------------------------------- 7. deceptive metadata
 dp = servers({"normal": ("normal", {}), "deceptive": ("deceptive", {})})

@@ -1594,10 +1594,15 @@ def add_read_status(dossier):
       MK7 marketplace_listing -> marketplace: marketplace.json resolves outside the tree
       MK8 marketplace_listing -> marketplace: an entry with no source string was never looked for
       LV1 add_live_mcp -> mcp_servers: --live-mcp names a server the target does not declare, or its
-          declaration cannot be read
+          declaration cannot be read (cause: target-fault when the target does not declare it or declares
+          it wrongly, since the manifest lacks what was asked for; tool-limit when its manifest or .mcp.json
+          resolves outside the tree)
       LV2 add_live_mcp -> mcp_servers: the live read was refused (a remote transport, a shell, eval or
-          module command, an entrypoint or argument outside the tree, an unsafe environment name)
-      LV3 add_live_mcp -> mcp_servers: the live read failed, or one of its lists did (a hang, a byte bound, a malformed reply)
+          module command, an entrypoint or argument outside the tree, an unsafe environment name: tool-limit,
+          neckbeard declined to run it; a declaration with no command, args that are not a list or an env that is
+          not strings: target-fault)
+      LV3 add_live_mcp -> mcp_servers: the live read failed, or one of its lists did (a hang or a byte bound: tool-limit; a malformed or wrong
+          reply, an error reply, a server that exits: target-fault)
     Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree
     with os.walk, which skips a folder it cannot list (onerror: "<folder>: folder could not be listed", untested
     because it takes a folder that exists and cannot be opened, which a test may not chmod) and does not enter
@@ -1866,20 +1871,20 @@ def add_live_mcp(target_dossier, path, name, timeout, max_bytes, max_pages=16, m
     add_read_status's list). A name the target does not declare has no entry to carry `live`: it is
     a note too."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # a caller that loads this file by path
-    from mcp_live import find_declaration, inventory_live_mcp   # only a --live-mcp run needs it
+    from mcp_live import find_declaration, inventory_live_mcp, refusal_cause   # only a --live-mcp run needs it
     notes = (target_dossier.get("_read_notes") or {}).get("mcp_servers")
     root = target_dossier.get("path") or path
     declaration, refusal = find_declaration(root, name)
     if refusal:
-        _note(notes, f"live MCP server {name!r}: {refusal}")   # LV1
+        _note(notes, f"live MCP server {name!r}: {refusal}", cause=refusal_cause(refusal))   # LV1
         return
     live = inventory_live_mcp(root, declaration, timeout=max(0.1, timeout), max_bytes=max(1024, max_bytes),
                                max_pages=max(1, max_pages), max_items=max(1, max_items))
     status = live.get("status")
     if status == "refused":
-        _note(notes, f"live MCP server {name!r}: refused: {live.get('refusal')}")   # LV2
+        _note(notes, f"live MCP server {name!r}: refused: {live.get('refusal')}", cause=live.get("cause") or "tool-limit")   # LV2
     elif status != "ok":   # "error": the read failed; "partial": a list failed and the rest stands
-        _note(notes, f"live MCP server {name!r}: {live.get('error')}")   # LV3
+        _note(notes, f"live MCP server {name!r}: {live.get('error')}", cause=live.get("cause") or "target-fault")   # LV3
     for entry in (target_dossier.get("mcp_servers") or {}).get("servers") or []:
         if entry.get("name") == name:
             entry["live"] = live
