@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+### Reports
+
+- **`tools/vet TARGET OUT --facts` writes the facts report.** It lists what the target adds (the "What it adds" section), reads no reader's rules, makes no model call and gives no verdict, so it needs only python3. Its title reads `what it adds`, and its header line is built by the same function as the judged report's, so `tools/vet --check` reads it unchanged. With `--judge`, `--model`, `--units` or `--note` it is a usage error.
+
 ## 1.16.0 (2026-11-10)
 
 ### Reports

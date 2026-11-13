@@ -87,12 +87,12 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
         fake = os.path.join(bindir, "claude")
-        open(fake, "w").write(FAKE_CLAUDE); os.chmod(fake, 0o755)
+        open(fake, "w").write(fake_body or FAKE_CLAUDE); os.chmod(fake, 0o755)
         target = os.path.join(tmp, "demo")
         os.makedirs(os.path.join(target, ".claude-plugin"))
         os.makedirs(os.path.join(target, "skills", "demo"))
@@ -285,6 +285,46 @@ rc, out = check("`2026-10-04` · neckbeard 1.12.9 · demo 1.0.0")
 chk("check: plain name, no commit passes", rc, 0)
 rc, out = check("Vetted some time ago.")
 chk("check: no header fails", (rc, "no header line" in out), (1, True))
+
+# 8. --facts: the report with no reader, no verdict and no model call
+NO_CLAUDE = """#!/usr/bin/env python3
+import json, os, sys
+with open(os.environ["FAKE_LOG"], "a") as f:
+    f.write(json.dumps({"cwd": os.getcwd(), "cfg": "", "args": sys.argv[1:], "prompt": ""}) + "\\n")
+sys.exit(97)
+"""
+r = run("facts", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("facts: written, exit 0, claude never called", (r["rc"], r["report"], r["calls"]), (0, True, []))
+chk("facts: title line", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 what it adds")
+chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "\U0001F7E9", "sample reader")], [False] * 4)
+chk("facts: closing line", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
+chk("facts: carries part 1", "What it adds" in r["text"].split("\n", 1)[1], True)
+chk("facts: temp folder removed", r["temp_left"], [])
+r2 = run("facts-again", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("facts: twice on one day, byte-identical", r["text"], r2["text"])
+def facts_check(version):
+    tmp = tempfile.mkdtemp()
+    try:
+        target = os.path.join(tmp, "demo"); os.makedirs(os.path.join(target, ".claude-plugin"))
+        json.dump({"name": "demo", "version": version}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
+        report = os.path.join(tmp, "report.md"); open(report, "w", encoding="utf-8").write(r["text"])
+        return subprocess.run([VET, "--check", report, target], capture_output=True, text=True).returncode
+    finally:
+        shutil.rmtree(tmp)
+chk("facts: --check passes on the same version", facts_check("1.0.0"), 0)
+chk("facts: --check fails on a new version", facts_check("1.1.0"), 1)
+for flags in (["--units"], ["--judge", "reader"], ["--model", "opus"], ["--note", "x"]):
+    u = run("facts-usage", extra=("--facts", *flags), fake_body=NO_CLAUDE)
+    chk("facts with " + flags[0] + ": usage", (u["rc"], "[--facts]" in u["out"], u["report"]), (2, True, False))
+u = run("facts-repo", extra=("--facts", "--repo", "https://github.com/someone/demo"), fake_body=NO_CLAUDE)
+chk("facts: --repo still applies", (u["rc"], "[someone/demo](https://github.com/someone/demo) 1.0.0" in u["text"]), (0, True))
+# the group's guard: one header writer, byte for byte
+j = run("judged-header", commit=True)
+f = run("facts-header", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
+want = [l.split("Header line to use: ", 1)[1] for c in judge(j) for l in c["prompt"].split("\n") if l.startswith("Header line to use: ")]
+got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 neckbeard " in l]
+chk("facts and judged header lines are equal", (len(want), got), (1, want))
+chk("judged title still says vetted", j["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)

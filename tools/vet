@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units]: vet one plugin against the sample reader, headless,
+# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--facts]: vet one plugin against the sample reader, headless,
 # and write the report to OUT. This is the gallery method in one command, for a plugin that publishes its report
 # and wants to rebuild it, say in a Claude Code web session on its own repo:
 #   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
@@ -21,6 +21,10 @@
 # OUT's stem .units.json and .answers.json beside the report; fails when the answers or the banner don't match.
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
+# --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
+# folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
+# what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
+# It takes --repo; with --judge, --model, --units or --note it is a usage error.
 # Exit 0 only when the report passed every check. Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
@@ -28,7 +32,8 @@
 # has no header to read.
 set -u
 usage() {
-  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units]" >&2
+  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--facts]" >&2
+  echo "       --facts takes only --repo" >&2
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
 }
@@ -78,29 +83,35 @@ for line in open(sys.argv[1], encoding="utf-8"):
 fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2; shift 2
-judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no
 while [ $# -gt 0 ]; do case $1 in
-  --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; shift 2 ;;
-  --model) [ $# -ge 2 ] || usage; model=$2; shift 2 ;;
+  --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
+  --model) [ $# -ge 2 ] || usage; model=$2; judgeflags=yes; shift 2 ;;
   --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
-  --note) [ $# -ge 2 ] || usage; note=$2; shift 2 ;;
-  --units) units=yes; shift ;;
+  --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
+  --units) units=yes; judgeflags=yes; shift ;;
+  --facts) facts=yes; shift ;;
   *) usage ;;
 esac; done
+[ "$facts" = no ] || [ "$judgeflags" = no ] || usage
 
 nb=$(cd "$(dirname "$0")/.." && pwd -P)
 [ -d "$target" ] || die "$target is not a folder"
 target=$(cd "$target" && pwd -P)
 mkdir -p "$(dirname "$out")" || die "can't make the folder for $out"
 out=$(cd "$(dirname "$out")" && pwd -P)/$(basename "$out")
-command -v claude >/dev/null || die "no claude on PATH"
+[ "$facts" = yes ] || command -v claude >/dev/null || die "no claude on PATH"
 command -v python3 >/dev/null || die "no python3 on PATH"
 
 # 1. a throwaway reader and an empty project, removed however this exits
 work=$(mktemp -d "${TMPDIR:-/tmp}/neckbeard-vet.XXXXXX") || die "mktemp failed"
 trap 'rm -rf "$work"' EXIT
 reader=$work/reader project=$work/project
-cp -R "$nb/examples/reader" "$reader" && mkdir "$project" || die "couldn't copy the sample reader"
+if [ "$facts" = yes ]; then
+  mkdir "$reader" "$project" || die "couldn't make the empty config folder"
+else
+  cp -R "$nb/examples/reader" "$reader" && mkdir "$project" || die "couldn't copy the sample reader"
+fi
 reader=$(cd "$reader" && pwd -P) project=$(cd "$project" && pwd -P)
 
 # 2. the dossier
@@ -108,6 +119,16 @@ dossier=$project/dossier.json
 # its note about the dossier holding your rules is moot here: the dossier is deleted on exit
 CLAUDE_CONFIG_DIR=$reader python3 "$nb/skills/neckbeard/inventory.py" "$target" --project-dir "$project" --out "$dossier" >"$work/inventory.log" 2>&1 ||
   { cat "$work/inventory.log" >&2; die "the inventory failed"; }
+if [ "$facts" = yes ]; then
+  # --facts reads no reader: the rule list must be empty
+  python3 - "$dossier" <<'EOF' || die "the dossier read rules, and a facts report must read none"
+import json, sys
+rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
+if rules:
+    print("vet: the dossier read: " + ", ".join(r.get("path") or "?" for r in rules), file=sys.stderr)
+    sys.exit(1)
+EOF
+else
 python3 - "$dossier" "$reader" <<'EOF' || die "the dossier read rules from outside the sample reader"
 import json, os, sys
 rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
@@ -115,9 +136,10 @@ paths = [r.get("path") or "" for r in rules]
 root = os.path.realpath(sys.argv[2]) + os.sep
 sys.exit(0 if paths and all(os.path.realpath(p).startswith(root) for p in paths) else 1)
 EOF
+fi
 
-# 3. the judge
-if [ "$judge" = auto ]; then
+# 3. the judge (--facts has none)
+if [ "$facts" = no ] && [ "$judge" = auto ]; then
   if (cd "$project" && CLAUDE_CONFIG_DIR=$reader timeout 120 claude -p --model "$model" "Reply with the single word ok" 2>&1) | grep -qx ok; then
     judge=reader
   else
@@ -135,7 +157,33 @@ name=$(basename "$target")
 [ -n "$remote" ] && name=${remote#https://github.com/}
 source=$name
 [ -n "$remote" ] && source="[$name]($remote)"
-title="# 🔍 ${name##*/}${version:+ $version} · vetted against the sample reader"
+# header_lines: the title line, then the header line, for both the judged report and --facts (vet --check reads the second)
+header_lines() {
+  echo "# 🔍 ${name##*/}${version:+ $version} · $title_tail"
+  echo "\`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}"
+}
+if [ "$facts" = yes ]; then
+  title_tail="what it adds"
+  {
+    header_lines | sed -n 1p
+    echo
+    header_lines | sed -n 2p
+    echo
+    if [ -n "$commit" ]; then python3 "$nb/tools/part1" "$dossier" --commit "$commit"; else python3 "$nb/tools/part1" "$dossier"; fi 2>"$work/part1.err" ||
+      { cat "$work/part1.err" >&2; die "part 1 could not be rendered"; }
+    echo
+    echo "No reader's rules were read: this report lists facts only and carries no verdict."
+  } >"$work/facts.md" || die "part 1 could not be rendered"
+  mv "$work/facts.md" "$out"
+  for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
+    [ "$p" = / ] && continue
+    grep -qF -- "$p" "$out" && die "$out names a local path ($p); fix it by hand or rerun"
+  done
+  echo "vet: facts report $out"
+  exit 0
+fi
+title_tail="vetted against the sample reader"
+title=$(header_lines | sed -n 1p) header=$(header_lines | sed -n 2p)
 prompt=$work/prompt.md
 cat > "$prompt" <<EOF
 Vet one plugin with neckbeard against the SAMPLE READER and write the report.
@@ -145,7 +193,7 @@ DOSSIER (already built, read-only): $dossier. It was built with the sample reade
 METHOD: $nb/skills/neckbeard/SKILL.md. Step 1 is done (the dossier). Follow Steps 2 to 4 as written, using the report shape in Step 3 exactly.
 REPORT FILE (the only file you create): $out
 
-Header line to use: \`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}
+Header line to use: $header
 Title line to use: $title
 Put this paragraph in the verdict block, after the summary: "${note:+$note }Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
 
