@@ -62,7 +62,7 @@ Counting what the host cannot see is worse than not counting.
 
 No hooks, no agents, one skill at 7,207 bytes. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 found no conflict (see the [gallery](examples/README.md)).
 
-**The report today** · neckbeard 1.12.7 against the [sample reader](examples/reader/) · [full report](examples/neckbeard.md)
+**The report today** · neckbeard 1.12.7 against the [sample reader](examples/reader/) · [full fit report, kept as a demo](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
 > 🟩 INSTALL · add the one skill, change no rules

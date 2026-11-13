@@ -50,14 +50,14 @@ Or do all of it in one command from this repo: `tools/vet <path-to-target> <repo
 
 A plugin's published report is the facts report: what the plugin adds to a session, with no reader, no verdict and no model call, so it needs only python3 and no login. A fit report against the sample reader, like the ones in this gallery, is a demo of what a local run prints, never a plugin's published verdict, because it depends on a reader's rules that a stranger does not have.
 
-Write it with one command, from a checkout of neckbeard:
+Write it with a clone of neckbeard and one command in your plugin's folder:
 
 ```bash
 git clone --depth 1 --branch v1.17.0 https://github.com/jerrydboonstra/neckbeard /tmp/nb
 /tmp/nb/tools/vet . docs/neckbeard-report.md --facts
 ```
 
-The report is the title `# 🔍 <name> <version> · what it adds`, a header line (date, neckbeard version, source, version, commit), the "What it adds" section written by `tools/part1` from the dossier, and one closing line saying no reader's rules were read. If the session's checkout is a private copy of your plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo. `--facts` takes no other option.
+The report is the title `# 🔍 <name> <version> · what it adds`, a header line (date, neckbeard version, source, version, commit), the "What it adds" section written by `tools/part1` from the dossier, and one closing line saying no reader's rules were read. If the session's checkout is a private copy of your plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo. `--facts` takes `--repo` and no other option.
 
 It also prints one Markdown badge line as the last line of its output, linked to the report's path as you gave it. Paste it into your README. The message is your plugin's version and how much of the plugin neckbeard could read, from the dossier's read states alone:
 

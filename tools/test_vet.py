@@ -452,6 +452,8 @@ try:
     os.makedirs(os.path.join(tmp, ".claude-plugin"))
     json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(tmp, ".claude-plugin", "plugin.json"), "w"))
     rel = subprocess.run([VET, ".", "docs/neckbeard-report.md", "--facts"], cwd=tmp, capture_output=True, text=True)
+    odd = subprocess.run([VET, ".", "my docs/r(1).md", "--facts"], cwd=tmp, capture_output=True, text=True)
+    chk("badge: spaces and parens in OUT are escaped in the link", (odd.returncode, odd.stdout.rstrip("\n").endswith("](my%20docs/r%281%29.md)")), (0, True))
     chk("badge: a relative OUT stays relative in the link", (rel.returncode, rel.stdout.rstrip("\n").endswith("](docs/neckbeard-report.md)")), (0, True))
 finally:
     shutil.rmtree(tmp)
@@ -486,7 +488,12 @@ rc, out = report_check("1.2.0")
 chk("report-check: a tagged report naming the tagged version passes", rc, 0)
 makefile = open(os.path.join(NB, "Makefile"), encoding="utf-8").read()
 release = makefile.split("\nrelease:", 1)[1].split("\ndeploy:", 1)[0]
-chk("release runs report-check before any push", ("report-check" in release, release.find("report-check") < release.find("git push")), (True, True))
+chk("release runs report-check before any push, and stops when it fails", (bool(re.search(r"^\t@\$\(MAKE\) --no-print-directory report-check \|\| \{ [^}]*exit 1; \}$", release, re.M)), release.find("report-check") < release.find("git push")), (True, True))
+readme = open(os.path.join(NB, "README.md"), encoding="utf-8").read()
+chk("README: the neckbeard badge links the published report, with the logo the code uses", ("[![neckbeard report: " in readme, "](docs/neckbeard-report.md)" in readme, "logo=" + LOGO in readme), (True, True, True))
+chk("the logo is URL-encoded: none of + & # ( ) [ ] = or a space raw", [c for c in "+&#()[]= " if c in LOGO], [])
+b = run("badge-precedence", extra=("--facts",), fake_body=NO_CLAUDE, setup=lambda t: (big_skill(t), bad_mcp(t)))
+chk("badge: a partial and a failed section give red, not yellow", "-red?logo=" in badge_of(b), True)
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)

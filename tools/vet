@@ -159,7 +159,7 @@ EOF
     3) # nothing to vet against: start again as --facts, with a fresh empty folder and a fresh inventory
        echo "vet: $label has no rule files, so there is no verdict to give; writing the facts report instead" >&2
        rm -rf "$work"; trap - EXIT
-       exec "$0" "$target" "$out" --facts ${repo:+--repo "$repo"} ;;
+       exec "$0" "$target" "$out_given" --facts ${repo:+--repo "$repo"} ;;
     *) die "the dossier read rules from outside $label" ;;
   esac
   command -v claude >/dev/null || die "no claude on PATH"
@@ -221,16 +221,9 @@ if [ "$facts" = yes ]; then
     echo
     echo "No reader's rules were read: this report lists facts only and carries no verdict."
   } >"$work/facts.md" || die "part 1 could not be rendered"
-  # the local-path check runs before OUT is written, so a report that names one never lands there
-  for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
-    [ "$p" = / ] && continue
-    grep -qF -- "$p" "$work/facts.md" && die "the facts report names a local path ($p), so $out was not written"
-  done
-  mv "$work/facts.md" "$out"
-  echo "vet: facts report $out" >&2
   # the badge for it, as stdout's last line: the label, the target's version and how much of it was read, from the
-  # dossier's read_status alone (whoever's limit a gap is, it counts)
-  python3 - "$dossier" "$version" "$out_given" "$nb/tools/badge-logo" <<'EOF' || die "couldn't write the badge line"
+  # dossier's read_status alone (whoever's limit a gap is, it counts). Worked out before OUT is written, so a failure leaves no report.
+  badge=$(python3 - "$dossier" "$version" "$out_given" "$nb/tools/badge-logo" <<'EOF'
 import json, sys
 from urllib.parse import quote
 dossier, version, link, logo_file = sys.argv[1:]
@@ -238,13 +231,25 @@ status = json.load(open(dossier)).get("target", {}).get("read_status")
 if not status:
     sys.exit("the dossier has no read_status")
 states = {v.get("state") for v in status.values()}
+# green only when every section is read or does not apply; a state this code does not know is not "read in full"
 state, colour = (("something unread", "red") if "failed" in states
-                 else ("partly read", "yellow") if "partial" in states else ("read in full", "brightgreen"))
+                 else ("read in full", "brightgreen") if states <= {"read", "not-applicable"} else ("partly read", "yellow"))
 message = (version + " \u00b7 " if version else "") + state
 shield = quote(message.replace("-", "--").replace("_", "__"), safe="")   # shields.io: "-" and "_" are doubled, the rest percent-encoded
+alt = message.replace("]", "\\]")
 logo = open(logo_file, encoding="utf-8").read().strip()
-print(f"[![neckbeard report: {message}](https://img.shields.io/badge/neckbeard%20report-{shield}-{colour}?logo={logo})]({link})")
+link = link.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
+print(f"[![neckbeard report: {alt}](https://img.shields.io/badge/neckbeard%20report-{shield}-{colour}?logo={logo})]({link})")
 EOF
+  ) || die "couldn't write the badge line"
+  # the local-path check runs before OUT is written, so a report that names one never lands there
+  for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
+    [ "$p" = / ] && continue
+    grep -qF -- "$p" "$work/facts.md" && die "the facts report names a local path ($p), so $out was not written"
+  done
+  mv "$work/facts.md" "$out"
+  echo "vet: facts report $out" >&2
+  printf '%s\n' "$badge"
   exit 0
 fi
 title_tail="vetted against $label"
