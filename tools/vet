@@ -26,11 +26,12 @@
 # fingerprint of their relative paths and contents) with the relative paths in a <details> block; tools/vet writes it after the
 # judge has, never the judge. The label is "the sample reader" for the default, else the folder's name, and the title and the
 # "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
-# (one stderr line says why, exit 0), with no claude needed.
+# (one stderr line says why, exit 0), with no claude needed. The reader is the config folder of the judge's session, so its
+# settings.json hooks run: vet only readers you trust.
 # --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
 # folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
 # what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
-# It takes --repo; with --judge, --model, --units or --note it is a usage error. Blank lines separate the four parts.
+# It takes --repo; with --judge, --model, --units, --note or --reader it is a usage error. Blank lines separate the four parts.
 # Exit 0 only when the report passed every check (--facts has one: it names no local path, checked before OUT is written). Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
@@ -96,7 +97,7 @@ while [ $# -gt 0 ]; do case $1 in
   --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
   --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
   --units) units=yes; judgeflags=yes; shift ;;
-  --reader) [ $# -ge 2 ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
+  --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
   --facts) facts=yes; shift ;;
   *) usage ;;
 esac; done
@@ -368,9 +369,11 @@ EOF
 python3 - "$out" "$header" "$baseline_file" <<'EOF'
 import sys
 lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
-at = lines.index(sys.argv[2]) + 1 if sys.argv[2] in lines else 1
 block = open(sys.argv[3], encoding="utf-8").read().rstrip("\n").split("\n")
-lines[at:at] = block
+if sys.argv[2] in lines:
+    lines[lines.index(sys.argv[2]) + 1:lines.index(sys.argv[2]) + 1] = block
+else:   # the judge wrote no header line, so vet writes it, where vet --check reads it (line 3)
+    lines[1:1] = ["", sys.argv[2]] + block
 open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
 EOF
 for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do

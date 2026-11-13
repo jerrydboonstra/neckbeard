@@ -171,7 +171,7 @@ chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)
 
 # 0c. part 1 ("What it adds", tools/part1) goes in the report immediately before At a glance, and nothing else moves
 r = run("part1", commit=True)
-t = re.sub(r"\nBaseline: .*?</details>\n", "", r["text"], count=1, flags=re.S)   # the baseline block is tools/vet's own, tested below
+t = re.sub(r"\n`\d{4}-\d\d-\d\d` \u00b7 neckbeard [^\n]*\n\nBaseline: .*?</details>\n", "", r["text"], count=1, flags=re.S)   # the baseline block is tools/vet's own, tested below
 head = "# 🔍 demo 1.0.0 · vetted against the sample reader\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n"
 glance = "## ⚡ At a glance\n\nOne line.\n"
 sec, _, rest = t[len(head):].partition(glance)
@@ -320,6 +320,15 @@ def facts_without_claude():
     finally:
         shutil.rmtree(tmp)
 chk("facts: runs with no claude on PATH", facts_without_claude(), (0, True, False))
+def facts_check_text(text, version):
+    tmp = tempfile.mkdtemp()
+    try:
+        target = os.path.join(tmp, "demo"); os.makedirs(os.path.join(target, ".claude-plugin"))
+        json.dump({"name": "demo", "version": version}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
+        report = os.path.join(tmp, "report.md"); open(report, "w", encoding="utf-8").write(text)
+        return subprocess.run([VET, "--check", report, target], capture_output=True, text=True).returncode
+    finally:
+        shutil.rmtree(tmp)
 def facts_check(version):
     tmp = tempfile.mkdtemp()
     try:
@@ -377,7 +386,17 @@ try:
     chk("reader: one byte changed, a different fingerprint", fp(rc_) not in (None, fp(ra)), True)
     chk("reader: label is the folder's basename", BASELINE.search(ra["text"]).group(1) if BASELINE.search(ra["text"]) else None, "readerdir")
     chk("reader: title names the label", ra["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against readerdir")
-    chk("reader: no absolute path of the folder in the report", (a in ra["text"], os.path.dirname(a) in ra["text"], ra["rc"]), (False, False, 0))
+    leaks = [x for d in (a, os.path.dirname(a)) for x in (d, os.path.realpath(d))]   # macOS prints /private/var for /var
+    chk("reader: no absolute path of the folder in the report", ([x for x in leaks if x in ra["text"] + ra["out"]], ra["rc"]), ([], 0))
+    # a path-only change (one rule file renamed) changes the fingerprint too
+    moved = reader_copy(tmp, "moved")
+    os.rename(os.path.join(moved, "rules", "safety.md"), os.path.join(moved, "rules", "safe.md"))
+    chk("reader: a renamed rule file, a different fingerprint", fp(run("fp-moved", extra=("--reader", moved))) not in (None, fp(ra)), True)
+    # the default named on the command line is still the sample reader
+    d = run("explicit-default", extra=("--reader", DEFAULT_READER))
+    chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", "the sample reader", True))
+    # vet --check reads a judged report that carries the Baseline block
+    chk("reader: --check passes on a judged report with a Baseline block", facts_check_text(ra["text"], "1.0.0"), 0)
     prompt = [l for c in judge(ra) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
     want = "Verdict is relative to readerdir's 4 rule files (fingerprint %s), not a judgment of the plugin's quality." % fp(ra)
     chk("reader: the verdict paragraph names the label, count and fingerprint, and links nothing", (len(prompt), want in prompt[0] and "](" not in prompt[0]), (1, True))
@@ -390,6 +409,7 @@ try:
     chk("reader: no rule files gives the facts report, no claude call, exit 0", (e["rc"], e["calls"], e["title"], "no rule files" in e["out"]), (0, [], "# \U0001F50D demo 1.0.0 \u00b7 what it adds", True))
     chk("reader: that report has no baseline and no verdict", ("Baseline:" in e["text"], "vetted against" in e["text"]), (False, False))
     chk("reader: a missing folder is an error", run("no-reader", extra=("--reader", os.path.join(tmp, "nope")))["rc"], 1)
+    chk("reader: an empty --reader is a usage error", run("empty-arg", extra=("--reader", ""), fake_body=NO_CLAUDE)["rc"], 2)
     chk("reader: --facts with --reader is a usage error", run("facts-reader", extra=("--facts", "--reader", a), fake_body=NO_CLAUDE)["rc"], 2)
 finally:
     shutil.rmtree(tmp)
