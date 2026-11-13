@@ -301,7 +301,7 @@ chk("facts: closing line", r["text"].rstrip("\n").endswith("No reader's rules we
 chk("facts: carries part 1", "\n## What it adds\n" in r["text"], True)
 chk("facts: temp folder removed", r["temp_left"], [])
 r2 = run("facts-again", extra=("--facts",), fake_body=NO_CLAUDE)
-chk("facts: twice on one day, byte-identical", r["text"], r2["text"])
+chk("facts: twice on one day, byte-identical", (r["report"], r2["report"], r["text"] == r2["text"]), (True, True, True))
 # claude need not be on PATH at all: a PATH holding only the tools vet itself uses
 def facts_without_claude():
     tmp = tempfile.mkdtemp()
