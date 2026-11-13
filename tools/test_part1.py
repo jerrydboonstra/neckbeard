@@ -409,6 +409,26 @@ for f in every:
         bad.append(f)
 chk("7. no output matches vet-stability's verdict or count lines, a Conflicts heading or a | | | | row", not bad and len(regexes) == 2, bad)
 
+# ---------------------------------------------------------------- note-cause: the report says whose limit each note is
+def with_notes(section, notes, causes, state="partial"):
+    def edit(d):
+        d["target"]["read_status"][section] = {"state": state, "notes": notes, "causes": causes}
+    return edit
+
+
+both = variant("plugin-partial", with_notes("agents", ["agents/a.md: read capped at 200000 bytes", "agents/b.md: not valid JSON"], ["tool-limit", "target-fault"]))
+al = lines(parse(render(both)[1]), "Subagents and commands", "Agents")
+chk("C4. one tool-limit and one target-fault note: 'neckbeard did not read:' line, then 'broken in the plugin:' line, each its own line",
+    al[-2:] == ["neckbeard did not read: agents/a.md: read capped at 200000 bytes", "broken in the plugin: agents/b.md: not valid JSON"], al)
+only = variant("plugin-partial", with_notes("agents", ["agents/a.md: read capped at 200000 bytes"], ["tool-limit"]))
+al = lines(parse(render(only)[1]), "Subagents and commands", "Agents")
+chk("C4. only tool-limit notes: no 'broken' line", al[-1] == "neckbeard did not read: agents/a.md: read capped at 200000 bytes" and not any(l.startswith("broken in the plugin") for l in al), al)
+fl = variant("plugin-partial", with_notes("agents", ["agents/a.md: could not be read", "agents/b.md: not valid JSON"], ["tool-limit", "target-fault"], "failed"))
+chk("C4. a failed section prints both on the label's line, in place of 'not read: <notes>'",
+    parse(render(fl)[1]).get(("Subagents and commands", "Agents"), ("", []))[0] ==
+    "neckbeard did not read: agents/a.md: could not be read; broken in the plugin: agents/b.md: not valid JSON",
+    parse(render(fl)[1]).get(("Subagents and commands", "Agents")))
+
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
 print(f"test_part1: {fail} failed" if fail else "test_part1: all passed")

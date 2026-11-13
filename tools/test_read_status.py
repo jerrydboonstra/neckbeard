@@ -341,5 +341,50 @@ check("7. a rule file: every section but rule_files not-applicable",
       all(status(fixture("rulefile-plain")).get(s, {}).get("state") == "not-applicable" for s in SECTIONS if s != "rule_files")
       and status(fixture("rulefile-plain")).get("rule_files", {}).get("state") == "read", repr(status(fixture("rulefile-plain"))))
 
+# ---------------------------------------------------------------- note-cause: each note says whose limit it is
+CAUSES = {"tool-limit", "target-fault"}
+
+
+def causes_of(target, section):
+    return (status(target).get(section) or {}).get("causes")
+
+
+check("C1. a malformed .mcp.json: mcp_servers.causes is ['target-fault']",
+      causes_of(fixture("mcp-malformed"), "mcp_servers") == ["target-fault"], repr(status(fixture("mcp-malformed")).get("mcp_servers")))
+_hs = status(tmp_tree({**PLUGIN, "hooks/hooks.json": '{"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run.sh"}]}]}}\n',
+                       "hooks/run.sh": "#!/bin/sh\n" + over(25_000) + "\n"})).get("hooks", {})
+_cap = [c for n, c in zip(_hs.get("notes", []), _hs.get("causes", [])) if "read capped at 20000 bytes" in n]
+check("C2. a hook script over the 20000-byte hook read cap: its note has cause 'tool-limit'", _cap == ["tool-limit"], repr(_hs))
+
+import ast
+_tree = ast.parse(INVENTORY.read_text())
+_builder = next(n for n in ast.walk(_tree) if isinstance(n, ast.FunctionDef) and n.name == "add_read_status")
+
+
+def _good(node):
+    if isinstance(node, ast.Constant):
+        return node.value in CAUSES
+    return isinstance(node, ast.IfExp) and _good(node.body) and _good(node.orelse)
+
+
+# bare _note( calls anywhere, bare add( calls inside the builder; a set's .add( is an Attribute call and is not matched
+_sites = [n for n in ast.walk(_tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "_note"]
+_sites += [n for n in ast.walk(_builder) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "add"]
+_bad = [n.lineno for n in _sites if not any(k.arg == "cause" and _good(k.value) for k in n.keywords)]
+check("C3. every _note( call and every add( call in the read_status builder passes cause= one of the two values",
+      len(_sites) >= 50 and not _bad, f"{len(_sites)} sites; without a valid cause= at lines {_bad}")
+_defs = [n for n in ast.walk(_tree) if isinstance(n, ast.FunctionDef) and n.name in ("_note", "add")]
+_req = lambda d: [a.arg for a, df in zip(d.args.kwonlyargs, d.args.kw_defaults) if a.arg == "cause" and df is None]
+check("C3. _note and the builder's add take cause as a required keyword-only argument (no default)",
+      len(_defs) == 2 and all(_req(d) == ["cause"] for d in _defs), repr([ast.dump(d.args) for d in _defs])[:300])
+_mis = []
+for d in sorted(FX.iterdir()):
+    if d.name.startswith("_") or (not d.is_dir() and not d.name.startswith("rulefile-")):
+        continue
+    for sec, v in status(fixture(d.name)).items():
+        if not isinstance(v, dict) or "causes" not in v or len(v["causes"]) != len(v["notes"]) or not set(v["causes"]) <= CAUSES:
+            _mis.append(f"{d.name}.{sec}")
+check("C5. on every read-status fixture len(causes) == len(notes) in every section, each a known cause", not _mis, repr(_mis[:8]))
+
 print(f"test_read_status: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)
