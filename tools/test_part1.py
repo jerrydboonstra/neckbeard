@@ -443,6 +443,18 @@ nr = [l for l in pl if l.startswith("neckbeard did not read: ")]
 chk("C4. 18 tool-limit notes on the persistence card: one 'neckbeard did not read:' line, 5 named, ending 'and 13 more'",
     len(nr) == 1 and nr[0].count("read capped") == 5 and nr[0].endswith("; and 13 more"), pl)
 
+# end to end: inventory.py's own causes reach the card (the cases above feed causes in by hand)
+tree = tmp(); real_tree(tree)
+open(os.path.join(tree, ".mcp.json"), "w").write("{not json")
+open(os.path.join(tree, "agents", "big.md"), "w").write("---\nname: big\ndescription: d\n---\n" + "x" * 250_000)
+e = tmp()
+r = subprocess.run([sys.executable, INVENTORY, tree, "--project-dir", e, "--out", os.path.join(e, "d.json")],
+                   env={"PATH": os.environ["PATH"], "HOME": e, "CLAUDE_CONFIG_DIR": e}, capture_output=True, text=True)
+got = parse(render(os.path.join(e, "d.json"))[1]) if r.returncode == 0 else {}
+chk("C4. real inventory output: a malformed .mcp.json prints 'broken in the plugin:' on the MCP line, a capped agent 'neckbeard did not read:'",
+    "broken in the plugin: .mcp.json" in (got.get(("Reaches outside the session", "MCP servers")) or ("", []))[0]
+    and any(l.startswith("neckbeard did not read: agents/big.md") for l in lines(got, "Subagents and commands", "Agents")), (r.stderr[-200:], got))
+
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
 print(f"test_part1: {fail} failed" if fail else "test_part1: all passed")
