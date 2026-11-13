@@ -4,7 +4,7 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
-## Unreleased
+## 1.17.0 (2026-11-12)
 
 ### Reports
 
