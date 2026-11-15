@@ -472,6 +472,20 @@ def resolve_target(target, tmp_root):
 
 
 # ------------------------------------------------------------------ plugin inventory
+# debt: a module-level set, not an argument, because the generic-pack search reaches find_files and
+# hooks_outside_manifest through several callers. Only inventory_target sets it, and only while it
+# reads a root that a marketplace lists beside nested local plugins; upgrade path: thread a skip
+# argument through inventory_skills, inventory_hooks and the two walkers.
+_SKIP_DIRS = set()
+
+
+def _prune_skipped(dirpath, dirnames):
+    """Drop the folders of other plugins from a walk: the root's own pack must not sweep in
+    the skills and hooks a nested plugin ships, which installing the root never loads."""
+    if _SKIP_DIRS:
+        dirnames[:] = [d for d in dirnames if os.path.realpath(os.path.join(dirpath, d)) not in _SKIP_DIRS]
+
+
 def find_files(root, names, max_depth=6, notes=None):
     out = []
     root = root.rstrip("/")
@@ -483,6 +497,7 @@ def find_files(root, names, max_depth=6, notes=None):
             dirnames[:] = []
             continue
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor")]
+        _prune_skipped(dirpath, dirnames)
         _walk_gaps(notes, dirpath, dirnames, root)
         for fn in filenames:
             if fn in names:
@@ -907,6 +922,7 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
         if stopped_at:
             break
         dirnames[:] = sorted(d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor"))
+        _prune_skipped(dirpath, dirnames)
         _walk_gaps(notes, dirpath, dirnames, root)
         for fn in sorted(filenames):
             if not fn.endswith(".json") or fn in NOT_HOOK_CONFIG:
@@ -1347,7 +1363,7 @@ READ_SECTIONS = ("skills", "agents", "commands", "rule_files", "hooks", "mcp_ser
                  "persistence_candidates", "plugin_json", "marketplace")
 
 
-def inventory_target(path, plugin_name=None):
+def inventory_target(path, plugin_name=None, _read_root=False):
     if os.path.isfile(path):
         text = read_text(path)
         if text is None or "\x00" in text:
@@ -1381,10 +1397,34 @@ def inventory_target(path, plugin_name=None):
     # without it the root is read as before but its hooks are reported as unknown,
     # because the plugins that carry them were not read.
     notes = {s: [] for s in READ_SECTIONS}
-    market = marketplace_listing(path, notes["marketplace"])
+    market = None if _read_root else marketplace_listing(path, notes["marketplace"])
     if market is not None:
         notes["_marketplace_seen"] = True  # a plugin's dossier has no marketplace key to show it
     local = [p for p in (market or {}).get("plugins", []) if p.get("status") == "local"]
+    # A marketplace that lists the root itself ("./") makes the root a plugin in its own
+    # right. With nested local plugins beside it, and no --plugin, the root is the default
+    # target; --plugin may name the root's own entry. The root is read without its
+    # marketplace (_read_root), so this does not recurse, and the marketplace is attached
+    # after, with the root selected and a hint on each nested entry.
+    root_entry = next((p for p in (market or {}).get("plugins", []) if p.get("status") == "the root itself"), None)
+    if root_entry and ((plugin_name is None and local) or
+                       (plugin_name is not None and plugin_name == root_entry.get("name"))):
+        global _SKIP_DIRS
+        _SKIP_DIRS = {os.path.realpath(p["dir"]) for p in local if p.get("dir")}
+        try:
+            sub = inventory_target(path, _read_root=True)
+        finally:
+            _SKIP_DIRS = set()
+        sub["_read_notes"]["marketplace"].extend(notes["marketplace"])
+        sub["_read_notes"]["_marketplace_seen"] = True
+        sub["marketplace"] = {"name": market.get("name"), "root": path,
+                              "selected": root_entry["name"],
+                              "selected_source": root_entry["source"],
+                              "plugins": [{**{k: v for k, v in p.items() if k != "dir"},
+                                           **({"hint": f"run again with --plugin {p['name']}"}
+                                              if p.get("status") == "local" else {})}
+                                          for p in market["plugins"]]}
+        return sub
     if plugin_name is not None:
         chosen = next((p for p in local if p.get("name") == plugin_name), None)
         if not chosen:
