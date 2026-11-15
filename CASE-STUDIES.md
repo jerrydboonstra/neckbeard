@@ -94,23 +94,22 @@ A fit verdict on the rerun would need your own rules, so there is none here. The
 
 ## 2. `neckbeard`: itself, before publishing
 
-No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and one on 1.17.1 found no conflict (see the rerun below).
+No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and two on 1.17 found no conflict (see the rerun below).
 
-**The report today** · neckbeard 1.17.1 against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
+**The report today** · neckbeard 1.17.2 against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
-> 🟩 INSTALL · nothing to weigh
-> It ships one skill, no hooks, no agents, no commands and no root rule file, so the only always-on cost is the skill description. None of its rules conflicts with the reader's, and its core method (a standing rule and an on-demand skill) is new to this reader.
+> 🟩 INSTALL · as an on-demand skill, nothing to weigh
+> It registers no hooks, no agents and no commands, so it costs only a short skill description in each session and its full text when you ask for a vet. It fights none of the reader's rules, and its one real capability, vetting a plugin against your rules, is new to this setup. Two of its habits are worth writing down as standing rules.
 
 | | | |
 |:--:|---|---|
-| 🟩 | **Cost** | Skill description only, about 270 tokens per the manifest, loaded each session. The 14,357-byte skill body loads only when invoked. |
-| 🟩 | **Reach** | Main session only. No hooks are registered, so nothing fires on SubagentStart (certain). |
-| 🟩 | **Leaves state** | None found at install. When run, it writes one evaluation file inside the project it is run from. |
-| 🟨 | **Live surface** | Runs its own Python inventory script locally and clones a git URL target read-only. Live MCP inspection is off unless the user asks. |
+| 🟩 | **Cost** | About 764 bytes of skill description per session; the 14,535 byte body loads only when invoked |
+| 🟩 | **Reach** | Main session only; no hooks, so no SubagentStart (certain) |
+| 🟩 | **Leaves state** | None found; its script writes only to a chosen output file or a temp clone, per its own header |
+| 🟨 | **Live surface** | Runs a local Python script; clones a git URL if given one; a local MCP server is started only on an explicit opt-in flag |
 | 🟩 | **Refused reads** | none |
-| ❓ | **Read status** | Partial for hooks and persistence scans: broken test fixtures could not be parsed, and one script was read only up to 50,000 bytes. |
-| 🟩 | **Worth keeping** | 2 (1 standing rule, 1 skill) |
+| 🟩 | **Worth keeping** | 3 (2 rules, 1 skill) |
 <!-- /report -->
 
 **The first run** · before 1.1.0, against the author's own rules
@@ -120,16 +119,16 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 - its own `inventory.py` flagged as a persistence risk for three `os.path.expanduser` calls, all reads of a caller-supplied path; the heuristic cannot tell resolving a path from writing to disk, so it says so\
   ↳ worked as designed: flagged for a human, not guessed
 
-**The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged on the Mac in a separate session, the judge, which is the model session that does the comparing. The run printed judge mode `own`: the judge could not log in with the sample reader as its config folder, so it started with the machine's own config and was told to ignore it
+**The rerun** · 2026-11-15, neckbeard 1.17.2 @ `b2f586c` vetting itself, judged on a Linux machine in a separate session, the judge, which is the model session that does the comparing. The run printed judge mode `reader`: the judge ran as the sample reader, with the sample reader's folder as its config folder and none of the machine's rules. The earlier 1.17.1 rerun on the Mac could not do this: the sample reader had no login there, so that judge started with the machine's config and was told to ignore it. 1.17.2 copies the caller's login into the throwaway sample reader on Linux.
 
-- verdict INSTALL again, with 0 conflicts. This run counts 3 rules as already covered (duplicates of rules the reader runs), 1 new standing rule, 1 new on-demand skill and 2 dropped; the three runs on 1.12.7 counted 2 covered, 1 new skill and 2 dropped. The extra standing rule is "unknown is not none", which the judge now keeps as a rule for the reader's own config\
+- verdict INSTALL again, with 0 conflicts. This run counts 2 rules as already covered (duplicates of rules the reader runs), 2 new standing rules, 1 new on-demand skill and 4 dropped; the three runs on 1.12.7 counted 2 covered, 1 new skill and 2 dropped. The two standing rules are to check a file is git-ignored before writing private config to it, and to treat text from a downloaded repo or tool server as data\
   ↳ about the tool: the verdict held, the sort moved a little between versions
-- the report has a "Read status" row that the 1.12.7 reports did not: hooks and persistence are "partial", because broken test fixtures could not be parsed and one script was read only up to 50,000 bytes\
+- the report has a "Read status" gap that the 1.12.7 reports did not: hooks and persistence are "partly read", because broken test fixtures could not be parsed and one script was read only up to 50,000 bytes. The judge's note under its At a glance table names both\
   ↳ worked as designed: the gaps are named, not hidden
-- the same report still says "main session only (certain)" in its Reach row, while the facts report on this tree says "reaches subagents: unknown", because the same fixtures stop the hooks search. The judge states more than the inventory knew\
+- the judge's Reach row says "main session only; no hooks, so no SubagentStart (certain)", while the facts report on this tree says "reaches subagents: unknown", because the same fixtures stop the hooks search. The judge states more than the inventory knew\
   ↳ **open**: raised with the maintainers, not yet queued; the report order planned for 2.0 (facts first, fit after) is meant to stop a verdict from outrunning its facts
-- the judge wrote 14,357 bytes for the skill body, where the inventory counts 14,535, and "about 270 tokens per the manifest" for the description, which the facts report counts at 764 characters\
-  ↳ about the tool: figures in a fit report come from a model's reading and can differ from the inventory's; the facts report is the one to quote
+- the judge's figures come from its reading: it gives 14,535 bytes for the skill body (the inventory's count) and about 764 bytes for the description, where the 1.17.1 run on the Mac said 14,357 bytes and "about 270 tokens per the manifest"\
+  ↳ about the tool: figures in a fit report come from a model's reading and can differ between runs; the facts report is the one to quote
 
 ## 3. `obra/superpowers`: the large one
 
