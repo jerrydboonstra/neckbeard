@@ -8,7 +8,10 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Docs
 
-- **The README opens with the original tagline again, and the "partly read" badge note sits beside the report it describes.**
+- **The README opens with its original tagline again.** The note on the yellow "partly read" badge moved down, beside neckbeard's own report.
+
+### Plugin listing
+
 - **The plugin description opens with its original line again.** An installer sees the same first words as the README.
 
 ## 1.17.2 (2026-11-15)
