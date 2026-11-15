@@ -4,7 +4,7 @@
     tools/mutate-selfcheck [--jobs N] [--limit N] [--out FILE] [--targeted]
 
 The Makefile says every self-check case has been seen to fail. This tests that claim in
-bulk: it makes copies of skills/neckbeard/inventory.py with one condition deleted (every
+bulk: it makes copies of skills/neckbeard/inventory*.py (inventory.py and the modules it imports from) with one condition deleted (every
 `if` test replaced by False, then by True, and every and/or operand dropped), runs
 selfcheck.py against each copy in a scratch directory, and records which cases failed.
 A case that fails for no mutant guards nothing the mutations reach: strengthen its fixture
@@ -60,13 +60,47 @@ def mutants(src):
     return out
 
 
+def modules(skill_dir):
+    """The inventory*.py files of the skill folder: the ones a mutant is made of and a snippet is searched in."""
+    return sorted(f for f in os.listdir(skill_dir) if f.startswith("inventory") and f.endswith(".py"))
+
+
+def all_mutants(skill_dir):
+    """(description, {file: mutated source}) for every inventory*.py, the description led by the file's name."""
+    out = []
+    for name in modules(skill_dir):
+        with open(os.path.join(skill_dir, name)) as f:
+            out += [(f"{name} {desc}", {name: text}) for desc, text in mutants(f.read())]
+    return out
+
+
+def apply_snippets(skill_dir, subs, case=""):
+    """{file: new text} after each (old, new) in subs. Each old snippet must occur exactly once across the
+    inventory*.py files, and is replaced in the one that holds it, so a case may change two files."""
+    texts = {}
+    for name in modules(skill_dir):
+        with open(os.path.join(skill_dir, name)) as f:
+            texts[name] = f.read()
+    changed = set()
+    for old, new in subs:
+        n = sum(t.count(old) for t in texts.values())
+        if n != 1:
+            sys.exit(f"targeted sabotage for {case!r}: {old[:50]!r} occurs {n} times across {', '.join(texts)}; update TARGETED")
+        name = next(k for k, t in texts.items() if old in t)
+        texts[name] = texts[name].replace(old, new)
+        changed.add(name)
+    return {k: texts[k] for k in sorted(changed)}
+
+
 def run_one(item):
     desc, text = item
+    files = {"inventory.py": text} if isinstance(text, str) else text   # a plain string is inventory.py's new text
     d = tempfile.mkdtemp(prefix="mut-")
     try:
         shutil.copytree(SKILL, os.path.join(d, "n"), ignore=shutil.ignore_patterns("__pycache__"))
-        with open(os.path.join(d, "n", "inventory.py"), "w") as f:
-            f.write(text)
+        for name, body in files.items():
+            with open(os.path.join(d, "n", name), "w") as f:
+                f.write(body)
         try:
             r = subprocess.run([sys.executable, os.path.join(d, "n", "selfcheck.py")], capture_output=True,
                                text=True, timeout=120)
@@ -85,7 +119,7 @@ def run_one(item):
 
 # Cases no generic mutation reaches, because the guarded behaviour is a merge order, a regex or
 # two layers of defence. Each is broken by hand: (case, [(old, new), ...]); every old snippet
-# must occur once in inventory.py, and the case must then fail or crash selfcheck.
+# must occur once across the inventory*.py files, and the case must then fail or crash selfcheck.
 TARGETED = [
     ("project false overrides global true", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
     ("local true overrides project false", [("merged.update(got)", "merged.update({k: v for k, v in got.items() if k not in merged})")]),
@@ -104,15 +138,7 @@ TARGETED = [
 
 
 def targeted():
-    src = open(os.path.join(SKILL, "inventory.py")).read()
-    items = []
-    for case, subs in TARGETED:
-        text = src
-        for old, new in subs:
-            if text.count(old) != 1:
-                sys.exit(f"targeted sabotage for {case!r}: {old[:50]!r} occurs {text.count(old)} times; update TARGETED")
-            text = text.replace(old, new)
-        items.append((case, text))
+    items = [(case, apply_snippets(SKILL, subs, case)) for case, subs in TARGETED]
     print(f"{'case':58} failed?")
     bad = 0
     for case, text in items:
@@ -138,8 +164,7 @@ def main():
     ORDER[:] = cases
     if a.targeted:
         targeted()
-    src = open(os.path.join(SKILL, "inventory.py")).read()
-    ms = mutants(src)
+    ms = all_mutants(SKILL)
     if a.limit:
         ms = ms[:a.limit]
     print(f"{len(cases)} cases, {len(ms)} mutants, {a.jobs} jobs", file=sys.stderr)

@@ -60,6 +60,12 @@ try:
                 return str(e.code)
             return ""
         chk("a snippet that occurs in no module stops the run, naming it", "NOPE" in exits([("NOPE", "x")]), True)
+        write("inventory.py", "from inventory_core import keep\nTOP = 1\nSECOND = 'ALSO-ME'\n")
+        two = m.apply_snippets(scratch, [("'MUTANT-ME'", "'BROKEN'"), ("'ALSO-ME'", "'GONE'")])
+        chk("two snippets, one in each module (as the NO .claude/ case has): both files come back, each with its own edit",
+            (sorted(two), "'BROKEN'" in two.get("inventory_core.py", ""), "'GONE'" in two.get("inventory.py", ""), "'MUTANT-ME'" in two.get("inventory.py", "")), (["inventory.py", "inventory_core.py"], True, True, False))
+        _, code2, failed2, crash2 = m.run_one(("two files", two))
+        chk("run_one writes both files of a two-module case", (failed2, crash2), (["guarded case"], False))
         write("inventory.py", "from inventory_core import keep\nTOP = 'MUTANT-ME'\n")
         chk("a snippet that occurs once in each of two modules stops the run: it must occur once across them", "2 times" in exits([("'MUTANT-ME'", "'BROKEN'")]), True)
         write("inventory.py", "from inventory_core import keep\nTOP = 1\n")
