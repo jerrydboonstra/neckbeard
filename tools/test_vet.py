@@ -532,6 +532,8 @@ chk("login-copy: nothing is left in vet's temp folder", r["temp_left"], [])
 chk("login-copy: the caller's own login file is left as it was, byte for byte", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
 r = run("login-leak", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=SECRET)
 chk("login-leak: a report that holds the login's token is not written, and vet fails without printing it", (r["rc"] != 0, r["report"], ACCESS in r["out"]), (True, False, False))
+r = run("login-say-clean", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SAY=" judge-said-this"))
+chk("login-say: a clean judge's stdout still reaches vet's stdout", (r["rc"], "judge-said-this" in r["stdout"]), (0, True))
 r = run("login-leak-refresh", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=dict(FAKE_SECRET=REFRESH))
 chk("login-leak: a report holding only the refresh token is refused too", (r["rc"] != 0, r["report"], REFRESH in r["out"]), (True, False, False))
 for tok, name in ((ACCESS, "access"), (REFRESH, "refresh")):
