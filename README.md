@@ -4,13 +4,13 @@
 
 [![self-check](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![neckbeard report: 1.17.1 · partly read](https://img.shields.io/badge/neckbeard%20report-1.17.1%20%C2%B7%20partly%20read-yellow?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
 
-The yellow badge means "partly read". neckbeard's own report says so on purpose: the folders under `tools/fixtures` hold files that are broken on purpose, to test the reader, and `inventory.py` is over the read cap. The report names each gap.
+The yellow badge means "partly read". neckbeard's own report says so on purpose: the folders under `tools/fixtures` hold files that are broken on purpose, to test the reader, and `inventory.py` is over the read cap (neckbeard reads at most 50,000 bytes of one file). The report names each gap.
 
-> **I read the whole thing. You’re welcome.**
+> **I read what I could. I tell you what I couldn’t.**
 >
 > Reads the plugin. Lists what it adds. Edits nothing.
 
-Before you install a plugin into Claude Code, neckbeard reads it for you and lists what it would add to every session. A **hook** is a script Claude Code runs on its own at an event, such as the start of a session. A **subagent** is a helper session that Claude starts for one job. neckbeard lists every hook, every piece of text a plugin injects, every session and subagent it reaches, and every file it may write outside your project. That list is the **facts report**. Optionally, it then compares each rule the plugin carries with the rules you already run and tells you which of its rules duplicate one of yours, which contradict one, and which are new. That is the **fit report**, and it needs your own rules. It changes nothing.
+Before you install a plugin into Claude Code, neckbeard reads it for you and lists what it would add to every session. A **hook** is a script Claude Code runs on its own at an event, such as the start of a session. A **subagent** is a helper session that Claude starts for one job. neckbeard lists the hooks, the text a plugin injects, the sessions and subagents it reaches, and the files it may write outside your project, and says which parts it could not read. That list is the **facts report**. Optionally, it then compares each rule the plugin carries with the rules you already run and tells you which of its rules duplicate one of yours, which contradict one, and which are new. That is the **fit report**, and it needs your own rules. It changes nothing.
 
 **Tested by trying to break it, fifteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
@@ -87,7 +87,7 @@ That gap is the point. A tool that catches plugins for running in the background
 
 ## Point it at the next plugin before you install it
 
-Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, then judges the fit. From a clone, you can also run the inventory directly:
+Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, which writes a **dossier** (a JSON record of everything it read), then judges the fit. From a clone, you can also run the inventory directly:
 
 ```bash
 tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
@@ -105,9 +105,9 @@ tools/neckbeard <target> --live-mcp NAME [--out FILE]
 
 `--live-mcp NAME` is a separate, explicit trust decision. An **MCP server** is a program a plugin can start to give Claude extra tools; a **stdio** server talks to Claude over standard input and output. For one local stdio server declared by the target, Neckbeard starts its target-owned entrypoint, initializes MCP, and lists the advertised tools, resources, resource templates, and prompts. It records metadata and schemas only: it never calls a tool, reads a resource, expands a prompt, opens a browser, or performs a login. Remote servers, shell snippets, package runners, missing or outside-tree entrypoints, unbounded output, and hung servers fail closed. Declared environment values are passed only to that isolated process and are redacted from the dossier, even if the server echoes one back (a value of four characters or more wherever it appears, a shorter one only where a whole string equals it).
 
-It prints the **dossier**, the JSON record of everything the inventory read, to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
+It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
 
-**A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo ignores every `.json` except its two manifests, for precisely this reason.
+**A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo's `.gitignore` ignores JSON files by default, so a dossier does not get committed by accident.
 
 ## How it was tested
 

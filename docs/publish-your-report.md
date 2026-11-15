@@ -7,7 +7,7 @@ A plugin's published report is the facts report: what the plugin adds to a sessi
 Write it with a clone of neckbeard and one command in your plugin's folder:
 
 ```bash
-git clone --depth 1 --branch v1.17.2 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+git clone --depth 1 --branch v1.17.1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
 /tmp/nb/tools/vet . docs/neckbeard-report.md --facts
 ```
 
@@ -30,7 +30,7 @@ neckbeard-report:
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v4
-    - run: git clone --depth 1 --branch v1.17.2 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+    - run: git clone --depth 1 --branch v1.17.1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
     - run: /tmp/nb/tools/vet --check docs/neckbeard-report.md .
 ```
 
@@ -40,6 +40,6 @@ The rest of this page covers the fit report, which is for your own use.
 
 `tools/vet --reader DIR` vets against your own rules instead of the sample reader. DIR is laid out as a Claude config folder (a `CLAUDE.md`, `rules/`, `skills/`). The report's header then carries a `Baseline:` line naming the folder, how many rule files the inventory read in it, their bytes and a 12-character fingerprint of their relative paths and contents, so the same rules in another folder give the same fingerprint, and a list of the relative paths. The default sample reader gets the same line, so every report now has one. The title and the verdict paragraph name the folder too, and print no path of it. The folder is the config folder of the judge's session, so its `settings.json` hooks would run: pass only a folder you trust. If the inventory finds no rule files in DIR there is nothing to judge against: vet prints why and writes the `--facts` report instead.
 
-A fit report is built by a judge running in a Claude Code session, for example on a plugin's repo in a Claude Code web session on your own subscription, where the judge is logged in from the environment and starts with the sample reader as its only rules. Sonnet is enough for the session itself, since it only runs the command. Keep the judge on Sonnet: in a side-by-side run on 2026-10-04, a Haiku judge finished in under a minute but missed both conflicts and all nine covered rules that the Sonnet judge found and that checked out against the files. A full run takes two to three minutes.
+A fit report is built by a **judge**, a separate Claude session that does the comparing, running in a Claude Code session, for example on a plugin's repo in a Claude Code web session on your own subscription, where the judge is logged in from the environment and starts with the sample reader as its only rules. Sonnet is enough for the session itself, since it only runs the command. Keep the judge on Sonnet: in a side-by-side run on 2026-10-04, a Haiku judge finished in under a minute but missed both conflicts and all nine covered rules that the Sonnet judge found and that checked out against the files. A full run takes two to three minutes.
 
 For a private copy of the plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo, and `--note "..."` for a sentence of your own before the verdict's disclaimer, such as saying you wrote both. `tools/vet` sets the report's title line itself, so it always names the reader the verdict is against.

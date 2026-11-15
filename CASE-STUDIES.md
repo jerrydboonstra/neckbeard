@@ -10,7 +10,6 @@ Every time this tool has been pointed at something real, in order, with what it 
 4. [`Koz-TV/viral-launch-pipeline`](#4-koz-tvviral-launch-pipeline-the-random-one): the random one
 5. [`claude-security`](#5-claude-security-anthropics-own-security-plugin): Anthropic's own security plugin
 6. [All 39 Anthropic first-party plugins](#6-all-39-anthropic-first-party-plugins-the-sweep): the sweep
-15. [Four `pstack` ports](#15-four-pstack-ports-hooks-where-the-manifest-did-not-say): hooks where the manifest did not say
 
 **Pointed at neckbeard itself**
 
@@ -22,6 +21,10 @@ Every time this tool has been pointed at something real, in order, with what it 
 12. [The fix that was the regression](#12-the-fix-that-was-the-regression)
 13. [The last claim resting on the builder's word](#13-the-last-claim-resting-on-the-builders-word)
 14. [Before going public](#14-before-going-public-the-tests-that-tested-the-wrong-thing): the tests that tested the wrong thing
+
+**Pointed at real plugins, later**
+
+15. [Four `pstack` ports](#15-four-pstack-ports-hooks-where-the-manifest-did-not-say): hooks where the manifest did not say
 
 [What the fifteen add up to](#what-the-fifteen-add-up-to) · [Who did the reviewing](#who-did-the-reviewing)
 
@@ -91,7 +94,7 @@ A fit verdict on the rerun would need your own rules, so there is none here. The
 
 ## 2. `neckbeard`: itself, before publishing
 
-No hooks, no agents, one skill at 7,207 bytes. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and one on 1.17.1 found no conflict (see the [gallery](examples/README.md)).
+No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and one on 1.17.1 found no conflict (see the rerun below).
 
 **The report today** · neckbeard 1.17.1 against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
 
