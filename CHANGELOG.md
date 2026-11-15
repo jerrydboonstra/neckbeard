@@ -13,7 +13,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Reports
 
-- **The reader judge now logs in on Linux.** vet copies your login file into the throwaway reader folder for the run and deletes it afterwards. It refuses output that holds the login's tokens, and says why when it falls back to the own judge.
+- **The judge can now run as the sample reader on Linux.** For the default sample reader, vet copies your login file into the throwaway reader folder for the run and deletes it afterwards; a `--reader` folder never gets it, and a Mac still falls back to your own config. vet refuses output that holds your login's tokens, and says why whenever it falls back.
 
 ### Plugin listing
 
