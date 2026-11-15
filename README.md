@@ -25,7 +25,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard 1.17.3 · what it adds
 >
-> `2026-11-15` · neckbeard 1.17.3 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.3 @ `06a63cd`
+> `2026-11-15` · neckbeard 1.17.3 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.3 @ `4668c68`
 >
 > ### Injects
 > - Skills:
@@ -51,7 +51,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Version: 1.17.3 (from plugin.json)
 > - plugin.json:
 > - Marketplace: none
-> - Commit: 06a63cd
+> - Commit: 4668c68
 <!-- /report -->
 
 The yellow badge means "partly read". neckbeard's own report names each gap, and both are on purpose: test files under `tools/fixtures` that are broken on purpose, and one source file, `inventory.py`, that is bigger than the most neckbeard reads of one file (50,000 bytes).

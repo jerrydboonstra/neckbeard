@@ -1,6 +1,6 @@
 # 🔍 neckbeard 1.17.3 · what it adds
 
-`2026-11-15` · neckbeard 1.17.3 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.3 @ `06a63cd`
+`2026-11-15` · neckbeard 1.17.3 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.3 @ `4668c68`
 
 ## What it adds
 
@@ -47,7 +47,7 @@
 - plugin.json:
   - name and version, shown above
 - Marketplace: none
-- Commit: 06a63cd
+- Commit: 4668c68
 
 Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.
 
