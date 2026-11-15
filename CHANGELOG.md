@@ -8,7 +8,12 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Docs
 
-- **The README, gallery and case studies now open with facts reports on current plugin versions, explain the yellow badge, and show a three-line way to run neckbeard.** The maintainer guide moved to `docs/publish-your-report.md`, and the plugin and marketplace descriptions no longer quote another plugin or old token figures.
+- **The README, gallery and case studies open with facts reports.** Each shows what a plugin adds, on its current version, with no verdict on someone else's plugin; neckbeard's report on itself stays as the one verdict example. The README explains the yellow badge and shows how to run neckbeard in three lines.
+- **The maintainer guide moved to `docs/publish-your-report.md`.**
+
+### Plugin listing
+
+- **The plugin and marketplace descriptions match what neckbeard does.** They list what it reads and adds, and no longer quote another plugin or old token figures.
 
 ## 1.17.1 (2026-11-14)
 
