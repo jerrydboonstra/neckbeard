@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "neckbeard",
-  "description": "Ponytail ships it. Neckbeard reads it first.",
+  "description": "Neckbeard reads it first.",
   "owner": {
     "name": "Jerry Boonstra",
     "url": "https://github.com/jerrydboonstra"

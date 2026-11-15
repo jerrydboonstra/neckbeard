@@ -99,17 +99,18 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 **The report today** · neckbeard 1.17.1 against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
-> 🟩 INSTALL · the vetting skill is new to this reader and nothing in it conflicts
-> It has no hooks and no agents, and its only always-on cost is a 766-byte skill description. Nothing in it collides with a rule the reader runs, and the reader has no vetting skill of its own, so the one on-demand skill is the reason to install it.
+> 🟩 INSTALL · nothing to weigh
+> It ships one skill, no hooks, no agents, no commands and no root rule file, so the only always-on cost is the skill description. None of its rules conflicts with the reader's, and its core method (a standing rule and an on-demand skill) is new to this reader.
 
 | | | |
 |:--:|---|---|
-| 🟩 | **Cost** | 766 bytes of skill description at every session start; the 14,535-byte skill body loads only when invoked |
-| 🟩 | **Reach** | Main session only (certain: no hooks, so no SubagentStart hook) |
-| 🟨 | **Leaves state** | None at install. When used, it writes an evaluation file into the project and, with `--out`, a dossier; a git-URL target is cloned to a temp dir that is removed. The scan of `skills/neckbeard/inventory.py` was capped at 50,000 of 105,514 bytes, so that file's writes are only partly checked |
-| 🟩 | **Live surface** | None by default (static read). `--live-mcp` is opt-in and starts a target's local stdio server; `git clone` for URL targets |
+| 🟩 | **Cost** | Skill description only, about 270 tokens per the manifest, loaded each session. The 14,357-byte skill body loads only when invoked. |
+| 🟩 | **Reach** | Main session only. No hooks are registered, so nothing fires on SubagentStart (certain). |
+| 🟩 | **Leaves state** | None found at install. When run, it writes one evaluation file inside the project it is run from. |
+| 🟨 | **Live surface** | Runs its own Python inventory script locally and clones a git URL target read-only. Live MCP inspection is off unless the user asks. |
 | 🟩 | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 1 skill |
+| ❓ | **Read status** | Partial for hooks and persistence scans: broken test fixtures could not be parsed, and one script was read only up to 50,000 bytes. |
+| 🟩 | **Worth keeping** | 2 (1 standing rule, 1 skill) |
 <!-- /report -->
 
 **The first run** · before 1.1.0, against the author's own rules
@@ -119,16 +120,16 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 - its own `inventory.py` flagged as a persistence risk for three `os.path.expanduser` calls, all reads of a caller-supplied path; the heuristic cannot tell resolving a path from writing to disk, so it says so\
   ↳ worked as designed: flagged for a human, not guessed
 
-**The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged in a separate session, the judge, which is the model session that does the comparing (judge mode `own`: the judge could not log in with the sample reader as its config folder, so it ran with its own config and was told to ignore it)
+**The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged on the Mac in a separate session, the judge, which is the model session that does the comparing. The run printed judge mode `own`: the judge could not log in with the sample reader as its config folder, so it started with the machine's own config and was told to ignore it
 
-- verdict INSTALL again, with 0 conflicts, 2 rules already covered (duplicates of rules the reader runs), 1 new on-demand skill and 2 dropped (no value to this reader: report layout rules, and dated incident notes inside the method text); the same sorting as the three runs on 1.12.7\
-  ↳ about the tool: the verdict held on the current version
-- the cost line follows the facts: a 766-byte skill description in every session, the 14,535-byte body only when the skill runs\
-  ↳ about the tool
-- the fit report says "no hooks, so main session only (certain)". The facts report on the same tree says "Hooks: partly read" and "reaches subagents: unknown", because the deliberately broken fixtures stop the hooks search. The judge stated more than the inventory knew\
+- verdict INSTALL again, with 0 conflicts. This run counts 3 rules as already covered (duplicates of rules the reader runs), 1 new standing rule, 1 new on-demand skill and 2 dropped; the three runs on 1.12.7 counted 2 covered, 1 new skill and 2 dropped. The extra standing rule is "unknown is not none", which the judge now keeps as a rule for the reader's own config\
+  ↳ about the tool: the verdict held, the sort moved a little between versions
+- the report has a "Read status" row that the 1.12.7 reports did not: hooks and persistence are "partial", because broken test fixtures could not be parsed and one script was read only up to 50,000 bytes\
+  ↳ worked as designed: the gaps are named, not hidden
+- the same report still says "main session only (certain)" in its Reach row, while the facts report on this tree says "reaches subagents: unknown", because the same fixtures stop the hooks search. The judge states more than the inventory knew\
   ↳ **open**: raised with the maintainers, not yet queued; the report order planned for 2.0 (facts first, fit after) is meant to stop a verdict from outrunning its facts
-- the scan of `inventory.py` was capped at 50,000 of 105,514 bytes, and the fit report says so under "Leaves state" instead of calling the file clean\
-  ↳ worked as designed: the read cap is named, not hidden
+- the judge wrote 14,357 bytes for the skill body, where the inventory counts 14,535, and "about 270 tokens per the manifest" for the description, which the facts report counts at 764 characters\
+  ↳ about the tool: figures in a fit report come from a model's reading and can differ from the inventory's; the facts report is the one to quote
 
 ## 3. `obra/superpowers`: the large one
 
