@@ -371,8 +371,10 @@ _cap = [c for n, c in zip(_hs.get("notes", []), _hs.get("causes", [])) if "read 
 check("C2. a hook script over the 20000-byte hook read cap: its note has cause 'tool-limit'", _cap == ["tool-limit"], repr(_hs))
 
 import ast
-_tree = ast.parse(INVENTORY.read_text())
-_builder = next(n for n in ast.walk(_tree) if isinstance(n, ast.FunctionDef) and n.name == "add_read_status")
+_files = sorted(INVENTORY.parent.glob("*.py"))
+_trees = [ast.parse(f.read_text()) for f in _files]
+_searched = ", ".join(f.name for f in _files)
+_builder = next(n for t in _trees for n in ast.walk(t) if isinstance(n, ast.FunctionDef) and n.name == "add_read_status")
 
 
 def _good(node):
@@ -382,15 +384,15 @@ def _good(node):
 
 
 # bare _note( calls anywhere, bare add( calls inside the builder; a set's .add( is an Attribute call and is not matched
-_sites = [n for n in ast.walk(_tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "_note"]
+_sites = [n for t in _trees for n in ast.walk(t) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "_note"]
 _sites += [n for n in ast.walk(_builder) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "add"]
 _bad = [n.lineno for n in _sites if not any(k.arg == "cause" and _good(k.value) for k in n.keywords)]
 check("C3. every _note( call and every add( call in the read_status builder passes cause= one of the two values",
-      len(_sites) >= 50 and not _bad, f"{len(_sites)} sites; without a valid cause= at lines {_bad}")
-_defs = [n for n in ast.walk(_tree) if isinstance(n, ast.FunctionDef) and n.name in ("_note", "add")]
+      len(_sites) >= 50 and not _bad, f"{len(_sites)} sites across {_searched}; without a valid cause= at lines {_bad}")
+_defs = [n for t in _trees for n in ast.walk(t) if isinstance(n, ast.FunctionDef) and n.name in ("_note", "add")]
 _req = lambda d: [a.arg for a, df in zip(d.args.kwonlyargs, d.args.kw_defaults) if a.arg == "cause" and df is None]
 check("C3. _note and the builder's add take cause as a required keyword-only argument (no default)",
-      len(_defs) == 2 and all(_req(d) == ["cause"] for d in _defs), repr([ast.dump(d.args) for d in _defs])[:300])
+      len(_defs) == 2 and all(_req(d) == ["cause"] for d in _defs), f"searched {_searched}: " + repr([ast.dump(d.args) for d in _defs])[:300])
 check("C1. a SKILL.md that is a dangling symlink: cause 'target-fault', the same as a dangling agent or command",
       causes_of(fixture("skill-unreadable"), "skills") == ["target-fault"] and causes_of(fixture("agents-dangling"), "agents") == ["target-fault"],
       repr((causes_of(fixture("skill-unreadable"), "skills"), causes_of(fixture("agents-dangling"), "agents"))))

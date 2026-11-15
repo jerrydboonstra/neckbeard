@@ -5,7 +5,7 @@ Issues and pull requests are welcome. neckbeard is small and has a few rules tha
 - **Standard library only.** No dependencies, so there is nothing to vet before vetting a plugin.
 - **Run `make check` before you push.** It runs `skills/neckbeard/selfcheck.py`; CI runs the same thing on Python 3.11 to 3.13.
 - **A new check must be seen to fail.** Break the code it guards, run `make check`, watch that case go red, then restore the code. A check nobody has seen fail is a claim, not a check. Say in the pull request how you broke it.
-- **Every read from a target goes through the containment guard** (`_within` in `inventory.py`). The target is untrusted by definition.
+- **Every read from a target goes through the containment guard** (`_within` in `skills/neckbeard/inventory_core.py`). The target is untrusted by definition.
 - **Never commit a dossier or an evaluation.** They contain the reader's private rules. The `.gitignore` blocks JSON for this reason.
 - **Tests are plain scripts.** Each `tools/test_<name>.py` exits 0 when it passes, so `python3 tools/test_vet.py` runs one, and `skills/neckbeard/selfcheck.py` is the self-check. `make check` runs them all, plus `tools/excerpts --check`, which keeps the report quotes in `README.md` and `CASE-STUDIES.md` in step with the reports they copy from; after you regenerate a report, run `tools/excerpts`. `tests/map` lists which test modules a changed file selects. A new `tools/test_*.py` adds its own `tools/test_X.py test_X` line there, which a test enforces, and a line for each source file it covers.
 - **A pull request says what changed and why**, has `make check` passing, shows the new check failing before the fix, and adds one line to `CHANGELOG.md`.
