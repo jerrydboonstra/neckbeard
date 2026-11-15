@@ -42,7 +42,7 @@ def reply(text):
     if "--output-format" in args and args[args.index("--output-format") + 1] == "json":
         print(json.dumps({"result": text, "total_cost_usd": 0.01, "duration_ms": 1000}))
     else:
-        print(text)
+        print(text + os.environ.get("FAKE_SAY", ""))
     sys.exit(0)
 m = re.search(r"Write (\S+) as JSON, \{\"conflicts\"", prompt)
 if "FIND PASS" in prompt and m:
@@ -81,6 +81,8 @@ if m:
     pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing")}.get(os.environ.get("FAKE_UNITS", ""))
     answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "conflicts": [], "why": "x"} for u in units] if pick else []
     json.dump({"answers": answers}, open(m.group(1), "w"))
+    if os.environ.get("FAKE_SIDE"):
+        open(m.group(1), "a").write(os.environ["FAKE_SIDE"])
 reply("🟩 INSTALL · 0/0/0/1/0")
 '''
 
@@ -146,7 +148,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
         title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
         res = dict(rc=p.returncode, out=p.stdout + p.stderr, stdout=p.stdout, outpath=out, calls=calls, report=os.path.exists(out), title=title,
-                   text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, cfg_left=[os.path.exists(c["cfg"]) for c in calls if c["cfg"] and c["cfg"] != env.get("CLAUDE_CONFIG_DIR")], reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
+                   text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, caller_after={n: open(os.path.join(env["CLAUDE_CONFIG_DIR"], n)).read() for n in os.listdir(env["CLAUDE_CONFIG_DIR"]) if os.path.isfile(os.path.join(env["CLAUDE_CONFIG_DIR"], n))} if caller is not None else {}, cfg_left=[os.path.exists(c["cfg"]) for c in calls if c["cfg"] and c["cfg"] != env.get("CLAUDE_CONFIG_DIR")], side_left=sorted(f for f in os.listdir(os.path.dirname(out)) if f != "report.md") if os.path.isdir(os.path.dirname(out)) else [], reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
         if os.environ.get("VERBOSE"):
             print(case, res)
         return res
@@ -526,9 +528,17 @@ chk("login-copy: the default judge on Linux with a login file runs as the reader
 chk("login-copy: the judge saw the login file, mode 600", (j.get("cred_seen"), j.get("cred_mode")), (True, "0o600"))
 chk("login-copy: the folder the judge ran in is gone once vet exits", (bool(r["cfg_left"]), any(r["cfg_left"])), (True, False))
 chk("login-copy: no secret and no file name in the report, the dossier or vet's output", (ACCESS in r["text"] or REFRESH in r["text"], any(c["dossier_has_secret"] for c in r["calls"]), ACCESS in r["out"] or REFRESH in r["out"], ".credentials.json" in r["out"]), (False, False, False, False))
-chk("login-copy: the caller's own login file is left as it was", r["temp_left"], [])
+chk("login-copy: nothing is left in vet's temp folder", r["temp_left"], [])
+chk("login-copy: the caller's own login file is left as it was, byte for byte", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
 r = run("login-leak", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=SECRET)
 chk("login-leak: a report that holds the login's token is not written, and vet fails without printing it", (r["rc"] != 0, r["report"], ACCESS in r["out"]), (True, False, False))
+r = run("login-leak-refresh", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=dict(FAKE_SECRET=REFRESH))
+chk("login-leak: a report holding only the refresh token is refused too", (r["rc"] != 0, r["report"], REFRESH in r["out"]), (True, False, False))
+for tok, name in ((ACCESS, "access"), (REFRESH, "refresh")):
+    r = run("login-say-" + name, login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SAY=" " + tok))
+    chk("login-say: a judge that prints the %s token to stdout is refused, with one line and no value" % name, (r["rc"] != 0, tok in r["out"], "held your login's secrets" in r["out"]), (True, False, True))
+r = run("login-side", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", fake_env=dict(FAKE_SIDE=ACCESS))
+chk("login-side: a token in a --units side file leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
 r = run("login-refresh", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_REFRESH="1"))
 chk("login-refresh: a judge that rewrote its login file gets one line saying so", (r["rc"], "log in again" in r["out"], ACCESS in r["out"]), (0, True, False))
 # no copy, and the fallback line says why
@@ -540,6 +550,7 @@ try:
              ("no login file in your config folder", dict(caller={}, uname="Linux")),
              ("due to refresh within the hour", dict(caller={".credentials.json": login_file(hours=1 / 6)}, uname="Linux")),
              ("login file couldn't be read", dict(caller={".credentials.json": "not json"}, uname="Linux")),
+             ("login file couldn't be read", dict(caller={".credentials.json": '{"claudeAiOauth": {"accessToken": "x"}}'}, uname="Linux")),
              ("login didn't work as the reader", dict(caller=LOGIN, uname="Linux", login="never"))]
     for why, kw in cases:
         r = run("no-copy " + why, **{"login": "file", **kw})
