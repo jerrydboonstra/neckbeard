@@ -1,6 +1,6 @@
-# 🔍 neckbeard 1.17.3 · what it adds
+# 🔍 neckbeard 1.17.4 · what it adds
 
-`2026-11-15` · neckbeard 1.17.3 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.3 @ `4668c68`
+`2026-11-15` · neckbeard 1.17.4 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.4 @ `9b5096e`
 
 ## What it adds
 
@@ -35,7 +35,7 @@
   - tools/part1
   - tools/rule-units
   - and 12 more, in: tools/ 12
-  - neckbeard did not read: tools/fixtures/read-status/persist-dangling/scripts/x.sh: could not be read; not scanned; skills/neckbeard/inventory.py: read capped at 50000 bytes
+  - neckbeard did not read: tools/test_vet.py: read capped at 50000 bytes; tools/fixtures/read-status/persist-dangling/scripts/x.sh: could not be read; not scanned; skills/neckbeard/inventory.py: read capped at 50000 bytes
 
 ### Reaches outside the session
 - MCP servers: none
@@ -43,11 +43,11 @@
 ### Source
 - Kind: plugin
 - Name: neckbeard (from plugin.json)
-- Version: 1.17.3 (from plugin.json)
+- Version: 1.17.4 (from plugin.json)
 - plugin.json:
   - name and version, shown above
 - Marketplace: none
-- Commit: 4668c68
+- Commit: 9b5096e
 
 Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.
 

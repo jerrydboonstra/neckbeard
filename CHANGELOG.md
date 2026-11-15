@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.4 (2026-11-15)
+
+### Reports
+
+- **An explicit `--judge reader` copies your login on Linux, like the default judge.** When it cannot log in, it stops before judging, names the reason and `--judge own`, exits non-zero and writes no report. It no longer falls back to your own config. A failing judge call's last error lines reach stderr, and the report header names the judge that ran.
+
 ## 1.17.3 (2026-11-15)
 
 ### Docs
