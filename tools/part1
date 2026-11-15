@@ -54,7 +54,7 @@ SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")   # what a printed script
 
 
 def expand_plugin_root(s, plugin_root):
-    """A copy of inventory.py's _expand_plugin_root, kept equal to it by tools/test_part1.py. tools/part1 passes the
+    """A copy of inventory_hooks.py's _expand_plugin_root, kept equal to it by tools/test_part1.py. tools/part1 passes the
     literal ${CLAUDE_PLUGIN_ROOT} as the root, so the prefix strip in script_of then runs on every form.
     Replace every reference to CLAUDE_PLUGIN_ROOT in a hook command with the
     plugin root: $CLAUDE_PLUGIN_ROOT, ${CLAUDE_PLUGIN_ROOT}, and the shell's
