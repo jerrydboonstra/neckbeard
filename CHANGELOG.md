@@ -8,7 +8,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Inventory
 
-- **`tools/vet` inventories the root plugin, not a nested one, when the root marketplace lists both.** A repository whose marketplace lists the root itself and a plugin under a subfolder (Cat Herder and its `herd-wake` mod) was read as the nested plugin: its name, skills and hooks came from the subfolder while the header named the root. The root's manifest, skills and hooks are now the default target, and `--plugin` still picks the nested plugin. A root with no manifest no longer counts a nested plugin's skills as its own.
+- **A repository whose marketplace lists both the root plugin and a nested one is read as the root plugin.** Such a repository (Cat Herder and its `herd-wake` mod, for one) was read as the nested plugin: the report's name, skills and hooks came from the subfolder while its header named the root. The root's manifest, skills and hooks are now the default, `--plugin NAME` still picks the nested one, and a root with no manifest no longer counts a nested plugin's skills as its own.
 
 ## 1.17.0 (2026-11-12)
 
