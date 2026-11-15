@@ -90,7 +90,7 @@ Counting what the host cannot see is worse than not counting.
 - the old first-run bullet about doubled skill counts (mirrors for other agents) did not come back: six skills are six folders under `skills/`\
   ↳ guard from 1.0.0 held
 
-A fit verdict on the rerun would need your own rules, so there is none here. The facts are enough to see what the 2026-09 verdict stood on, and where today's tool reads less than it should.
+A fit verdict on the rerun would need your own rules, so there is none here. The facts show what changed since the first run, and where today's tool reads less than it should.
 
 ## 2. `neckbeard`: itself, before publishing
 
@@ -119,7 +119,7 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 - its own `inventory.py` flagged as a persistence risk for three `os.path.expanduser` calls, all reads of a caller-supplied path; the heuristic cannot tell resolving a path from writing to disk, so it says so\
   ↳ worked as designed: flagged for a human, not guessed
 
-**The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged in a separate session (judge mode `own`: the judge could not log in with the sample reader as its config folder, so it ran with its own config and was told to ignore it)
+**The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged in a separate session, the judge, which is the model session that does the comparing (judge mode `own`: the judge could not log in with the sample reader as its config folder, so it ran with its own config and was told to ignore it)
 
 - verdict INSTALL again, with 0 conflicts, 2 rules already covered, 1 new on-demand skill and 2 dropped (report layout rules, and dated incident notes inside the method text); the same sorting as the three runs on 1.12.7\
   ↳ about the tool: the verdict held on the current version
@@ -232,7 +232,7 @@ Picked with an unseeded `random.choice()` from 183 candidates, filtered by keywo
 
 **The first run** · 2026-09-19, against the author's own rules
 
-- "21-agent pipeline" looked like an overclaim next to zero agent files; wrong: the skill's text *is* the orchestration, calling the `Agent` tool 21 times, four in one parallel batch\
+- "21-agent pipeline" sat next to zero agent files; the skill's text *is* the orchestration, calling the `Agent` tool 21 times, four in one parallel batch\
   ↳ about the plugin
 - a pipeline built as dispatch instructions inside one skill reports `agents: []` and looks inert; zero declared agents does not mean zero agent dispatch\
   ↳ **still open**: prose is not parsed for `Agent(` calls

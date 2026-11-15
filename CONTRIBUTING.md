@@ -8,7 +8,7 @@ Issues and pull requests are welcome. neckbeard is small and has a few rules tha
 - **Every read from a target goes through the containment guard** (`_within` in `inventory.py`). The target is untrusted by definition.
 - **Never commit a dossier or an evaluation.** They contain the reader's private rules. The `.gitignore` blocks JSON for this reason.
 - **Tests are plain scripts.** Each `tools/test_<name>.py` exits 0 when it passes, so `python3 tools/test_vet.py` runs one, and `skills/neckbeard/selfcheck.py` is the self-check. `make check` runs them all, plus `tools/excerpts --check`, which keeps the report quotes in `README.md` and `CASE-STUDIES.md` in step with the reports they copy from; after you regenerate a report, run `tools/excerpts`. `tests/map` lists which test modules a changed file selects. A new `tools/test_*.py` adds its own `tools/test_X.py test_X` line there, which a test enforces, and a line for each source file it covers.
-- **A pull request says what changed and why**, has `make check` passing, shows the new check failing before the fix, and adds one line under `## Unreleased` in `CHANGELOG.md`.
+- **A pull request says what changed and why**, has `make check` passing, shows the new check failing before the fix, and adds one line to `CHANGELOG.md`.
 - **A release bumps the version in both manifests**, `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`, and adds a `CHANGELOG.md` entry. Installed copies are cached by version, so a change shipped under an unchanged number never reaches them. `make release` checks this.
 
 ## Merging several branches

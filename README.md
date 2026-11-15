@@ -81,13 +81,13 @@ Use one or the other, not both: two copies means two skills with the same name.
 
 One skill. Its plugin manifest registers no hooks and no agents. By the [published report](docs/neckbeard-report.md) (tokens estimated as bytes / 4): the skill's description is 764 characters, about 190 tokens, in every session, since that is all Claude Code shows its router so it knows the tool is there; the skill file is 14,535 bytes, about 3,600 tokens, loaded each time you use it. Both figures are the same for either install.
 
-The same report says "Hooks: partly read" and "reaches subagents: unknown", and that is the report being honest, not a hidden hook. The deliberately broken fixtures under `tools/fixtures` stop the hooks search from finishing, so neckbeard can only say what it did read. The plugin that prompted this one injects about 1,300 tokens into every session *and* every subagent, for as long as it is installed.
+The same report says "Hooks: partly read" and "reaches subagents: unknown", and that is the report being honest, not a hidden hook. The deliberately broken fixtures under `tools/fixtures` stop the hooks search from finishing, so neckbeard can only say what it did read. The plugin that prompted this one injected about 1,300 tokens into every session *and* every subagent when I first read it.
 
 That gap is the point. A tool that catches plugins for running in the background cannot run in the background. It works when you ask, reports, and stops.
 
 ## Point it at the next plugin before you install it
 
-Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, which writes a **dossier** (a JSON record of everything it read), then judges the fit. From a clone, you can also run the inventory directly:
+Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, which writes a **dossier** (a JSON record of everything it read), then judges the fit. From a clone, you can also run the inventory directly. `tools/vet` (above) writes the finished report; `tools/neckbeard` prints the raw dossier that report is built from:
 
 ```bash
 tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
