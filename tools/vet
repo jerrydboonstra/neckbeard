@@ -49,10 +49,16 @@ usage() {
 }
 # While a login copy exists (credcopy=yes), no token of it may reach vet's output or a file beside OUT. login_scan checks OUT,
 # the judge's stdout and the --units files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
-login_files() { local stem=${out%.md}; echo "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json; }
+login_files() {   # the files to check, one per NUL-terminated entry, so a path with spaces stays whole
+  local stem=${out%.md} f
+  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json; do
+    [ -e "$f" ] && printf '%s\0' "$f"
+  done
+}
 login_scan() {   # returns 1 and removes the files when one holds a token of the login
   [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ] || return 0
-  python3 - "$credtokens" "${reader:-/nonexistent}/.credentials.json" "${work:-/nonexistent}/judge.out" $(login_files) <<'PYEOF' && return 0
+  login_files >"$work/login.files"
+  python3 - "$credtokens" "${reader:-/nonexistent}/.credentials.json" "${work:-/nonexistent}/judge.out" "$work/login.files" <<'PYEOF' && return 0
 import json, os, sys
 toks = [t for t in open(sys.argv[1]).read().split("\n") if t]
 try:   # a login the judge refreshed holds new tokens
@@ -60,18 +66,26 @@ try:   # a login the judge refreshed holds new tokens
     toks += [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
 except Exception:
     pass
-sys.exit(1 if any(os.path.isfile(p) and any(t.encode() in open(p, "rb").read() for t in toks) for p in sys.argv[3:]) else 0)
+files = [sys.argv[3]] + [p for p in open(sys.argv[4], "rb").read().decode().split("\0") if p]
+sys.exit(1 if any(os.path.isfile(p) and any(t.encode() in open(p, "rb").read() for t in toks) for p in files) else 0)
 PYEOF
-  rm -f $(login_files); return 1
+  while IFS= read -r -d '' f; do rm -f "$f"; done <"$work/login.files"; return 1
 }
 die() {
   local m="$*"
   if [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ]; then
     m=$(printf '%s' "$m" | python3 -c 'import sys
 m = sys.stdin.read()
-for t in open(sys.argv[1]).read().split("\n"):
-    if t: m = m.replace(t, "[login]")
-print(m)' "$credtokens")
+toks = open(sys.argv[1]).read().split("\n")
+try:
+    import json
+    o = json.load(open(sys.argv[2]))["claudeAiOauth"]
+    toks += [o.get("accessToken"), o.get("refreshToken")]
+except Exception:
+    pass
+for t in toks:
+    if isinstance(t, str) and t: m = m.replace(t, "[login]")
+print(m)' "$credtokens" "${reader:-/nonexistent}/.credentials.json")
     login_scan || m="$m (files holding your login's secrets were removed)"
   fi
   echo "vet: $m" >&2; exit 1

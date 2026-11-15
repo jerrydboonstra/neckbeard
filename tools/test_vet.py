@@ -45,7 +45,7 @@ def reply(text):
     else:
         print(text + os.environ.get("FAKE_SAY", ""))
     sys.exit(0)
-m = re.search(r"Write (\S+) as JSON, \{\"conflicts\"", prompt)
+m = re.search(r"Write (.+?) as JSON, \{\"conflicts\"", prompt)
 if "FIND PASS" in prompt and m:
     mode = os.environ.get("FAKE_FINDS", "none")
     n = m.group(1).rsplit("-", 1)[1][0]
@@ -56,7 +56,7 @@ if "FIND PASS" in prompt and m:
     quote = {"one": "Always run the tests before you commit.", "invented": "Never run the tests."}.get(mode)
     if mode == "late" and n == "3":
         quote = "Always run the tests before you commit."
-    units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
+    units = json.load(open(re.search(r"UNITS: (.+?)\. Each unit", prompt).group(1)))["units"]
     found = [{"id": units[0]["id"], "quote": quote, "reader_rule": 'safety.md: "Never run anything destructive without my explicit go-ahead in this conversation" (FINDER ARGUMENT: the permission is unlimited)'}] if quote else []
     json.dump({"conflicts": found}, open(m.group(1), "w"))
     reply(str(len(found)))
@@ -82,7 +82,7 @@ if body is not None:
     open(out, "w").write("# 🔍 demo 1.0.0\n\n" + body)
 m = re.search(r"Write the answers to (\S+) as JSON", prompt)
 if m:
-    units = json.load(open(re.search(r"UNITS: (\S+)\. Each unit", prompt).group(1)))["units"]
+    units = json.load(open(re.search(r"UNITS: (.+?)\. Each unit", prompt).group(1)))["units"]
     pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing")}.get(os.environ.get("FAKE_UNITS", ""))
     answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "conflicts": [], "why": "x"} for u in units] if pick else []
     json.dump({"answers": answers}, open(m.group(1), "w"))
@@ -107,7 +107,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None, outname="report.md"):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -134,7 +134,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         if uname:   # the host's kind is a thing vet asks `uname -s`, so a test says which one it is
             open(os.path.join(bindir, "uname"), "w").write("#!/bin/sh\necho %s\n" % uname); os.chmod(os.path.join(bindir, "uname"), 0o755)
         home = os.path.join(tmp, "home"); os.makedirs(os.path.join(home, ".claude"))   # never the real HOME or login
-        out = os.path.join(tmp, "out", "report.md")
+        out = os.path.join(tmp, "out", outname)
         log = os.path.join(tmp, "claude.log")
         # a cloud container rewrites git@github.com: to https itself through GIT_CONFIG_*, which would hide vet's own rewrite
         env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR" and not k.startswith("GIT_CONFIG")}
@@ -153,7 +153,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
         title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
         res = dict(rc=p.returncode, out=p.stdout + p.stderr, stdout=p.stdout, outpath=out, calls=calls, report=os.path.exists(out), title=title,
-                   text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, caller_after={n: open(os.path.join(env["CLAUDE_CONFIG_DIR"], n)).read() for n in os.listdir(env["CLAUDE_CONFIG_DIR"]) if os.path.isfile(os.path.join(env["CLAUDE_CONFIG_DIR"], n))} if caller is not None else {}, cfg_left=[os.path.exists(c["cfg"]) for c in calls if c["cfg"] and c["cfg"] != env.get("CLAUDE_CONFIG_DIR")], side_left=sorted(f for f in os.listdir(os.path.dirname(out)) if f != "report.md") if os.path.isdir(os.path.dirname(out)) else [], reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
+                   text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, caller_after={n: open(os.path.join(env["CLAUDE_CONFIG_DIR"], n)).read() for n in os.listdir(env["CLAUDE_CONFIG_DIR"]) if os.path.isfile(os.path.join(env["CLAUDE_CONFIG_DIR"], n))} if caller is not None else {}, cfg_left=[os.path.exists(c["cfg"]) for c in calls if c["cfg"] and c["cfg"] != env.get("CLAUDE_CONFIG_DIR")], side_left=sorted(f for f in os.listdir(os.path.dirname(out)) if f != outname) if os.path.isdir(os.path.dirname(out)) else [], reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
         if os.environ.get("VERBOSE"):
             print(case, res)
         return res
@@ -548,6 +548,8 @@ r = run("login-side", login="file", uname="Linux", caller=LOGIN, extra=("--units
 chk("login-side: a token in a --units side file leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
 r = run("login-find-die", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", finds="tokenanswer", fake_env=SECRET)
 chk("login-find: a find pass that answers with the token and writes no candidates: non-zero, no value in vet's output, no side file left", (r["rc"] != 0, ACCESS in r["out"], r["side_left"]), (True, False, []))
+r = run("login-find-space", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", finds="tokenanswer", fake_env=SECRET, outname="my report.md")
+chk("login-find: an OUT path with a space is scanned and cleaned whole", (r["rc"] != 0, ACCESS in r["out"], r["side_left"]), (True, False, []))
 r = run("login-refresh", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_REFRESH="1"))
 chk("login-refresh: a judge that rewrote its login file gets one line saying so", (r["rc"], "log in again" in r["out"], ACCESS in r["out"]), (0, True, False))
 chk("login-refresh: the caller's own login file is untouched by it", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
