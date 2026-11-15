@@ -132,7 +132,7 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 
 ## 3. `obra/superpowers`: the large one
 
-Picked by measurement: real file, hook and skill counts across four candidates from GitHub's tree API, not their descriptions. 231 files across 67 directories as of 2026-09-19 (it has grown since; see §14).
+Picked by measurement: real file, hook and skill counts across four candidates from GitHub's tree API, not their descriptions. 231 files across 67 directories as of 2026-09-19 (its size today is in the rerun below).
 
 **The report today** · superpowers 7.0.2 @ `22f0b46`, a facts report by neckbeard 1.17.1 (no reader, no verdict) · [full report](examples/superpowers.md)
 

@@ -4,7 +4,7 @@
 
 [![self-check](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![neckbeard report: 1.17.1 · partly read](https://img.shields.io/badge/neckbeard%20report-1.17.1%20%C2%B7%20partly%20read-yellow?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
 
-The yellow badge means "partly read". neckbeard's own report says so on purpose: the folders under `tools/fixtures` hold files that are broken on purpose, to test the reader, and `inventory.py` is over the read cap (neckbeard reads at most 50,000 bytes of one file). The report names each gap.
+The yellow badge means "partly read". neckbeard's own report names each gap, and two are on purpose: test files under `tools/fixtures` that are broken on purpose, and one source file, `inventory.py`, that is bigger than the most neckbeard reads of one file (50,000 bytes).
 
 > **I read what I could. I tell you what I couldn’t.**
 >
@@ -18,11 +18,11 @@ Before you install a plugin into Claude Code, neckbeard reads it for you and lis
 
 ```bash
 git clone https://github.com/jerrydboonstra/neckbeard && cd neckbeard
-tools/vet <path-to-a-plugin> report.md --facts
+tools/vet . report.md --facts
 cat report.md
 ```
 
-It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit) and one section per kind of thing the plugin adds. This is neckbeard's own, cut down to its headings and top-level bullets ([the full report](docs/neckbeard-report.md) lists every skill and file):
+The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit) and one section per kind of thing the plugin adds. This is neckbeard's own, cut down to its headings and top-level bullets ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard 1.17.1 · what it adds
@@ -56,7 +56,7 @@ It needs Python 3.11 or later and no login. The report opens with a title, a hea
 > - Commit: aa64129
 <!-- /report -->
 
-A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR`, or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
+**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR`, or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
 Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
@@ -118,7 +118,7 @@ Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itsel
 - **Who reviewed it:** AI agents only. Each was a separate Claude session that had not written the code. The only outside user ran an early version and hit bugs that later rounds fixed.
 - **Hardest round:** the ninth, the first by a session outside the build. Eleven problems, four published claims proved false, one of them a path that could leak 90,533 bytes of private rules into a public repo.
 - **The code:** checked against the filesystem. Every self-check case has been seen to fail with the code it guards broken.
-- **The judgment:** graded blind against two sealed fixtures, built by separate sessions; the author has never seen the answers. On the second, the instructions scored 30 of 31 where the same model without them scored 16.
+- **The judgment:** graded blind against two sealed fixtures (test sets with known answers, built by separate sessions; the author has never seen the answers). On the 31 items of the second that both arms were graded on, the instructions scored 30 where the same model without them scored 16.
 
 ## What it reads, and what it refuses to touch
 
@@ -156,11 +156,11 @@ It resolves hook injection **statically, or says it could not**. A hook that bui
 
 ## Why
 
-I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin. It injects about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and it told me half of them restated my own config and five contradicted hard stops I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
+I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin, which at the time injected about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and the answer was a list of overlaps and clashes with rules I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
 
 ## The name
 
-Two kinds of hair, two kinds of developer. Ponytail ships the shortest thing that works. Neckbeard reads all 670 lines of your hook code first, and wants the smallest set of good rules and nothing else.
+The name is the developer who reads all of your hook code first, and wants the smallest set of good rules and nothing else.
 
 ## License
 

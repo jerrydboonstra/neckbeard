@@ -1,6 +1,6 @@
 # Gallery
 
-Facts reports on seven public plugins and skill packs, and one fit report that neckbeard ran on itself. A **facts report** lists what a plugin adds to a Claude Code session: the skills and rule text it injects, the hooks it registers, the agents and commands it ships, the files it may write, and the servers it reaches. It has no verdict and no model call, and it never judges whether the plugin is good. Every report here is dated and names the version it read, so an old one is easy to spot.
+Facts reports on seven public plugins and skill packs, and one fit report that neckbeard ran on itself. A **facts report** lists what a plugin adds to a Claude Code session: the skills and rule text it injects, the hooks it registers, the agents and commands it ships, the files it may write, and the servers it reaches. It has no verdict and no model call, and it never judges whether the plugin is good. Every report here is dated and names the commit it read, so an old one is easy to spot.
 
 | plugin | version and commit | read state | date |
 |---|---|---|---|
@@ -8,7 +8,7 @@ Facts reports on seven public plugins and skill packs, and one fit report that n
 | [obra/superpowers](superpowers.md) | 7.0.2 @ `22f0b46` (latest release) | partly read | 2026-11-15 |
 | [anthropics/claude-plugins-official: claude-security](claude-security.md) | 0.12.0 @ `b5b01ac` (head: the repo has no release tags) | partly read | 2026-11-15 |
 | [addyosmani/agent-skills](agent-skills.md) | 0.6.16 @ `39b723c` (latest release) | partly read | 2026-11-15 |
-| [github/spec-kit](spec-kit.md) | v1.4.0 @ `0019fa1` (latest release) | partly read | 2026-11-15 |
+| [github/spec-kit](spec-kit.md) | tag v1.4.0 @ `0019fa1` (latest release; its report shows no version, since the repo has no manifest version) | partly read | 2026-11-15 |
 | [Koz-TV/viral-launch-pipeline](viral-launch-pipeline.md) | 1.0.0 @ `475705f` (head: no release tags) | read in full | 2026-11-15 |
 | [calm-trader/skills](calm-trader-skills.md) | @ `d222506` (head: no release tags). A pack the author of neckbeard contributes to, so this row is a conflict of interest. It is here with the other maintainer's agreement. | partly read | 2026-11-15 |
 | [jerrydboonstra/neckbeard](neckbeard.md), vetting itself | 1.17.1 @ `ba87cb2`: the one fit report, kept as a labelled demo (see below) | not applicable: a fit report, judged by a model | 2026-11-15 |
