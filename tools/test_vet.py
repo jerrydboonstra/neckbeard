@@ -30,7 +30,7 @@ with open(os.environ["FAKE_LOG"], "a") as f:
                         "reader_cred_left": bool(__import__("glob").glob(os.path.join(os.environ.get("TMPDIR", "/nonexistent"), "neckbeard-vet.*", "reader", ".credentials.json"))),
                         "dossier_has_secret": bool(mark and dm and mark in open(dm.group(1), encoding="utf-8").read())}) + "\n")
 if "single word ok" in prompt and (os.environ.get("FAKE_LOGIN") == "never" or (os.environ.get("FAKE_LOGIN") == "file" and not (cred and os.path.exists(cred)))):
-    print("Not logged in · Please run /login"); sys.exit(1)   # a login that lives in the config folder's login file
+    print(os.environ.get("FAKE_PROBE_MSG", "Not logged in · Please run /login")); sys.exit(1)   # a login that lives in the config folder's login file
 if os.environ.get("FAKE_REFRESH") and cred and os.path.exists(cred) and "single word ok" not in prompt:
     open(cred, "w").write('{"claudeAiOauth": {"accessToken": "ROTATED", "refreshToken": "ROTATED", "expiresAt": 1}}')
 if os.environ.get("FAKE_LOGIN") == "default" and cfg:
@@ -69,6 +69,8 @@ if "CONFIRM CALL" in prompt:
     if os.environ.get("FAKE_CONFIRM") == "garbage":
         reply("no json here")
     reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") in ("yes", "flaky"), "why": "fake"}))
+if os.environ.get("FAKE_JUDGE_FAIL") and "Vet one plugin" in prompt:   # the main judge exits non-zero with its message on stdout
+    print("judge noise line"); print(os.environ.get("FAKE_FAIL_MSG", "fake-judge-error: out of credit")); sys.exit(1)
 out = re.search(r"REPORT FILE \(the only file you create\): (\S+)", prompt).group(1)
 target = re.search(r"checked out at (\S+)", prompt).group(1).rstrip(",")
 mode = os.environ.get("FAKE_REPORT", "good")
@@ -602,6 +604,18 @@ r = run("call-fail", extra=("--units",), units="units-install", finds="one", con
 chk("call-fail: a confirm call that exits non-zero: its last error lines reach stderr", (r["rc"] != 0, "fake-claude-error: quota exceeded" in r["out"]), (True, True))
 r = run("call-fail-token", login="file", uname="Linux", caller=LOGIN, extra=("--units", *FORCED), units="units-install", finds="one", confirm="fail", fake_env=dict(FAKE_SECRET=ACCESS, FAKE_FAIL_MSG="denied for " + ACCESS))
 chk("call-fail: an error line holding the login's token is dropped, not printed", (r["rc"] != 0, ACCESS in r["out"]), (True, False))
+# the probe's own error follows the stop line; a token in it is dropped
+r = run("forced-probe-msg", login="never", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=SECRET)
+lines = r["out"].split("\n")
+stop = [i for i, l in enumerate(lines) if "--judge reader can't log in" in l]
+chk("forced-probe: the probe's error line reaches stderr after the stop line", (len(stop) == 1 and any("Not logged in" in l for l in lines[stop[0] + 1:]) if stop else False), True)
+r = run("forced-probe-token", login="never", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=dict(FAKE_SECRET=ACCESS, FAKE_PROBE_MSG="denied for " + ACCESS))
+chk("forced-probe: a probe error holding the login's token is dropped, not printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], "--judge reader can't log in" in r["out"]), (True, False, False, True))
+# the main judge failing: the last lines of its stdout reach stderr; a token never does
+r = run("judge-fail", fake_env=dict(FAKE_JUDGE_FAIL="1"))
+chk("judge-fail: a main judge that exits non-zero: its last lines reach stderr", (r["rc"] != 0, "fake-judge-error: out of credit" in r["out"], "the judge exited non-zero" in r["out"]), (True, True, True))
+r = run("judge-fail-token", login="file", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=dict(FAKE_SECRET=ACCESS, FAKE_JUDGE_FAIL="1", FAKE_FAIL_MSG="denied for " + ACCESS))
+chk("judge-fail: a judge message holding the login's token is not printed", (r["rc"] != 0, ACCESS in r["out"], r["report"]), (True, False, False))
 # the judged report names the judge that ran, and vet --check still passes on it
 for name, kw, want in (("judge-line-reader", dict(login="env"), "Judge: the sample reader's config"),
                        ("judge-line-own", dict(login="default", uname="Darwin"), "Judge: your own config, told to ignore it")):
