@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.3 (2026-11-15)
+
+### Docs
+
+- **The README opens with the original tagline again, and the "partly read" badge note sits beside the report it describes.**
+
 ## 1.17.2 (2026-11-15)
 
 ### Docs
