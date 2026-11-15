@@ -121,7 +121,7 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 
 **The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged in a separate session, the judge, which is the model session that does the comparing (judge mode `own`: the judge could not log in with the sample reader as its config folder, so it ran with its own config and was told to ignore it)
 
-- verdict INSTALL again, with 0 conflicts, 2 rules already covered, 1 new on-demand skill and 2 dropped (report layout rules, and dated incident notes inside the method text); the same sorting as the three runs on 1.12.7\
+- verdict INSTALL again, with 0 conflicts, 2 rules already covered (duplicates of rules the reader runs), 1 new on-demand skill and 2 dropped (no value to this reader: report layout rules, and dated incident notes inside the method text); the same sorting as the three runs on 1.12.7\
   ↳ about the tool: the verdict held on the current version
 - the cost line follows the facts: a 766-byte skill description in every session, the 14,535-byte body only when the skill runs\
   ↳ about the tool
