@@ -89,10 +89,13 @@ check("3. --plugin naming a nested plugin inventories it", code == 0 and t["plug
 
 # 4. a root with no manifest that lists "./" and one local entry: the root is read as a pack
 PACK = tree({"skills/rs/SKILL.md": SKILL.format(n="rs"), "mods/x/.claude-plugin/plugin.json": manifest("x"),
+             "mods/x/skills/xs/SKILL.md": SKILL.format(n="xs"), "mods/x/hooks/hooks.json": hooks("echo x-hook"),
              ".claude-plugin/marketplace.json": market(("rootp", "./"), ("x", "./mods/x"))})
 code, t = run(PACK)
 check("4. no root manifest: the root is read as a pack with the marketplace attached",
       code == 0 and t["kind"] == "generic-pack" and names(t) == ["rs"] and t.get("marketplace", {}).get("selected") == "rootp", t)
+check("4. the nested plugin's skills and hooks are left out of the root pack",
+      code == 0 and "xs" not in names(t) and "x-hook" not in hook_text(t), t)
 check("4. its hooks are not reported unknown", code == 0 and t["hooks"].get("has_hooks") != "unknown" and "marketplace_note" not in t["hooks"], t)
 code, t = run(PACK, "--plugin", "rootp")
 check("4. --plugin naming a manifest-less root does not error", code == 0 and t["kind"] == "generic-pack", t)
