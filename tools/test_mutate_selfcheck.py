@@ -46,7 +46,10 @@ try:
     write("inventory_core.py", "def keep(x):\n    if x:\n        return 'MUTANT-ME'\n    return None\n")
     write("selfcheck.py", "import os, sys\nhere = os.path.dirname(os.path.abspath(__file__))\n"
           "core = open(os.path.join(here, 'inventory_core.py')).read()\n"
-          "print('  ' + ('FAIL' if 'BROKEN' in core else 'ok  ') + ' guarded case: x')\nsys.exit(1 if 'BROKEN' in core else 0)\n")
+          "top = open(os.path.join(here, 'inventory.py')).read()\n"
+          "bad = ('BROKEN' in core) or ('GONE' in top)\n"
+          "print('  ' + ('FAIL' if 'BROKEN' in core else 'ok  ') + ' guarded case: x')\n"
+          "print('  ' + ('FAIL' if 'GONE' in top else 'ok  ') + ' top case: y')\nsys.exit(1 if bad else 0)\n")
     real_skill, m.SKILL = m.SKILL, scratch
     try:
         files = m.apply_snippets(scratch, [("'MUTANT-ME'", "'BROKEN'")])
@@ -65,7 +68,7 @@ try:
         chk("two snippets, one in each module (as the NO .claude/ case has): both files come back, each with its own edit",
             (sorted(two), "'BROKEN'" in two.get("inventory_core.py", ""), "'GONE'" in two.get("inventory.py", ""), "'MUTANT-ME'" in two.get("inventory.py", "")), (["inventory.py", "inventory_core.py"], True, True, False))
         _, code2, failed2, crash2 = m.run_one(("two files", two))
-        chk("run_one writes both files of a two-module case", (failed2, crash2), (["guarded case"], False))
+        chk("run_one writes both files of a two-module case: the case that reads each file fails", (sorted(failed2), crash2), (["guarded case", "top case"], False))
         write("inventory.py", "from inventory_core import keep\nTOP = 'MUTANT-ME'\n")
         chk("a snippet that occurs once in each of two modules stops the run: it must occur once across them", "2 times" in exits([("'MUTANT-ME'", "'BROKEN'")]), True)
         write("inventory.py", "from inventory_core import keep\nTOP = 1\n")
