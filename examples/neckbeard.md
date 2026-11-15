@@ -1,93 +1,139 @@
-# 🔍 neckbeard 1.12.7 · vetted against the sample reader's rules
+# 🔍 neckbeard 1.17.1 · vetted against the sample reader
 
-**A demo, not neckbeard's published report.** This is a fit report: neckbeard 1.12.7 judged against the sample reader's rules, kept to show what a local run prints. neckbeard's published report, with no reader and no verdict, is [docs/neckbeard-report.md](../docs/neckbeard-report.md).
-
-> ## 🟩 INSTALL · add the one skill, change no rules
-> No hooks, no agents, no subagent reach: it costs about 270 tokens of skill description each session and loads its 13.8 KB body only when invoked. Nothing it carries conflicts with the reader's rules, and two of its rules repeat ones the reader already runs. The reader has no way to vet a plugin, so the skill itself is the one new thing.
+> ## 🟩 INSTALL · nothing to weigh
+> It ships one skill, no hooks, no agents, no commands and no root rule file, so the only always-on cost is the skill description. None of its rules conflicts with the reader's, and its core method (a standing rule and an on-demand skill) is new to this reader.
 >
-> Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
+> Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md).
 
-`2026-10-01` · neckbeard 1.12.7 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.12.7 @ `f9e17db`
+`2026-11-15` · neckbeard 1.17.1 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.1 @ `85d60c1`
 
-This target is neckbeard vetting itself, against the sample reader, not the setup that built it.
+Baseline: the sample reader · 4 rule files · 2347 bytes · sha256 b564c945bf65
 
----
+<details><summary>Rule files</summary>
+
+- `CLAUDE.md`
+- `rules/engineering.md`
+- `rules/safety.md`
+- `skills/release-notes/SKILL.md`
+
+</details>
+
+## What it adds
+
+### Injects
+- Skills:
+  - neckbeard: description every session (764 chars); the file on demand (14535 bytes, ~3633 tokens)
+- Rule files: none
+- Hook-injected text: partly read
+  - neckbeard did not read: tools/fixtures/read-status/hooks-search-dangling/data/x.json: could not be read; not searched for hooks
+  - broken in the plugin: tools/fixtures/read-status/hooks-search-bad-json/data/broken.json: not valid JSON; not searched for hooks; tools/fixtures/read-status/mcp-malformed/.mcp.json: not valid JSON; not searched for hooks
+
+### Hooks
+- Hooks: partly read
+  - reaches subagents: unknown
+  - neckbeard did not read: tools/fixtures/read-status/hooks-search-dangling/data/x.json: could not be read; not searched for hooks
+  - broken in the plugin: tools/fixtures/read-status/hooks-search-bad-json/data/broken.json: not valid JSON; not searched for hooks; tools/fixtures/read-status/mcp-malformed/.mcp.json: not valid JSON; not searched for hooks
+
+### Subagents and commands
+- Agents: none
+- Commands: none
+
+### State it may leave
+- Persistence candidates: partly read
+  - Makefile
+  - measurements/2026-10-16-units-confirm/reconfirm.py
+  - skills/neckbeard/inventory.py
+  - skills/neckbeard/mcp_live.py
+  - skills/neckbeard/selfcheck.py
+  - tools/deploy-host.sh
+  - tools/excerpts
+  - tools/mutate-selfcheck
+  - tools/part1
+  - tools/rule-units
+  - and 12 more, in: tools/ 12
+  - neckbeard did not read: tools/fixtures/read-status/persist-dangling/scripts/x.sh: could not be read; not scanned; skills/neckbeard/inventory.py: read capped at 50000 bytes
+
+### Reaches outside the session
+- MCP servers: none
+
+### Source
+- Kind: plugin
+- Name: neckbeard (from plugin.json)
+- Version: 1.17.1 (from plugin.json)
+- plugin.json:
+  - name and version, shown above
+- Marketplace: none
+- Commit: 85d60c1
+
+Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.
 
 ## ⚡ At a glance
 
 | | | |
 |:--:|---|---|
-| 🟩 | **Cost** | ~270 tokens of skill description at session start (the manifest's count); 13,810 bytes of `SKILL.md` (manifest: ~4.7k tokens) only when invoked |
-| 🟩 | **Reach** | main session only (certain: `has_hooks` is false, no agents declared) |
-| 🟩 | **Leaves state** | none found. `inventory.py` writes only to the `--out` file you name; the four files the scan flagged are that script and repo maintenance tooling |
-| 🟨 | **Live surface** | no MCP servers; runs `python3 inventory.py` locally; network only if you pass a git URL (`git clone --depth 1` into a temp dir it removes) |
+| 🟩 | **Cost** | Skill description only, about 270 tokens per the manifest, loaded each session. The 14,357-byte skill body loads only when invoked. |
+| 🟩 | **Reach** | Main session only. No hooks are registered, so nothing fires on SubagentStart (certain). |
+| 🟩 | **Leaves state** | None found at install. When run, it writes one evaluation file inside the project it is run from. |
+| 🟨 | **Live surface** | Runs its own Python inventory script locally and clones a git URL target read-only. Live MCP inspection is off unless the user asks. |
 | 🟩 | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 1 skill |
+| ❓ | **Read status** | Partial for hooks and persistence scans: broken test fixtures could not be parsed, and one script was read only up to 50,000 bytes. |
+| 🟩 | **Worth keeping** | 2 (1 standing rule, 1 skill) |
 
 ## 🧮 How its rules sorted
 
 | | verdict | count | |
 |:--:|---|:--:|---|
 | ⛔ | **conflicts** with a rule you run | **0** | none |
-| 🔁 | **already covered** | **2** | ⬜⬜ |
-| 🆕 | **new, standing rule** | **0** | none |
+| 🔁 | **already covered** | **3** | ⬜⬜⬜ |
+| 🆕 | **new, standing rule** | **1** | 🟩 |
 | 🆕 | **new, on-demand skill** | **1** | 🟩 |
-| 🗑️ | **dropped** (persona, extras, no value) | **1** | ⬛ |
-
----
+| 🗑️ | **dropped** (persona, extras, no value) | **2** | ⬛⬛ |
 
 ## ⛔ Conflicts: 0
+| # | it says | collides with | held in | |
+|:--:|---|---|---|:--:|
+| | none found | | | |
 
-None found. Closest call: given a git URL, `inventory.py` deletes its own temp clone, which sits outside the working tree, but it removes only a directory it made, so `examples/reader/rules/safety.md` rule 1 is not engaged.
-
-## 🔁 Already covered: 2
-
+## 🔁 Already covered: 3
 | its rule | covered by | held in |
 |---|---|---|
-| Never edit a rule file or settings, never uninstall; show the patch and stop | "say what you would change and let me decide" (rule 4). Chosen over safety rule 1, which covers only destructive acts | `examples/reader/rules/engineering.md` |
-| Name the exact rule and file behind every finding, with the reasoning | "Give the reasoning with the verdict" | `examples/reader/CLAUDE.md` |
+| Edit nothing: show the patch, never write rule files, never uninstall or disable the target | Rule 4, "the scope I asked for is the deliverable", says to name a change and let the reader decide. Chosen over safety rule 1 because that one is about destructive actions, not scope. | examples/reader/rules/engineering.md |
+| Cite the exact source for every duplicate or conflict, name the sentence | "Give the reasoning with the verdict", which rejects a review that does not say what was checked | examples/reader/CLAUDE.md |
+| If the evaluation path is unclear or not git-ignored, ask before writing | Hard stop 5, ask when a request is ambiguous and the wrong reading is costly | examples/reader/rules/safety.md |
 
-## 🟩 Keep: 1
-
+## 🟩 Keep: 2
 | # | rule or skill | kind | |
 |:--:|---|:--:|:--:|
-| 1 | `neckbeard` (the target's own name): vet a plugin, skill pack or rule file against the rules in force before adopting it. Its guards (output path must be git-ignored, never paste the dossier, report refused reads) travel inside it | on-demand | 🆕 ⭐ |
+| 1 | When a read is partial, refused or unresolved, report it as unknown or as a finding, never as "none found" | standing | 🟩 |
+| 2 | The vetting method: inventory a plugin statically, discover rules in force, sort each rule into duplicate, conflict or new, then propose a patch without applying it | on-demand | 🟩 |
 
 ## 🗑️ Dropped
-
-`examples/ gallery reports and CASE-STUDIES.md` (documentation, never loaded by Claude Code, not read for this run)
-
----
+`report layout, symbols and bars` · `keep provenance out of the rules file`
 
 ## 🧩 What it installs
-
 | surface | when | reaches subagents | size |
 |---|---|:--:|--:|
-| hooks | none | | 0 |
-| 1 skill · 0 commands · 0 agents | on demand (description always listed) | | 13,810 B |
-| helper scripts | `inventory.py` runs when the skill does; `selfcheck.py` is for the repo's own checks | | 60,493 B · 23,484 B |
-| MCP servers | none | | |
-| state | none unless you pass `--out` | | |
+| skill description | every session | no (no hooks) | about 270 tokens |
+| skill body (skills/neckbeard/SKILL.md) | when invoked | no | 14,357 bytes |
+| helper scripts (skills/neckbeard/inventory.py and others) | when the skill runs them | no | not injected |
+| hooks, agents, commands, MCP servers, root rule files | none | no | 0 |
 
 ## ✅ Do this
+- ⬜ 1. Install it, or copy only rule 1 below if you will never vet a plugin.
 
-- ⬜ 1. Install neckbeard as a plugin, or copy `skills/neckbeard` beside `examples/reader/skills/release-notes` if you prefer a personal skill. Pick one.
-- ⬜ 2. Leave `examples/reader/CLAUDE.md` and both rules files as they are.
-
-Carrying-cost case three: zero hooks and no subagent reach, so only the ~270-token description is always on, and the question is whether the skill is good. Here it fills a gap.
+Case: zero hooks and almost no always-on cost, so there is nothing to weigh. The only question is whether the rules are good, and the one standing rule is worth having.
 
 ## 📋 Proposed rules patch
 
-Nothing to add to the rules: every rule neckbeard carries is a step of one task, not a standing working rule.
+Standing rule, as item 8 in examples/reader/rules/engineering.md, matching its numbered, bold-lead style:
 
-One on-demand skill, kept as the target ships it. The name is the target's own, not my proposal:
-
+```diff
+ 7. **Commit messages:** imperative subject under 60 characters, then why.
++8. **Unknown is not none.** When a check was partial, refused or could not
++   resolve, say so and name what was not read. Never report it as "nothing
++   found".
 ```
-neckbeard: Vet a plugin, skill pack, or rule file before adopting it; sort each rule it carries into duplicate, conflict or new, then propose a patch and stop.
-```
 
-The dossier shows the reader keeps personal skills under `examples/reader/skills/`, so that is where a copy would go. Never applied here.
-
----
+On-demand skill, name proposed by this report: `vet-plugin`, "Inventory a plugin or skill pack statically, compare each rule it carries against the rules already in force, and write a verdict without editing anything." The dossier shows this reader keeps skills in examples/reader/skills/, so that is the natural home; the choice is yours.
 
 **Key:** 🟥 high · 🟧 medium · 🟨 partly · 🟩 keep · ⬜ covered · ⬛ dropped · ⛔ conflict · 🔁 duplicate · 🆕 new · ⭐ standout · ✅ done · ❓ unknown

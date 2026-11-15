@@ -10,7 +10,6 @@ Every time this tool has been pointed at something real, in order, with what it 
 4. [`Koz-TV/viral-launch-pipeline`](#4-koz-tvviral-launch-pipeline-the-random-one): the random one
 5. [`claude-security`](#5-claude-security-anthropics-own-security-plugin): Anthropic's own security plugin
 6. [All 39 Anthropic first-party plugins](#6-all-39-anthropic-first-party-plugins-the-sweep): the sweep
-15. [Four `pstack` ports](#15-four-pstack-ports-hooks-where-the-manifest-did-not-say): hooks where the manifest did not say
 
 **Pointed at neckbeard itself**
 
@@ -23,6 +22,10 @@ Every time this tool has been pointed at something real, in order, with what it 
 13. [The last claim resting on the builder's word](#13-the-last-claim-resting-on-the-builders-word)
 14. [Before going public](#14-before-going-public-the-tests-that-tested-the-wrong-thing): the tests that tested the wrong thing
 
+**Pointed at real plugins, later**
+
+15. [Four `pstack` ports](#15-four-pstack-ports-hooks-where-the-manifest-did-not-say): hooks where the manifest did not say
+
 [What the fifteen add up to](#what-the-fifteen-add-up-to) · [Who did the reviewing](#who-did-the-reviewing)
 
 ---
@@ -31,20 +34,38 @@ Every time this tool has been pointed at something real, in order, with what it 
 
 The plugin that prompted this one. Run against the installed `ponytail@ponytail`, then cold against `addyosmani/agent-skills` by GitHub URL to exercise the clone path (25 skills found).
 
-**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/ponytail.md)
+**The report today** · ponytail 5.3.3 @ `7801d06`, a facts report by neckbeard 1.17.1 (no reader, no verdict) · [full report](examples/ponytail.md)
 
 <!-- report:ponytail -->
-> 🟨 COPY RULES, SKIP PLUGIN · take the rule and three skills, skip the always-on injection
-> Injects its main skill into every session and every subagent, about 1,300 tokens each time (its 6.6 KB skill file, frontmatter stripped), and writes mode state to files outside the project. Two of its instructions tell the model to proceed on its own where the sample reader's rules say ask first. One new safety rule and three on-demand skills are worth having, and both are cheaper to copy as text than to carry as a permanent injection.
-
-| | | |
-|:--:|---|---|
-| 🟧 | **Cost** | ~1,300 tokens (its 6.6 KB skill file, frontmatter stripped) at every session start, and again at every subagent start |
-| 🟧 | **Reach** | main session + subagents (certain, a `SubagentStart` hook, documented) |
-| 🟧 | **Leaves state** | flag/config files outside the project: home config dir and host-specific dirs |
-| 🟩 | **Live surface** | no MCP servers, no network calls in its hooks; one nudge asks the model to offer editing settings.json |
-| 🟩 | **Refused reads** | none |
-| 🟨 | **Worth keeping** | 1 standing rule + 3 on-demand skills |
+> # 🔍 ponytail 5.3.3 · what it adds
+>
+> `2026-11-15` · neckbeard 1.17.1 · [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) 5.3.3 @ `7801d06`
+>
+> ### Injects
+> - Skills:
+> - Rule files: none
+> - Hook-injected text: partly read
+>
+> ### Hooks
+> - Hooks: partly read
+>
+> ### Subagents and commands
+> - Agents: none
+> - Commands:
+>
+> ### State it may leave
+> - Persistence candidates:
+>
+> ### Reaches outside the session
+> - MCP servers: none
+>
+> ### Source
+> - Kind: plugin
+> - Name: ponytail (from plugin.json)
+> - Version: 5.3.3 (from plugin.json)
+> - plugin.json:
+> - Marketplace: none
+> - Commit: 7801d06
 <!-- /report -->
 
 **The first run** · before 1.0.0, against the author's own rules
@@ -58,24 +79,38 @@ The plugin that prompted this one. Run against the installed `ponytail@ponytail`
 
 Counting what the host cannot see is worse than not counting.
 
+**The rerun** · 2026-11-15, ponytail 5.3.3 (the first run read it before 1.0.0), neckbeard 1.17.1, facts only
+
+- the plugin grew to six skills and six commands, 21,177 bytes of skill files in all; the hooks still inject at session start and at every subagent start, and neckbeard reaches the same answer ("reaches subagents: true", from the `SubagentStart` hook)\
+  ↳ about the plugin
+- neckbeard cannot say what the three hooks inject. Each runs an inline `node -e` command that requires one script by a path built from `CLAUDE_PLUGIN_ROOT`, and the report prints `<unparsed command>` and "partly read", where 1.0.0 had learned to follow exactly this shape through a script file\
+  ↳ **open**: `hook-inline-require`
+- `plugin.json` also lists `hooks/claude-band.json`, which holds no hooks but a `modules` entry: a Claude Code mod, JavaScript that runs inside the session with your permissions. The inventory reads only the `hooks` key, so the mod does not appear in the report at all\
+  ↳ **open**: `mod-inventory`
+- the old first-run bullet about doubled skill counts (mirrors for other agents) did not come back: six skills are six folders under `skills/`\
+  ↳ guard from 1.0.0 held
+
+A fit verdict on the rerun would need your own rules, so there is none here. The facts show what changed since the first run, and where today's tool reads less than it should.
+
 ## 2. `neckbeard`: itself, before publishing
 
-No hooks, no agents, one skill at 7,207 bytes. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 found no conflict (see the [gallery](examples/README.md)).
+No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and one on 1.17.1 found no conflict (see the rerun below).
 
-**The report today** · neckbeard 1.12.7 against the [sample reader](examples/reader/) · [full fit report, kept as a demo](examples/neckbeard.md)
+**The report today** · neckbeard 1.17.1 against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
-> 🟩 INSTALL · add the one skill, change no rules
-> No hooks, no agents, no subagent reach: it costs about 270 tokens of skill description each session and loads its 13.8 KB body only when invoked. Nothing it carries conflicts with the reader's rules, and two of its rules repeat ones the reader already runs. The reader has no way to vet a plugin, so the skill itself is the one new thing.
+> 🟩 INSTALL · nothing to weigh
+> It ships one skill, no hooks, no agents, no commands and no root rule file, so the only always-on cost is the skill description. None of its rules conflicts with the reader's, and its core method (a standing rule and an on-demand skill) is new to this reader.
 
 | | | |
 |:--:|---|---|
-| 🟩 | **Cost** | ~270 tokens of skill description at session start (the manifest's count); 13,810 bytes of `SKILL.md` (manifest: ~4.7k tokens) only when invoked |
-| 🟩 | **Reach** | main session only (certain: `has_hooks` is false, no agents declared) |
-| 🟩 | **Leaves state** | none found. `inventory.py` writes only to the `--out` file you name; the four files the scan flagged are that script and repo maintenance tooling |
-| 🟨 | **Live surface** | no MCP servers; runs `python3 inventory.py` locally; network only if you pass a git URL (`git clone --depth 1` into a temp dir it removes) |
+| 🟩 | **Cost** | Skill description only, about 270 tokens per the manifest, loaded each session. The 14,357-byte skill body loads only when invoked. |
+| 🟩 | **Reach** | Main session only. No hooks are registered, so nothing fires on SubagentStart (certain). |
+| 🟩 | **Leaves state** | None found at install. When run, it writes one evaluation file inside the project it is run from. |
+| 🟨 | **Live surface** | Runs its own Python inventory script locally and clones a git URL target read-only. Live MCP inspection is off unless the user asks. |
 | 🟩 | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 1 skill |
+| ❓ | **Read status** | Partial for hooks and persistence scans: broken test fixtures could not be parsed, and one script was read only up to 50,000 bytes. |
+| 🟩 | **Worth keeping** | 2 (1 standing rule, 1 skill) |
 <!-- /report -->
 
 **The first run** · before 1.1.0, against the author's own rules
@@ -85,24 +120,53 @@ No hooks, no agents, one skill at 7,207 bytes. Its own report marked it down at 
 - its own `inventory.py` flagged as a persistence risk for three `os.path.expanduser` calls, all reads of a caller-supplied path; the heuristic cannot tell resolving a path from writing to disk, so it says so\
   ↳ worked as designed: flagged for a human, not guessed
 
+**The rerun** · 2026-11-15, neckbeard 1.17.1 vetting itself, judged on the Mac in a separate session, the judge, which is the model session that does the comparing. The run printed judge mode `own`: the judge could not log in with the sample reader as its config folder, so it started with the machine's own config and was told to ignore it
+
+- verdict INSTALL again, with 0 conflicts. This run counts 3 rules as already covered (duplicates of rules the reader runs), 1 new standing rule, 1 new on-demand skill and 2 dropped; the three runs on 1.12.7 counted 2 covered, 1 new skill and 2 dropped. The extra standing rule is "unknown is not none", which the judge now keeps as a rule for the reader's own config\
+  ↳ about the tool: the verdict held, the sort moved a little between versions
+- the report has a "Read status" row that the 1.12.7 reports did not: hooks and persistence are "partial", because broken test fixtures could not be parsed and one script was read only up to 50,000 bytes\
+  ↳ worked as designed: the gaps are named, not hidden
+- the same report still says "main session only (certain)" in its Reach row, while the facts report on this tree says "reaches subagents: unknown", because the same fixtures stop the hooks search. The judge states more than the inventory knew\
+  ↳ **open**: raised with the maintainers, not yet queued; the report order planned for 2.0 (facts first, fit after) is meant to stop a verdict from outrunning its facts
+- the judge wrote 14,357 bytes for the skill body, where the inventory counts 14,535, and "about 270 tokens per the manifest" for the description, which the facts report counts at 764 characters\
+  ↳ about the tool: figures in a fit report come from a model's reading and can differ from the inventory's; the facts report is the one to quote
+
 ## 3. `obra/superpowers`: the large one
 
-Picked by measurement: real file, hook and skill counts across four candidates from GitHub's tree API, not their descriptions. 231 files across 67 directories as of 2026-09-19 (it has grown since; see §14).
+Picked by measurement: real file, hook and skill counts across four candidates from GitHub's tree API, not their descriptions. 231 files across 67 directories as of 2026-09-19 (its size today is in the rerun below).
 
-**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/superpowers.md)
+**The report today** · superpowers 7.0.2 @ `22f0b46`, a facts report by neckbeard 1.17.1 (no reader, no verdict) · [full report](examples/superpowers.md)
 
 <!-- report:superpowers -->
-> 🟧 INSTALL WITH CHANGES · install it, skip the two model overrides
-> Fifteen skills and one hook, 3,192 bytes injected once at session start and never reaching a subagent. Two skills tell you to override a dispatched subagent's pinned model, which collides with a rule the sample reader already runs; two more just restate a rule it already has. The other ten, one of them condensed into a new rule, are worth keeping.
-
-| | | |
-|:--:|---|---|
-| 🟧 | **Cost** | 3,192 bytes injected at `SessionStart` (`startup\|clear\|compact`), once per session |
-| ⬜ | **Reach** | main session only: the matcher excludes every subagent-firing event, and the injected skill itself carries a guard telling a dispatched subagent to ignore it |
-| ⬜ | **Leaves state** | plans, specs and review ledgers under the consuming project's own `docs/superpowers/` and `.superpowers/`; nothing found outside the project |
-| ⬜ | **Live surface** | no MCP servers, no network calls; skills shell out to `git`, test runners and `gh` |
-| ⬜ | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 10 (1 rule, 9 skills) |
+> # 🔍 superpowers 7.0.2 · what it adds
+>
+> `2026-11-15` · neckbeard 1.17.1 · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46`
+>
+> ### Injects
+> - Skills:
+> - Rule files: none
+> - Hook-injected text: partly read
+>
+> ### Hooks
+> - Hooks: partly read
+>
+> ### Subagents and commands
+> - Agents: none
+> - Commands: none
+>
+> ### State it may leave
+> - Persistence candidates:
+>
+> ### Reaches outside the session
+> - MCP servers: none
+>
+> ### Source
+> - Kind: plugin
+> - Name: superpowers (from plugin.json)
+> - Version: 7.0.2 (from plugin.json)
+> - plugin.json:
+> - Marketplace: none
+> - Commit: 22f0b46
 <!-- /report -->
 
 **The first run** · 2026-09-19, against the author's own rules
@@ -122,53 +186,105 @@ skills: 15, total 168,036 bytes
 
 Read by hand, `hooks/session-start` cats `skills/using-superpowers/SKILL.md` (3,192 bytes) into session context, once, against ponytail's ~6,600 on every session and every subagent.
 
+**The rerun** · 2026-11-15, superpowers 7.0.2 (first read at 6.4.1), neckbeard 1.17.1, facts only
+
+- still fifteen skills, now 143,103 bytes (it was 168,036), and still one `SessionStart` hook with the matcher `startup|clear|compact`; neckbeard still reports that it reaches no subagent\
+  ↳ about the plugin
+- the hook command is still `run-hook.cmd`, and the report still says "partly read": the script was found, its payload could not be traced, and the report says unknown, not none. This is the 1.11.0 behaviour of [§12](#12-the-fix-that-was-the-regression) working on the same hook it once got wrong\
+  ↳ worked as designed · guard: `selfcheck.py` "no skills, UNRESOLVED hook"
+
 ## 4. `Koz-TV/viral-launch-pipeline`: the random one
 
 Picked with an unseeded `random.choice()` from 183 candidates, filtered by keyword out of Anthropic's official (310) and community (2,282) catalogs. One skill, 15,919 bytes, no hooks, no declared agents.
 
-**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/viral-launch-pipeline.md)
+**The report today** · viral-launch-pipeline 1.0.0 @ `475705f`, a facts report by neckbeard 1.17.1 (no reader, no verdict) · [full report](examples/viral-launch-pipeline.md)
 
 <!-- report:viral-launch-pipeline -->
-> 🟩 INSTALL · adopt as-is, then copy four of its rules into your own
-> No hooks, no declared agents, no MCP servers: the only always-on cost is one skill description in the session listing. Its 21 subagents are real, they just live in prose rather than agent files, and the loop dispatches them straight into your `Agent` tool. Four of its internal rules are worth keeping on their own; two duplicate a rule you already run, and none of them conflict with it.
-
-| | | |
-|:--:|---|---|
-| 🟩 | **Cost** | 571 B skill description, every session; the 15,919 B `SKILL.md` and ~92 KB of prompt/reference files load only when the skill fires |
-| 🟩 | **Reach** | main session + subagents (certain): dispatches roughly 21 `Agent` calls per launch, one per pipeline stage |
-| 🟩 | **Leaves state** | none outside the project; writes a full paper trail under `./launches/<slug>/` inside the working directory |
-| 🟨 | **Live surface** | `WebSearch` / `WebFetch` in its research and technical-review stages; no MCP servers, no external API keys |
-| 🟩 | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 4 rules |
+> # 🔍 viral-launch-pipeline 1.0.0 · what it adds
+>
+> `2026-11-15` · neckbeard 1.17.1 · [Koz-TV/viral-launch-pipeline](https://github.com/Koz-TV/viral-launch-pipeline) 1.0.0 @ `475705f`
+>
+> ### Injects
+> - Skills:
+> - Rule files: none
+> - Hook-injected text: none
+>
+> ### Hooks
+> - Hooks: none
+>
+> ### Subagents and commands
+> - Agents: none
+> - Commands: none
+>
+> ### State it may leave
+> - Persistence candidates: none
+>
+> ### Reaches outside the session
+> - MCP servers: none
+>
+> ### Source
+> - Kind: plugin
+> - Name: viral-launch-pipeline (from plugin.json)
+> - Version: 1.0.0 (from plugin.json)
+> - plugin.json:
+> - Marketplace: none
+> - Commit: 475705f
 <!-- /report -->
 
 **The first run** · 2026-09-19, against the author's own rules
 
-- "21-agent pipeline" looked like an overclaim next to zero agent files; wrong: the skill's text *is* the orchestration, calling the `Agent` tool 21 times, four in one parallel batch\
+- "21-agent pipeline" sat next to zero agent files; the skill's text *is* the orchestration, calling the `Agent` tool 21 times, four in one parallel batch\
   ↳ about the plugin
 - a pipeline built as dispatch instructions inside one skill reports `agents: []` and looks inert; zero declared agents does not mean zero agent dispatch\
   ↳ **still open**: prose is not parsed for `Agent(` calls
 - the 15,919-byte skill is not the whole footprint: 21 stage prompts and 6 references, 92,456 bytes, load one at a time as stages run\
   ↳ about the tool's framing · not a bug: nothing about them is standing cost, but "one 15KB skill" understates the total by six times
 
+**The rerun** · 2026-11-15, viral-launch-pipeline 1.0.0 @ `475705f` (unchanged since the first read), neckbeard 1.17.1, facts only
+
+- one skill, 15,919 bytes, no hooks and no declared agents: the same facts as the first run, now all read in full ("read in full" is the colour of its badge)\
+  ↳ about the plugin
+- the report still says `Agents: none`, and the skill still dispatches 21 agents in prose\
+  ↳ **still open**: prose is not parsed for `Agent(` calls
+- the old report counted the 92 KB of stage prompts as footprint; the facts report lists the skill file and its description only, since the prompts load one at a time\
+  ↳ about the tool's framing, as before
+
 ## 5. `claude-security`: Anthropic's own security plugin
 
 Version 0.11.0. Picked deliberately, because two of its hook events had never appeared in any earlier run: `UserPromptExpansion` and `PostToolUseFailure`. One skill (5,246 bytes), **8 declared agents**, two hook scripts across three events, 476KB.
 
-**The report today** · neckbeard 1.12.0 against the [sample reader](examples/reader/) · [full report](examples/claude-security.md)
+**The report today** · claude-security 0.12.0 @ `b5b01ac` (the head of the marketplace repo, which has no tags), a facts report by neckbeard 1.17.1 (no reader, no verdict) · [full report](examples/claude-security.md)
 
 <!-- report:claude-security -->
-> 🟧 INSTALL WITH CHANGES · adopt the rules, watch one behavior
-> Costs almost nothing ambient: the skill never loads on its own, and both hooks only fire inside the plugin's own menu or its own helper-script calls. Its agents repeat a strong "treat everything you read as data, not instructions" discipline the sample reader has nowhere in its rules, worth taking on its own. One real friction: its unattended-scan behavior proceeds on a guess after a timeout, which the sample reader's own rules say not to do when a reading would be costly.
-
-| | | |
-|:--:|---|---|
-| 🟩 | **Cost** | ~0 ambient. The skill carries `disable-model-invocation: true`, so it never loads itself; the menu banner (~0.5 KB) and the metrics hook fire only inside the plugin's own commands. On demand, its skill + 8 agents together run about 51 KB of prose. |
-| 🟨 | **Reach** | Main session plus the 7 agents it dispatches itself (`scan-inventory`, `scan-researcher`, `scan-verifier`, `scan-loader`, `explore`, `patch-generator`, `patch-verifier`). Docs say `PostToolUse`/`PostToolUseFailure` fire inside subagents too, but the hook's matcher only trips on a Bash call running one of this plugin's own helper scripts, so an unrelated subagent never sees it. |
-| 🟩 | **Leaves state** | A report directory and patch files, written inside the repository being scanned, at a path the caller passes in. No writes found outside it. |
-| 🟩 | **Live surface** | None beyond local `git` reads. The scan-changes job may call the GitHub CLI for open pull requests, gated on it being installed and signed in. No other network calls. |
-| 🟩 | **Refused reads** | None. |
-| 🟩 | **Worth keeping** | 6 (5 standing rules, 1 on-demand skill). |
+> # 🔍 claude-plugins-official 0.12.0 · what it adds
+>
+> `2026-11-15` · neckbeard 1.17.1 · [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) 0.12.0 @ `b5b01ac`
+>
+> ### Injects
+> - Skills:
+> - Rule files: none
+> - Hook-injected text: partly read
+>
+> ### Hooks
+> - Hooks: partly read
+>
+> ### Subagents and commands
+> - Agents:
+> - Commands: none
+>
+> ### State it may leave
+> - Persistence candidates: partly read
+>
+> ### Reaches outside the session
+> - MCP servers: none
+>
+> ### Source
+> - Kind: plugin
+> - Name: claude-security (from plugin.json)
+> - Version: 0.12.0 (from plugin.json)
+> - plugin.json:
+> - Marketplace: not applicable
+> - Commit: b5b01ac
 <!-- /report -->
 
 **The first run** · 2026-09-19, against the author's own rules
@@ -188,6 +304,17 @@ persistence: []
   ↳ 1.2.0: renamed `hooks_reach_subagents`
 - the persistence scan found nothing across 16 Python files and 2 shell scripts; `hooks.py` writes only to stdout and stderr. Read at the time as evidence the heuristic errs toward false positives\
   ↳ that reading was wrong: [§9](#9-an-independent-audit-the-one-that-found-the-most) built five writes it missed; widened in 1.7.0
+
+**The rerun** · 2026-11-15, claude-security 0.12.0 @ `b5b01ac` (first read at 0.11.0), neckbeard 1.17.1, facts only
+
+- one skill (5,569 bytes) and now nine agents, with `scan-redactor` added; the hooks file now registers `PermissionRequest` beside `UserPromptExpansion`, `PostToolUse` and `PostToolUseFailure`, all running one `hooks/hooks.sh`\
+  ↳ about the plugin
+- the report now says "reaches subagents: true", on the documented rule that `PostToolUse` fires inside subagents; the first run said false, since no `Subagent*` event was registered. The matcher is `Bash`, so the reach is narrower than the word suggests, and a facts report does not say so\
+  ↳ about the tool's framing · 1.2.0 named the field for exactly this reason
+- the hooks read "partly read": the script `hooks/hooks.sh` was found but what it injects could not be traced, so the report says unknown\
+  ↳ worked as designed
+- two persistence candidates (`workflows/scan.js`, `scripts/patch_artifacts.py`) are over the 50,000-byte read cap, and the report says so rather than listing them as clean\
+  ↳ worked as designed: the read cap is named, not hidden
 
 ## 6. All 39 Anthropic first-party plugins: the sweep
 

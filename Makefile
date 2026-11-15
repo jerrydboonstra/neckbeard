@@ -26,7 +26,7 @@ VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugi
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
 
-check: ## run the self-check (every case has been seen to fail), and check CASE-STUDIES quotes the gallery as it is
+check: ## run the self-check (every case has been seen to fail), and check README and CASE-STUDIES quote the reports as they are
 	tools/check-no-bin
 	$(PYTHON) skills/neckbeard/selfcheck.py
 	$(PYTHON) tools/excerpts --check
@@ -36,11 +36,12 @@ mutate: ## break inventory.py a few hundred ways and list the self-check cases n
 	$(PYTHON) tools/mutate-selfcheck --jobs 10
 	$(PYTHON) tools/mutate-selfcheck --targeted
 
-excerpts: ## rewrite the report excerpts in CASE-STUDIES.md from examples/
+excerpts: ## rewrite the report excerpts in README.md and CASE-STUDIES.md from the reports they quote
 	$(PYTHON) tools/excerpts
 
-report: ## regenerate docs/neckbeard-report.md, neckbeard's own published report (no reader, no verdict, no model call), and print its badge line
+report: ## regenerate docs/neckbeard-report.md, neckbeard's own published report (no reader, no verdict, no model call), and print its badge line (and refresh the README excerpt of it)
 	tools/vet . docs/neckbeard-report.md --facts --repo https://github.com/jerrydboonstra/neckbeard
+	@$(PYTHON) tools/excerpts >/dev/null   # the README's excerpt of this report, so the badge line stays the last output
 
 report-check: ## fail unless the report in the tagged tree names the tagged version (a tag set before the report commit is refused)
 	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "report-check: no tag v$(VERSION)"; exit 1; }

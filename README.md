@@ -4,47 +4,59 @@
 
 [![self-check](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![neckbeard report: 1.17.1 · partly read](https://img.shields.io/badge/neckbeard%20report-1.17.1%20%C2%B7%20partly%20read-yellow?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
 
-> **I read the whole thing. You’re welcome.**
->
-> Reads the plugin. Writes the verdict. Edits nothing.
+The yellow badge means "partly read". neckbeard's own report names each gap, and both are on purpose: test files under `tools/fixtures` that are broken on purpose, and one source file, `inventory.py`, that is bigger than the most neckbeard reads of one file (50,000 bytes).
 
-Before you install a plugin into Claude Code, neckbeard reads it for you. Every hook, every string it injects, every session and subagent it reaches, every file it writes outside your project. Then it checks each rule against what you already run and tells you what is duplicate, what conflicts, and what is new. It changes nothing.
+> **I read what I could. I tell you what I couldn’t.**
+>
+> Reads the plugin. Lists what it adds. Edits nothing.
+
+Before you install a plugin into Claude Code, neckbeard reads it for you and lists what it would add to every session. A **hook** is a script Claude Code runs on its own at an event, such as the start of a session. A **subagent** is a helper session that Claude starts for one job. neckbeard lists the hooks, the text a plugin injects, the sessions and subagents it reaches, and the files it may write outside your project, and says which parts it could not read. That list is the **facts report**. Optionally, it then compares each rule the plugin carries with the rules you already run and tells you which of its rules duplicate one of yours, which contradict one, and which are new. That is the **fit report**, and it needs your own rules. It changes nothing.
 
 **Tested by trying to break it, fifteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
-## What you get
+## Try it: three lines, then the report
 
-One page per plugin, answer first. This is the top of a real report, [ponytail](https://github.com/DietrichGebert/ponytail) against a [sample reader](examples/reader/):
+```bash
+git clone https://github.com/jerrydboonstra/neckbeard && cd neckbeard
+tools/vet . report.md --facts
+cat report.md
+```
 
-> ## 🟨 COPY RULES, SKIP PLUGIN · take the rule and three skills, skip the always-on injection
-> Injects its main skill into every session and every subagent, about 1,300 tokens each time (its 6.6 KB skill file, frontmatter stripped), and writes mode state to files outside the project. Two of its instructions tell the model to proceed on its own where the sample reader's rules say ask first. One new safety rule and three on-demand skills are worth having, and both are cheaper to copy as text than to carry as a permanent injection.
+The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit) and one section per kind of thing the plugin adds. This is neckbeard's own, cut down to its headings and top-level bullets ([the full report](docs/neckbeard-report.md) lists every skill and file):
+
+<!-- report:docs/neckbeard-report -->
+> # 🔍 neckbeard 1.17.1 · what it adds
 >
-> Verdict is relative to the [sample reader](examples/reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](examples/README.md).
+> `2026-11-14` · neckbeard 1.17.1 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.1 @ `aa64129`
+>
+> ### Injects
+> - Skills:
+> - Rule files: none
+> - Hook-injected text: partly read
+>
+> ### Hooks
+> - Hooks: partly read
+>
+> ### Subagents and commands
+> - Agents: none
+> - Commands: none
+>
+> ### State it may leave
+> - Persistence candidates: partly read
+>
+> ### Reaches outside the session
+> - MCP servers: none
+>
+> ### Source
+> - Kind: plugin
+> - Name: neckbeard (from plugin.json)
+> - Version: 1.17.1 (from plugin.json)
+> - plugin.json:
+> - Marketplace: none
+> - Commit: aa64129
+<!-- /report -->
 
-`2026-09-24` · neckbeard 1.12.0 · [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
-
-**⚡ At a glance**
-
-| | | |
-|:--:|---|---|
-| 🟧 | **Cost** | ~1,300 tokens (its 6.6 KB skill file, frontmatter stripped) at every session start, and again at every subagent start |
-| 🟧 | **Reach** | main session + subagents (certain, a `SubagentStart` hook, documented) |
-| 🟧 | **Leaves state** | flag/config files outside the project: home config dir and host-specific dirs |
-| 🟩 | **Live surface** | no MCP servers, no network calls in its hooks; one nudge asks the model to offer editing settings.json |
-| 🟩 | **Refused reads** | none |
-| 🟨 | **Worth keeping** | 1 standing rule + 3 on-demand skills |
-
-**🧮 How its rules sorted**
-
-| | verdict | count | |
-|:--:|---|:--:|---|
-| ⛔ | **conflicts** with a rule you run | **2** | 🟥🟥 |
-| 🔁 | **already covered** | **5** | ⬜⬜⬜⬜⬜ |
-| 🆕 | **new, standing rule** | **1** | 🟩 |
-| 🆕 | **new, on-demand skill** | **3** | 🟩🟩🟩 |
-| 🗑️ | **dropped** (persona, extras, no value) | **5** | ⬛⬛⬛⬛⬛ |
-
-The full report goes on to list every conflict with the rule it breaks, everything already covered, what is worth keeping, what the plugin installs, and a patch to copy. **[See the gallery](examples/README.md)**: eight public plugins and skill packs, including this one, all against the same sample reader. These are demos of a fit report. The badge above links neckbeard's own published report, [docs/neckbeard-report.md](docs/neckbeard-report.md), which lists what neckbeard adds to a session, with no reader and no verdict. The badge reads "partly read" because neckbeard's own `tools/fixtures` hold deliberately broken files, and its `inventory.py` is longer than the 50000 bytes the inventory reads; the report names each gap.
+**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR`, or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
 Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
@@ -67,13 +79,15 @@ ln -s ~/src/neckbeard/skills/neckbeard ~/.claude/skills/neckbeard
 
 Use one or the other, not both: two copies means two skills with the same name.
 
-One skill, zero hooks, zero agents. **About 270 tokens always-on**, the skill's description, which is all Claude Code shows its router so it knows the tool is there; **about 4.7k tokens each time you use it**. Both figures are from `claude plugin details` on 1.12.1 and are the same for either install. It injects nothing at session start and reaches none of your subagents. The plugin that prompted this one injects about 1,300 tokens into every session *and* every subagent, for as long as it is installed.
+One skill. Its plugin manifest registers no hooks and no agents. By the [published report](docs/neckbeard-report.md) (tokens estimated as bytes / 4): the skill's description is 764 characters, about 190 tokens, in every session, since that is all Claude Code shows its router so it knows the tool is there; the skill file is 14,535 bytes, about 3,600 tokens, loaded each time you use it. Both figures are the same for either install.
+
+The same report says "Hooks: partly read" and "reaches subagents: unknown", and that is the report being honest, not a hidden hook. The deliberately broken fixtures under `tools/fixtures` stop the hooks search from finishing, so neckbeard can only say what it did read. The plugin that prompted this one injected about 1,300 tokens into every session *and* every subagent when I first read it.
 
 That gap is the point. A tool that catches plugins for running in the background cannot run in the background. It works when you ask, reports, and stops.
 
 ## Point it at the next plugin before you install it
 
-Ask Claude to "vet this plugin" or "should I install X". From a clone, you can also run the inventory directly:
+Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, which writes a **dossier** (a JSON record of everything it read), then judges the fit. From a clone, you can also run the inventory directly. `tools/vet` (above) writes the finished report; `tools/neckbeard` prints the raw dossier that report is built from:
 
 ```bash
 tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
@@ -89,22 +103,22 @@ tools/neckbeard <target> --live-mcp NAME [--out FILE]
 
 `--project-dir` (default: cwd) is where rule discovery starts. `--extra-rules` adds a file or directory the discovery would otherwise miss.
 
-`--live-mcp NAME` is a separate, explicit trust decision. For one local stdio server declared by the target, Neckbeard starts its target-owned entrypoint, initializes MCP, and lists the advertised tools, resources, resource templates, and prompts. It records metadata and schemas only: it never calls a tool, reads a resource, expands a prompt, opens a browser, or performs a login. Remote servers, shell snippets, package runners, missing or outside-tree entrypoints, unbounded output, and hung servers fail closed. Declared environment values are passed only to that isolated process and are redacted from the dossier, even if the server echoes one back (a value of four characters or more wherever it appears, a shorter one only where a whole string equals it).
+`--live-mcp NAME` is a separate, explicit trust decision. An **MCP server** is a program a plugin can start to give Claude extra tools; a **stdio** server talks to Claude over standard input and output. For one local stdio server declared by the target, Neckbeard starts its target-owned entrypoint, initializes MCP, and lists the advertised tools, resources, resource templates, and prompts. It records metadata and schemas only: it never calls a tool, reads a resource, expands a prompt, opens a browser, or performs a login. Remote servers, shell snippets, package runners, missing or outside-tree entrypoints, unbounded output, and hung servers fail closed. Declared environment values are passed only to that isolated process and are redacted from the dossier, even if the server echoes one back (a value of four characters or more wherever it appears, a shorter one only where a whole string equals it).
 
 It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
 
-**A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo ignores every `.json` except its two manifests, for precisely this reason.
+**A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo's `.gitignore` ignores JSON files by default, so a dossier does not get committed by accident.
 
 ## How it was tested
 
-Fifteen rounds, each one pointed at something real. **[CASE-STUDIES.md](./CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
+Fifteen rounds, some against real plugins and some against neckbeard itself. **[CASE-STUDIES.md](./CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
 
-Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itself](CASE-STUDIES.md#2-neckbeard-itself-before-publishing) · [superpowers](CASE-STUDIES.md#3-obrasuperpowers-the-large-one) · [a random pick](CASE-STUDIES.md#4-koz-tvviral-launch-pipeline-the-random-one) · [claude-security](CASE-STUDIES.md#5-claude-security-anthropics-own-security-plugin) · [all 39 Anthropic plugins](CASE-STUDIES.md#6-all-39-anthropic-first-party-plugins-the-sweep) · [built to break](CASE-STUDIES.md#7-purpose-built-directories-attacking-the-unexercised-branches) · [a crash and a lie](CASE-STUDIES.md#8-the-last-unexercised-branches-a-crash-and-a-lie) · [independent audit](CASE-STUDIES.md#9-an-independent-audit-the-one-that-found-the-most) · [judgment](CASE-STUDIES.md#10-the-judgment-half-the-first-thing-that-passed) · [judgment, hard case](CASE-STUDIES.md#11-the-judgment-half-again-on-the-hard-case) · [the fix that regressed](CASE-STUDIES.md#12-the-fix-that-was-the-regression) · [sealed fixture](CASE-STUDIES.md#13-the-last-claim-resting-on-the-builders-word) · [before going public](CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing)
+Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itself](CASE-STUDIES.md#2-neckbeard-itself-before-publishing) · [superpowers](CASE-STUDIES.md#3-obrasuperpowers-the-large-one) · [a random pick](CASE-STUDIES.md#4-koz-tvviral-launch-pipeline-the-random-one) · [claude-security](CASE-STUDIES.md#5-claude-security-anthropics-own-security-plugin) · [all 39 Anthropic plugins](CASE-STUDIES.md#6-all-39-anthropic-first-party-plugins-the-sweep) · [built to break](CASE-STUDIES.md#7-purpose-built-directories-attacking-the-unexercised-branches) · [a crash and a lie](CASE-STUDIES.md#8-the-last-unexercised-branches-a-crash-and-a-lie) · [independent audit](CASE-STUDIES.md#9-an-independent-audit-the-one-that-found-the-most) · [judgment](CASE-STUDIES.md#10-the-judgment-half-the-first-thing-that-passed) · [judgment, hard case](CASE-STUDIES.md#11-the-judgment-half-again-on-the-hard-case) · [the fix that regressed](CASE-STUDIES.md#12-the-fix-that-was-the-regression) · [sealed fixture](CASE-STUDIES.md#13-the-last-claim-resting-on-the-builders-word) · [before going public](CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing) · [four pstack ports](CASE-STUDIES.md#15-four-pstack-ports-hooks-where-the-manifest-did-not-say)
 
 - **Who reviewed it:** AI agents only. Each was a separate Claude session that had not written the code. The only outside user ran an early version and hit bugs that later rounds fixed.
 - **Hardest round:** the ninth, the first by a session outside the build. Eleven problems, four published claims proved false, one of them a path that could leak 90,533 bytes of private rules into a public repo.
 - **The code:** checked against the filesystem. Every self-check case has been seen to fail with the code it guards broken.
-- **The judgment:** graded blind against two sealed fixtures, built by separate sessions; the author has never seen the answers. On the second, the instructions scored 30 of 31 where the same model without them scored 16.
+- **The judgment:** graded blind against two sealed fixtures (test sets with known answers, built by separate sessions; the author has never seen the answers). On the 31 items of the second that both arms were graded on, the instructions scored 30 where the same model without the instructions scored 16.
 
 ## What it reads, and what it refuses to touch
 
@@ -112,7 +126,7 @@ Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itsel
 
 - Every `skills/*/SKILL.md`, at the standard path only. It does not walk the whole repo. A plugin built for several agents also ships copies under `.openclaw/`, `.opencode/` and `.cursor/`, and Claude Code never loads those, so counting them would double the plugin's apparent size.
 - Every command and agent definition, in full, since each is an instruction to a model, and a `CLAUDE.md` at its root.
-- Every hook event it registers, and whether `SubagentStart` is one of them.
+- Every hook event it registers, and whether `SubagentStart` (the event that fires when a subagent starts, so a hook on it reaches every helper session) is one of them.
 - What each hook injects, where a static read can work that out. It follows one hop of local `require()` and rebuilds `path.join(__dirname, ...)` literals.
 - Anything its scripts write to disk outside your project.
 - Any **MCP server** the manifest declares, with its name, command and transport. This remains declaration-only by default. With the explicit `--live-mcp NAME` option, one contained local stdio server can also be initialized and asked only for its advertised metadata.
@@ -142,11 +156,11 @@ It resolves hook injection **statically, or says it could not**. A hook that bui
 
 ## Why
 
-I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin. It injects about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and it told me half of them restated my own config and five contradicted hard stops I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
+I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin, which at the time injected about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and the answer was a list of overlaps and clashes with rules I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
 
 ## The name
 
-Two kinds of hair, two kinds of developer. Ponytail ships the shortest thing that works. Neckbeard reads all 670 lines of your hook code first, and wants the smallest set of good rules and nothing else.
+The name is the developer who reads all of your hook code first, and wants the smallest set of good rules and nothing else.
 
 ## License
 
