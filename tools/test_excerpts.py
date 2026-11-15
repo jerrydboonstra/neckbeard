@@ -65,13 +65,13 @@ def run(report, *args):
 
 r, text = run(FACTS)
 check("a facts report is excerpted, not refused", r.returncode == 0, r.stderr)
-check("facts: the title line is quoted", "# 🔍 demo 1.2.3 · what it adds" in text, text)
+check("facts: the title line is quoted", "> # 🔍 demo 1.2.3 · what it adds" in text, text)
 check("facts: the source line is quoted", "`2026-11-15` · neckbeard 1.17.1 · [a/demo]" in text, text)
 check("facts: each ### heading and its top-level bullets are quoted",
       all(s in text for s in ("### Injects", "- Skills:", "- Rule files: none", "### Hooks", "- Hooks: partly read")), text)
 check("facts: sub-bullets and the closing note are left out",
       "demo: description every session" not in text and "reaches subagents" not in text and "No reader's rules" not in text, text)
-check("facts: no verdict box is invented", "> ##" not in text, text)
+check("facts: no verdict box is invented", "> ## " not in text and "| | | |" not in text, text)
 
 r, text = run(FIT)
 check("a fit report keeps its verdict box and At-a-glance table",
