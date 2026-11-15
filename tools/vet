@@ -9,9 +9,9 @@
 #      the reader's; refuse if the dossier read anything outside the copy
 #   3. judge in a separate `claude -p` session started in the empty project, following SKILL.md Steps 2 to 4.
 #      --judge reader (the default) gives it the copy as its config folder too, so it starts with the reader's
-#      rules and nothing else; that needs a login from the environment, as a web session has. Where it can't log
-#      in that way (a Mac keeps its login with the default config), it falls back to --judge own, the caller's
-#      own config, and says so: the judge is told to ignore those instructions but still starts with them
+#      rules and nothing else; that needs a login from the environment, as a web session has, or on Linux a copy of
+#      your login file for the run. Where it can't log in (a Mac keeps its login with the default config), it falls back
+#      to --judge own, the caller's own config, and says so and why: the judge is told to ignore those instructions but still starts with them
 #   4. check the report: it exists, carries a verdict and a title line; put tools/part1's "What it adds" (what the target
 #      injects, reaches and leaves behind, read from the dossier, with no reference to the reader) immediately before its
 #      "## ⚡ At a glance" (the report fails if that line is missing); set its title line, which says the verdict is
@@ -47,7 +47,49 @@ usage() {
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
 }
-die() { echo "vet: $*" >&2; exit 1; }
+# While a login copy exists (credcopy=yes), no token of it may reach vet's output or a file beside OUT. login_scan checks OUT,
+# the judge's stdout and the --units files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
+login_files() {   # the files to check, one per NUL-terminated entry, so a path with spaces stays whole
+  local stem=${out%.md} f
+  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json; do
+    [ -e "$f" ] && printf '%s\0' "$f"
+  done
+}
+login_scan() {   # returns 1 and removes the files when one holds a token of the login
+  [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ] || return 0
+  login_files >"$work/login.files"
+  python3 - "$credtokens" "${reader:-/nonexistent}/.credentials.json" "${work:-/nonexistent}/judge.out" "$work/login.files" <<'PYEOF' && return 0
+import json, os, sys
+toks = [t for t in open(sys.argv[1]).read().split("\n") if t]
+try:   # a login the judge refreshed holds new tokens
+    o = json.load(open(sys.argv[2]))["claudeAiOauth"]
+    toks += [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
+except Exception:
+    pass
+files = [sys.argv[3]] + [p for p in open(sys.argv[4], "rb").read().decode().split("\0") if p]
+sys.exit(1 if any(os.path.isfile(p) and any(t.encode() in open(p, "rb").read() for t in toks) for p in files) else 0)
+PYEOF
+  while IFS= read -r -d '' f; do rm -f "$f"; done <"$work/login.files"; return 1
+}
+die() {
+  local m="$*"
+  if [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ]; then
+    m=$(printf '%s' "$m" | python3 -c 'import sys
+m = sys.stdin.read()
+toks = open(sys.argv[1]).read().split("\n")
+try:
+    import json
+    o = json.load(open(sys.argv[2]))["claudeAiOauth"]
+    toks += [o.get("accessToken"), o.get("refreshToken")]
+except Exception:
+    pass
+for t in toks:
+    if isinstance(t, str) and t: m = m.replace(t, "[login]")
+print(m)' "$credtokens" "${reader:-/nonexistent}/.credentials.json")
+    login_scan || m="$m (files holding your login's secrets were removed)"
+  fi
+  echo "vet: $m" >&2; exit 1
+}
 plugin_version() { python3 -c 'import json,sys
 for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
     try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
@@ -185,12 +227,44 @@ EOF
 fi
 
 # 3. the judge (--facts has none)
+# On Linux the login lives in the config folder's login file, so the default reader gets a copy of the caller's for this
+# run (mode 600, removed with the work folder). A --reader folder never does: its settings.json hooks run.
+credcopy=no credsum="" credtokens=$work/login.tokens login_why=""
+copy_login() {   # sets login_why and returns 1 when there is nothing to copy
+  [ "$is_default" = yes ] || { login_why="a --reader folder never gets your login"; return 1; }
+  [ "$(uname -s)" = Linux ] || { login_why="reader mode logs in only on Linux"; return 1; }
+  local f=${CLAUDE_CONFIG_DIR:-${HOME:-}/.claude}/.credentials.json
+  [ -f "$f" ] || { login_why="no login file in your config folder"; return 1; }
+  python3 - "$f" "$credtokens" <<'PYEOF'
+import json, sys, time
+try:
+    o = json.load(open(sys.argv[1]))["claudeAiOauth"]
+    exp = int(o["expiresAt"]) / 1000.0
+    toks = [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
+except Exception:
+    sys.exit(3)
+open(sys.argv[2], "w").write("\n".join(toks))
+sys.exit(0 if exp > time.time() + 3600 else 4)
+PYEOF
+  case $? in
+    0) ;;
+    4) rm -f "$credtokens"; login_why="your login is due to refresh within the hour"; return 1 ;;
+    *) rm -f "$credtokens"; login_why="your login file couldn't be read"; return 1 ;;
+  esac
+  (umask 077; cp "$f" "$reader/.credentials.json") && chmod 600 "$reader/.credentials.json" || { login_why="your login file couldn't be read"; return 1; }
+  credcopy=yes credsum=$(cksum <"$reader/.credentials.json")
+}
 if [ "$facts" = no ] && [ "$judge" = auto ]; then
+  copy_login || true
   if (cd "$project" && CLAUDE_CONFIG_DIR=$reader timeout 120 claude -p --model "$model" "Reply with the single word ok" 2>&1) | grep -qx ok; then
     judge=reader
   else
     judge=own
-    echo "vet: the judge can't log in with $label as its config folder here, so it runs with your own config and is told to ignore it" >&2
+    if [ "$credcopy" = yes ]; then
+      [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the probe rewrote its login file, so you may need to log in again" >&2
+      login_why="your login didn't work as the reader"; rm -f "$reader/.credentials.json" "$credtokens"; credcopy=no
+    fi
+    echo "vet: the judge can't log in with $label as its config folder here ($login_why), so it runs with your own config and is told to ignore it" >&2
   fi
 fi
 version=$(plugin_version "$target")
@@ -358,8 +432,15 @@ fi
 cfg=()
 [ "$judge" = reader ] && cfg=(env CLAUDE_CONFIG_DIR="$reader")
 rm -f "$out"
-(cd "$project" && "${cfg[@]}" claude -p --model "$model" --allowedTools Bash,Read,Write,Edit,Glob,Grep --output-format text < "$prompt") ||
-  die "the judge exited non-zero"
+(cd "$project" && "${cfg[@]}" claude -p --model "$model" --allowedTools Bash,Read,Write,Edit,Glob,Grep --output-format text < "$prompt") >"$work/judge.out"
+judge_rc=$?
+if [ "$credcopy" = yes ]; then
+  [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the judge rewrote its login file, so you may need to log in again" >&2
+  login_scan || die "the judge's output held your login's secrets, so no report was written"
+fi
+rm -f "$credtokens"
+[ "$judge_rc" = 0 ] || die "the judge exited non-zero"
+cat "$work/judge.out"
 
 # 4. the report
 [ -s "$out" ] || die "the judge wrote no report to $out"
