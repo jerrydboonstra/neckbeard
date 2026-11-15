@@ -206,8 +206,8 @@ sys.exit(0 if exp > time.time() + 3600 else 4)
 PYEOF
   case $? in
     0) ;;
-    4) login_why="your login is due to refresh within the hour"; return 1 ;;
-    *) login_why="your login file couldn't be read"; return 1 ;;
+    4) rm -f "$credtokens"; login_why="your login is due to refresh within the hour"; return 1 ;;
+    *) rm -f "$credtokens"; login_why="your login file couldn't be read"; return 1 ;;
   esac
   (umask 077; cp "$f" "$reader/.credentials.json") && chmod 600 "$reader/.credentials.json" || { login_why="your login file couldn't be read"; return 1; }
   credcopy=yes credsum=$(cksum <"$reader/.credentials.json")
@@ -218,7 +218,10 @@ if [ "$facts" = no ] && [ "$judge" = auto ]; then
     judge=reader
   else
     judge=own
-    [ "$credcopy" = no ] || { login_why="your login didn't work as the reader"; rm -f "$reader/.credentials.json" "$credtokens"; credcopy=no; }
+    if [ "$credcopy" = yes ]; then
+      [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the probe rewrote its login file, so you may need to log in again" >&2
+      login_why="your login didn't work as the reader"; rm -f "$reader/.credentials.json" "$credtokens"; credcopy=no
+    fi
     echo "vet: the judge can't log in with $label as its config folder here ($login_why), so it runs with your own config and is told to ignore it" >&2
   fi
 fi
@@ -407,6 +410,7 @@ for path in sys.argv[2:-1]:
 PYEOF
     { rm -f "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json; die "the judge's output held your login's secrets, so no report was written"; }
 fi
+rm -f "$credtokens"
 [ "$judge_rc" = 0 ] || die "the judge exited non-zero"
 cat "$work/judge.out"
 

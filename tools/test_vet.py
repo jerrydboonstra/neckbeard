@@ -27,6 +27,7 @@ with open(os.environ["FAKE_LOG"], "a") as f:
     f.write(json.dumps({"cwd": os.getcwd(), "cfg": cfg, "args": args, "prompt": prompt,
                         "cred_seen": bool(cred) and os.path.exists(cred),
                         "cred_mode": oct(os.stat(cred).st_mode & 0o777) if cred and os.path.exists(cred) else "",
+                        "reader_cred_left": bool(__import__("glob").glob(os.path.join(os.environ.get("TMPDIR", "/nonexistent"), "neckbeard-vet.*", "reader", ".credentials.json"))),
                         "dossier_has_secret": bool(mark and dm and mark in open(dm.group(1), encoding="utf-8").read())}) + "\n")
 if "single word ok" in prompt and (os.environ.get("FAKE_LOGIN") == "never" or (os.environ.get("FAKE_LOGIN") == "file" and not (cred and os.path.exists(cred)))):
     print("Not logged in · Please run /login"); sys.exit(1)   # a login that lives in the config folder's login file
@@ -543,6 +544,7 @@ r = run("login-side", login="file", uname="Linux", caller=LOGIN, extra=("--units
 chk("login-side: a token in a --units side file leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
 r = run("login-refresh", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_REFRESH="1"))
 chk("login-refresh: a judge that rewrote its login file gets one line saying so", (r["rc"], "log in again" in r["out"], ACCESS in r["out"]), (0, True, False))
+chk("login-refresh: the caller's own login file is untouched by it", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
 # no copy, and the fallback line says why
 with_reader = tempfile.mkdtemp()
 try:
@@ -556,13 +558,15 @@ try:
              ("login didn't work as the reader", dict(caller=LOGIN, uname="Linux", login="never"))]
     for why, kw in cases:
         r = run("no-copy " + why, **{"login": "file", **kw})
+        if "didn't work" in why:
+            chk("no-copy: the copy is removed once the probe fails, before the own judge runs", any(c["reader_cred_left"] for c in r["calls"] if "single word ok" not in c["prompt"]), False)
         chk("no-copy: " + why, ("judge: own" in r["out"], "can't log in" in r["out"], why in r["out"], any(c["cred_seen"] and "single word ok" in c["prompt"] for c in r["calls"]) and "didn't work" not in why, ACCESS in r["out"]), (True, True, True, False, False))
 finally:
     shutil.rmtree(with_reader)
 r = run("login-facts", extra=("--facts",), uname="Linux", caller=LOGIN, fake_body=NO_CLAUDE)
 chk("facts: no login is copied, no model is called", (r["rc"], r["calls"]), (0, []))
 r = run("login-own", login="file", uname="Linux", caller=LOGIN, extra=("--judge", "own"), fake_env=SECRET)
-chk("own: an explicit --judge own copies nothing", (r["rc"], any(c["cred_seen"] and c["cfg"] != "" and "single word ok" in c["prompt"] for c in r["calls"])), (0, False))
+chk("own: an explicit --judge own copies nothing", (r["rc"], any(c["reader_cred_left"] for c in r["calls"])), (0, False))
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)
