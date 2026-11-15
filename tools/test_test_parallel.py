@@ -287,6 +287,9 @@ check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",
       repr([m for m in own if m not in (rows.get(f"tools/{m}.py") or [])]))
 check("tools/vet selects test_vet and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_stability"], repr(rows.get("tools/vet")))
 check("skills/neckbeard/inventory.py selects test_selfcheck", "test_selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
+check("skills/neckbeard/inventory_core.py selects test_selfcheck, and the modules inventory.py's row selects",
+      "test_selfcheck" in rows.get("skills/neckbeard/inventory_core.py", []) and set(rows.get("skills/neckbeard/inventory.py", [])) <= set(rows.get("skills/neckbeard/inventory_core.py", [])),
+      repr(rows.get("skills/neckbeard/inventory_core.py")))
 check("the runner's own files select its test", all("test_test_parallel" in rows.get(f"tools/{f}", []) for f in ("test-parallel", "test-changed")))
 d4 = project({"test_vet": OK}, mapfile=mp.read_text() if mp.exists() else "")
 (d4 / "tools" / "vet").write_text("#!/bin/sh\n")
