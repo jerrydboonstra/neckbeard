@@ -12,6 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.dirname(HERE)
 PART1 = os.path.join(HERE, "part1")
 INVENTORY = os.path.join(NB, "skills", "neckbeard", "inventory.py")
+INVENTORY_HOOKS = os.path.join(NB, "skills", "neckbeard", "inventory_hooks.py")
 FX = os.path.join(HERE, "fixtures", "part1")
 HEADINGS = ["Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"]
 FOOTER = ('Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; '
@@ -278,12 +279,13 @@ try:
 except Exception as e:
     chk("8. tools/part1's plugin-root expansion is fast on a long command", False, f"{type(e).__name__}: {e}")
 try:
-    inv = load_expander(INVENTORY, "_expand_plugin_root")
+    sys.path.insert(0, os.path.dirname(INVENTORY_HOOKS))   # inventory_hooks imports its sibling inventory_core
+    inv = load_expander(INVENTORY_HOOKS, "_expand_plugin_root")
     mine = load_expander(PART1, "expand_plugin_root")
     bad = [f for f in FORMS if inv(f, "ROOT") != mine(f, "ROOT")]
-    chk(f"8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's on {len(FORMS)} forms, :+ and ROOTX included", not bad, bad)
+    chk(f"8. tools/part1's copy of the plugin-root expansion agrees with inventory_hooks.py's on {len(FORMS)} forms, :+ and ROOTX included", not bad, bad)
 except Exception as e:
-    chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's", False, f"{type(e).__name__}: {e}")
+    chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory_hooks.py's", False, f"{type(e).__name__}: {e}")
 
 # ---------------------------------------------------------------- the State it may leave card summarises a long list
 def card_lines(out, heading):
