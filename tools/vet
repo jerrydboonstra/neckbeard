@@ -47,7 +47,35 @@ usage() {
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
 }
-die() { echo "vet: $*" >&2; exit 1; }
+# While a login copy exists (credcopy=yes), no token of it may reach vet's output or a file beside OUT. login_scan checks OUT,
+# the judge's stdout and the --units files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
+login_files() { local stem=${out%.md}; echo "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json; }
+login_scan() {   # returns 1 and removes the files when one holds a token of the login
+  [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ] || return 0
+  python3 - "$credtokens" "${reader:-/nonexistent}/.credentials.json" "${work:-/nonexistent}/judge.out" $(login_files) <<'PYEOF' && return 0
+import json, os, sys
+toks = [t for t in open(sys.argv[1]).read().split("\n") if t]
+try:   # a login the judge refreshed holds new tokens
+    o = json.load(open(sys.argv[2]))["claudeAiOauth"]
+    toks += [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
+except Exception:
+    pass
+sys.exit(1 if any(os.path.isfile(p) and any(t.encode() in open(p, "rb").read() for t in toks) for p in sys.argv[3:]) else 0)
+PYEOF
+  rm -f $(login_files); return 1
+}
+die() {
+  local m="$*"
+  if [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ]; then
+    m=$(printf '%s' "$m" | python3 -c 'import sys
+m = sys.stdin.read()
+for t in open(sys.argv[1]).read().split("\n"):
+    if t: m = m.replace(t, "[login]")
+print(m)' "$credtokens")
+    login_scan || m="$m (files holding your login's secrets were removed)"
+  fi
+  echo "vet: $m" >&2; exit 1
+}
 plugin_version() { python3 -c 'import json,sys
 for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
     try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
@@ -394,21 +422,7 @@ rm -f "$out"
 judge_rc=$?
 if [ "$credcopy" = yes ]; then
   [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the judge rewrote its login file, so you may need to log in again" >&2
-  # no token of the login may reach the report, the files beside it, or the terminal; nothing is printed of what was found
-  stem=${out%.md}
-  python3 - "$credtokens" "$work/judge.out" "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json "$reader/.credentials.json" <<'PYEOF' ||
-import json, os, sys
-toks = [t for t in open(sys.argv[1]).read().split("\n") if t]
-try:   # a login the judge refreshed holds new tokens
-    o = json.load(open(sys.argv[-1]))["claudeAiOauth"]
-    toks += [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
-except Exception:
-    pass
-for path in sys.argv[2:-1]:
-    if os.path.isfile(path) and any(t.encode() in open(path, "rb").read() for t in toks):
-        sys.exit(1)
-PYEOF
-    { rm -f "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json; die "the judge's output held your login's secrets, so no report was written"; }
+  login_scan || die "the judge's output held your login's secrets, so no report was written"
 fi
 rm -f "$credtokens"
 [ "$judge_rc" = 0 ] || die "the judge exited non-zero"

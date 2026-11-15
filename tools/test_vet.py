@@ -49,6 +49,10 @@ m = re.search(r"Write (\S+) as JSON, \{\"conflicts\"", prompt)
 if "FIND PASS" in prompt and m:
     mode = os.environ.get("FAKE_FINDS", "none")
     n = m.group(1).rsplit("-", 1)[1][0]
+    if mode == "tokenanswer":   # the judge answers with the login and writes no candidates (pass 2), or leaves it in its file (the others)
+        if n == "2":
+            reply(os.environ["FAKE_SECRET"])
+        json.dump({"conflicts": [], "note": os.environ["FAKE_SECRET"]}, open(m.group(1), "w")); reply("0")
     quote = {"one": "Always run the tests before you commit.", "invented": "Never run the tests."}.get(mode)
     if mode == "late" and n == "3":
         quote = "Always run the tests before you commit."
@@ -542,6 +546,8 @@ for tok, name in ((ACCESS, "access"), (REFRESH, "refresh")):
     chk("login-say: a judge that prints the %s token to stdout is refused, with one line and no value" % name, (r["rc"] != 0, tok in r["out"], "held your login's secrets" in r["out"]), (True, False, True))
 r = run("login-side", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", fake_env=dict(FAKE_SIDE=ACCESS))
 chk("login-side: a token in a --units side file leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
+r = run("login-find-die", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", finds="tokenanswer", fake_env=SECRET)
+chk("login-find: a find pass that answers with the token and writes no candidates: non-zero, no value in vet's output, no side file left", (r["rc"] != 0, ACCESS in r["out"], r["side_left"]), (True, False, []))
 r = run("login-refresh", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_REFRESH="1"))
 chk("login-refresh: a judge that rewrote its login file gets one line saying so", (r["rc"], "log in again" in r["out"], ACCESS in r["out"]), (0, True, False))
 chk("login-refresh: the caller's own login file is untouched by it", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
