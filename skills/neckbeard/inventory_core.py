@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The helpers every part of neckbeard's inventory uses: reading files, the read-status notes, frontmatter,
 the containment guard (_within lives only here among the inventory*.py modules; mcp_live.py keeps its own), and the file search. Moved out of inventory.py with no change
-in behaviour, so no shipped file is over neckbeard's own read cap. inventory.py imports each name from here, so
+in behaviour, one step toward every shipped file being under neckbeard's own read cap. inventory.py imports each name from here, so
 `inventory.<name>` still resolves. Stdlib only; reads nothing outside the paths it is given.
 """
 import json

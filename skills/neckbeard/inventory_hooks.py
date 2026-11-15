@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The hooks part of neckbeard's inventory: which hooks a plugin registers, the scripts they run and what those scripts
 read in, the files outside the manifest that hold hook configuration, the settings writers, and the scan for code that
-persists something. Moved out of inventory.py with no change in behaviour, so no shipped file is over neckbeard's own
-read cap. inventory.py imports each name from here, so `inventory.<name>` still resolves. Stdlib only.
+persists something. Moved out of inventory.py with no change in behaviour, one step toward every shipped file being
+under neckbeard's own read cap. inventory.py imports each name from here, so `inventory.<name>` still resolves. Stdlib only.
 """
 import json
 import os

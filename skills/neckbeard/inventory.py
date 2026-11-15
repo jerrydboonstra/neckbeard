@@ -33,7 +33,10 @@ from inventory_core import (  # noqa: F401  (each name stays reachable as invent
 )
 from inventory_core import find_up as _core_find_up
 from inventory_hooks import (  # noqa: F401  (each name stays reachable as inventory.<name>)
-    SUBAGENT_EVENTS, SUBAGENT_TOOL_EVENTS, SUBAGENT_TOOL_EVENTS_LIKELY, PERSIST_PATTERNS, SCRIPT_EXTS, JS_REQUIRE_RE, PATH_JOIN_RE, _literal_path_candidates, resolve_injected_text, _expand_plugin_root, _identify_hook_script, inventory_hooks, _merge_hook_list, _parse_events, HOOK_EVENTS, NOT_HOOK_CONFIG, _hook_events_in, settings_writers, hooks_outside_manifest, inventory_persistence,
+    SUBAGENT_EVENTS, SUBAGENT_TOOL_EVENTS, SUBAGENT_TOOL_EVENTS_LIKELY, PERSIST_PATTERNS, SCRIPT_EXTS,
+    JS_REQUIRE_RE, PATH_JOIN_RE, _literal_path_candidates, resolve_injected_text, _expand_plugin_root,
+    _identify_hook_script, inventory_hooks, _merge_hook_list, _parse_events, HOOK_EVENTS, NOT_HOOK_CONFIG,
+    _hook_events_in, settings_writers, hooks_outside_manifest, inventory_persistence,
 )
 
 
