@@ -607,7 +607,7 @@ if True:   # uname is faked, so these run on any host
 r = run("call-fail", extra=("--units",), units="units-install", finds="one", confirm="fail")
 chk("call-fail: a confirm call that exits non-zero: its last error lines reach stderr", (r["rc"] != 0, "fake-claude-error: quota exceeded" in r["out"]), (True, True))
 r = run("call-fail-token", login="file", uname="Linux", caller=LOGIN, extra=("--units", *FORCED), units="units-install", finds="one", confirm="fail", fake_env=dict(FAKE_SECRET=ACCESS, FAKE_FAIL_MSG="denied for " + ACCESS))
-chk("call-fail: an error line holding the login's token is dropped, not printed", (r["rc"] != 0, ACCESS in r["out"]), (True, False))
+chk("call-fail: an error line holding the login's token is dropped, not printed, and the call's error file is scanned and removed", (r["rc"] != 0, ACCESS in r["out"], "files holding your login's secrets were removed" in r["out"]), (True, False, True))
 # the probe's own error follows the stop line; a token in it is dropped
 r = run("forced-probe-msg", login="never", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=SECRET)
 lines = r["out"].split("\n")
