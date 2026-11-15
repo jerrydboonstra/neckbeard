@@ -11,6 +11,10 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 - **The README, gallery and case studies open with facts reports.** Each shows what a plugin adds, on its current version, with no verdict on someone else's plugin; neckbeard's report on itself stays as the one verdict example. The README explains the yellow badge and shows how to run neckbeard in three lines.
 - **The maintainer guide moved to `docs/publish-your-report.md`.**
 
+### Reports
+
+- **The reader judge now logs in on Linux.** vet copies your login file into the throwaway reader folder for the run and deletes it afterwards. It refuses output that holds the login's tokens, and says why when it falls back to the own judge.
+
 ### Plugin listing
 
 - **The plugin and marketplace descriptions match what neckbeard does.** They list what it reads and adds, and no longer quote another plugin or old token figures.
