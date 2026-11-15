@@ -36,6 +36,8 @@ tools/test_mcp_live.py test_mcp_live
 tools/fixtures/mcp-live/** test_mcp_live test_read_status
 tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_part1.py test_part1
+tools/excerpts test_excerpts
+tools/test_excerpts.py test_excerpts
 tools/fixtures/part1/** test_part1
 tools/test_read_status.py test_read_status
 tools/fixtures/read-status/** test_read_status
