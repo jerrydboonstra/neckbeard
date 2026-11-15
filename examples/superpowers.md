@@ -1,96 +1,66 @@
-# 🔍 obra/superpowers 6.4.1 · vetted against the sample reader
+# 🔍 superpowers 7.0.2 · what it adds
 
-> ## 🟧 INSTALL WITH CHANGES · install it, skip the two model overrides
-> Fifteen skills and one hook, 3,192 bytes injected once at session start and never reaching a subagent. Two skills tell you to override a dispatched subagent's pinned model, which collides with a rule the sample reader already runs; two more just restate a rule it already has. The other ten, one of them condensed into a new rule, are worth keeping.
->
-> Verdict is relative to the [sample reader](reader/), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](README.md).
+`2026-11-15` · neckbeard 1.17.1 · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46`
 
-`2026-09-24` · neckbeard 1.12.0 · [obra/superpowers](https://github.com/obra/superpowers)
+## What it adds
 
-## ⚡ At a glance
+### Injects
+- Skills:
+  - brainstorming: description every session (213 chars); the file on demand (15190 bytes, ~3797 tokens)
+  - diagnosing-superpowers: description every session (375 chars); the file on demand (6941 bytes, ~1735 tokens)
+  - dispatching-parallel-agents: description every session (106 chars); the file on demand (6078 bytes, ~1519 tokens)
+  - executing-plans: description every session (170 chars); the file on demand (18364 bytes, ~4591 tokens)
+  - finishing-a-development-branch: description every session (101 chars); the file on demand (7781 bytes, ~1945 tokens)
+  - receiving-code-review: description every session (234 chars); the file on demand (6203 bytes, ~1550 tokens)
+  - requesting-code-review: description every session (107 chars); the file on demand (2974 bytes, ~743 tokens)
+  - subagent-driven-development: description every session (85 chars); the file on demand (19740 bytes, ~4935 tokens)
+  - systematic-debugging: description every session (91 chars); the file on demand (9530 bytes, ~2382 tokens)
+  - test-driven-development: description every session (79 chars); the file on demand (9578 bytes, ~2394 tokens)
+  - using-git-worktrees: description every session (196 chars); the file on demand (6813 bytes, ~1703 tokens)
+  - using-superpowers: description every session (154 chars); the file on demand (3192 bytes, ~798 tokens)
+  - verification-before-completion: description every session (225 chars); the file on demand (3646 bytes, ~911 tokens)
+  - writing-plans: description every session (84 chars); the file on demand (10335 bytes, ~2583 tokens)
+  - writing-skills: description every session (97 chars); the file on demand (16738 bytes, ~4184 tokens)
+- Rule files: none
+- Hook-injected text: partly read
+  - neckbeard did not read: hooks/hooks.json: unresolved hooks: SessionStart: hooks/run-hook.cmd; hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.
 
-| | | |
-|:--:|---|---|
-| 🟧 | **Cost** | 3,192 bytes injected at `SessionStart` (`startup\|clear\|compact`), once per session |
-| ⬜ | **Reach** | main session only: the matcher excludes every subagent-firing event, and the injected skill itself carries a guard telling a dispatched subagent to ignore it |
-| ⬜ | **Leaves state** | plans, specs and review ledgers under the consuming project's own `docs/superpowers/` and `.superpowers/`; nothing found outside the project |
-| ⬜ | **Live surface** | no MCP servers, no network calls; skills shell out to `git`, test runners and `gh` |
-| ⬜ | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 10 (1 rule, 9 skills) |
+### Hooks
+- Hooks: partly read
+  - SessionStart (startup|clear|compact): hooks/run-hook.cmd
+  - reaches subagents: false (no event known to fire in a subagent)
+  - neckbeard did not read: hooks/hooks.json: unresolved hooks: SessionStart: hooks/run-hook.cmd; hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.
 
-## 🧮 How its rules sorted
+### Subagents and commands
+- Agents: none
+- Commands: none
 
-| | verdict | count | |
-|:--:|---|:--:|---|
-| ⛔ | **conflicts** with a rule you run | **2** | 🟥🟥 |
-| 🔁 | **already covered** | **2** | ⬜⬜ |
-| 🆕 | **new, standing rule** | **1** | 🟩 |
-| 🆕 | **new, on-demand skill** | **9** | 🟩×9 |
-| 🗑️ | **dropped** (persona, extras, no value) | **2** | ⬛⬛ |
+### State it may leave
+- Persistence candidates:
+  - .opencode/plugins/superpowers.js
+  - hooks/session-start
+  - scripts/bump-version.sh
+  - scripts/lint-shell.sh
+  - scripts/package-codex-plugin.sh
+  - scripts/render-antigravity-logo.sh
+  - scripts/sync-to-codex-plugin.sh
+  - skills/brainstorming/scripts/helper.js
+  - skills/brainstorming/scripts/server.cjs
+  - skills/brainstorming/scripts/start-server.sh
+  - and 8 more, in: skills/ 8
 
-## ⛔ Conflicts: 2
+### Reaches outside the session
+- MCP servers: none
 
-| # | it says | collides with | held in | |
-|:--:|---|---|---|:--:|
-| 1 | "Always specify the model explicitly when dispatching a subagent" (`skills/subagent-driven-development/SKILL.md`) | "Subagents run on the model their definition pins. Do not override it on the dispatch call." | `examples/reader/rules/engineering.md` rule 6 | 🟥 |
-| 2 | "an omitted model inherits the session's, which may not be the most capable" (`skills/executing-plans/SKILL.md`) | same rule: don't override a subagent's pinned model on dispatch | `examples/reader/rules/engineering.md` rule 6 | 🟥 |
+### Source
+- Kind: plugin
+- Name: superpowers (from plugin.json)
+- Version: 7.0.2 (from plugin.json)
+- plugin.json:
+  - name and version, shown above
+- Marketplace: none
+- Commit: 22f0b46
 
-## 🔁 Already covered: 2
+Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.
 
-| its rule | covered by | held in |
-|---|---|---|
-| "NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST" (`skills/systematic-debugging/SKILL.md`) | "Fix the cause, not the symptom. Before changing a function, find every caller." | `examples/reader/rules/engineering.md` rule 2 |
-| "NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST" (`skills/test-driven-development/SKILL.md`) | "A test is not done until it has been seen to fail. Break the code it guards, watch it go red, restore it." | `examples/reader/rules/engineering.md` rule 3 |
-
-## 🟩 Keep: 10
-
-| # | rule or skill | kind | |
-|:--:|---|:--:|:--:|
-| 1 | verification-before-completion, condensed | rule | ⭐ |
-| 2 | brainstorming | skill | 🆕 |
-| 3 | diagnosing-superpowers | skill | 🆕 |
-| 4 | dispatching-parallel-agents | skill | 🆕 |
-| 5 | finishing-a-development-branch | skill | 🆕 |
-| 6 | receiving-code-review | skill | 🆕 |
-| 7 | requesting-code-review | skill | 🆕 |
-| 8 | using-git-worktrees | skill | 🆕 |
-| 9 | writing-plans | skill | 🆕 |
-| 10 | writing-skills | skill | 🆕 |
-
-## 🗑️ Dropped
-
-`skills/using-superpowers/SKILL.md` (the `SessionStart` payload; "you ABSOLUTELY MUST invoke the skill" is a bootstrap mandate, not an engineering rule, and its own text already tells a subagent to ignore it) · `CLAUDE.md` (target root; points contributors at `AGENTS.md`, but a plugin install never loads a target's own root `CLAUDE.md` into the installing session, so it carries no weight here)
-
-## 🧩 What it installs
-
-| surface | when | reaches subagents | size |
-|---|---|:--:|--:|
-| `hooks/session-start` (`SessionStart` hook) | every session start matching `startup\|clear\|compact` | No | 3,192 bytes |
-| 15 skills under `skills/` | on invocation via the Skill tool | No | 168,882 bytes |
-| `CLAUDE.md` (target root) | only inside a checkout of this repo itself | No | 123 bytes |
-
-## ✅ Do this
-
-- ⬜ 1. Install the plugin as-is; when `skills/subagent-driven-development/SKILL.md` or `skills/executing-plans/SKILL.md` says to specify a model on dispatch, follow `examples/reader/rules/engineering.md` rule 6 instead and leave the model alone.
-- ⬜ 2. Add the proposed rule below to `examples/reader/rules/engineering.md`.
-
-This is the first carrying-cost case: the hook injects at every session, and what survives (one new rule plus nine skills) is well above the one-rule bar that would make copying the text cheaper than installing the plugin.
-
-## 📋 Proposed rules patch
-
-```diff
---- a/examples/reader/rules/engineering.md
-+++ b/examples/reader/rules/engineering.md
-@@
- 7. **Commit messages:** imperative subject under 60 characters, then why.
-+8. **No completion claims without fresh evidence.** Before saying a fix, a
-+   build, or a test run passed, run the command in this message and read
-+   its output. "Should pass" is not evidence.
-```
-
-Condensed from `skills/verification-before-completion/SKILL.md`.
-
-The other nine keeps (brainstorming, diagnosing-superpowers, dispatching-parallel-agents, finishing-a-development-branch, receiving-code-review, requesting-code-review, using-git-worktrees, writing-plans, writing-skills) already ship as named, on-demand skills inside the plugin. Installing it is how the sample reader gets them, so none need a new name or a separate file.
-
-**Key:** 🟥 high · 🟧 medium · 🟨 partly · 🟩 keep · ⬜ covered · ⬛ dropped ·
-⛔ conflict · 🔁 duplicate · 🆕 new · ⭐ standout · ✅ done · ❓ unknown
+No reader's rules were read: this report lists facts only and carries no verdict.

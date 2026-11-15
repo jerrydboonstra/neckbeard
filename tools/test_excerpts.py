@@ -92,4 +92,17 @@ with tempfile.TemporaryDirectory() as d:
     fresh = subprocess.run(ex + ["--check"], capture_output=True, text=True)
     check("--check passes once the excerpt is rewritten", fresh.returncode == 0, fresh.stderr)
 
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d)
+    (root / "tools").mkdir()
+    shutil.copy(SCRIPT, root / "tools" / "excerpts")
+    (root / "docs").mkdir()
+    (root / "docs" / "own-report.md").write_text(FACTS)
+    (root / "README.md").write_text("top\n<!-- report:docs/own-report -->\nold\n<!-- /report -->\n")
+    ex = [sys.executable, str(root / "tools" / "excerpts")]
+    r = subprocess.run(ex, capture_output=True, text=True)
+    text = (root / "README.md").read_text()
+    check("README.md takes a marker too, and a name with a folder reads that file in the repo",
+          r.returncode == 0 and "> ### Injects" in text and "old" not in text, r.stderr + text)
+
 sys.exit(1 if failures else 0)

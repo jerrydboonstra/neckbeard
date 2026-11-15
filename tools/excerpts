@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the report excerpts in CASE-STUDIES.md in step with the gallery.
+"""Keep the report excerpts in README.md and CASE-STUDIES.md in step with the reports.
 
 Each case study that ran against a gallery plugin opens with that report's
 excerpt between two markers: a fit report's verdict and "At a glance" table, a
@@ -9,8 +9,9 @@ facts report's title, header line and "What it adds" headings with their top-lev
     ...
     <!-- /report -->
 
-The text between them is copied from examples/superpowers.md, never typed by
-hand, so re-running the gallery cannot leave a case study quoting an old report.
+The text between them is copied from examples/superpowers.md (or, for a name with
+a folder, such as docs/neckbeard-report, from that file), never typed by hand, so
+re-running the gallery cannot leave a page quoting an old report.
 
     tools/excerpts           rewrite every excerpt from its report
     tools/excerpts --check   exit 1, naming each excerpt that has drifted
@@ -20,8 +21,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DOC = ROOT / "CASE-STUDIES.md"
-BLOCK = re.compile(r"(<!-- report:([\w.-]+) -->\n)(.*?)(\n<!-- /report -->)", re.S)
+DOCS = [ROOT / "README.md", ROOT / "CASE-STUDIES.md"]
+BLOCK = re.compile(r"(<!-- report:([\w./-]+) -->\n)(.*?)(\n<!-- /report -->)", re.S)
 
 
 def facts_excerpt(report):
@@ -51,7 +52,9 @@ def facts_excerpt(report):
 
 def excerpt(name):
     """From examples/<name>.md: a fit report's verdict and At-a-glance table, or a facts report's facts."""
-    report = (ROOT / "examples" / f"{name}.md").read_text()
+    # A bare name is a gallery report; a name with a folder in it (docs/neckbeard-report) is that file in the repo.
+    path = ROOT / f"{name}.md" if "/" in name else ROOT / "examples" / f"{name}.md"
+    report = path.read_text()
     # The verdict box: its headline and summary, without the closing
     # "Verdict is relative..." note, which the case study does not need.
     verdict = re.search(r"^> ## (.+\n(?:>.*\n)*?)>\n> Verdict is relative", report, re.M)
@@ -62,29 +65,34 @@ def excerpt(name):
         facts = facts_excerpt(report)
         if facts:
             return facts
-    sys.exit(f"excerpts: examples/{name}.md is neither a fit report (verdict box and At-a-glance table) nor a facts report (title, header line, \"What it adds\")")
+    sys.exit(f"excerpts: {path.relative_to(ROOT)} is neither a fit report (verdict box and At-a-glance table) nor a facts report (title, header line, \"What it adds\")")
 
 
 def main():
     check = "--check" in sys.argv[1:]
-    text = DOC.read_text()
-    stale = []
+    stale, seen = [], 0
+    for doc in DOCS:
+        if not doc.is_file():
+            continue
+        text = doc.read_text()
+        seen += len(BLOCK.findall(text))
 
-    def fill(m):
-        want = excerpt(m.group(2))
-        if m.group(3) != want:
-            stale.append(m.group(2))
-        return m.group(1) + want + m.group(4)
+        def fill(m):
+            want = excerpt(m.group(2))
+            if m.group(3) != want:
+                stale.append(f"{doc.name}:{m.group(2)}")
+            return m.group(1) + want + m.group(4)
 
-    new = BLOCK.sub(fill, text)
-    if not BLOCK.search(text):
-        sys.exit("excerpts: no <!-- report:... --> blocks in CASE-STUDIES.md")
+        new = BLOCK.sub(fill, text)
+        if not check and new != text:
+            doc.write_text(new)
+    if not seen:
+        sys.exit("excerpts: no <!-- report:... --> blocks in README.md or CASE-STUDIES.md")
     if check:
         if stale:
-            sys.exit("excerpts: out of step with the gallery: " + ", ".join(stale) + ". Run tools/excerpts.")
-        print(f"excerpts: {len(BLOCK.findall(text))} in step with the gallery")
+            sys.exit("excerpts: out of step with the reports: " + ", ".join(stale) + ". Run tools/excerpts.")
+        print(f"excerpts: {seen} in step with the reports")
         return
-    DOC.write_text(new)
     print(f"excerpts: rewrote {', '.join(stale) or 'nothing, all in step'}")
 
 
