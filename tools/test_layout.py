@@ -37,5 +37,22 @@ def _defs(name):
 check("skills/neckbeard: inventory_core.py defines _within and inventory.py does not (the containment guard in one place)",
       "_within" in _defs("inventory_core.py") and "_within" not in _defs("inventory.py"))
 
+# find_up stops at HOME: inventory.py's wrapper hands inventory_core the value of inventory.HOME at call time
+sys.path.insert(0, str(ROOT / "skills" / "neckbeard"))
+import inventory
+with tempfile.TemporaryDirectory() as _d:
+    _above = Path(_d).resolve()
+    (_above / "CLAUDE.md").write_text("rules\n")
+    _home = _above / "home"
+    (_home / "proj" / "sub").mkdir(parents=True)
+    _was, inventory.HOME = inventory.HOME, str(_home)
+    try:
+        _got = inventory.find_up(str(_home / "proj" / "sub"), "CLAUDE.md")
+        (_home / "proj" / "CLAUDE.md").write_text("mine\n")
+        _near = inventory.find_up(str(_home / "proj" / "sub"), "CLAUDE.md")
+    finally:
+        inventory.HOME = _was
+check("inventory.find_up stops at HOME (a CLAUDE.md above it is not found) and still finds one below it", _got is None and _near == str(_home / "proj" / "CLAUDE.md"))
+
 print(f"test_layout: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)
