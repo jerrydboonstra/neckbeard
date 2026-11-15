@@ -4,11 +4,9 @@
 
 [![self-check](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![neckbeard report: 1.17.2 · partly read](https://img.shields.io/badge/neckbeard%20report-1.17.2%20%C2%B7%20partly%20read-yellow?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
 
-The yellow badge means "partly read". neckbeard's own report names each gap, and both are on purpose: test files under `tools/fixtures` that are broken on purpose, and one source file, `inventory.py`, that is bigger than the most neckbeard reads of one file (50,000 bytes).
-
-> **I read what I could. I tell you what I couldn’t.**
+> **I read the whole thing. You’re welcome.**
 >
-> Reads the plugin. Lists what it adds. Edits nothing.
+> Reads the plugin. Writes the verdict. Edits nothing.
 
 Before you install a plugin into Claude Code, neckbeard reads it for you and lists what it would add to every session. A **hook** is a script Claude Code runs on its own at an event, such as the start of a session. A **subagent** is a helper session that Claude starts for one job. neckbeard lists the hooks, the text a plugin injects, the sessions and subagents it reaches, and the files it may write outside your project, and says which parts it could not read. That list is the **facts report**. Optionally, it then compares each rule the plugin carries with the rules you already run and tells you which of its rules duplicate one of yours, which contradict one, and which are new. That is the **fit report**, and it needs your own rules. It changes nothing.
 
@@ -55,6 +53,8 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Marketplace: none
 > - Commit: 606b17f
 <!-- /report -->
+
+The yellow badge means "partly read". neckbeard's own report names each gap, and both are on purpose: test files under `tools/fixtures` that are broken on purpose, and one source file, `inventory.py`, that is bigger than the most neckbeard reads of one file (50,000 bytes).
 
 **Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR`, or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
