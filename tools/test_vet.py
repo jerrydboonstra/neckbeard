@@ -61,6 +61,8 @@ if "FIND PASS" in prompt and m:
     json.dump({"conflicts": found}, open(m.group(1), "w"))
     reply(str(len(found)))
 if "CONFIRM CALL" in prompt:
+    if os.environ.get("FAKE_CONFIRM") == "fail":   # the claude inside a call() exits non-zero with its own message
+        sys.stderr.write("noise line\n" + os.environ.get("FAKE_FAIL_MSG", "fake-claude-error: quota exceeded") + "\n"); sys.exit(1)
     if os.environ.get("FAKE_CONFIRM") == "flaky" and not os.path.exists(os.environ["FAKE_LOG"] + ".flaky"):
         open(os.environ["FAKE_LOG"] + ".flaky", "w").close()
         reply("I would rather not say.")
@@ -274,8 +276,8 @@ j = judge(r)
 chk("mac: judge has no config folder", bool(j) and j[0]["cfg"], "")
 
 # 3. --judge reader on a Mac: no fallback, so the run fails
-r = run("forced", login="default", extra=("--judge", "reader"))
-chk("forced reader: exit 1", r["rc"], 1)
+r = run("forced", login="default", uname="Darwin", extra=("--judge", "reader"))
+chk("forced reader: exit 1, no report, one line naming the reason and --judge own", (r["rc"], r["report"], "--judge reader can't log in" in r["out"], "reader mode logs in only on Linux" in r["out"], "--judge own" in r["out"]), (1, False, True, True, True))
 
 # 4. the judge writes no report
 r = run("none", report="none")
@@ -575,6 +577,45 @@ r = run("login-facts", extra=("--facts",), uname="Linux", caller=LOGIN, fake_bod
 chk("facts: no login is copied, no model is called", (r["rc"], r["calls"]), (0, []))
 r = run("login-own", login="file", uname="Linux", caller=LOGIN, extra=("--judge", "own"), fake_env=SECRET)
 chk("own: an explicit --judge own copies nothing", (r["rc"], any(c["reader_cred_left"] for c in r["calls"])), (0, False))
+
+# 12. vet-forced-reader-no-fallback: an explicit --judge reader copies the login like auto, and never falls back to own
+FORCED = ("--judge", "reader")
+if True:   # uname is faked, so these run on any host
+    r = run("forced-copy", login="file", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=SECRET)
+    j = judge(r)[0] if judge(r) else {}
+    chk("forced-copy: --judge reader on Linux with a fresh login file judges as the reader with the copy in place", (r["rc"], j.get("cred_seen"), j.get("cred_mode"), "judge: reader" in r["out"]), (0, True, "0o600", True))
+    chk("forced-copy: no secret in the report or vet's output, and the folder is gone", (ACCESS in r["text"] or REFRESH in r["text"], ACCESS in r["out"] or REFRESH in r["out"], any(r["cfg_left"])), (False, False, False))
+    for why, kw in (("no login file in your config folder", dict(caller={})),
+                    ("due to refresh within the hour", dict(caller={".credentials.json": login_file(hours=1 / 6)})),
+                    ("your login didn't work as the reader", dict(caller=LOGIN, login="never"))):
+        r = run("forced-stop " + why, **{"login": "file", "uname": "Linux", "extra": FORCED, **kw})
+        chk("forced-stop: " + why + ": non-zero, no report, no judge call, the reason and --judge own on stderr", (r["rc"] != 0, r["report"], [c for c in r["calls"] if "single word ok" not in c["prompt"]], why in r["out"], "--judge own" in r["out"], ACCESS in r["out"]), (True, False, [], True, True, False))
+    mine = reader_copy(tempfile.mkdtemp())
+    r = run("forced-reader-dir", login="never", uname="Linux", caller=LOGIN, extra=(*FORCED, "--reader", mine))
+    chk("forced-stop: a --reader folder never gets your login, and the line says so", (r["rc"] != 0, r["report"], "a --reader folder never gets your login" in r["out"], "--judge own" in r["out"]), (True, False, True, True))
+    shutil.rmtree(os.path.dirname(mine))
+    r = run("forced-web", login="env", uname="Linux", caller={}, extra=FORCED)
+    j = judge(r)[0] if judge(r) else {}
+    chk("forced-web: no login file but the probe passes (a web session): judges as the reader", (r["rc"], j.get("cfg") != "", "can't log in" in r["out"]), (0, True, False))
+# a failing call() says why: the last lines of its own error, and never a token
+r = run("call-fail", extra=("--units",), units="units-install", finds="one", confirm="fail")
+chk("call-fail: a confirm call that exits non-zero: its last error lines reach stderr", (r["rc"] != 0, "fake-claude-error: quota exceeded" in r["out"]), (True, True))
+r = run("call-fail-token", login="file", uname="Linux", caller=LOGIN, extra=("--units", *FORCED), units="units-install", finds="one", confirm="fail", fake_env=dict(FAKE_SECRET=ACCESS, FAKE_FAIL_MSG="denied for " + ACCESS))
+chk("call-fail: an error line holding the login's token is dropped, not printed", (r["rc"] != 0, ACCESS in r["out"]), (True, False))
+# the judged report names the judge that ran, and vet --check still passes on it
+for name, kw, want in (("judge-line-reader", dict(login="env"), "Judge: the sample reader's config"),
+                       ("judge-line-own", dict(login="default", uname="Darwin"), "Judge: your own config, told to ignore it")):
+    r = run(name, **kw)
+    chk(name + ": the report carries the Judge line", want in r["text"], True)
+    chk(name + ": the Judge line sits after the Baseline line, not in header lines 1-2", (want in r["text"].split("\n")[:3], r["text"].find("Baseline:") < r["text"].find(want)), (False, True))
+    d = tempfile.mkdtemp()
+    try:
+        os.makedirs(os.path.join(d, ".claude-plugin")); json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(d, ".claude-plugin", "plugin.json"), "w"))
+        open(os.path.join(d, "report.md"), "w", encoding="utf-8").write(r["text"])
+        c = subprocess.run([VET, "--check", os.path.join(d, "report.md"), d], capture_output=True, text=True)
+        chk(name + ": vet --check passes on it", c.returncode, 0)
+    finally:
+        shutil.rmtree(d)
 
 print(f"test_vet: {checks - fail}/{checks} checks passed")
 sys.exit(1 if fail else 0)
