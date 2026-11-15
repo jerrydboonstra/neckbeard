@@ -13,8 +13,8 @@
 #      your login file for the run (for the default judge and for an explicit --judge reader alike). Where the default judge can't
 #      log in (a Mac keeps its login with the default config), it falls back to --judge own, the caller's own config, and says so
 #      and why: the judge is told to ignore those instructions but still starts with them. The fallback is for the default judge
-#      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and --judge own. The report
-#      report carries a "Judge:" line beside the Baseline line saying which judge ran.
+#      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and
+#      --judge own. The report carries a "Judge:" line beside the Baseline line saying which judge ran.
 #   4. check the report: it exists, carries a verdict and a title line; put tools/part1's "What it adds" (what the target
 #      injects, reaches and leaves behind, read from the dossier, with no reference to the reader) immediately before its
 #      "## ⚡ At a glance" (the report fails if that line is missing); set its title line, which says the verdict is
@@ -94,6 +94,7 @@ show_call_errors() {   # each isolated call's own error output, last 5 lines, be
   for f in "$work"/*.err; do
     [ -s "$f" ] && [ -e "${f%.err}.failed" ] || continue   # only a call whose claude exited non-zero
     echo "vet: ${f##*/} said:" >&2; safe_tail "$f" 5
+    rm -f "${f%.err}.failed"   # printed once; a retry that fails again marks it again
   done
 }
 die() {
