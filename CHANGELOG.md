@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.2 (2026-11-15)
+
+### Docs
+
+- **The README, gallery and case studies now open with facts reports on current plugin versions, explain the yellow badge, and show a three-line way to run neckbeard.** The maintainer guide moved to `docs/publish-your-report.md`, and the plugin and marketplace descriptions no longer quote another plugin or old token figures.
+
 ## 1.17.1 (2026-11-14)
 
 ### Inventory
