@@ -596,6 +596,10 @@ if True:   # uname is faked, so these run on any host
     r = run("forced-reader-dir", login="never", uname="Linux", caller=LOGIN, extra=(*FORCED, "--reader", mine))
     chk("forced-stop: a --reader folder never gets your login, and the line says so", (r["rc"] != 0, r["report"], "a --reader folder never gets your login" in r["out"], "--judge own" in r["out"]), (True, False, True, True))
     shutil.rmtree(os.path.dirname(mine))
+    mine = reader_copy(tempfile.mkdtemp())
+    r = run("forced-reader-dir-nocopy", login="env", uname="Linux", caller=LOGIN, extra=(*FORCED, "--reader", mine))
+    chk("forced-reader-dir: a --reader folder gets no copy of your login, and the judge runs as that reader", (r["rc"], any(c["cred_seen"] for c in r["calls"])), (0, False))
+    shutil.rmtree(os.path.dirname(mine))
     r = run("forced-web", login="env", uname="Linux", caller={}, extra=FORCED)
     j = judge(r)[0] if judge(r) else {}
     chk("forced-web: no login file but the probe passes (a web session): judges as the reader", (r["rc"], j.get("cfg") != "", "can't log in" in r["out"]), (0, True, False))

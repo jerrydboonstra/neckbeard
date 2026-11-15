@@ -8,13 +8,13 @@
 #   2. inventory TARGET with that copy as the config folder and an empty project, so the only rules in force are
 #      the reader's; refuse if the dossier read anything outside the copy
 #   3. judge in a separate `claude -p` session started in the empty project, following SKILL.md Steps 2 to 4.
-#      --judge reader (the default) gives it the copy as its config folder too, so it starts with the reader's
+#      --judge reader (what the default tries first) gives it the copy as its config folder too, so it starts with the reader's
 #      rules and nothing else; that needs a login from the environment, as a web session has, or on Linux a copy of
 #      your login file for the run (for the default judge and for an explicit --judge reader alike). Where the default judge can't
 #      log in (a Mac keeps its login with the default config), it falls back to --judge own, the caller's own config, and says so
 #      and why: the judge is told to ignore those instructions but still starts with them. The fallback is for the default judge
-#      only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and --judge own. The report
-#      header carries a "Judge:" line saying which judge ran.
+#      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and --judge own. The report
+#      report carries a "Judge:" line beside the Baseline line saying which judge ran.
 #   4. check the report: it exists, carries a verdict and a title line; put tools/part1's "What it adds" (what the target
 #      injects, reaches and leaves behind, read from the dossier, with no reference to the reader) immediately before its
 #      "## ⚡ At a glance" (the report fails if that line is missing); set its title line, which says the verdict is
@@ -92,7 +92,7 @@ PYEOF
 show_call_errors() {   # each isolated call's own error output, last 5 lines, before the work folder goes
   local f
   for f in "$work"/*.err; do
-    [ -s "$f" ] || continue
+    [ -s "$f" ] && [ -e "${f%.err}.failed" ] || continue   # only a call whose claude exited non-zero
     echo "vet: ${f##*/} said:" >&2; safe_tail "$f" 5
   done
 }
@@ -414,9 +414,10 @@ if [ "$units" = yes ]; then
   # an isolated judge call: PROMPT-FILE in, its text answer on stdout; its cost and time go to the usage log
   call() { # call TOOLS PROMPT-FILE
     local rc
+    rm -f "${2%.md}.failed"
     (cd "$project" && "${ucfg[@]}" claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") >"$2.json"
     rc=$?
-    [ "$rc" = 0 ] || return "$rc"   # its own error is already in the call's .err file
+    [ "$rc" = 0 ] || { : >"${2%.md}.failed"; return "$rc"; }   # its own error is already in the call's .err file
     python3 -c 'import json,sys
 r = json.load(sys.stdin)
 print(r.get("result", ""))
@@ -430,7 +431,8 @@ print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossi
     call Read,Write,Glob,Grep "$work/find-$i.md" >"$work/find-$i.out" 2>"$work/find-$i.err" &
   done
   wait
-  for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || { show_call_errors; die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.out" "$work/find-$i.err"))"; }; done
+  show_call_errors
+  for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.out" "$work/find-$i.err"))"; done
   python3 "$nb/tools/units-confirm" pool "$unitsf" "$dossier" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
   # 3b. each candidate confirmed alone: it sees the reader rule, the sentence and the written test, and nothing else
   python3 -c 'import json,sys
@@ -446,13 +448,15 @@ print(open(sys.argv[1], encoding="utf-8").read().format(rule=open(sys.argv[2]).r
     call "" "$work/confirm-$cid.md" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err" &
   done
   wait
+  show_call_errors
   # a confirm call that answered with no JSON (a refusal, a hiccup) gets one more try, alone
   for f in "$work"/confirm-*.md; do
     [ -e "$f" ] || break
     cid=${f##*/confirm-}; cid=${cid%.md}
     grep -q '"conflict"' "$work/confirm-$cid.out" || call "" "$f" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err"
   done
-  python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF' || { show_call_errors; die "a confirm call gave no usable answer"; }
+  show_call_errors   # a retry that failed again
+  python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF' || die "a confirm call gave no usable answer"
 import json, re, sys
 cands = json.load(open(sys.argv[1]))["candidates"]
 confs, kept = [], []
