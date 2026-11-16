@@ -4,6 +4,18 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.6 (2026-11-15)
+
+### Reports
+
+- **The report header names the release tag for neckbeard's own report.** It says "+ uncommitted changes" after the commit when a checkout differs from it, and `tools/vet` takes `--release-tag`.
+- **The README's report excerpt shows counts.** It lists how many skills and persistence candidates neckbeard's own report finds, in place of empty bullets.
+
+### Docs
+
+- **The publish guide names the current release, and a check keeps it in step.** The marketplace description, the README definition of "reader" and the score link now read plainly.
+- **Each gallery row says which sections of its report are partly read, and why.**
+
 ## 1.17.5 (2026-11-15)
 
 ### Reports
