@@ -22,7 +22,7 @@
   "injected_content": null,
   "injected_content_note": "1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.",
   "unresolved_hooks": [
-   "SessionStart: hooks/run.sh"
+   "SessionStart: hooks/run.sh (line 2: runs `cat`, whose output may reach Claude)"
   ]
  },
  "is_plugin": true,
