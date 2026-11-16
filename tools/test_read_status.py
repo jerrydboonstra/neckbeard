@@ -268,6 +268,23 @@ _t3 = target_of(tmp_tree({"fx/install.json": '{"hooks": {"SessionStart": [{"hook
                           ".neckbeard.json": '{"fixtures": ["fx"]}'}))
 check("DF 3. a declared folder holding an installer hook: it is still inventoried (a guard)",
       (_t3.get("hooks") or {}).get("has_hooks") in (True, "partial") and "SessionStart" in ((_t3.get("hooks") or {}).get("events") or {}), repr(_t3.get("hooks"))[:300])
+_t3c = target_of(tmp_tree({"fx/skills/a/SKILL.md": ("->", "missing.md"), ".neckbeard.json": '{"fixtures": ["fx"]}'}))
+_s3c = (_t3c.get("read_status") or {}).get("skills", {})
+check("DF 3. an unreadable skill inside a declared folder still counts: only the hooks and persistence scans' notes move (a guard)",
+      _s3c.get("state") in ("partial", "failed") and not _s3c.get("declared"), repr(_s3c))
+_t3d = target_of(tmp_tree({".claude-plugin/marketplace.json": '{"name": "m", "plugins": [{"name": "p", "source": "./plugins/p"}, {"name": "q", "source": "./plugins/q"}]}\n',
+                           "plugins/p/.claude-plugin/plugin.json": '{"name": "p", "version": "1.0.0"}\n', "plugins/q/.claude-plugin/plugin.json": '{"name": "q", "version": "1.0.0"}\n',
+                           "plugins/p/fx/data/broken.json": "{ ", ".neckbeard.json": '{"fixtures": ["plugins/p/fx"]}'}), "--plugin", "p")
+check("DF 1. a plugin selected from a marketplace: the outer .neckbeard.json's folder is matched against the plugin's own notes",
+      _t3d.get("declared_fixtures") == ["plugins/p/fx"] and (_t3d.get("read_status") or {}).get("hooks", {}).get("state") == "read"
+      and any("fx/data/broken.json" in n for n in declared_of(_t3d, "hooks")), repr((_t3d.get("declared_fixtures"), (_t3d.get("read_status") or {}).get("hooks"))))
+_t3e = target_of(tmp_tree({".neckbeard.json": '{"fixtures": ["."]}', "data/broken.json": "{ "}))
+check("DF 4. an entry of . would declare the whole tree: it is left out, with its note",
+      _t3e.get("declared_fixtures") == [] and (_t3e.get("read_status") or {}).get("hooks", {}).get("state") == "partial"
+      and not declared_of(_t3e, "hooks"), repr(_t3e.get("declared_fixtures")))
+_t3f = target_of(tmp_tree({".neckbeard.json": '{"fixtures": ["fx"]}', "fx: x.json": "{ ", "fx/data/ok.json": "{}"}))
+check("DF 1. a file outside a declared folder whose name starts with its path and ': ' keeps its note counted",
+      (_t3f.get("read_status") or {}).get("hooks", {}).get("state") == "partial" and not declared_of(_t3f, "hooks"), repr((_t3f.get("read_status") or {}).get("hooks")))
 _t3b = target_of(tmp_tree({"fx/install.json": '{"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": 5}]}]}}\n',
                            ".neckbeard.json": '{"fixtures": ["fx"]}'}))
 _h3b = (_t3b.get("read_status") or {}).get("hooks", {})

@@ -215,7 +215,7 @@ def read_declared_fixtures(root):
         ok = isinstance(e, str) and e.strip() and not os.path.isabs(e) and ".." not in e.replace("\\", "/").split("/")
         if ok:
             d = os.path.join(root, e)
-            ok = os.path.isdir(d) and _within(d, root)
+            ok = os.path.isdir(d) and _within(d, root) and os.path.normpath(e) != "."   # "." would declare the whole tree
         if ok:
             e = os.path.normpath(e)
             if e not in folders:
@@ -343,8 +343,8 @@ def add_read_status(dossier):
     marketplace selects a nested plugin). hooks_outside_manifest and inventory_persistence still walk them and report
     what they find; only the read-failure notes their own walk adds for a path inside one (marked from_scan: a
     file note, a folder that could not be listed, a symlinked folder) are kept under read_status[section]["declared"]
-    instead of counting toward the state, in those two sections. A note's path is the text before its first ": ",
-    joined to the target's path. Notes _parse_events adds, and every note from a path the manifest, a hooks
+    instead of counting toward the state, in those two sections. A note is inside a declared folder when its text starts with that folder's path and a separator;
+    its path is relative to the target, kept as the walk wrote it, relative to the target. Notes _parse_events adds, and every note from a path the manifest, a hooks
     config or a settings file points to, are counted as always. The dossier key declared_fixtures (the valid
     folders) exists only when .neckbeard.json does.
     Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree
@@ -421,12 +421,13 @@ def add_read_status(dossier):
             dossier["declared_fixtures"] = folders
             for e in ignored:
                 add("hooks", f"{e}: not a folder under the target, ignored", cause="target-fault")
-            roots = [os.path.normpath(os.path.join(outer, f)) for f in folders]
+            # a note is "<path>: <reason>", its path from the walk's own root (base): it is inside a declared folder when it
+            # starts with that folder's path and a separator, so a file whose name holds ": " cannot pass for one
+            roots = [os.path.relpath(os.path.normpath(os.path.join(outer, f)), base) + os.sep for f in folders]
             for section in ("hooks", "persistence_candidates"):
                 keep = []
                 for n in notes[section]:
-                    where = os.path.normpath(os.path.join(base, str(n).split(": ", 1)[0]))
-                    if n.from_scan and any(where == r or where.startswith(r + os.sep) for r in roots):
+                    if n.from_scan and any(str(n).startswith(r) for r in roots):
                         moved.setdefault(section, []).append(str(n))
                     else:
                         keep.append(n)

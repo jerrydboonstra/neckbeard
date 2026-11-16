@@ -13,7 +13,7 @@ __pycache__/
 *.json
 !.claude-plugin/plugin.json
 !.claude-plugin/marketplace.json
-# A repo may list its test fixture folders here, so neckbeard's report does not count the files broken on purpose in them.
+# A repo may list its test fixture folders here, so the hooks search and persistence scan do not count the files broken on purpose in them.
 !.neckbeard.json
 # A measurement's raw data is its evidence: the units prototype's per-run answers and unit lists.
 !measurements/**/*.json
