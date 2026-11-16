@@ -1,0 +1,95 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "hooks": {
+      "events": {
+        "SessionStart": [
+          {
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\"",
+            "matcher": null
+          }
+        ]
+      },
+      "has_hooks": true,
+      "hook_registrations": 1,
+      "hook_scripts": 1,
+      "hooks_file": "hooks/hooks.json",
+      "hooks_reach_subagents": false,
+      "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+      "injected_bytes_total_estimate": 66,
+      "injected_content": [
+        {
+          "at_least": false,
+          "built_at_run_time": true,
+          "bytes": 66,
+          "events": [
+            "SessionStart"
+          ],
+          "file": "hooks/session-start.sh",
+          "template": [
+            "imagegen doctor: \u2026 missing; run skills/imagegen/doctor.sh for fixes"
+          ],
+          "writes": [
+            "mkdir -p \u2026",
+            ": > \u2026"
+          ]
+        }
+      ]
+    },
+    "is_plugin": false,
+    "kind": "generic-pack",
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [
+      "hooks/session-start.sh"
+    ],
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [],
+        "state": "read"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "readme_excerpt": null,
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": []
+  }
+}

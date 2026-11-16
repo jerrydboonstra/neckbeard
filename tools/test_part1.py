@@ -466,6 +466,29 @@ chk("C4. real inventory output: a malformed .mcp.json prints 'broken in the plug
     "broken in the plugin: .mcp.json" in (got.get(("Reaches outside the session", "MCP servers")) or ("", []))[0]
     and any(l.startswith("neckbeard did not read: agents/big.md") for l in lines(got, "Subagents and commands", "Agents")), (r.stderr[-200:], got))
 
+# ---------------------------------------------------------------- hook-echo-traced: text a shell hook builds at run time
+def built(events, template, writes, nbytes=66):
+    return {"file": "hooks/run.sh", "bytes": nbytes, "events": events, "built_at_run_time": True, "template": template, "writes": writes}
+
+
+def with_injected(entries):
+    return variant("plugin-found", lambda d: d["target"]["hooks"].update(injected_content=entries))
+
+
+CAVEAT = "built at run time: read from the script's own text, not run; commands it runs are not followed and may print or write files"
+rc, out, _ = render(with_injected([built(["SessionStart"], ["imagegen doctor: \u2026 missing", "second \u2026"], ["mkdir -p \u2026", ": > \u2026"])]))
+chk("HE5. a built-at-run-time entry prints one `<file> (<events>, built at run time, at least N bytes): <line>` line per template line",
+    "  - hooks/run.sh (SessionStart, built at run time, at least 66 bytes): imagegen doctor: \u2026 missing\n"
+    "  - hooks/run.sh (SessionStart, built at run time, at least 66 bytes): second \u2026\n" in out, out[:900])
+chk("HE5. ... then a `  writes: <items joined by '; '>` line under the entry", "\n  writes: mkdir -p \u2026; : > \u2026\n" in out, out[:900])
+rc, out, _ = render(with_injected([built(["SessionStart", "Stop"], [], ["touch \u2026"], 0)]))
+chk("HE5. a writes-only entry prints `<file> (<events>, built at run time): prints nothing; writes: <items>`",
+    "  - hooks/run.sh (SessionStart, Stop, built at run time): prints nothing; writes: touch \u2026\n" in out, out[:900])
+rc, out, _ = render(with_injected([built(["SessionStart"], ["a"], []), {**built(["Stop"], ["b"], []), "file": "hooks/two.sh"}]))
+chk("HE5. the caveat line appears once per report, however many entries", out.count(CAVEAT) == 1, out.count(CAVEAT))
+rc, out, _ = render(fx("plugin-found"))
+chk("HE5. a report with no built entry has no caveat line", CAVEAT not in out)
+
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
 print(f"test_part1: {fail} failed" if fail else "test_part1: all passed")

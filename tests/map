@@ -11,7 +11,8 @@
 # The skill
 skills/neckbeard/inventory.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live
 skills/neckbeard/inventory_core.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live
-skills/neckbeard/inventory_hooks.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1
+skills/neckbeard/inventory_hooks.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1 test_hook_echo
+skills/neckbeard/hook_shell.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1 test_hook_echo
 skills/neckbeard/inventory_parts.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live
 skills/neckbeard/inventory_dossier.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live
 skills/neckbeard/mcp_live.py test_mcp_live test_selfcheck test_read_status
@@ -44,6 +45,7 @@ tools/excerpts test_excerpts
 tools/test_excerpts.py test_excerpts
 tools/fixtures/part1/** test_part1
 tools/test_read_status.py test_read_status
+tools/test_hook_echo.py test_hook_echo
 tools/fixtures/read-status/** test_read_status
 tools/test_test_parallel.py test_test_parallel
 tools/test_units.py test_units
