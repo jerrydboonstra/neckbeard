@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts]: vet one plugin against the sample reader, headless,
+# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]: vet one plugin against the sample reader, headless,
 # and write the report to OUT. This is the gallery method in one command, for a plugin that publishes its report
 # and wants to rebuild it, say in a Claude Code web session on its own repo:
 #   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
@@ -34,10 +34,14 @@
 # --facts also prints, as the last line of stdout, one Markdown badge line for OUT (label "neckbeard report", message
 # "<version> · <read state>", coloured by the dossier's read_status: failed gives red "something unread", partial yellow
 # "partly read", else brightgreen "read in full"), linked to OUT's path as given. Its other messages go to stderr.
+# The commit label (the header's "@ `...`", Source's "Commit:" line and the dossier's "(commit ...)") is the short sha of the target's
+# HEAD, with " + uncommitted changes" after it when `git status --porcelain --untracked-files=no` prints anything (the files read are
+# not HEAD's). --facts --release-tag TAG makes the label TAG instead and wins over the dirty rule: a report committed into a tagged
+# tree cannot name the commit that contains it, so `make report` names the tag.
 # --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
 # folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
 # what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
-# It takes --repo; with --judge, --model, --units, --note or --reader it is a usage error. Blank lines separate the four parts.
+# It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error. Blank lines separate the four parts.
 # Exit 0 only when the report passed every check (--facts has one: it names no local path, checked before OUT is written). Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
@@ -45,8 +49,8 @@
 # has no header to read.
 set -u
 usage() {
-  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts]" >&2
-  echo "       --facts takes only --repo" >&2
+  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]" >&2
+  echo "       --facts takes only --repo and --release-tag" >&2
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
 }
@@ -149,7 +153,7 @@ if [ "${1:-}" = --check ]; then
   [ -d "$target" ] || die "$target is not a folder"
   want=$(plugin_version "$target")
   [ -n "$want" ] || die "no version in $target's plugin.json"
-  # the header line tools/vet writes: `DATE` · neckbeard X · <name or [name](url)> VERSION[ @ `commit`]
+  # the header line tools/vet writes: `DATE` · neckbeard X · <name or [name](url)> VERSION[ @ `commit`], where commit is a sha, "<sha> + uncommitted changes" or a release tag
   got=$(python3 -c 'import re,sys
 for line in open(sys.argv[1], encoding="utf-8"):
     m = re.match(r"^`\d{4}-\d{2}-\d{2}` · neckbeard \S+ · (?:\[[^\]]+\]\([^)]+\)|\S+) (\S+)(?: @ |\s*$)", line)
@@ -161,7 +165,7 @@ for line in open(sys.argv[1], encoding="utf-8"):
 fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2 out_given=$2; shift 2
-judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no readerdir=""
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no readerdir="" releasetag=""
 while [ $# -gt 0 ]; do case $1 in
   --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
   --model) [ $# -ge 2 ] || usage; model=$2; judgeflags=yes; shift 2 ;;
@@ -169,10 +173,12 @@ while [ $# -gt 0 ]; do case $1 in
   --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
   --units) units=yes; judgeflags=yes; shift ;;
   --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
+  --release-tag) [ $# -ge 2 ] && [ -n "$2" ] || usage; case $2 in *[!A-Za-z0-9._-]*) usage ;; esac; releasetag=$2; shift 2 ;;   # a plain tag name: it goes into a public header line
   --facts) facts=yes; shift ;;
   *) usage ;;
 esac; done
 [ "$facts" = no ] || [ "$judgeflags" = no ] || usage
+[ -z "$releasetag" ] || [ "$facts" = yes ] || usage
 
 nb=$(cd "$(dirname "$0")/.." && pwd -P)
 [ -d "$target" ] || die "$target is not a folder"
@@ -316,6 +322,9 @@ PYEOF
 fi
 version=$(plugin_version "$target")
 commit=$(git -C "$target" rev-parse --short HEAD 2>/dev/null || true)
+# the files read are the working tree's: say so when a tracked file differs from HEAD, and name the tag under --release-tag
+if [ -n "$releasetag" ]; then commit=$releasetag
+elif [ -n "$commit" ] && [ -n "$(git -C "$target" status --porcelain --untracked-files=no 2>/dev/null)" ]; then commit="$commit + uncommitted changes"; fi
 remote=$(git -C "$target" remote get-url origin 2>/dev/null | sed -E 's#^git@github\.com:#https://github.com/#; s#\.git$##' || true)
 case $remote in https://github.com/*) ;; *) remote="" ;; esac
 [ -n "$repo" ] && remote=${repo%.git}

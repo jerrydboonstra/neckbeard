@@ -40,13 +40,14 @@ excerpts: ## rewrite the report excerpts in README.md and CASE-STUDIES.md from t
 	$(PYTHON) tools/excerpts
 
 report: ## regenerate docs/neckbeard-report.md, neckbeard's own published report (no reader, no verdict, no model call), and print its badge line (and refresh the README excerpt of it)
-	tools/vet . docs/neckbeard-report.md --facts --repo https://github.com/jerrydboonstra/neckbeard
+	tools/vet . docs/neckbeard-report.md --facts --release-tag v$(VERSION) --repo https://github.com/jerrydboonstra/neckbeard
 	@$(PYTHON) tools/excerpts >/dev/null   # the README's excerpt of this report, so the badge line stays the last output
 
 report-check: ## fail unless the report in the tagged tree names the tagged version (a tag set before the report commit is refused)
 	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "report-check: no tag v$(VERSION)"; exit 1; }
 	@d=$$(mktemp -d) && trap '[ -n "$$d" ] && rm -rf "$$d"' EXIT && git archive "v$(VERSION)" | tar -x -C "$$d" && \
-	  tools/vet --check "$$d/docs/neckbeard-report.md" "$$d"
+	  tools/vet --check "$$d/docs/neckbeard-report.md" "$$d" && \
+	  { grep -E '^`[0-9]{4}-[0-9]{2}-[0-9]{2}` · neckbeard ' "$$d/docs/neckbeard-report.md" | head -1 | grep -qF ' @ `v$(VERSION)`' || { echo "report-check: the header of the tagged report must name the tag, @ \`v$(VERSION)\`, not a commit or another tag"; exit 1; }; }
 
 release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Release will carry
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d' | grep . >/dev/null || { echo "release: CHANGELOG.md has no entry for $(VERSION)" >&2; exit 1; }

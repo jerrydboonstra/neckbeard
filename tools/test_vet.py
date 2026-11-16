@@ -320,7 +320,7 @@ chk("badge: a version 1.2.3-rc_1 is escaped 1.2.3--rc__1", "badge/neckbeard%20re
 chk("badge: the judged path prints no badge", "img.shields.io" in run("badge-judged")["stdout"], False)
 
 # 11. make report-check: the tagged report must name the tagged version
-def report_check(report_version, tag_after=False):
+def report_check(report_version, tag_after=False, at="`v1.2.0`"):
     tmp = tempfile.mkdtemp()
     try:
         for d in (".claude-plugin", "docs", "tools"):
@@ -329,12 +329,12 @@ def report_check(report_version, tag_after=False):
         shutil.copy(VET, os.path.join(tmp, "tools", "vet"))
         json.dump({"name": "demo", "version": "1.2.0"}, open(os.path.join(tmp, ".claude-plugin", "plugin.json"), "w"))
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
-            "# \U0001F50D demo %s \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo %s\n" % (report_version, report_version))
+            "# \U0001F50D demo %s \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo %s @ %s\n" % (report_version, report_version, at))
         git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=tmp, check=True, capture_output=True)
         git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "x"); git("tag", "-a", "v1.2.0", "-m", "x")
         # the working tree is made right after the tag: the check must read the tagged tree, not this one
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
-            "# \U0001F50D demo 1.2.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.2.0\n")
+            "# \U0001F50D demo 1.2.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.2.0 @ `v1.2.0`\n")
         p = subprocess.run(["make", "--no-print-directory", "report-check"], cwd=tmp, capture_output=True, text=True)
         return p.returncode, p.stdout + p.stderr
     finally:
@@ -351,5 +351,43 @@ chk("README: the neckbeard badge links the published report, with the logo the c
 chk("the logo is URL-encoded: none of + & # ( ) [ ] = or a space raw", [c for c in "+&#()[]= " if c in LOGO], [])
 b = run("badge-precedence", extra=("--facts",), fake_body=NO_CLAUDE, setup=lambda t: (big_skill(t), bad_mcp(t)))
 chk("badge: a partial and a failed section give red, not yellow", "-red?logo=" in badge_of(b), True)
+
+# 12. the header's label names what was read: "+ uncommitted changes" on a dirty checkout, the tag under --release-tag
+def dirty(target):   # a commit, then a tracked file changed after it
+    for c in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"]):
+        subprocess.run(["git", *c], cwd=target, check=True)
+    open(os.path.join(target, "skills", "demo", "SKILL.md"), "a").write("One more rule.\n")
+def untracked_only(target):   # a commit, then a new untracked file only
+    dirty(target)
+    subprocess.run(["git", "checkout", "-q", "--", "."], cwd=target, check=True)
+    open(os.path.join(target, "new.txt"), "w").write("x\n")
+def header_of(r): return next((l for l in r["text"].splitlines() if " · neckbeard " in l), "")
+def source_commit(r): return next((l for l in r["text"].splitlines() if l.startswith("- Commit: ")), "")
+d = run("dirty", extra=("--facts",), fake_body=NO_CLAUDE, setup=dirty)
+chk("label: a tracked file changed after the commit: the header ends '+ uncommitted changes'", header_of(d).endswith(" + uncommitted changes`"), True)
+chk("label: the Source 'Commit:' line shows the same label", re.fullmatch(r"- Commit: [0-9a-f]+ \+ uncommitted changes", source_commit(d)) is not None, True)
+u = run("untracked", extra=("--facts",), fake_body=NO_CLAUDE, setup=untracked_only)
+chk("label: an untracked file alone does not count as uncommitted", ("uncommitted" in header_of(u), "uncommitted" in source_commit(u)), (False, False))
+c = run("clean-label", extra=("--facts",), fake_body=NO_CLAUDE, commit=True)
+chk("label: a clean checkout is unchanged: '@ `<sha>`' and a bare sha in Source", (header_of(c).endswith(" @ `%s`" % c["sha"]), source_commit(c)), (True, "- Commit: " + c["sha"]))
+t1 = run("release-tag", extra=("--facts", "--release-tag", "v9.9.9"), fake_body=NO_CLAUDE, commit=True)
+chk("--release-tag: the header names the tag and no sha", (t1["rc"], header_of(t1).endswith(" @ `v9.9.9`"), t1["sha"] in header_of(t1)), (0, True, False))
+chk("--release-tag: the Source line names the tag and no sha", (source_commit(t1), t1["sha"] in t1["text"]), ("- Commit: v9.9.9", False))
+t2 = run("release-tag-dirty", extra=("--facts", "--release-tag", "v9.9.9"), fake_body=NO_CLAUDE, setup=dirty)
+chk("--release-tag wins over uncommitted changes", ("uncommitted" in t2["text"], header_of(t2).endswith(" @ `v9.9.9`")), (False, True))
+t3 = run("release-tag-judged", extra=("--release-tag", "v9.9.9"))
+chk("--release-tag with a judged run: a usage error, no report, no judge call", (t3["rc"], t3["report"], len(t3["calls"]), "usage:" in t3["out"]), (2, False, 0, True))
+chk("usage names --release-tag", "--facts takes only --repo and --release-tag" in t3["out"], True)
+rc, out = report_check("1.2.0", at="`cd202ff`")
+chk("report-check: a tagged report naming a commit, not the tag, fails", (rc != 0, "v1.2.0" in out), (True, True))
+rc, out = report_check("1.2.0", at="`v1.1.0`")
+chk("report-check: a tagged report naming another tag fails, and says which tag it wanted", (rc != 0, "must name the tag" in out and "v1.2.0" in out), (True, True))
+rc, out = report_check("1.2.0", at="`v1.2.0`")
+chk("report-check: a tagged report naming the tag passes", rc, 0)
+chk("--check still passes on a report whose header carries '@ `<sha> + uncommitted changes`'", facts_check_text("# \U0001F50D demo 1.0.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.0.0 @ `abc1234 + uncommitted changes`\n", "1.0.0"), 0)
+chk("--release-tag with a backtick, a slash, a space or a newline: a usage error", [subprocess.run([VET, ".", "/dev/null", "--facts", "--release-tag", v], capture_output=True, text=True).returncode for v in ("v1`x", "/private/x", "v 1", "v1\nx")], [2, 2, 2, 2])
+chk("--release-tag with no value or an empty one: a usage error", [subprocess.run([VET, ".", "/dev/null", "--facts", "--release-tag", *a], capture_output=True, text=True).returncode for a in ([], [""])], [2, 2])
+report = makefile.split("\nreport:", 1)[1].split("\nreport-check:", 1)[0]
+chk("make report passes --release-tag v$(VERSION)", "--release-tag v$(VERSION)" in report, True)
 
 sys.exit(vet_harness.summary("test_vet"))
