@@ -68,3 +68,4 @@ LICENSE test_layout
 .github/** test_layout
 assets/** test_layout
 tools/test_nested_plugin.py test_nested_plugin
+.neckbeard.json test_read_status test_part1 test_vet test_layout
