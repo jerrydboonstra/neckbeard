@@ -421,7 +421,7 @@ def add_read_status(dossier):
     Not noted: settings_writers re-reads files inventory_persistence just read, so a file it cannot
     read already has a persistence note; the reader's own rules (current_rules), which are
     reader-read-status's; a marketplace entry that is external, which is a choice the manifest makes.
-    A site added to inventory.py without a line here, or a line without a test, sends the item back at
+    A site added to any inventory*.py module without a line here, or a line without a test, sends the item back at
     review: nothing else catches it."""
     private = dossier.pop("_read_notes", None) or {}
     kind, base = dossier.get("kind"), dossier.get("path") or ""
