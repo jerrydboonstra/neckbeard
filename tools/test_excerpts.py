@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """tools/excerpts quotes a report in CASE-STUDIES.md: a fit report as its verdict box and At-a-glance table, a facts report
-(no verdict box) as its title line, its source line, and under "What it adds" each ### heading with its top-level bullets.
+(no verdict box) as its title line, its source line, and under "What it adds" each ### heading with its top-level bullets (a bullet ending in ":" says how many items it held).
 Every case runs a copy of the script inside a throwaway tree, since the script finds its root from its own location."""
-import shutil, subprocess, sys, tempfile
+import re, shutil, subprocess, sys, tempfile
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent / "excerpts"
@@ -104,5 +104,46 @@ with tempfile.TemporaryDirectory() as d:
     text = (root / "README.md").read_text()
     check("README.md takes a marker too, and a name with a folder reads that file in the repo",
           r.returncode == 0 and "> ### Injects" in text and "old" not in text, r.stderr + text)
+
+# A bullet ending in ":" whose children the excerpt drops carries their count, so no quoted line ends bare.
+COUNTS = FACTS.replace("## Notes", """### State it may leave
+- Persistence candidates:
+  - a.py
+  - b.py
+  - and 19 more, in: tools/ 19
+- Agents:
+- Commands:
+\t- one
+- Tabbed:
+\t- x
+\t- y
+- Nested:
+  - top
+    - detail
+- Lone overflow:
+  - and 3 more, in:
+
+## Notes""")
+r, text = run(COUNTS)
+check("facts: one child gives its count and its name, whole line",
+      "\n> - Skills: 1 (demo)\n" in text, text)
+check("facts: a child with no colon is named whole",
+      "\n> - Commands: 1 (one)\n" in text, text)
+check("facts: 'and N more' adds N to the listed lines",
+      "\n> - Persistence candidates: 21 (see the full report)\n" in text, text)
+check("facts: tab-indented children are counted", "\n> - Tabbed: 2 (see the full report)\n" in text, text)
+check("facts: a nested detail is not a child", "\n> - Nested: 1 (top)\n" in text, text)
+check("facts: a lone 'and N more' counts N and is not named", "\n> - Lone overflow: 3 (see the full report)\n" in text, text)
+check("facts: a bullet ending in a colon with no children says none",
+      "\n> - Agents: none\n" in text, text)
+check("facts: a bullet with text after its colon is unchanged", "\n> - Hooks: partly read\n" in text, text)
+check("facts: no quoted line ends in a colon", not any(l.rstrip().endswith(":") for l in text.splitlines() if l.startswith("> ")), text)
+
+ROOT = SCRIPT.parent.parent
+for doc in ("README.md", "CASE-STUDIES.md"):
+    body = (ROOT / doc).read_text()
+    blocks = re.findall(r"<!-- report:[\w./-]+ -->\n(.*?)\n<!-- /report -->", body, re.S)
+    bare = [l for b in blocks for l in b.splitlines() if l.rstrip().endswith(":")]
+    check(f"{doc}: no line in a report block ends in a colon", bool(blocks) and not bare, "; ".join(bare) or "no report blocks found")
 
 sys.exit(1 if failures else 0)

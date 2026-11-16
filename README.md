@@ -28,7 +28,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > `2026-11-15` · neckbeard 1.17.5 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.5 @ `cd202ff`
 >
 > ### Injects
-> - Skills:
+> - Skills: 1 (neckbeard)
 > - Rule files: none
 > - Hook-injected text: none
 >
@@ -40,7 +40,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Commands: none
 >
 > ### State it may leave
-> - Persistence candidates:
+> - Persistence candidates: 29 (see the full report)
 >
 > ### Reaches outside the session
 > - MCP servers: none
@@ -49,7 +49,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Kind: plugin
 > - Name: neckbeard (from plugin.json)
 > - Version: 1.17.5 (from plugin.json)
-> - plugin.json:
+> - plugin.json: 1 (name and version, shown above)
 > - Marketplace: none
 > - Commit: cd202ff
 > - Declared fixtures: tools/fixtures (files there that the hooks and persistence scans can't read don't count against the badge)
@@ -57,7 +57,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 
 How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](docs/publish-your-report.md#badge-colours-and-declared-fixtures).
 
-**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
+**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project (in neckbeard's own report: the skill's own scripts, which write only the report you name and temporary folders, as [SECURITY.md](SECURITY.md) says, and the repo's build, deploy, test and measurement tools), and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
 Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
