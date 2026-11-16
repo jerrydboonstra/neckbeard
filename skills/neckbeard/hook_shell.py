@@ -463,6 +463,9 @@ def _trace(text):
             if "$((" in w or re.search(r"\$\{[^}]*\?|\$\{!", w) or re.search(r"(^|[^\\])[<>]\(", w):
                 raise Stop(line, "uses an expansion that can exit 2 or print through another process")
         words, redirs = _split_redirects(words, line)
+        close_paren = bool(len(words) > 1 and words[-1] == ")" and frames and frames[-1][0] == "(")
+        if close_paren:   # `( cmd )` on one line: the trailing ) closes the group this statement opened or one still open
+            words = words[:-1]
         if any(w in ("(", ")") for w in words) and not (len(words) == 1 and words[0] in CLOSE_WORDS):
             raise Stop(line, "has a ( or ) where the shell reads a syntax error, which prints the line")
         if not words:
@@ -535,6 +538,8 @@ def _trace(text):
             writes.append(stmt_template)
         if words and head not in CLOSE_WORDS:
             last = (line, ok_exit and not frames and after not in ("&&", "||"))
+        if close_paren:
+            _close_frame(")", frames, redirs, template, writes, line)
     if frames:
         raise Stop(frames[-1][2], "opens a group or loop that is never closed")
     if last is None or not last[1]:

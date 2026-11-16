@@ -190,5 +190,12 @@ check("HE8. x=1>f traces and lists the write", *traced("#!/bin/sh\nx=1>f\nexit 0
 check("HE8. echo x>&2 prints nothing and traces", *(lambda r: (not r[0].get("unresolved_hooks") and not built_entry(r[0]), repr(r[0])))(shell_hook("#!/bin/sh\necho x>&2\nexit 0\n")))
 check("HE8. [ ... ] || exit 0 before a plain exit 0 still traces", *traced('#!/bin/sh\n[ -n "$x" ] || exit 0\necho hi\nexit 0\n', ["hi"]))
 
+# ---- a subshell on one line is valid shell and traces (review round 2)
+check("HE9. ( echo hi ) traces", *traced("#!/bin/sh\n( echo hi )\nexit 0\n", ["hi"]))
+check("HE9. (echo a; echo b) traces", *traced("#!/bin/sh\n(echo a; echo b)\nexit 0\n", ["a", "b"]))
+check("HE9. then ( echo y ); fi traces", *traced("#!/bin/sh\nif [ -d x ]; then ( echo y ); fi\nexit 0\n", ["y"]))
+check("HE9. ( mkdir -p d ) 2>/dev/null traces and lists the write", *traced("#!/bin/sh\n( mkdir -p d ) 2>/dev/null\nexit 0\n", [], writes=["mkdir -p d"]))
+check("HE9. a subshell that ends the script with exit 0 is not the script's final exit", *stopped("#!/bin/sh\necho hi\n( exit 0 )\n", 3))
+
 print(f"test_hook_echo: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)
