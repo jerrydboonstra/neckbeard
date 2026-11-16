@@ -287,6 +287,9 @@ check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",
       repr([m for m in own if m not in (rows.get(f"tools/{m}.py") or [])]))
 check("tools/vet selects test_vet and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_stability"], repr(rows.get("tools/vet")))
 check("skills/neckbeard/inventory.py selects test_selfcheck", "test_selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
+check("skills/neckbeard/inventory_dossier.py selects the modules inventory.py's row selects, and test_read_status",
+      bool(rows.get("skills/neckbeard/inventory.py")) and (set(rows.get("skills/neckbeard/inventory.py", [])) | {"test_read_status"}) <= set(rows.get("skills/neckbeard/inventory_dossier.py", [])),
+      repr(rows.get("skills/neckbeard/inventory_dossier.py")))
 check("skills/neckbeard/inventory_parts.py selects the modules inventory.py's row selects",
       bool(rows.get("skills/neckbeard/inventory.py")) and set(rows.get("skills/neckbeard/inventory.py", [])) <= set(rows.get("skills/neckbeard/inventory_parts.py", [])),
       repr(rows.get("skills/neckbeard/inventory_parts.py")))

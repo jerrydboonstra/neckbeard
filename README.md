@@ -25,7 +25,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard 1.17.4 · what it adds
 >
-> `2026-11-15` · neckbeard 1.17.4 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.4 @ `9b5096e`
+> `2026-11-15` · neckbeard 1.17.4 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.4 @ `08f1864`
 >
 > ### Injects
 > - Skills:
@@ -51,10 +51,10 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Version: 1.17.4 (from plugin.json)
 > - plugin.json:
 > - Marketplace: none
-> - Commit: 9b5096e
+> - Commit: 08f1864
 <!-- /report -->
 
-The yellow badge means "partly read". neckbeard's own report names each gap, and both are on purpose: test files under `tools/fixtures` that are broken on purpose, and one source file, `inventory.py`, that is bigger than the most neckbeard reads of one file (50,000 bytes).
+The yellow badge means "partly read". neckbeard's own report says so on purpose: the folders under `tools/fixtures` hold files that are broken on purpose, to test the reader. The report names each gap.
 
 **Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR`, or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
