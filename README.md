@@ -12,6 +12,29 @@ Before you install a plugin into Claude Code, neckbeard reads it for you and lis
 
 **Tested by trying to break it, fifteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
+## Install
+
+Paste this into Claude Code (in the terminal, or in the Code tab of the Claude desktop app):
+
+> Install the plugin neckbeard from the marketplace jerrydboonstra/neckbeard: run `claude plugin marketplace add jerrydboonstra/neckbeard`, then `claude plugin install neckbeard@neckbeard`. Check that `python3 --version` is 3.11 or later, and if it isn't, tell me in plain words how to get it. Then tell me to run /reload-plugins, and that I can say "vet this plugin" with a plugin's name or folder.
+
+Or type this one line in Claude Code (version 2.1.275 or later):
+
+```text
+/plugin install neckbeard --marketplace jerrydboonstra/neckbeard
+```
+
+It asks you to confirm the marketplace (press `y`), then where to install: pick "for you", the first option.
+
+Or run these two lines in a shell:
+
+```bash
+claude plugin marketplace add jerrydboonstra/neckbeard
+claude plugin install neckbeard@neckbeard
+```
+
+It needs Claude Code and Python 3.11 or later, plus git to read a plugin from a git URL. Want the report without installing anything? [Try it](#try-it-three-lines-then-the-report) runs it from a clone.
+
 ## Try it: three lines, then the report
 
 ```bash
@@ -65,12 +88,7 @@ Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what
 
 Requires Claude Code and Python 3.11 or later (standard library only), plus `git` if you point it at a git URL. Tested on macOS and, in CI, Linux.
 
-```bash
-claude plugin marketplace add jerrydboonstra/neckbeard
-claude plugin install neckbeard@neckbeard
-```
-
-Or as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update:
+You can also install it as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update:
 
 ```bash
 git clone https://github.com/jerrydboonstra/neckbeard.git ~/src/neckbeard
