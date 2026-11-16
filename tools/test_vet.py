@@ -1,172 +1,15 @@
 #!/usr/bin/env python3
-"""tools/vet, the headless gallery method, run end to end against a fake `claude`.
-
-The inventory is real; the judge is a fake `claude` on PATH that logs how it was
-started (folder, config folder, arguments), writes into its config folder the way
-the real one does, and writes the report the prompt names in the shape a case asks
-for. FAKE_LOGIN=env logs in with any config folder, as a web session does;
-FAKE_LOGIN=default logs in only with the default one, as a Mac does.
+"""tools/vet, the headless gallery method, run end to end against a fake `claude`: the --units prototype, part 1, the
+report checks, --facts, --reader, the badge and report-check. The judge and login checks are in tools/test_vet_judge.py;
+the fake `claude` and the helpers both share are in tools/vet_harness.py.
 
     python3 tools/test_vet.py
 """
 import json, os, re, shutil, subprocess, sys, tempfile
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-NB = os.path.dirname(HERE)
-VET = os.environ.get("VET_SCRIPT", os.path.join(HERE, "vet"))
+import vet_harness
+from vet_harness import *
 
-FAKE_CLAUDE = r'''#!/usr/bin/env python3
-import json, os, re, sys
-cfg = os.environ.get("CLAUDE_CONFIG_DIR", "")
-args = sys.argv[1:]
-prompt = args[-1] if args and not args[-1].startswith("-") and "ok" in args[-1] else sys.stdin.read()
-cred = os.path.join(cfg, ".credentials.json") if cfg else ""
-dm = re.search(r"DOSSIER \(already built, read-only\): (\S+)\.", prompt)
-mark = os.environ.get("FAKE_SECRET", "")
-with open(os.environ["FAKE_LOG"], "a") as f:
-    f.write(json.dumps({"cwd": os.getcwd(), "cfg": cfg, "args": args, "prompt": prompt,
-                        "cred_seen": bool(cred) and os.path.exists(cred),
-                        "cred_mode": oct(os.stat(cred).st_mode & 0o777) if cred and os.path.exists(cred) else "",
-                        "reader_cred_left": bool(__import__("glob").glob(os.path.join(os.environ.get("TMPDIR", "/nonexistent"), "neckbeard-vet.*", "reader", ".credentials.json"))),
-                        "dossier_has_secret": bool(mark and dm and mark in open(dm.group(1), encoding="utf-8").read())}) + "\n")
-if "single word ok" in prompt and (os.environ.get("FAKE_LOGIN") == "never" or (os.environ.get("FAKE_LOGIN") == "file" and not (cred and os.path.exists(cred)))):
-    print(os.environ.get("FAKE_PROBE_MSG", "Not logged in · Please run /login")); sys.exit(1)   # a login that lives in the config folder's login file
-if os.environ.get("FAKE_REFRESH") and cred and os.path.exists(cred) and "single word ok" not in prompt:
-    open(cred, "w").write('{"claudeAiOauth": {"accessToken": "ROTATED", "refreshToken": "ROTATED", "expiresAt": 1}}')
-if os.environ.get("FAKE_LOGIN") == "default" and cfg:
-    print("Not logged in · Please run /login"); sys.exit(1)
-if cfg:
-    os.makedirs(os.path.join(cfg, "backups"), exist_ok=True)
-if "single word ok" in prompt:
-    print("ok"); sys.exit(0)
-def reply(text):
-    if "--output-format" in args and args[args.index("--output-format") + 1] == "json":
-        print(json.dumps({"result": text, "total_cost_usd": 0.01, "duration_ms": 1000}))
-    else:
-        print(text + os.environ.get("FAKE_SAY", ""))
-    sys.exit(0)
-m = re.search(r"Write (.+?) as JSON, \{\"conflicts\"", prompt)
-if "FIND PASS" in prompt and m:
-    mode = os.environ.get("FAKE_FINDS", "none")
-    n = m.group(1).rsplit("-", 1)[1][0]
-    if mode == "tokenanswer":   # the judge answers with the login and writes no candidates (pass 2), or leaves it in its file (the others)
-        if n == "2":
-            reply(os.environ["FAKE_SECRET"])
-        json.dump({"conflicts": [], "note": os.environ["FAKE_SECRET"]}, open(m.group(1), "w")); reply("0")
-    quote = {"one": "Always run the tests before you commit.", "invented": "Never run the tests."}.get(mode)
-    if mode == "late" and n == "3":
-        quote = "Always run the tests before you commit."
-    units = json.load(open(re.search(r"UNITS: (.+?)\. Each unit", prompt).group(1)))["units"]
-    found = [{"id": units[0]["id"], "quote": quote, "reader_rule": 'safety.md: "Never run anything destructive without my explicit go-ahead in this conversation" (FINDER ARGUMENT: the permission is unlimited)'}] if quote else []
-    json.dump({"conflicts": found}, open(m.group(1), "w"))
-    reply(str(len(found)))
-if "CONFIRM CALL" in prompt:
-    if os.environ.get("FAKE_CONFIRM") == "fail":   # the claude inside a call() exits non-zero with its own message
-        sys.stderr.write("noise line\n" + os.environ.get("FAKE_FAIL_MSG", "fake-claude-error: quota exceeded") + "\n"); sys.exit(1)
-    if os.environ.get("FAKE_CONFIRM") == "flaky" and not os.path.exists(os.environ["FAKE_LOG"] + ".flaky"):
-        open(os.environ["FAKE_LOG"] + ".flaky", "w").close()
-        reply("I would rather not say.")
-    if os.environ.get("FAKE_CONFIRM") == "garbage":
-        reply("no json here")
-    reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") in ("yes", "flaky"), "why": "fake"}))
-if os.environ.get("FAKE_JUDGE_FAIL") and "Vet one plugin" in prompt:   # the main judge exits non-zero with its message on stdout
-    print("judge noise line"); print(os.environ.get("FAKE_FAIL_MSG", "fake-judge-error: out of credit")); sys.exit(1)
-out = re.search(r"REPORT FILE \(the only file you create\): (\S+)", prompt).group(1)
-target = re.search(r"checked out at (\S+)", prompt).group(1).rstrip(",")
-mode = os.environ.get("FAKE_REPORT", "good")
-GLANCE = "\n## ⚡ At a glance\n\nOne line.\n"
-body = {"good": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE,
-        "noglance": "> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n## Details\n\nText.\n",
-        "noverdict": "# 🔍 demo\n\nNo banner here.\n",
-        "leak": "> ## 🟩 INSTALL · fine\n> Read " + target + "/skills/demo/SKILL.md.\n" + GLANCE,
-        "secret": "> ## 🟩 INSTALL · fine\n> The login is " + os.environ.get("FAKE_SECRET", "") + ".\n" + GLANCE}.get(mode)
-if mode == "header":   # a judge that wrote the header line it was given
-    body = re.search(r"Header line to use: (.*)", prompt).group(1) + "\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n" + GLANCE
-if body is not None:
-    open(out, "w").write("# 🔍 demo 1.0.0\n\n" + body)
-m = re.search(r"Write the answers to (\S+) as JSON", prompt)
-if m:
-    units = json.load(open(re.search(r"UNITS: (.+?)\. Each unit", prompt).group(1)))["units"]
-    pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing")}.get(os.environ.get("FAKE_UNITS", ""))
-    answers = [{"id": u["id"], "skill": pick[0], "rules": pick[1], "conflicts": [], "why": "x"} for u in units] if pick else []
-    json.dump({"answers": answers}, open(m.group(1), "w"))
-    if os.environ.get("FAKE_SIDE"):
-        open(m.group(1), "a").write(os.environ["FAKE_SIDE"])
-reply("🟩 INSTALL · 0/0/0/1/0")
-'''
-
-fail = checks = 0
-
-
-def chk(name, got, want):
-    global fail, checks
-    checks += 1
-    if got != want:
-        fail += 1
-        print(f"FAIL {name}: got {got!r}, want {want!r}")
-
-
-def reader_files():
-    root = os.path.join(NB, "examples", "reader")
-    return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
-
-
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None, outname="report.md"):
-    tmp = tempfile.mkdtemp()
-    try:
-        bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
-        fake = os.path.join(bindir, "claude")
-        open(fake, "w").write(fake_body or FAKE_CLAUDE); os.chmod(fake, 0o755)
-        target = os.path.join(tmp, "demo")
-        os.makedirs(os.path.join(target, ".claude-plugin"))
-        os.makedirs(os.path.join(target, "skills", "demo"))
-        json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
-        open(os.path.join(target, "skills", "demo", "SKILL.md"), "w").write(
-            "---\nname: demo\ndescription: A demo skill.\n---\n\nAlways run the tests before you commit.\n")
-        if version:
-            json.dump({"name": "demo", "version": version}, open(os.path.join(target, ".claude-plugin", "plugin.json"), "w"))
-        if setup:
-            setup(target)
-        if remote:
-            for c in (["init", "-q"], ["remote", "add", "origin", remote]):
-                subprocess.run(["git", *c], cwd=target, check=True)
-        sha = ""
-        if commit:
-            for c in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"]):
-                subprocess.run(["git", *c], cwd=target, check=True, env={**os.environ, "GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"})  # a fixed date, so two targets get one sha
-            sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=target, capture_output=True, text=True).stdout.strip()
-        if uname:   # the host's kind is a thing vet asks `uname -s`, so a test says which one it is
-            open(os.path.join(bindir, "uname"), "w").write("#!/bin/sh\necho %s\n" % uname); os.chmod(os.path.join(bindir, "uname"), 0o755)
-        home = os.path.join(tmp, "home"); os.makedirs(os.path.join(home, ".claude"))   # never the real HOME or login
-        out = os.path.join(tmp, "out", outname)
-        log = os.path.join(tmp, "claude.log")
-        # a cloud container rewrites git@github.com: to https itself through GIT_CONFIG_*, which would hide vet's own rewrite
-        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR" and not k.startswith("GIT_CONFIG")}
-        env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
-                   PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, FAKE_LOGIN=login, FAKE_REPORT=report, FAKE_UNITS=units, FAKE_FINDS=finds, FAKE_CONFIRM=confirm,
-                   TMPDIR=os.path.join(tmp, "t"), HOME=home, **(fake_env or {}))
-        os.mkdir(env["TMPDIR"])
-        if caller is not None:   # the caller's config folder, through CLAUDE_CONFIG_DIR, holding these files
-            env["CLAUDE_CONFIG_DIR"] = os.path.join(tmp, "caller"); os.makedirs(env["CLAUDE_CONFIG_DIR"])
-            for name, text in caller.items():
-                open(os.path.join(env["CLAUDE_CONFIG_DIR"], name), "w").write(text)
-        if rules_above:   # the dossier looks up from the throwaway project for a CLAUDE.md, and finds this one
-            open(os.path.join(env["TMPDIR"], "CLAUDE.md"), "w").write("Always run the tests before you commit.\n")
-        before = reader_files()
-        p = subprocess.run([vet or VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
-        calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
-        title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
-        res = dict(rc=p.returncode, out=p.stdout + p.stderr, stdout=p.stdout, outpath=out, calls=calls, report=os.path.exists(out), title=title,
-                   text=open(out, encoding="utf-8").read() if os.path.exists(out) else "", sha=sha, caller_after={n: open(os.path.join(env["CLAUDE_CONFIG_DIR"], n)).read() for n in os.listdir(env["CLAUDE_CONFIG_DIR"]) if os.path.isfile(os.path.join(env["CLAUDE_CONFIG_DIR"], n))} if caller is not None else {}, cfg_left=[os.path.exists(c["cfg"]) for c in calls if c["cfg"] and c["cfg"] != env.get("CLAUDE_CONFIG_DIR")], side_left=sorted(f for f in os.listdir(os.path.dirname(out)) if f != outname) if os.path.isdir(os.path.dirname(out)) else [], reader_untouched=reader_files() == before, temp_left=os.listdir(env["TMPDIR"]), target=target)
-        if os.environ.get("VERBOSE"):
-            print(case, res)
-        return res
-    finally:
-        shutil.rmtree(tmp)
-
-
-judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"] and "--output-format" in c["args"] and c["args"][c["args"].index("--output-format") + 1] == "text"]
-isolated = lambda r, word: [c for c in r["calls"] if word in c["prompt"]]
 
 # 0. --units (prototype): the verdict comes from the per-unit answers, and the banner must carry it
 r = run("units", extra=("--units",), units="units-install")
@@ -324,12 +167,6 @@ rc, out = check("Vetted some time ago.")
 chk("check: no header fails", (rc, "no header line" in out), (1, True))
 
 # 8. --facts: the report with no reader, no verdict and no model call
-NO_CLAUDE = """#!/usr/bin/env python3
-import json, os, sys
-with open(os.environ["FAKE_LOG"], "a") as f:
-    f.write(json.dumps({"cwd": os.getcwd(), "cfg": "", "args": sys.argv[1:], "prompt": ""}) + "\\n")
-sys.exit(97)
-"""
 r = run("facts", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("facts: written, exit 0, claude never called", (r["rc"], r["report"], r["calls"]), (0, True, []))
 chk("facts: title line", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 what it adds")
@@ -392,15 +229,6 @@ chk("judged title still says vetted", j["title"], "# \U0001F50D demo 1.0.0 \u00b
 
 # 9. --reader and the baseline line
 BASELINE = re.compile(r"^Baseline: (.+) \u00b7 (\d+) rule files \u00b7 (\d+) bytes \u00b7 sha256 ([0-9a-f]{12})$", re.M)
-DEFAULT_READER = os.path.join(NB, "examples", "reader")
-
-def reader_copy(parent, name="myreader", edit=None):
-    dest = os.path.join(parent, name)
-    shutil.copytree(DEFAULT_READER, dest)
-    if edit:
-        path = os.path.join(dest, "rules", "safety.md")
-        open(path, "ab").write(edit)
-    return dest
 
 r = run("baseline-default")
 m = BASELINE.search(r["text"])
@@ -524,116 +352,4 @@ chk("the logo is URL-encoded: none of + & # ( ) [ ] = or a space raw", [c for c 
 b = run("badge-precedence", extra=("--facts",), fake_body=NO_CLAUDE, setup=lambda t: (big_skill(t), bad_mcp(t)))
 chk("badge: a partial and a failed section give red, not yellow", "-red?logo=" in badge_of(b), True)
 
-# 11. vet-reader-login: on Linux the default reader gets a copy of the caller's login, so reader mode can log in
-import time
-ACCESS, REFRESH = "MARKERACCESS-zz11-aaaa", "MARKERREFRESH-zz22-bbbb"
-def login_file(hours=24):
-    return json.dumps({"claudeAiOauth": {"accessToken": ACCESS, "refreshToken": REFRESH, "expiresAt": int((time.time() + hours * 3600) * 1000)}})
-LOGIN = {".credentials.json": login_file()}
-SECRET = dict(FAKE_SECRET=ACCESS)
-r = run("login-copy", login="file", uname="Linux", caller=LOGIN, fake_env=SECRET)
-j = judge(r)[0] if judge(r) else {}
-chk("login-copy: the default judge on Linux with a login file runs as the reader", (r["rc"], "judge: reader" in r["out"], "can't log in" in r["out"]), (0, True, False))
-chk("login-copy: the judge saw the login file, mode 600", (j.get("cred_seen"), j.get("cred_mode")), (True, "0o600"))
-chk("login-copy: the folder the judge ran in is gone once vet exits", (bool(r["cfg_left"]), any(r["cfg_left"])), (True, False))
-chk("login-copy: no secret and no file name in the report, the dossier or vet's output", (ACCESS in r["text"] or REFRESH in r["text"], any(c["dossier_has_secret"] for c in r["calls"]), ACCESS in r["out"] or REFRESH in r["out"], ".credentials.json" in r["out"]), (False, False, False, False))
-chk("login-copy: nothing is left in vet's temp folder", r["temp_left"], [])
-chk("login-copy: the caller's own login file is left as it was, byte for byte", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
-r = run("login-leak", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=SECRET)
-chk("login-leak: a report that holds the login's token is not written, and vet fails without printing it", (r["rc"] != 0, r["report"], ACCESS in r["out"]), (True, False, False))
-r = run("login-say-clean", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SAY=" judge-said-this"))
-chk("login-say: a clean judge's stdout still reaches vet's stdout", (r["rc"], "judge-said-this" in r["stdout"]), (0, True))
-r = run("login-leak-refresh", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=dict(FAKE_SECRET=REFRESH))
-chk("login-leak: a report holding only the refresh token is refused too", (r["rc"] != 0, r["report"], REFRESH in r["out"]), (True, False, False))
-for tok, name in ((ACCESS, "access"), (REFRESH, "refresh")):
-    r = run("login-say-" + name, login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SAY=" " + tok))
-    chk("login-say: a judge that prints the %s token to stdout is refused, with one line and no value" % name, (r["rc"] != 0, tok in r["out"], "held your login's secrets" in r["out"]), (True, False, True))
-r = run("login-side", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", fake_env=dict(FAKE_SIDE=ACCESS))
-chk("login-side: a token in a --units side file leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
-r = run("login-find-die", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", finds="tokenanswer", fake_env=SECRET)
-chk("login-find: a find pass that answers with the token and writes no candidates: non-zero, no value in vet's output, no side file left", (r["rc"] != 0, ACCESS in r["out"], r["side_left"]), (True, False, []))
-r = run("login-find-space", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", finds="tokenanswer", fake_env=SECRET, outname="my report.md")
-chk("login-find: an OUT path with a space is scanned and cleaned whole", (r["rc"] != 0, ACCESS in r["out"], r["side_left"]), (True, False, []))
-r = run("login-refresh", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_REFRESH="1"))
-chk("login-refresh: a judge that rewrote its login file gets one line saying so", (r["rc"], "log in again" in r["out"], ACCESS in r["out"]), (0, True, False))
-chk("login-refresh: the caller's own login file is untouched by it", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
-# no copy, and the fallback line says why
-with_reader = tempfile.mkdtemp()
-try:
-    mine = reader_copy(with_reader)
-    cases = [("never gets your login", dict(caller=LOGIN, uname="Linux", extra=("--reader", mine))),
-             ("logs in only on Linux", dict(caller=LOGIN, uname="Darwin")),
-             ("no login file in your config folder", dict(caller={}, uname="Linux")),
-             ("due to refresh within the hour", dict(caller={".credentials.json": login_file(hours=1 / 6)}, uname="Linux")),
-             ("login file couldn't be read", dict(caller={".credentials.json": "not json"}, uname="Linux")),
-             ("login file couldn't be read", dict(caller={".credentials.json": '{"claudeAiOauth": {"accessToken": "x"}}'}, uname="Linux")),
-             ("login didn't work as the reader", dict(caller=LOGIN, uname="Linux", login="never"))]
-    for why, kw in cases:
-        r = run("no-copy " + why, **{"login": "file", **kw})
-        if "didn't work" in why:
-            chk("no-copy: the copy is removed once the probe fails, before the own judge runs", any(c["reader_cred_left"] for c in r["calls"] if "single word ok" not in c["prompt"]), False)
-        chk("no-copy: " + why, ("judge: own" in r["out"], "can't log in" in r["out"], why in r["out"], any(c["cred_seen"] and "single word ok" in c["prompt"] for c in r["calls"]) and "didn't work" not in why, ACCESS in r["out"]), (True, True, True, False, False))
-finally:
-    shutil.rmtree(with_reader)
-r = run("login-facts", extra=("--facts",), uname="Linux", caller=LOGIN, fake_body=NO_CLAUDE)
-chk("facts: no login is copied, no model is called", (r["rc"], r["calls"]), (0, []))
-r = run("login-own", login="file", uname="Linux", caller=LOGIN, extra=("--judge", "own"), fake_env=SECRET)
-chk("own: an explicit --judge own copies nothing", (r["rc"], any(c["reader_cred_left"] for c in r["calls"])), (0, False))
-
-# 12. vet-forced-reader-no-fallback: an explicit --judge reader copies the login like auto, and never falls back to own
-FORCED = ("--judge", "reader")
-if True:   # uname is faked, so these run on any host
-    r = run("forced-copy", login="file", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=SECRET)
-    j = judge(r)[0] if judge(r) else {}
-    chk("forced-copy: --judge reader on Linux with a fresh login file judges as the reader with the copy in place", (r["rc"], j.get("cred_seen"), j.get("cred_mode"), "judge: reader" in r["out"]), (0, True, "0o600", True))
-    chk("forced-copy: no secret in the report or vet's output, and the folder is gone", (ACCESS in r["text"] or REFRESH in r["text"], ACCESS in r["out"] or REFRESH in r["out"], any(r["cfg_left"])), (False, False, False))
-    for why, kw in (("no login file in your config folder", dict(caller={})),
-                    ("due to refresh within the hour", dict(caller={".credentials.json": login_file(hours=1 / 6)})),
-                    ("your login didn't work as the reader", dict(caller=LOGIN, login="never"))):
-        r = run("forced-stop " + why, **{"login": "file", "uname": "Linux", "extra": FORCED, **kw})
-        chk("forced-stop: " + why + ": non-zero, no report, no judge call, the reason and --judge own on stderr", (r["rc"] != 0, r["report"], [c for c in r["calls"] if "single word ok" not in c["prompt"]], why in r["out"], "--judge own" in r["out"], ACCESS in r["out"]), (True, False, [], True, True, False))
-    mine = reader_copy(tempfile.mkdtemp())
-    r = run("forced-reader-dir", login="never", uname="Linux", caller=LOGIN, extra=(*FORCED, "--reader", mine))
-    chk("forced-stop: a --reader folder never gets your login, and the line says so", (r["rc"] != 0, r["report"], "a --reader folder never gets your login" in r["out"], "--judge own" in r["out"]), (True, False, True, True))
-    shutil.rmtree(os.path.dirname(mine))
-    mine = reader_copy(tempfile.mkdtemp())
-    r = run("forced-reader-dir-nocopy", login="env", uname="Linux", caller=LOGIN, extra=(*FORCED, "--reader", mine))
-    chk("forced-reader-dir: a --reader folder gets no copy of your login, and the judge runs as that reader", (r["rc"], any(c["cred_seen"] for c in r["calls"])), (0, False))
-    shutil.rmtree(os.path.dirname(mine))
-    r = run("forced-web", login="env", uname="Linux", caller={}, extra=FORCED)
-    j = judge(r)[0] if judge(r) else {}
-    chk("forced-web: no login file but the probe passes (a web session): judges as the reader", (r["rc"], j.get("cfg") != "", "can't log in" in r["out"]), (0, True, False))
-# a failing call() says why: the last lines of its own error, and never a token
-r = run("call-fail", extra=("--units",), units="units-install", finds="one", confirm="fail")
-chk("call-fail: a confirm call that exits non-zero: its last error lines reach stderr", (r["rc"] != 0, "fake-claude-error: quota exceeded" in r["out"]), (True, True))
-r = run("call-fail-token", login="file", uname="Linux", caller=LOGIN, extra=("--units", *FORCED), units="units-install", finds="one", confirm="fail", fake_env=dict(FAKE_SECRET=ACCESS, FAKE_FAIL_MSG="denied for " + ACCESS))
-chk("call-fail: an error line holding the login's token is dropped, not printed, and the call's error file is scanned and removed", (r["rc"] != 0, ACCESS in r["out"], "files holding your login's secrets were removed" in r["out"]), (True, False, True))
-# the probe's own error follows the stop line; a token in it is dropped
-r = run("forced-probe-msg", login="never", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=SECRET)
-lines = r["out"].split("\n")
-stop = [i for i, l in enumerate(lines) if "--judge reader can't log in" in l]
-chk("forced-probe: the probe's error line reaches stderr after the stop line", (len(stop) == 1 and any("Not logged in" in l for l in lines[stop[0] + 1:]) if stop else False), True)
-r = run("forced-probe-token", login="never", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=dict(FAKE_SECRET=ACCESS, FAKE_PROBE_MSG="denied for " + ACCESS))
-chk("forced-probe: a probe error holding the login's token is dropped, not printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], "--judge reader can't log in" in r["out"]), (True, False, False, True))
-# the main judge failing: the last lines of its stdout reach stderr; a token never does
-r = run("judge-fail", fake_env=dict(FAKE_JUDGE_FAIL="1"))
-chk("judge-fail: a main judge that exits non-zero: its last lines reach stderr", (r["rc"] != 0, "fake-judge-error: out of credit" in r["out"], "the judge exited non-zero" in r["out"]), (True, True, True))
-r = run("judge-fail-token", login="file", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=dict(FAKE_SECRET=ACCESS, FAKE_JUDGE_FAIL="1", FAKE_FAIL_MSG="denied for " + ACCESS))
-chk("judge-fail: a judge message holding the login's token is not printed", (r["rc"] != 0, ACCESS in r["out"], r["report"]), (True, False, False))
-# the judged report names the judge that ran, and vet --check still passes on it
-for name, kw, want in (("judge-line-reader", dict(login="env"), "Judge: the sample reader's config"),
-                       ("judge-line-own", dict(login="default", uname="Darwin"), "Judge: your own config, told to ignore it")):
-    r = run(name, **kw)
-    chk(name + ": the report carries the Judge line", want in r["text"], True)
-    chk(name + ": the Judge line sits after the Baseline line, not in header lines 1-2", (want in r["text"].split("\n")[:3], r["text"].find("Baseline:") < r["text"].find(want)), (False, True))
-    d = tempfile.mkdtemp()
-    try:
-        os.makedirs(os.path.join(d, ".claude-plugin")); json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(d, ".claude-plugin", "plugin.json"), "w"))
-        open(os.path.join(d, "report.md"), "w", encoding="utf-8").write(r["text"])
-        c = subprocess.run([VET, "--check", os.path.join(d, "report.md"), d], capture_output=True, text=True)
-        chk(name + ": vet --check passes on it", c.returncode, 0)
-    finally:
-        shutil.rmtree(d)
-
-print(f"test_vet: {checks - fail}/{checks} checks passed")
-sys.exit(1 if fail else 0)
+sys.exit(vet_harness.summary("test_vet"))
