@@ -4,6 +4,16 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.7 (2026-11-15)
+
+### Inventory
+
+- **A shell hook that builds its printed text at run time is now read.** The report shows each printed line, with "…" for parts known only at run time, and each file the script writes. Scripts it cannot follow stay "partly read".
+
+### Docs
+
+- **The README opens with a prompt-based Install section.** Paste one prompt into Claude Code, or type one `/plugin install` line, to install neckbeard.
+
 ## 1.17.6 (2026-11-15)
 
 ### Reports

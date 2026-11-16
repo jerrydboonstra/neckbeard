@@ -7,7 +7,7 @@ A plugin's published report is the facts report: what the plugin adds to a sessi
 Write it with a clone of neckbeard and one command in your plugin's folder:
 
 ```bash
-git clone --depth 1 --branch v1.17.6 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+git clone --depth 1 --branch v1.17.7 https://github.com/jerrydboonstra/neckbeard /tmp/nb
 /tmp/nb/tools/vet . docs/neckbeard-report.md --facts
 ```
 
@@ -30,7 +30,7 @@ neckbeard-report:
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v4
-    - run: git clone --depth 1 --branch v1.17.6 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+    - run: git clone --depth 1 --branch v1.17.7 https://github.com/jerrydboonstra/neckbeard /tmp/nb
     - run: /tmp/nb/tools/vet --check docs/neckbeard-report.md .
 ```
 
