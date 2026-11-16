@@ -4,6 +4,13 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.5 (2026-11-15)
+
+### Reports
+
+- **A repo can list its test fixture folders in a `.neckbeard.json` at its root.** Unreadable files in a listed folder no longer make the hooks or persistence sections "partly read", and the report names each listed folder under "Declared fixtures, not read". The hook and persistence search still walks those folders and counts what it finds there. neckbeard lists `tools/fixtures` in its own repo.
+- **neckbeard's own report now reads in full, with a green badge.** The inventory code is split into five modules under `skills/neckbeard`, each under 40,000 bytes, and `tools/test_vet.py` is split under the read cap too, so no file counts as read capped.
+
 ## 1.17.4 (2026-11-15)
 
 ### Reports
