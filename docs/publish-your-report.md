@@ -7,7 +7,7 @@ A plugin's published report is the facts report: what the plugin adds to a sessi
 Write it with a clone of neckbeard and one command in your plugin's folder:
 
 ```bash
-git clone --depth 1 --branch v1.17.1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+git clone --depth 1 --branch v1.17.5 https://github.com/jerrydboonstra/neckbeard /tmp/nb
 /tmp/nb/tools/vet . docs/neckbeard-report.md --facts
 ```
 
@@ -30,7 +30,7 @@ neckbeard-report:
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v4
-    - run: git clone --depth 1 --branch v1.17.1 https://github.com/jerrydboonstra/neckbeard /tmp/nb
+    - run: git clone --depth 1 --branch v1.17.5 https://github.com/jerrydboonstra/neckbeard /tmp/nb
     - run: /tmp/nb/tools/vet --check docs/neckbeard-report.md .
 ```
 
@@ -43,3 +43,7 @@ The rest of this page covers the fit report, which is for your own use.
 A fit report is built by a **judge**, a separate Claude session that does the comparing, running in a Claude Code session, for example on a plugin's repo in a Claude Code web session on your own subscription, where the judge is logged in from the environment and starts with the sample reader as its only rules. On Linux without such a login, `tools/vet` copies your own login file into the throwaway reader for the run and deletes it with the folder; it skips the copy when the login is due to refresh within the hour (the default judge then falls back to your own config, while an explicit `--judge reader` stops and says why), and it refuses a report that holds the login's tokens. A judge that refreshes its copy can sign your own login out, and `tools/vet` says so when it sees that. Sonnet is enough for the session itself, since it only runs the command. Keep the judge on Sonnet: in a side-by-side run on 2026-10-04, a Haiku judge finished in under a minute but missed both conflicts and all nine covered rules that the Sonnet judge found and that checked out against the files. A full run takes two to three minutes.
 
 For a private copy of the plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo, and `--note "..."` for a sentence of your own before the verdict's disclaimer, such as saying you wrote both. `tools/vet` sets the report's title line itself, so it always names the reader the verdict is against.
+
+## Badge colours and declared fixtures
+
+A repo can declare its test fixtures, the files it keeps broken on purpose, in a `.neckbeard.json` at its root, for example `{"fixtures": ["tools/fixtures"]}`. neckbeard still walks those folders and reports what it finds there, but a file in one that the hooks search or the persistence scan cannot read no longer makes that section "partly read", and the report says which folders were declared. neckbeard declares `tools/fixtures`, so its own badge is green. A yellow badge means some part of the repo was not read.

@@ -55,9 +55,9 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Declared fixtures: tools/fixtures (files there that the hooks and persistence scans can't read don't count against the badge)
 <!-- /report -->
 
-A repo can declare its test fixtures, the files it keeps broken on purpose, in a `.neckbeard.json` at its root, for example `{"fixtures": ["tools/fixtures"]}`. neckbeard still walks those folders and reports what it finds there, but a file in one that the hooks search or the persistence scan cannot read no longer makes that section "partly read", and the report says which folders were declared. neckbeard declares `tools/fixtures`, so its own badge is green. A yellow badge means some part of the repo was not read.
+How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](docs/publish-your-report.md#badge-colours-and-declared-fixtures).
 
-**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR`, or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
+**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project, and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
 Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
@@ -119,7 +119,7 @@ Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itsel
 - **Who reviewed it:** AI agents only. Each was a separate Claude session that had not written the code. The only outside user ran an early version and hit bugs that later rounds fixed.
 - **Hardest round:** the ninth, the first by a session outside the build. Eleven problems, four published claims proved false, one of them a path that could leak 90,533 bytes of private rules into a public repo.
 - **The code:** checked against the filesystem. Every self-check case has been seen to fail with the code it guards broken.
-- **The judgment:** graded blind against two sealed fixtures (test sets with known answers, built by separate sessions; the author has never seen the answers). On the 31 items of the second that both arms were graded on, the instructions scored 30 where the same model without the instructions scored 16.
+- **The judgment:** graded blind against two sealed fixtures (test sets with known answers, built by separate sessions; the author has never seen the answers). On the 31 items of the second graded with and without neckbeard's instructions, the instructions scored 30 and the same model without them scored 16 ([the scores and data](CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing)).
 
 ## What it reads, and what it refuses to touch
 

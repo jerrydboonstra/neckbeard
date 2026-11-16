@@ -86,5 +86,16 @@ with tempfile.TemporaryDirectory() as _d:
         inventory.HOME = _was
 check("inventory.find_up stops at HOME (a CLAUDE.md above it is not found) and still finds one below it", _got is None and _near == str(_home / "proj" / "CLAUDE.md"))
 
+# The publish guide clones the tag it documents: its --branch pins must name the manifest version.
+import json, re
+def _guide_pins(guide, version):
+    pins = set(re.findall(r"--branch v(\S+)", guide))
+    return bool(pins) and pins == {version}
+_ver = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())["version"]
+_guide = (ROOT / "docs" / "publish-your-report.md").read_text()
+check("docs/publish-your-report.md pins the clone to the manifest version", _guide_pins(_guide, _ver))
+check("the guide check fails when the manifest version moves on (seen to fail)", not _guide_pins(_guide, _ver + ".1"))
+check("the guide check fails on a guide that pins an older tag (seen to fail)", not _guide_pins(_guide.replace("--branch v" + _ver, "--branch v0.0.1"), _ver))
+
 print(f"test_layout: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)
