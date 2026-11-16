@@ -61,8 +61,8 @@ with tempfile.TemporaryDirectory() as _d:
             _notes += [n for n in (_sec.get("notes") or []) if isinstance(n, str)] if isinstance(_sec, dict) else []
     except Exception as e:
         _notes = [f"could not read the dossier: {e!r}"]
-_capped = [n for n in _notes if n.startswith("skills/") and "read capped" in n or n.startswith("could not")]
-check("the inventory of this repo's own tree carries no 'read capped' note naming a file under skills/" + ("" if not _capped else f": {_capped!r}"), not _capped)
+_capped = [n for n in _notes if (n.startswith("skills/") and ("read capped" in n or "could not" in n)) or n.startswith("could not read the dossier")]
+check("the inventory of this repo's own tree carries no 'read capped' or unreadable note naming a file under skills/" + ("" if not _capped else f": {_capped!r}"), not _capped)
 _rep = (ROOT / "docs" / "neckbeard-report.md").read_text()
 check("docs/neckbeard-report.md does not list a skills/ file as read capped", "skills/neckbeard/inventory.py: read capped" not in _rep and not any(
       l for l in _rep.splitlines() if "read capped" in l and "skills/neckbeard/" in l))
