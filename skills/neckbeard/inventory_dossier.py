@@ -197,6 +197,34 @@ def inventory_target(path, plugin_name=None, _read_root=False):
     }
 
 
+# ------------------------------------------------------------------ declared fixtures
+def read_declared_fixtures(root):
+    """The fixture folders a target declares in .neckbeard.json at its root ({"fixtures": ["tools/fixtures"]}).
+    None when there is no such file; else (folders, ignored): the entries that name a folder under the root, and the
+    entries left out (not a string, absolute, containing "..", or no folder inside the root). A file that does not
+    parse, or has no "fixtures" list, declares nothing (the hooks search notes an invalid file itself)."""
+    fp = os.path.join(root, ".neckbeard.json")
+    if not os.path.lexists(fp):
+        return None
+    data = read_json(fp) if _within(fp, root) else None
+    items = data.get("fixtures") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        return [], []
+    folders, ignored = [], []
+    for e in items:
+        ok = isinstance(e, str) and e.strip() and not os.path.isabs(e) and ".." not in e.replace("\\", "/").split("/")
+        if ok:
+            d = os.path.join(root, e)
+            ok = os.path.isdir(d) and _within(d, root) and os.path.normpath(e) != "."   # "." would declare the whole tree
+        if ok:
+            e = os.path.normpath(e)
+            if e not in folders:
+                folders.append(e)
+        else:
+            ignored.append(e)
+    return folders, ignored
+
+
 # ------------------------------------------------------------------ read status
 def add_read_status(dossier):
     """Add `read_status` to a target dossier: for each of nine sections, whether it was read, partly
@@ -309,6 +337,16 @@ def add_read_status(dossier):
           not executable: target-fault)
       LV3 add_live_mcp -> mcp_servers: the live read failed, or one of its lists did (a hang or a byte bound: tool-limit; a malformed or wrong
           reply, an error reply, a server that exits: target-fault)
+      DF1 add_read_status -> hooks: a .neckbeard.json fixtures entry that is not a string, is absolute or
+          contains "..", or names no folder inside the target is left out of declared_fixtures
+    Declared fixtures: a target may list fixture folders in .neckbeard.json at its root (the outer root when a
+    marketplace selects a nested plugin). hooks_outside_manifest and inventory_persistence still walk them and report
+    what they find; only the read-failure notes their own walk adds for a path inside one (marked from_scan: a
+    file note, a folder that could not be listed, a symlinked folder) are kept under read_status[section]["declared"]
+    instead of counting toward the state, in those two sections. A note is inside a declared folder when its text starts with that folder's path and a separator;
+    its path is relative to the target, kept as the walk wrote it, relative to the target. Notes _parse_events adds, and every note from a path the manifest, a hooks
+    config or a settings file points to, are counted as always. The dossier key declared_fixtures (the valid
+    folders) exists only when .neckbeard.json does.
     Folders: find_files, skill_companions, hooks_outside_manifest and inventory_persistence walk the tree
     with os.walk, which skips a folder it cannot list (onerror: "<folder>: folder could not be listed", untested
     because it takes a folder that exists and cannot be opened, which a test may not chmod) and does not enter
@@ -373,6 +411,28 @@ def add_read_status(dossier):
     if dossier.get("manifest_refused"):
         add("plugin_json", dossier["manifest_refused"], "partial" if kind == "plugin" else "failed", cause="tool-limit")
 
+    moved = {}
+    if kind != "rule-file" and base:
+        outer = (dossier.get("marketplace") or {}).get("root") if isinstance(dossier.get("marketplace"), dict) else None
+        outer = outer or base
+        decl = read_declared_fixtures(outer)
+        if decl is not None:
+            folders, ignored = decl
+            dossier["declared_fixtures"] = folders
+            for e in ignored:
+                add("hooks", f"{e}: not a folder under the target, ignored", cause="target-fault")
+            # a note is "<path>: <reason>", its path from the walk's own root (base): it is inside a declared folder when it
+            # starts with that folder's path and a separator, so a file whose name holds ": " cannot pass for one
+            roots = [os.path.relpath(os.path.normpath(os.path.join(outer, f)), base) + os.sep for f in folders]
+            for section in ("hooks", "persistence_candidates"):
+                keep = []
+                for n in notes[section]:
+                    if n.from_scan and any(str(n).startswith(r) for r in roots):
+                        moved.setdefault(section, []).append(str(n))
+                    else:
+                        keep.append(n)
+                notes[section] = keep
+
     na = set()
     if kind == "rule-file":
         na = set(READ_SECTIONS) - {"rule_files"}
@@ -394,5 +454,6 @@ def add_read_status(dossier):
             state = "failed" if listed and read == 0 and any(n.level == "entry" for n in ns) else "partial"
         else:
             state = "read"
-        status[section] = {"state": state, "notes": [str(n) for n in ns], "causes": [n.cause for n in ns]}
+        status[section] = {"state": state, "notes": [str(n) for n in ns], "causes": [n.cause for n in ns],
+                           **({"declared": moved[section]} if moved.get(section) else {})}
     dossier["read_status"] = status

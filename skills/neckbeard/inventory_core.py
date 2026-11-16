@@ -28,6 +28,7 @@ class _Note(str):
     a cap for one). A note can carry text from the target, so it is one line of at most 400
     characters whatever the target wrote."""
     level = "partial"
+    from_scan = False   # set on a note the tree walk of hooks_outside_manifest or inventory_persistence added (declared fixtures)
     cause = None   # "tool-limit" (neckbeard's limit) or "target-fault" (the plugin's), set by _note and add
 
     def __new__(cls, text):
@@ -45,6 +46,14 @@ def _note(notes, text, level="partial", *, cause):
         n.level = level
         n.cause = cause
         notes.append(n)
+
+
+def _mark_scan(notes, start):
+    """Mark the notes a tree walk added since `start` (len(notes) before it): add_read_status may move those that name a file in a
+    declared fixtures folder (.neckbeard.json) out of the section's state. Notes from any other path stay as they are."""
+    if notes is not None:
+        for n in notes[start:]:
+            n.from_scan = True
 
 
 def _rel(path, root):

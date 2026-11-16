@@ -102,6 +102,15 @@ STATES = {  # fixture -> label -> the state its line shows; across them every st
     "rule-file": {**{k: "not applicable" for k in CARDS}, "Rule files": "entries"},
 }
 
+# ---------------------------------------------------------------- declared-fixtures: the Declared fixtures line
+p = variant("plugin-found", lambda d: d["target"].update(declared_fixtures=["tools/fixtures", "x\ny"]))
+got = parse(render(p)[1])
+chk("D. a dossier with declared_fixtures prints one Declared fixtures line in the Source card, names through safe()",
+    (got.get(("Source", "Declared fixtures")) or ("",))[0].startswith("tools/fixtures, x y"), got.get(("Source", "Declared fixtures")))
+chk("D. a dossier without the key, or with an empty list, prints no such line",
+    ("Source", "Declared fixtures") not in parse(render(fx("plugin-found"))[1])
+    and ("Source", "Declared fixtures") not in parse(render(variant("plugin-found", lambda d: d["target"].update(declared_fixtures=[])))[1]))
+
 # ---------------------------------------------------------------- Done when 1: each card, each state, and the exact words
 for name, want in STATES.items():
     rc, out, err = render(fx(name))

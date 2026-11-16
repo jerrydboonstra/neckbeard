@@ -9,7 +9,7 @@ import os
 import re
 
 from inventory_core import (
-    READ_LIMIT, _note, _prune_skipped, _walk_error, _walk_gaps, _within, measure, read_json, read_text,
+    READ_LIMIT, _mark_scan, _note, _prune_skipped, _walk_error, _walk_gaps, _within, measure, read_json, read_text,
 )
 
 
@@ -465,6 +465,7 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
     128 local trees measured read 5,378 JSON files in about 3 seconds."""
     root = root.rstrip("/")
     found, events, reads, stopped_at = [], {}, 0, None
+    first_note = len(notes) if notes is not None else 0
     for dirpath, dirnames, filenames in os.walk(root, onerror=_walk_error(notes, root)):
         if stopped_at:
             break
@@ -498,6 +499,7 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
                 found.append(os.path.relpath(fp, root))
                 for event, groups in got.items():
                     events.setdefault(event, []).extend(groups)
+    _mark_scan(notes, first_note)   # the walk's own notes only: what _parse_events adds below counts as it always did
     # A search cut short says so whatever it found: before it stopped, nothing
     # means unknown, and something means those hooks and maybe more.
     incomplete = (f"The search for hook-shaped JSON stopped after {max_reads} files, at "
@@ -543,6 +545,14 @@ def hooks_outside_manifest(root, max_reads=20_000, notes=None):
 
 
 def inventory_persistence(plugin_root, notes=None):
+    first_note = len(notes) if notes is not None else 0
+    try:
+        return _persistence_walk(plugin_root, notes)
+    finally:
+        _mark_scan(notes, first_note)
+
+
+def _persistence_walk(plugin_root, notes):
     hits = []
     for dirpath, dirnames, filenames in os.walk(plugin_root, onerror=_walk_error(notes, plugin_root)):
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor", "benchmarks", "tests", "test")]
