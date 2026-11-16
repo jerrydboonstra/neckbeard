@@ -24,6 +24,8 @@ Every file the tool reads from a target is resolved, symlinks included, and chec
 
 This paragraph used to make the same claim when only three read paths checked. An adversarial review on 2026-09-24 found five more open, and all eight now go through one guard. Commands, agents, a root `CLAUDE.md` and its imports were added to the tool later, behind the same guard. `selfcheck.py` now plants a marker outside the target for each path and fails if it reaches the dossier, and each check has been seen to fail with its guard removed.
 
+A shell hook that prints text it builds at run time (`echo "imagegen doctor: $failed missing"`) is read from the script's own text, not run. The report shows each printed line with "…" where the text is known only at run time, and each statement that writes a file. It does not follow what the script runs: code inside `$(...)` and backticks, and programs the script calls (`doctor.sh`, `mkdir` with a computed argument), can write to the hook's output by other routes, or write files. A script that does anything the trace does not recognise stays "partly read", and the note names the first line that stopped it.
+
 ## Reporting
 
 Open an issue at https://github.com/jerrydboonstra/neckbeard/issues. For anything you would rather not post publicly, use GitHub's private vulnerability reporting on the same repository.

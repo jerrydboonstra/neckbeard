@@ -344,6 +344,13 @@ for p in sorted(P1_SRC.glob("*.dossier.json")):
         bad_names.append("part1 fixture " + n)
 check(f"2. flag off: the dossier of each of {len(fxs)} fixtures and packs, and part1's output, equal 4bece13's "
       "(read_status causes removed). A guard: it cannot fail on 4bece13 itself", (bad_names, missing), ([], []))
+# hook-echo-traced changed two baselines on purpose and no other: rs-hooks-untraced gains the stopping line in its unresolved note,
+# and rs-hooks-echo-traced is a new fixture. The guard above holds every other baseline to the text it had; these two pin what the
+# change added, so the new text is the only thing either may differ by (the diff of the commit lists exactly these files).
+_ut = (BASE / "rs-hooks-untraced.baseline.txt").read_text()
+_et = (BASE / "rs-hooks-echo-traced.part1.md").read_text()
+check("2. hook-echo-traced: rs-hooks-untraced carries the added stopping line in both of its notes, and rs-hooks-echo-traced prints the template and writes",
+      (_ut.count("(line 2: runs `cat`, whose output may reach Claude)"), "imagegen doctor: \u2026 missing" in _et and "writes: mkdir -p \u2026; : > \u2026" in _et), (2, True))
 fresh = servers({"normal": ("normal", {"TEST_SECRET": SECRET})})
 d, r = run(fresh)
 check("2. flag off: no live key and the server is not started", ("live" in entry(d, "normal"), calls(fresh)), (False, None))

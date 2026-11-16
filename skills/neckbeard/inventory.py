@@ -296,7 +296,9 @@ def classifiable_items(target_dossier):
             for k in ("skills", "rule_files", "commands", "agents"))
     hooks = target_dossier.get("hooks") or {}
     if isinstance(hooks, dict) and hooks.get("has_hooks"):
-        n += max(1, len(hooks.get("injected_content") or []))
+        # a script traced as printing nothing but writing files carries no text for the reader to classify
+        n += max(1, len([e for e in hooks.get("injected_content") or []
+                         if not (isinstance(e, dict) and e.get("built_at_run_time") and not e.get("template"))]))
     return n
 
 

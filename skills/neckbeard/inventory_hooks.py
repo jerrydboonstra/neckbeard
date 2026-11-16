@@ -7,7 +7,9 @@ under neckbeard's own read cap. inventory.py imports each name from here, so `in
 import json
 import os
 import re
+import shlex
 
+from hook_shell import trace_shell_hook
 from inventory_core import (
     READ_LIMIT, _mark_scan, _note, _prune_skipped, _walk_error, _walk_gaps, _within, measure, read_json, read_text,
 )
@@ -202,6 +204,39 @@ def _identify_hook_script(cmd, plugin_root):
     return None
 
 
+SHELL_SHEBANG_RE = re.compile(r"#!\s*(/bin/(ba)?sh|/usr/bin/env\s+(ba)?sh)\s*$")
+
+
+def _command_is_script_alone(cmd, plugin_root):
+    """True when the hook command is the script alone, optionally after bash or sh: nothing else runs, so the script's
+    own text is all there is to read."""
+    mark = "\0PLUGIN_ROOT\0"
+    try:
+        toks = shlex.split(_expand_plugin_root(cmd, mark))
+    except ValueError:
+        return False
+    if toks and toks[0] in ("bash", "sh", "/bin/bash", "/bin/sh"):
+        toks = toks[1:]
+    return len(toks) == 1 and not re.search(r"[;&|<>`$()]", toks[0].replace(mark, ""))
+
+
+def _shell_trace(script, cmd, plugin_root):
+    """(trace, detail) for a shell hook script resolve_injected_text found no file in. trace is hook_shell's answer when
+    every statement passed, else None; detail is what to add to the unresolved note (None when the script is not a shell
+    script, so the note stays as it was)."""
+    text = read_text(script, limit=20_000) or ""
+    if not (script.endswith(".sh") or SHELL_SHEBANG_RE.match(text.split("\n", 1)[0].strip())):
+        return None, None
+    if not _command_is_script_alone(cmd, plugin_root):
+        return None, "the hook command runs more than the script"
+    if os.path.getsize(script) > 20_000:
+        return None, "line 1: longer than the 20000-byte read cap, so not traced"
+    r = trace_shell_hook(text)
+    if "stop" in r:
+        return None, f"line {r['stop'][0]}: {r['stop'][1]}"
+    return r, None
+
+
 def inventory_hooks(plugin_root, plugin_json, notes=None):
     hooks_ref = plugin_json.get("hooks")
     hooks_path = None
@@ -318,6 +353,7 @@ def _parse_events(events, rel, plugin_root, notes=None):
     reaches_subagents = False
     reaches_subagents_likely = False
     injected_seen = {}
+    built_seen = {}   # script path -> {"trace": hook_shell's answer, "events": [...]}
     scripts_seen = set()
     resolved_scripts = set()
     unresolved_scripts = set()
@@ -374,8 +410,15 @@ def _parse_events(events, rel, plugin_root, notes=None):
                         injected_seen[inj["resolved_file"]] = inj.get("bytes") or inj.get("chars") or 0
                         resolved_scripts.add(os.path.basename(script))
                     else:
-                        unresolved_scripts.add(
-                            f"{event}: {os.path.relpath(script, plugin_root)}")
+                        tr, detail = _shell_trace(script, cmd, plugin_root)
+                        rel_script = os.path.relpath(script, plugin_root)
+                        if tr is not None:
+                            built = built_seen.setdefault(rel_script, {"trace": tr, "events": []})
+                            if event not in built["events"]:
+                                built["events"].append(event)
+                            resolved_scripts.add(os.path.basename(script))
+                        else:
+                            unresolved_scripts.add(f"{event}: {rel_script}" + (f" ({detail})" if detail else ""))
         if event in SUBAGENT_EVENTS or event in SUBAGENT_TOOL_EVENTS:
             reaches_subagents = True
         if event in SUBAGENT_TOOL_EVENTS_LIKELY:
@@ -393,8 +436,16 @@ def _parse_events(events, rel, plugin_root, notes=None):
     # a correct doc. See CHANGELOG.md 1.1.0.
     result["hook_registrations"] = sum(len(v) for v in result["events"].values())
     result["hook_scripts"] = len(scripts_seen)
-    result["injected_content"] = [{"file": f, "bytes": b} for f, b in injected_seen.items()] or None
-    result["injected_bytes_total_estimate"] = sum(injected_seen.values()) or None
+    entries = [{"file": f, "bytes": b} for f, b in injected_seen.items()]
+    total = sum(injected_seen.values())
+    for f, built in built_seen.items():
+        tr = built["trace"]
+        if tr["template"] or tr["writes"]:
+            entries.append({"file": f, "bytes": tr["bytes"], "events": built["events"], "built_at_run_time": True,
+                            "template": tr["template"], "writes": tr["writes"], "at_least": tr["at_least"]})
+            total += tr["bytes"]
+    result["injected_content"] = entries or None
+    result["injected_bytes_total_estimate"] = total or None
     if malformed:
         result["malformed_entries"] = malformed
         result["has_hooks"] = "partial"

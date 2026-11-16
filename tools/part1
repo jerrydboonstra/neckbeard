@@ -32,6 +32,10 @@ Field (under target) -> label (card), the section whose read_status gives its st
   marketplace                     Marketplace (Source)           marketplace
   kind, path, plugin_json.name/.version, --commit   Kind, Name, Version, Commit (Source), no section
 
+An injected_content entry with built_at_run_time (a shell hook traced from its own text) prints one
+`<file> (<events>, built at run time, at least N bytes): <template line>` line per template line, then `  writes: <items joined by "; ">`
+when it writes; with no template line it prints `<file> (<events>, built at run time): prints nothing; writes: <items>`. The caveat
+line (BUILT_NOTE) follows the entries once per report.
 A hooks section read with injected_content null and an injected_content_note prints the note as not read, never none.
 An entry with `refused`, or with bytes and text both None, prints `<name>: not read`. Notes are cleaned before they
 print: a hook command in one becomes its script (script_of), any other absolute or ~ path its basename. Every string
@@ -186,6 +190,27 @@ def toks(n):
     return f"{n} bytes, ~{n // 4} tokens"
 
 
+BUILT_NOTE = ("built at run time: read from the script's own text, not run; commands it runs are not followed "
+              "and may print or write files")
+
+
+def injected_line(i, root):
+    """One Hook-injected text entry. A text file: `<file>: N bytes, ~T tokens`. A script traced as printing text it builds at
+    run time: one `<file> (<events>, built at run time, at least N bytes): <template line>` per line, then `  writes: <items>`;
+    one that only writes prints `<file> (<events>, built at run time): prints nothing; writes: <items>`."""
+    f = safe(i.get("file"), root)
+    if not i.get("built_at_run_time"):
+        return f"{f}: {toks(i['bytes'])}"
+    events = ", ".join(safe(e) for e in as_list(i.get("events")) if isinstance(e, str))
+    head = f"{f} ({events + ', ' if events else ''}built at run time"
+    writes = "; ".join(safe(w) for w in as_list(i.get("writes")) if isinstance(w, str))
+    lines = [safe(x) for x in as_list(i.get("template")) if isinstance(x, str)]
+    if not lines:
+        return f"{head}): prints nothing; writes: {writes}"
+    out = f"{head}, at least {i['bytes']} bytes): " + f"\n  - {head}, at least {i['bytes']} bytes): ".join(lines)
+    return out + (f"\n  writes: {writes}" if writes else "")
+
+
 CAUSES = ("tool-limit", "target-fault")
 CAUSE_WORDS = {"tool-limit": "neckbeard did not read", "target-fault": "broken in the plugin"}
 
@@ -313,8 +338,9 @@ def render(d, commit):
         p = str(r.get("path") or "")
         rel = os.path.basename(p) if t.get("kind") == "rule-file" or not root or not p.startswith(root.rstrip("/") + "/") else os.path.relpath(p, root)
         rules.append(f"{safe(rel) or name_of(r, root)}: every session ({toks(r['bytes'])}){capped(r)}")
-    injected = [f"{safe(i.get('file'), root)}: {toks(i['bytes'])}" for i in as_list(hooks.get("injected_content"))
+    injected = [injected_line(i, root) for i in as_list(hooks.get("injected_content"))
                 if isinstance(i, dict) and isinstance(i.get("bytes"), int)]
+    built_note = [BUILT_NOTE] if any(isinstance(i, dict) and i.get("built_at_run_time") for i in as_list(hooks.get("injected_content"))) else []
     hsec = sec("hooks")
     if hsec[0] == "read" and hooks.get("injected_content") is None and hooks.get("injected_content_note"):
         hsec = ("failed", [hooks["injected_content_note"]], ["tool-limit"])
@@ -365,7 +391,7 @@ def render(d, commit):
     out = ["## What it adds", "", "### Injects"]
     out += block("Skills", sec("skills"), skills, root)
     out += block("Rule files", sec("rule_files"), rules, root)
-    out += block("Hook-injected text", hsec, injected, root)
+    out += block("Hook-injected text", hsec, injected, root, tail=built_note)
     out += ["", "### Hooks"] + block("Hooks", sec("hooks"), events, root, tail=[reach_line])
     out += ["", "### Subagents and commands"] + block("Agents", sec("agents"), agents, root) + block("Commands", sec("commands"), commands, root)
     shown, ptail = cap_entries(persist)
