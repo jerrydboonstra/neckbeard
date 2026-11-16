@@ -25,7 +25,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard 1.17.4 · what it adds
 >
-> `2026-11-15` · neckbeard 1.17.4 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.4 @ `3cde815`
+> `2026-11-15` · neckbeard 1.17.4 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.4 @ `ff83cf4`
 >
 > ### Injects
 > - Skills:
@@ -51,8 +51,8 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Version: 1.17.4 (from plugin.json)
 > - plugin.json:
 > - Marketplace: none
-> - Commit: 3cde815
-> - Declared fixtures: tools/fixtures (files there that can't be read don't count against the badge)
+> - Commit: ff83cf4
+> - Declared fixtures: tools/fixtures (files there that the hooks and persistence scans can't read don't count against the badge)
 <!-- /report -->
 
 A repo can declare its test fixtures, the files it keeps broken on purpose, in a `.neckbeard.json` at its root, for example `{"fixtures": ["tools/fixtures"]}`. neckbeard still walks those folders and reports what it finds there, but a file in one that the hooks search or the persistence scan cannot read no longer makes that section "partly read", and the report says which folders were declared. neckbeard declares `tools/fixtures`, so its own badge is green. A yellow badge means some part of the repo was not read.
