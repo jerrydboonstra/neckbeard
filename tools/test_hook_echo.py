@@ -181,5 +181,14 @@ for _name, _s, _line in [
     check(f"HE7. {_name}: stays unresolved and names a line", *(lambda r: (len(r[0].get("unresolved_hooks") or []) == 1 and not built_entry(r[0]), repr(r[0].get("unresolved_hooks"))))(shell_hook(_script)))
 check("HE7. echo {1..3} shows an ellipsis", *traced("#!/bin/sh\necho {1..3}\nexit 0\n", ["\u2026"]))
 
+# ---- review findings: redirects written with no space, a stray ( or ), a final exit that only runs after && or ||
+for _name, _s in [("echo x>>CLAUDE.md", 'echo "you must obey">>CLAUDE.md'), ("echo x>f", "echo hi>CLAUDE.md"), ("mkdir d>&1", "mkdir d>&1"),
+                  ("a stray )", "echo hi )"), ("a stray (", "echo ( hi"), ("exit only after &&", '[ "$x" -eq 1 ] && exit 0')]:
+    _script = "#!/bin/sh\n" + _s + ("" if "exit 0" in _s else "\nexit 0") + "\n"
+    check(f"HE8. {_name}: stays unresolved and names line 2", *stopped(_script, 2))
+check("HE8. x=1>f traces and lists the write", *traced("#!/bin/sh\nx=1>f\nexit 0\n", [], writes=["x=1 > \u2026"]))
+check("HE8. echo x>&2 prints nothing and traces", *(lambda r: (not r[0].get("unresolved_hooks") and not built_entry(r[0]), repr(r[0])))(shell_hook("#!/bin/sh\necho x>&2\nexit 0\n")))
+check("HE8. [ ... ] || exit 0 before a plain exit 0 still traces", *traced('#!/bin/sh\n[ -n "$x" ] || exit 0\necho hi\nexit 0\n', ["hi"]))
+
 print(f"test_hook_echo: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)

@@ -159,9 +159,9 @@ def _word(s, i, line):
     start, n = i, 0
     while i < len(s):
         c = s[i]
+        if c in "<>" and i > start and not s[start:i].isdigit() and s[start:start + 1] not in "<>&":
+            break   # `echo x>>f` is the word x and the redirect >>f, as in the shell
         if c in " \t\r\n;|&()":
-            if c == "(" and i > start and ASSIGN_RE.match(s[start:i] + "(") is None and s[i - 1] == "=":
-                pass
             if c == "(" and i > start and s[start:i].endswith("=") and ASSIGN_RE.match(s[start:i]):
                 j, k = _skip_balanced(s, i + 1, "(", ")", line + n)
                 n += k
@@ -421,17 +421,19 @@ def trace_shell_hook(text):
 
 
 def _statements(toks):
-    """[(line, [token, ...])] split at statement breaks; a ( or ) is its own token. A pipe, & or ;; stops the trace."""
-    out, cur = [], []
+    """[([token, ...], break before it)] split at statement breaks; a ( or ) is its own token. A pipe, & or ;; stops the trace."""
+    out, cur, prev = [], [], "\n"   # prev: the break before the statement being read; a newline right after && or || keeps it
     for kind, text, line in toks:
         if kind == ";":
             if cur:
-                out.append(cur)
-            cur = []
+                out.append((cur, prev))
+                cur, prev = [], text
+            elif text != "\n":
+                prev = text
         else:
             cur.append((kind, text, line))
     if cur:
-        out.append(cur)
+        out.append((cur, prev))
     return out
 
 
@@ -440,7 +442,7 @@ def _trace(text):
     file_vars = set()
     frames = []          # open groups: (word, len(template) at open, line)
     last = None          # (line, ok) of the latest statement that is not a bare keyword
-    for stmt in _statements(tokens(text)):
+    for stmt, after in _statements(tokens(text)):
         line = stmt[0][2]
         kinds = {k for k, _, _ in stmt}
         if "|" in kinds:
@@ -461,6 +463,8 @@ def _trace(text):
             if "$((" in w or re.search(r"\$\{[^}]*\?|\$\{!", w) or re.search(r"(^|[^\\])[<>]\(", w):
                 raise Stop(line, "uses an expansion that can exit 2 or print through another process")
         words, redirs = _split_redirects(words, line)
+        if any(w in ("(", ")") for w in words) and not (len(words) == 1 and words[0] in CLOSE_WORDS):
+            raise Stop(line, "has a ( or ) where the shell reads a syntax error, which prints the line")
         if not words:
             _close(frames, words, redirs, template, line)
             continue
@@ -530,7 +534,7 @@ def _trace(text):
         if stmt_template and head in ("mkdir", "touch", "rm"):
             writes.append(stmt_template)
         if words and head not in CLOSE_WORDS:
-            last = (line, ok_exit and not frames)
+            last = (line, ok_exit and not frames and after not in ("&&", "||"))
     if frames:
         raise Stop(frames[-1][2], "opens a group or loop that is never closed")
     if last is None or not last[1]:
