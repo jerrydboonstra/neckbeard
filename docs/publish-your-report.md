@@ -11,7 +11,7 @@ git clone --depth 1 --branch v1.17.5 https://github.com/jerrydboonstra/neckbeard
 /tmp/nb/tools/vet . docs/neckbeard-report.md --facts
 ```
 
-The report is the title `# 🔍 <name> <version> · what it adds`, a header line (date, neckbeard version, source, version, commit), the "What it adds" section written by `tools/part1` from the dossier, and one closing line saying no reader's rules were read. If the session's checkout is a private copy of your plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo. `--facts` takes `--repo` and no other option.
+The report is the title `# 🔍 <name> <version> · what it adds`, a header line (date, neckbeard version, source, version, commit or release tag), the "What it adds" section written by `tools/part1` from the dossier, and one closing line saying no reader's rules were read. If the session's checkout is a private copy of your plugin, add `--repo https://github.com/<you>/<plugin>` so the report links the public repo. `--facts` takes `--repo` and `--release-tag`, and no other option. neckbeard's own report names its release tag in the header, with `--release-tag`, because a file cannot name the commit that contains it. For a plugin you vet from a checkout with uncommitted changes, the header says "+ uncommitted changes" after the commit.
 
 It also prints one Markdown badge line as the last line of its output, linked to the report's path as you gave it. Paste it into your README. The message is your plugin's version and how much of the plugin neckbeard could read, from the dossier's read states alone:
 

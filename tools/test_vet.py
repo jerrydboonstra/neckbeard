@@ -384,6 +384,8 @@ rc, out = report_check("1.2.0", at="`v1.1.0`")
 chk("report-check: a tagged report naming another tag fails", rc != 0, True)
 rc, out = report_check("1.2.0", at="`v1.2.0`")
 chk("report-check: a tagged report naming the tag passes", rc, 0)
+chk("--check still passes on a report whose header carries '@ `<sha> + uncommitted changes`'", facts_check_text("# \U0001F50D demo 1.0.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.0.0 @ `abc1234 + uncommitted changes`\n", "1.0.0"), 0)
+chk("--release-tag with no value or an empty one: a usage error", [subprocess.run([VET, ".", "/dev/null", "--facts", "--release-tag", *a], capture_output=True, text=True).returncode for a in ([], [""])], [2, 2])
 report = makefile.split("\nreport:", 1)[1].split("\nreport-check:", 1)[0]
 chk("make report passes --release-tag v$(VERSION)", "--release-tag v$(VERSION)" in report, True)
 
