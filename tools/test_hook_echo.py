@@ -120,6 +120,7 @@ _two = {"has_hooks": True, "injected_content": [{"file": "a.md", "bytes": 5}, {"
 _one = {"has_hooks": True, "injected_content": [{"file": "a.md", "bytes": 5}]}
 check("HE1. a writes-only entry is not an instruction source (classifiable_items counts the same with and without it)",
       inventory.classifiable_items({"hooks": _two}) == inventory.classifiable_items({"hooks": _one}) == 1, repr((inventory.classifiable_items({"hooks": _two}), inventory.classifiable_items({"hooks": _one}))))
+EXPECT_LINE = {"exit 2": 3}
 MORE_STOPS = {
     "heredoc": "#!/bin/sh\ncat <<EOF\nhi\nEOF\nexit 0\n", "eval": "#!/bin/sh\neval \"$x\"\nexit 0\n",
     "source": "#!/bin/sh\nsource ./lib.sh\nexit 0\n", ". file": "#!/bin/sh\n. ./lib.sh\nexit 0\n",
@@ -133,13 +134,52 @@ MORE_STOPS = {
 for name, script in MORE_STOPS.items():
     h_, d_ = shell_hook(script)
     u_ = h_.get("unresolved_hooks") or []
-    check(f"HE2 more stops: {name} leaves the hook unresolved with a line named", len(u_) == 1 and "(line " in u_[0] and not built_entry(h_), repr(u_))
+    check(f"HE2 more stops: {name} leaves the hook unresolved with a line named", len(u_) == 1 and f"(line {EXPECT_LINE.get(name, 2)}:" in u_[0] and not built_entry(h_), repr(u_))
 check("HE2 control: a plain echo and exit 0 does trace", *traced("#!/bin/sh\necho hi\nexit 0\n", ["hi"]))
 check("HE3. the hook command runs more than the script: unresolved, with the note",
       *stopped("#!/bin/sh\necho hi\nexit 0\n", None, cmd='${CLAUDE_PLUGIN_ROOT}/hooks/run.sh && cat x', extra="(the hook command runs more than the script)"))
 check("HE4. printf with %s: the template shows an ellipsis for it", *traced('#!/bin/sh\nprintf "%s done\\n" "$x"\nexit 0\n', ["\u2026 done"]))
 check("HE4. an unquoted glob in echo shows an ellipsis", *traced("#!/bin/sh\necho *.txt\nexit 0\n", ["\u2026"]))
 
+
+# ---- spec points not covered above: how a script is picked, how it is read, what passes, what is left out of the template
+_hj = json.dumps({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run"}]}]}})
+_d = dossier(tmp_tree({**PLUGIN, "hooks/hooks.json": _hj, "hooks/run": "#!/usr/bin/env bash\necho hi\nexit 0\n"}))
+_h = _d.get("target", {}).get("hooks") or {}
+check("HE6. a script found by its #!/usr/bin/env bash line (the name has no .sh) traces",
+      not _h.get("unresolved_hooks") and (built_entry(_h) or {}).get("template") == ["hi"], repr(_h.get("unresolved_hooks")))
+_h2 = dossier(tmp_tree({**PLUGIN, "hooks/hooks.json": _hj, "hooks/run": "echo hi\nexit 0\n"})).get("target", {}).get("hooks") or {}
+check("HE6. a script with no .sh name and no shell shebang is not traced", bool(_h2.get("unresolved_hooks")) and not built_entry(_h2), repr(_h2.get("unresolved_hooks")))
+check("HE6. a sh script with a comment, a continuation and ${#x} traces",
+      *traced("#!/bin/sh\n# a comment\nx=${#y}\necho one \\\ntwo # not text\nexit 0 # end\n", ["one two"]))
+check("HE6. cd, touch, rm -rf, local, return and exit 1 pass; touch and rm are writes",
+      *traced("#!/bin/sh\ncd d\ntouch f\nrm -rf g\nlocal a=1\nreturn 0\necho hi\nexit 1\n", ["hi"], writes=["touch f", "rm -rf g"]))
+check("HE6. echo -e is a flag the spec allows; its \\n makes a second line", *traced("#!/bin/sh\necho -e 'a\\nb'\nexit 0\n", ["a", "b"]))
+check("HE6. an echo whose stdout goes to stderr is left out of the template", *traced("#!/bin/sh\necho hidden >&2\necho shown\nexit 0\n", ["shown"]))
+check("HE6. 2>FILE on a statement is a write; 2>/dev/null is not",
+      *traced("#!/bin/sh\nmkdir d 2>err.log\nmkdir e 2>/dev/null\nexit 0\n", [], writes=["mkdir d 2> \u2026", "mkdir d", "mkdir e"]))
+check("HE6. printf with more arguments than conversions marks the template at least",
+      *(lambda r: (built_entry(r[0]) is not None and built_entry(r[0]).get("at_least") is True, repr(built_entry(r[0]))))(shell_hook('#!/bin/sh\nprintf "%s\\n" a b\nexit 0\n')))
+check("HE6. a script that prints and writes nothing gets no entry and still reads", *(lambda r: (not r[0].get("injected_content") and not r[0].get("unresolved_hooks"), repr(r[0])))(shell_hook("#!/bin/sh\ntrue\nexit 0\n")))
+check("HE6. a script past the 20000-byte read cap stays unresolved", *stopped("#!/bin/sh\n" + "# pad\n" * 4000 + "echo hi\nexit 0\n", 1))
+for _name, _s in {"jq file": "s=$(jq .a f.json); echo \"$s\"", "awk file": "s=$(awk '{print}' f.txt); echo \"$s\"", "$(<f)": "s=$(<f); echo \"$s\"",
+                  "cut file": "s=$(cut -d, -f1 f.csv); echo \"$s\"", "assignment chain": "s=$(cat f); t=\"$s\"; echo \"$t\""}.items():
+    check(f"HE6. file text printed ({_name}) stops the trace", *stopped(f"#!/bin/sh\n{_s}\nexit 0\n", 2))
+
+# ---- found by a correctness read of the diff: each stops (or shows an ellipsis) where an earlier version traced it
+for _name, _s, _line in [
+    ("deep nesting does not crash", 'x="$(' * 1500 + "cat f\n" + ')"' * 1500 + "\nexit 0", 2),
+    ("a file read inside a nested assignment", 'echo "$(s=$(cat "$R/payload.txt"); printf "%s" "$s")"\nexit 0', 2),
+    ("indirect ${!n}", 's=$(cat f)\nn=s\necho "${!n}"\nexit 0', 4),
+    ("printf \\x escapes", "printf '\\x49\\x67\\n'\nexit 0", 2),
+    ("printf octal escape", "printf '\\101\\n'\nexit 0", 2),
+    ("echo $'...'", "echo $'\\x41'\nexit 0", 2),
+    ("a group redirected to a file", "{ : ; } > CLAUDE.md\nexit 0", 2),
+    ("${x[0]:?msg}", "x=()\necho ${x[0]:?oops}\nexit 0", 3),
+    ("a backslash in echo with no -e", "echo 'a\\nb'\nexit 0", 2)]:
+    _script = "#!/bin/sh\n" + _s + ("" if _s.endswith("exit 0") else "")
+    check(f"HE7. {_name}: stays unresolved and names a line", *(lambda r: (len(r[0].get("unresolved_hooks") or []) == 1 and not built_entry(r[0]), repr(r[0].get("unresolved_hooks"))))(shell_hook(_script)))
+check("HE7. echo {1..3} shows an ellipsis", *traced("#!/bin/sh\necho {1..3}\nexit 0\n", ["\u2026"]))
 
 print(f"test_hook_echo: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)

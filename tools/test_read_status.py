@@ -4,7 +4,7 @@ does not apply. Every case runs inventory.py as a command, with HOME, CLAUDE_CON
 all set to one empty directory, so no reader's rule text is ever read or compared.
 
 Fixtures are trees under tools/fixtures/read-status/<name>/. A fixture with a baseline has its dossier from
-8ac500d's inventory.py in _baselines/<name>.baseline.json (the fixture's real path written as <ROOT>, the fixtures folder's as <FX>): every
+8ac500d's inventory.py (hooks-untraced's since hook-echo-traced: its unresolved note adds the stopping line) in _baselines/<name>.baseline.json (the fixture's real path written as <ROOT>, the fixtures folder's as <FX>): every
 key but read_status must still match it. The fixtures that need many files, a big file or a deep folder are
 built in a temporary directory here instead. An unreadable file is always a dangling symlink, never chmod 000
 (it cannot be committed, and it passes under root)."""

@@ -5,7 +5,7 @@ and never follows what the script calls. Rule of the design: when in doubt, stop
 "unresolved", never a false all-clear. What it cannot see (code inside $(...) and backticks, the programs the script runs)
 is a named limit in SECURITY.md and on the report line. Stdlib only.
 
-trace_shell_hook(text) -> {"template": [lines], "writes": [items], "at_least": bool} when every statement passes, or
+trace_shell_hook(text) -> {"template": [lines], "writes": [items], "at_least": bool, "bytes": literal template bytes} when every statement passes, or
 {"stop": (line, why)} on the first that does not. A "…" in a template line stands for text known only at run time.
 """
 import re
@@ -253,7 +253,7 @@ def expand(word, glob=True):
             globbed = True   # the shell replaces the whole word with whatever matches
             put(c)
             i += 1
-        elif glob and c == "{" and re.search(r"\{[^{}]*,[^{}]*\}", word[i:]):
+        elif glob and c == "{" and re.search(r"\{[^{}]*(,|\.\.)[^{}]*\}", word[i:]):
             globbed = True
             i = word.find("}", i) + 1
         else:
@@ -364,6 +364,8 @@ def _reads_file(seg):
             cur = []
     cmds.append(cur)
     for words in cmds:
+        if any(_reads_file(s) for w in words for s in _segments(w)):   # an assignment's own $(...) counts too
+            return True
         while words and ASSIGN_RE.match(words[0]):
             words = words[1:]
         if not words:
@@ -414,6 +416,10 @@ def trace_shell_hook(text):
         return _trace(text)
     except Stop as s:
         return {"stop": (s.line, s.why)}
+    except RecursionError:
+        return {"stop": (1, "is nested too deeply to read")}
+    except Exception:   # a script the reader cannot take apart is an unknown, never a trace
+        return {"stop": (1, "could not be read by the trace")}
 
 
 def _statements(toks):
@@ -454,7 +460,7 @@ def _trace(text):
                 frames.append((words[0], len(template), line))
             words = words[1:]
         for w in words:
-            if "$((" in w or re.search(r"\$\{[A-Za-z0-9_]+:?\?", w) or re.search(r"(^|[^\\])[<>]\(", w):
+            if "$((" in w or re.search(r"\$\{[^}]*\?|\$\{!", w) or re.search(r"(^|[^\\])[<>]\(", w):
                 raise Stop(line, "uses an expansion that can exit 2 or print through another process")
         words, redirs = _split_redirects(words, line)
         if not words:
@@ -581,12 +587,16 @@ def _print_template(head, words, file_vars, line):
     for w in args:
         if (set(VAR_REF_RE.findall(w)) & file_vars) or any(_reads_file(s) for s in _segments(w)):
             raise Stop(line, f"prints text read from a file with `{head}`, which resolve_injected_text should name")
+    if any("$'" in a or re.search(r"\\[xuU0-7]", a) for a in args):
+        raise Stop(line, f"prints with an escape (\\x, \\u, octal or $'...') the trace does not decode")
     if head == "echo":
         flags = []
         while args and re.fullmatch(r"-[neE]+", args[0]):
             flags.append(args.pop(0))
         text = " ".join(expand(a) for a in args)
         text = re.sub(BLANK + "+", BLANK, text)
+        if "\\" in text and not any("e" in f for f in flags):
+            raise Stop(line, "prints a backslash with echo, which different shells print differently")
         if any("e" in f for f in flags):
             text = text.replace("\\n", "\n")
         return _lines(text), False
@@ -612,8 +622,8 @@ def _close_frame(word, frames, redirs, template, writes, line):
         elif fd == "2" and op in (">", ">>"):
             pass
         elif fd in ("", "1") and op in (">", ">>"):
-            if len(template) > start:
-                raise Stop(line, "redirects a group's output to a file, which could put text in a project file")
+            # a group's output to a file stops the trace whether or not it prints: it writes
+            raise Stop(line, "redirects a group's output to a file, which could put text in a project file")
         else:
             raise Stop(line, f"uses the redirect `{fd}{op}{target}` on a group, which can send output to Claude")
     if drop:

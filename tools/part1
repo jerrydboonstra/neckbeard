@@ -32,6 +32,10 @@ Field (under target) -> label (card), the section whose read_status gives its st
   marketplace                     Marketplace (Source)           marketplace
   kind, path, plugin_json.name/.version, --commit   Kind, Name, Version, Commit (Source), no section
 
+An injected_content entry with built_at_run_time (a shell hook traced from its own text) prints one
+`<file> (<events>, built at run time, at least N bytes): <template line>` line per template line, then `  writes: <items joined by "; ">`
+when it writes; with no template line it prints `<file> (<events>, built at run time): prints nothing; writes: <items>`. The caveat
+line (BUILT_NOTE) follows the entries once per report.
 A hooks section read with injected_content null and an injected_content_note prints the note as not read, never none.
 An entry with `refused`, or with bytes and text both None, prints `<name>: not read`. Notes are cleaned before they
 print: a hook command in one becomes its script (script_of), any other absolute or ~ path its basename. Every string
