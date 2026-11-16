@@ -173,7 +173,7 @@ while [ $# -gt 0 ]; do case $1 in
   --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
   --units) units=yes; judgeflags=yes; shift ;;
   --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
-  --release-tag) [ $# -ge 2 ] && [ -n "$2" ] || usage; releasetag=$2; shift 2 ;;
+  --release-tag) [ $# -ge 2 ] && [ -n "$2" ] || usage; case $2 in *[!A-Za-z0-9._-]*) usage ;; esac; releasetag=$2; shift 2 ;;   # a plain tag name: it goes into a public header line
   --facts) facts=yes; shift ;;
   *) usage ;;
 esac; done
