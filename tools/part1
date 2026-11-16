@@ -374,7 +374,11 @@ def render(d, commit):
     out += ["", "### Source", f"- Kind: {kind}", f"- Name: {name}", f"- Version: {version}"]
     out += block("plugin.json", sec("plugin_json"), ["name and version, shown above"] if pj else [], root)
     out += block("Marketplace", sec("marketplace"), mk_entries, root)
-    out += [f"- Commit: {safe(commit) if commit else 'commit not given'}", "", FOOTER]
+    out += [f"- Commit: {safe(commit) if commit else 'commit not given'}"]
+    decl = [safe(f, root) for f in as_list(t.get("declared_fixtures")) if isinstance(f, str)]
+    if decl:
+        out += [f"- Declared fixtures: {', '.join(decl)} (files there that can't be read don't count against the badge)"]
+    out += ["", FOOTER]
     return "\n".join(out) + "\n"
 
 

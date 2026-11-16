@@ -268,6 +268,11 @@ _t3 = target_of(tmp_tree({"fx/install.json": '{"hooks": {"SessionStart": [{"hook
                           ".neckbeard.json": '{"fixtures": ["fx"]}'}))
 check("DF 3. a declared folder holding an installer hook: it is still inventoried (a guard)",
       (_t3.get("hooks") or {}).get("has_hooks") in (True, "partial") and "SessionStart" in ((_t3.get("hooks") or {}).get("events") or {}), repr(_t3.get("hooks"))[:300])
+_t3b = target_of(tmp_tree({"fx/install.json": '{"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": 5}]}]}}\n',
+                           ".neckbeard.json": '{"fixtures": ["fx"]}'}))
+_h3b = (_t3b.get("read_status") or {}).get("hooks", {})
+check("DF 3. a declared folder's hook-shaped JSON with a non-string command: _parse_events' note stays counted, hooks not read, nothing under declared (a guard)",
+      _h3b.get("state") in ("partial", "failed") and bool(_h3b.get("notes")) and not _h3b.get("declared"), repr(_h3b))
 _t4 = target_of(tmp_tree({".neckbeard.json": json.dumps({"fixtures": ["/abs/path", "../up", 5, "nope", "afile", "fx"]}),
                           "afile": "x\n", "fx/data/broken.json": "{ "}))
 _h4 = (_t4.get("read_status") or {}).get("hooks", {})

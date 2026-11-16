@@ -13,6 +13,8 @@ __pycache__/
 *.json
 !.claude-plugin/plugin.json
 !.claude-plugin/marketplace.json
+# A repo may list its test fixture folders here, so neckbeard's report does not count the files broken on purpose in them.
+!.neckbeard.json
 # A measurement's raw data is its evidence: the units prototype's per-run answers and unit lists.
 !measurements/**/*.json
 # Fixtures for tools/test_read_status.py: each JSON file by name, none by glob. Baselines sit in
