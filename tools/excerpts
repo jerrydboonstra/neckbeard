@@ -3,7 +3,7 @@
 
 Each case study that ran against a gallery plugin opens with that report's
 excerpt between two markers: a fit report's verdict and "At a glance" table, a
-facts report's title, header line and "What it adds" headings with their top-level bullets:
+facts report's title, header line and "What it adds" headings with their top-level bullets (a bullet that ends in ":" says how many items it held):
 
     <!-- report:superpowers -->
     ...
@@ -29,26 +29,30 @@ def counted(bullet, after):
     """A top-level bullet ending in ":" has children the excerpt drops, so it says how many instead of
     ending bare: "- Skills: 1 (name)" for one, "- Files: 29 (see the full report)" for more, "none" for
     no children. A last child "and N more, in: ..." counts as N."""
-    kids = []
+    kids, indent = [], None
     for l in after:
-        if not l.startswith(" "):
-            if l.strip():
-                break
+        if l.strip() and l[0] not in " \t":
+            break
+        item = l.strip()
+        if not item.startswith("- "):
             continue
-        if l.lstrip().startswith("- "):
-            kids.append(l.lstrip()[2:].strip())
+        depth = len(l) - len(l.lstrip())
+        if indent is None:
+            indent = depth
+        if depth == indent:  # a deeper line is a detail of the item above it
+            kids.append(item[2:].strip())
     if not kids:
         return bullet + " none"
-    more = re.fullmatch(r"and (\d+) more, in: .*", kids[-1])
+    more = re.fullmatch(r"and (\d+) more, in:.*", kids[-1])
     n = len(kids) - 1 + int(more.group(1)) if more else len(kids)
-    if n == 1:
+    if n == 1 and not more:
         return f"{bullet} 1 ({kids[0].split(': ')[0]})"
     return f"{bullet} {n} (see the full report)"
 
 
 def facts_excerpt(report):
     """The excerpt of a facts report (no verdict box): its title line, the one header line under it, and
-    under "What it adds" each ### heading with its top-level bullet lines, no sub-bullets. Quoted, so its
+    under "What it adds" each ### heading with its top-level bullet lines, no sub-bullets (a bullet ending in ":" gains the count of its dropped items). Quoted, so its
     headings stay out of the page's own outline."""
     lines = report.splitlines()
     title = next((l for l in lines if l.startswith("# ")), None)
@@ -68,7 +72,7 @@ def facts_excerpt(report):
                 out.append("")
             out.append(l)
         elif l.startswith("- "):
-            out.append(counted(l, body[i + 1:]) if l.endswith(":") else l)
+            out.append(counted(l.rstrip(), body[i + 1:]) if l.rstrip().endswith(":") else l)
     while out and out[-1] == "":
         out.pop()
     return "\n".join(("> " + l).rstrip() for l in out)
