@@ -416,9 +416,7 @@ def trace_shell_hook(text):
         return _trace(text)
     except Stop as s:
         return {"stop": (s.line, s.why)}
-    except RecursionError:
-        return {"stop": (1, "is nested too deeply to read")}
-    except Exception:   # a script the reader cannot take apart is an unknown, never a trace
+    except Exception:   # deep nesting (RecursionError) or anything else the reader cannot take apart: an unknown, never a trace
         return {"stop": (1, "could not be read by the trace")}
 
 
