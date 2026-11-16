@@ -559,9 +559,7 @@ def _split_redirects(words, line):
             if fd == "&" or op in ("<<", "<<<", "<", "<&"):
                 raise Stop(line, "uses a redirect or heredoc the trace does not follow")
             if op == ">&":
-                if not rest or not rest.isdigit() or rest != "2" or fd not in ("", "1"):
-                    raise Stop(line, f"uses the redirect `{fd}>&{rest}`, which can send output to Claude")
-                redirs.append((fd, op, rest))
+                redirs.append((fd, op, rest))   # the redirect loop in _trace keeps only >&2 and 1>&2 and stops on any other
             else:
                 if fd not in ("", "1", "2"):
                     raise Stop(line, f"uses the redirect on file descriptor {fd}, which the trace does not follow")

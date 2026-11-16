@@ -125,6 +125,7 @@ MORE_STOPS = {
     "source": "#!/bin/sh\nsource ./lib.sh\nexit 0\n", ". file": "#!/bin/sh\n. ./lib.sh\nexit 0\n",
     "function": "#!/bin/sh\nf() { echo hi; }\nexit 0\n", "for": "#!/bin/sh\nfor i in 1 2; do echo $i; done\nexit 0\n",
     "case": "#!/bin/sh\ncase $x in a) echo hi;; esac\nexit 0\n", "background": "#!/bin/sh\nsleep 1 &\nexit 0\n",
+    ">&1": "#!/bin/sh\necho hi >&1\nexit 0\n", "3>&2": "#!/bin/sh\necho hi 3>&2\nexit 0\n",
     "$((...))": "#!/bin/sh\nx=$((1/0))\nexit 0\n", "set": "#!/bin/sh\nset -e\nexit 0\n", "shift": "#!/bin/sh\nshift\nexit 0\n",
     "unset": "#!/bin/sh\nunset x\nexit 0\n", "readonly": "#!/bin/sh\nreadonly x=1\nexit 0\n", "exec": "#!/bin/sh\nexec cat f\nexit 0\n",
     "process substitution": "#!/bin/sh\necho <(cat f)\nexit 0\n", "exit 2": "#!/bin/sh\necho hi\nexit 2\n",
