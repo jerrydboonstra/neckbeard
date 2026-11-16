@@ -37,6 +37,9 @@ def _defs(name):
 check("skills/neckbeard: inventory_core.py defines _within and inventory.py does not (the containment guard in one place)",
       "_within" in _defs("inventory_core.py") and "_within" not in _defs("inventory.py"))
 
+check("skills/neckbeard: inventory_hooks.py defines inventory_hooks and hooks_outside_manifest, and inventory.py defines neither",
+      {"inventory_hooks", "hooks_outside_manifest"} <= _defs("inventory_hooks.py") and not ({"inventory_hooks", "hooks_outside_manifest"} & _defs("inventory.py")))
+
 # find_up stops at HOME: inventory.py's wrapper hands inventory_core the value of inventory.HOME at call time
 sys.path.insert(0, str(ROOT / "skills" / "neckbeard"))
 import inventory

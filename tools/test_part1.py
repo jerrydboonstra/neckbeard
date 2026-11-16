@@ -12,6 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.dirname(HERE)
 PART1 = os.path.join(HERE, "part1")
 INVENTORY = os.path.join(NB, "skills", "neckbeard", "inventory.py")
+INVENTORY_HOOKS = os.path.join(NB, "skills", "neckbeard", "inventory_hooks.py")
 FX = os.path.join(HERE, "fixtures", "part1")
 HEADINGS = ["Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"]
 FOOTER = ('Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; '
@@ -234,7 +235,7 @@ for l in lines(got, "Hooks", "Hooks"):
     if m and not l.startswith("reaches"):
         hl[m.group(1)] = m.group(2)
 chk("8. Cat Herder's hook form, \"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow\" _hook sessionend, prints bin/meow, not <unparsed command>", hl.get("SessionEnd") == "bin/meow", hl)
-chk("8. each default form inventory.py expands (:- - := = :? ?) prints its script; :+ and $CLAUDE_PLUGIN_ROOTX stay <unparsed command>; a quoted form after an interpreter prints its script",
+chk("8. each default form inventory_hooks.py expands (:- - := = :? ?) prints its script; :+ and $CLAUDE_PLUGIN_ROOTX stay <unparsed command>; a quoted form after an interpreter prints its script",
     hl == {"SessionEnd": "bin/meow", "SessionStart": "hooks/a.sh", "Stop": "hooks/b.sh", "PreCompact": "hooks/c.sh", "PostCompact": "hooks/d.sh", "Notification": "hooks/e.sh",
            "PreToolUse": "hooks/f.sh", "PostToolUse": "<unparsed command>", "SubagentStop": "hooks/h.sh", "UserPromptSubmit": "<unparsed command>"}, hl)
 
@@ -270,7 +271,7 @@ def load_expander(path, name):
 
 FORMS = ["${CLAUDE_PLUGIN_ROOT}/x.sh", "$CLAUDE_PLUGIN_ROOT/x.sh", "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow _hook a", "${CLAUDE_PLUGIN_ROOT:-/opt/x y}/z.sh",
          "${CLAUDE_PLUGIN_ROOT-w}/a", "${CLAUDE_PLUGIN_ROOT:=w}/a", "${CLAUDE_PLUGIN_ROOT=w}/a", "${CLAUDE_PLUGIN_ROOT:?w}/a", "${CLAUDE_PLUGIN_ROOT?w}/a",
-         "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTX/a", "${CLAUDE_PLUGIN_ROOTX}/a", "${CLAUDE_PLUGIN_ROOT:-${A:-${B}}}/a", "${CLAUDE_PLUGIN_ROOT:-unclosed/a",
+         "${CLAUDE_PLUGIN_ROOT:+w}/a", "$CLAUDE_PLUGIN_ROOTX/a", "$CLAUDE_PLUGIN_ROOT_x/a", "${CLAUDE_PLUGIN_ROOTX}/a", "${CLAUDE_PLUGIN_ROOT:-${A:-${B}}}/a", "${CLAUDE_PLUGIN_ROOT:-unclosed/a",
          "a ${CLAUDE_PLUGIN_ROOT}/b $CLAUDE_PLUGIN_ROOT/c", "no variable here", "${CLAUDE_PLUGIN_ROOT:-w}${CLAUDE_PLUGIN_ROOT-v}/a"]
 try:
     t0 = time.time(); load_expander(PART1, "expand_plugin_root")("${CLAUDE_PLUGIN_ROOTX" * 100000, "ROOT"); took = time.time() - t0
@@ -278,12 +279,13 @@ try:
 except Exception as e:
     chk("8. tools/part1's plugin-root expansion is fast on a long command", False, f"{type(e).__name__}: {e}")
 try:
-    inv = load_expander(INVENTORY, "_expand_plugin_root")
+    sys.path.insert(0, os.path.dirname(INVENTORY_HOOKS))   # inventory_hooks imports its sibling inventory_core
+    inv = load_expander(INVENTORY_HOOKS, "_expand_plugin_root")
     mine = load_expander(PART1, "expand_plugin_root")
     bad = [f for f in FORMS if inv(f, "ROOT") != mine(f, "ROOT")]
-    chk(f"8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's on {len(FORMS)} forms, :+ and ROOTX included", not bad, bad)
+    chk(f"8. tools/part1's copy of the plugin-root expansion agrees with inventory_hooks.py's on {len(FORMS)} forms, :+ and ROOTX included", not bad, bad)
 except Exception as e:
-    chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory.py's", False, f"{type(e).__name__}: {e}")
+    chk("8. tools/part1's copy of the plugin-root expansion agrees with inventory_hooks.py's", False, f"{type(e).__name__}: {e}")
 
 # ---------------------------------------------------------------- the State it may leave card summarises a long list
 def card_lines(out, heading):
