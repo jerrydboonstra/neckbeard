@@ -8,7 +8,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Reports
 
-- **The report header names the release tag for neckbeard's own report.** It says "+ uncommitted changes" after the commit when a checkout differs from it, and `tools/vet` takes `--release-tag`.
+- **A report on a checkout with uncommitted changes says so.** Its header and Source line read "<commit> + uncommitted changes" when the files read differ from that commit. `tools/vet --facts` also takes `--release-tag`, so a plugin's own published report can name its release tag, as neckbeard's now does.
 - **The README's report excerpt shows counts.** It lists how many skills and persistence candidates neckbeard's own report finds, in place of empty bullets.
 
 ### Docs
