@@ -25,7 +25,7 @@ target: my-plugin 2.3.0
 |---|---|---|---|---|
 | engineering 6 | comply | `agents/reviewer.md` | pins `model: haiku`; skills send it by name | |
 | safety 2 | exception | `Makefile` | `make release` pushes main after its checks pass; the release is the point | owner, 2026-10-15 |
-| cost | open | `hooks/hooks.json` | SessionStart now fires on every start; narrowing it is queued (item hook-narrow) | owner, 2026-10-15 |
+| cost | open | `hooks/hooks.json` | SessionStart now fires on every start; narrowing it to startup only is planned | owner, 2026-10-15 |
 | release-notes | n/a | | the plugin writes no release notes | |
 ```
 

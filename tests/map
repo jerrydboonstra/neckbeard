@@ -56,6 +56,8 @@ tests/map test_test_parallel
 .claude-plugin/** test_selfcheck test_vet test_vet_judge test_deploy
 Makefile test_deploy test_vet test_vet_judge
 docs/** test_vet test_vet_judge
+docs/publish-your-report.md test_layout
+.claude-plugin/plugin.json test_layout
 examples/** test_selfcheck test_vet test_vet_judge test_vet_stability
 CHANGELOG.md test_selfcheck
 README.md test_selfcheck test_deploy
