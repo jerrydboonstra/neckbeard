@@ -25,6 +25,27 @@ DOCS = [ROOT / "README.md", ROOT / "CASE-STUDIES.md"]
 BLOCK = re.compile(r"(<!-- report:([\w./-]+) -->\n)(.*?)(\n<!-- /report -->)", re.S)
 
 
+def counted(bullet, after):
+    """A top-level bullet ending in ":" has children the excerpt drops, so it says how many instead of
+    ending bare: "- Skills: 1 (name)" for one, "- Files: 29 (see the full report)" for more, "none" for
+    no children. A last child "and N more, in: ..." counts as N."""
+    kids = []
+    for l in after:
+        if not l.startswith(" "):
+            if l.strip():
+                break
+            continue
+        if l.lstrip().startswith("- "):
+            kids.append(l.lstrip()[2:].strip())
+    if not kids:
+        return bullet + " none"
+    more = re.fullmatch(r"and (\d+) more, in: .*", kids[-1])
+    n = len(kids) - 1 + int(more.group(1)) if more else len(kids)
+    if n == 1:
+        return f"{bullet} 1 ({kids[0].split(': ')[0]})"
+    return f"{bullet} {n} (see the full report)"
+
+
 def facts_excerpt(report):
     """The excerpt of a facts report (no verdict box): its title line, the one header line under it, and
     under "What it adds" each ### heading with its top-level bullet lines, no sub-bullets. Quoted, so its
@@ -36,15 +57,18 @@ def facts_excerpt(report):
     if not title or not header or start is None:
         return None
     out = [title, "", header, ""]
+    body = []
     for l in lines[start + 1:]:
         if l.startswith("## "):
             break
+        body.append(l)
+    for i, l in enumerate(body):
         if l.startswith("### "):
             if out[-1] != "":
                 out.append("")
             out.append(l)
         elif l.startswith("- "):
-            out.append(l)
+            out.append(counted(l, body[i + 1:]) if l.endswith(":") else l)
     while out and out[-1] == "":
         out.pop()
     return "\n".join(("> " + l).rstrip() for l in out)

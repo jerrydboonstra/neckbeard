@@ -42,7 +42,7 @@ The plugin that prompted this one. Run against the installed `ponytail@ponytail`
 > `2026-11-15` · neckbeard 1.17.1 · [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) 5.3.3 @ `7801d06`
 >
 > ### Injects
-> - Skills:
+> - Skills: 6 (see the full report)
 > - Rule files: none
 > - Hook-injected text: partly read
 >
@@ -51,10 +51,10 @@ The plugin that prompted this one. Run against the installed `ponytail@ponytail`
 >
 > ### Subagents and commands
 > - Agents: none
-> - Commands:
+> - Commands: 6 (see the full report)
 >
 > ### State it may leave
-> - Persistence candidates:
+> - Persistence candidates: 18 (see the full report)
 >
 > ### Reaches outside the session
 > - MCP servers: none
@@ -63,7 +63,7 @@ The plugin that prompted this one. Run against the installed `ponytail@ponytail`
 > - Kind: plugin
 > - Name: ponytail (from plugin.json)
 > - Version: 5.3.3 (from plugin.json)
-> - plugin.json:
+> - plugin.json: 1 (name and version, shown above)
 > - Marketplace: none
 > - Commit: 7801d06
 <!-- /report -->
@@ -142,7 +142,7 @@ Picked by measurement: real file, hook and skill counts across four candidates f
 > `2026-11-15` · neckbeard 1.17.1 · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46`
 >
 > ### Injects
-> - Skills:
+> - Skills: 15 (see the full report)
 > - Rule files: none
 > - Hook-injected text: partly read
 >
@@ -154,7 +154,7 @@ Picked by measurement: real file, hook and skill counts across four candidates f
 > - Commands: none
 >
 > ### State it may leave
-> - Persistence candidates:
+> - Persistence candidates: 18 (see the full report)
 >
 > ### Reaches outside the session
 > - MCP servers: none
@@ -163,7 +163,7 @@ Picked by measurement: real file, hook and skill counts across four candidates f
 > - Kind: plugin
 > - Name: superpowers (from plugin.json)
 > - Version: 7.0.2 (from plugin.json)
-> - plugin.json:
+> - plugin.json: 1 (name and version, shown above)
 > - Marketplace: none
 > - Commit: 22f0b46
 <!-- /report -->
@@ -204,7 +204,7 @@ Picked with an unseeded `random.choice()` from 183 candidates, filtered by keywo
 > `2026-11-15` · neckbeard 1.17.1 · [Koz-TV/viral-launch-pipeline](https://github.com/Koz-TV/viral-launch-pipeline) 1.0.0 @ `475705f`
 >
 > ### Injects
-> - Skills:
+> - Skills: 1 (viral-launch)
 > - Rule files: none
 > - Hook-injected text: none
 >
@@ -225,7 +225,7 @@ Picked with an unseeded `random.choice()` from 183 candidates, filtered by keywo
 > - Kind: plugin
 > - Name: viral-launch-pipeline (from plugin.json)
 > - Version: 1.0.0 (from plugin.json)
-> - plugin.json:
+> - plugin.json: 1 (name and version, shown above)
 > - Marketplace: none
 > - Commit: 475705f
 <!-- /report -->
@@ -260,7 +260,7 @@ Version 0.11.0. Picked deliberately, because two of its hook events had never ap
 > `2026-11-15` · neckbeard 1.17.1 · [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) 0.12.0 @ `b5b01ac`
 >
 > ### Injects
-> - Skills:
+> - Skills: 1 (claude-security)
 > - Rule files: none
 > - Hook-injected text: partly read
 >
@@ -268,7 +268,7 @@ Version 0.11.0. Picked deliberately, because two of its hook events had never ap
 > - Hooks: partly read
 >
 > ### Subagents and commands
-> - Agents:
+> - Agents: 9 (see the full report)
 > - Commands: none
 >
 > ### State it may leave
@@ -281,7 +281,7 @@ Version 0.11.0. Picked deliberately, because two of its hook events had never ap
 > - Kind: plugin
 > - Name: claude-security (from plugin.json)
 > - Version: 0.12.0 (from plugin.json)
-> - plugin.json:
+> - plugin.json: 1 (name and version, shown above)
 > - Marketplace: not applicable
 > - Commit: b5b01ac
 <!-- /report -->
