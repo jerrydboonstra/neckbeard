@@ -1,6 +1,6 @@
 # Changelog
 
-**Everything before 1.12.2 was developed in private; 1.12.2 is the first public release.** The version number is high for a first release because the tool was rewritten fifteen times in thirty-one hours, each time because something found a defect in it. Those numbers are kept rather than collapsed to 1.0.0, since the plugin cache is keyed to version and 1.0.0 already refers to different content.
+**Everything before 1.12.2 was developed in private; 1.12.2 is the first public release.** Fifteen rounds of adversarial testing each found a defect and shipped a fix, which is why the version starts high (see CASE-STUDIES.md). Those numbers are kept rather than collapsed to 1.0.0, since the plugin cache is keyed to version and 1.0.0 already refers to different content.
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
