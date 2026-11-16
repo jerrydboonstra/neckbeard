@@ -227,6 +227,72 @@ def live_tree(mode, url=False):
                      ".mcp.json": json.dumps({"mcpServers": {"s": cfg}})})
 
 
+# ---------------------------------------------------------------- declared-fixtures: a target's .neckbeard.json
+# A target may list fixture folders in .neckbeard.json. The two walks still enter them and report what they find; only the
+# read-failure notes they add for a file inside one stop counting toward the section's state (kept under "declared").
+DECL = {".neckbeard.json": '{"fixtures": ["fx"]}', "fx/data/broken.json": "{ ", "fx/scripts/x.sh": ("->", "missing.sh")}
+
+
+def target_of(tree, *extra):
+    return dossier(tree, *extra).get("target") or {}
+
+
+def declared_of(t, section):
+    return (t.get("read_status") or {}).get(section, {}).get("declared") or []
+
+
+def gen_df_bad_entry():
+    t = target_of(tmp_tree({".neckbeard.json": '{"fixtures": ["nope"]}'}))
+    h = (t.get("read_status") or {}).get("hooks", {})
+    return (t.get("declared_fixtures") == [] and any("nope: not a folder under the target, ignored" in n for n in h.get("notes", [])),
+            repr((t.get("declared_fixtures"), h)))
+
+
+_t1 = target_of(tmp_tree(DECL))
+_rs1 = _t1.get("read_status") or {}
+check("DF 1. declared folder with a broken JSON and a dangling script: hooks and persistence read, notes kept under declared, key names the folder",
+      _rs1.get("hooks", {}).get("state") == "read" and _rs1.get("persistence_candidates", {}).get("state") == "read"
+      and any("fx/data/broken.json" in n for n in declared_of(_t1, "hooks"))
+      and any("fx/scripts/x.sh" in n for n in declared_of(_t1, "persistence_candidates"))
+      and _t1.get("declared_fixtures") == ["fx"], repr((_rs1.get("hooks"), _rs1.get("persistence_candidates"), _t1.get("declared_fixtures"))))
+_t0 = target_of(tmp_tree({k: v for k, v in DECL.items() if k != ".neckbeard.json"}))
+check("DF 1. the same tree without .neckbeard.json: both partial, no declared key, no declared_fixtures (a guard)",
+      (_t0.get("read_status") or {}).get("hooks", {}).get("state") == "partial"
+      and (_t0.get("read_status") or {}).get("persistence_candidates", {}).get("state") == "partial"
+      and "declared_fixtures" not in _t0 and not declared_of(_t0, "hooks"), repr(_t0.get("read_status", {}).get("hooks")))
+_t2 = target_of(tmp_tree({**PLUGIN, ".claude-plugin/plugin.json": '{"name": "g", "version": "1.0.0", "hooks": "fx/h.json"}\n',
+                          "fx/h.json": "{bad", ".neckbeard.json": '{"fixtures": ["fx"]}'}))
+check("DF 2. a manifest's hooks path inside a declared folder that does not parse: hooks failed, its note counted (a guard)",
+      (_t2.get("read_status") or {}).get("hooks", {}).get("state") == "failed" and not declared_of(_t2, "hooks"), repr(_t2.get("read_status", {}).get("hooks")))
+_t3 = target_of(tmp_tree({"fx/install.json": '{"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo hi"}]}]}}\n',
+                          ".neckbeard.json": '{"fixtures": ["fx"]}'}))
+check("DF 3. a declared folder holding an installer hook: it is still inventoried (a guard)",
+      (_t3.get("hooks") or {}).get("has_hooks") in (True, "partial") and "SessionStart" in ((_t3.get("hooks") or {}).get("events") or {}), repr(_t3.get("hooks"))[:300])
+_t4 = target_of(tmp_tree({".neckbeard.json": json.dumps({"fixtures": ["/abs/path", "../up", 5, "nope", "afile", "fx"]}),
+                          "afile": "x\n", "fx/data/broken.json": "{ "}))
+_h4 = (_t4.get("read_status") or {}).get("hooks", {})
+check("DF 4. an absolute, a .. , a non-string, a missing and a file entry are left out, each with one note; the valid one stays",
+      _t4.get("declared_fixtures") == ["fx"] and sum("not a folder under the target, ignored" in n for n in _h4.get("notes", [])) == 5
+      and any("fx/data/broken.json" in n for n in _h4.get("declared", [])), repr((_t4.get("declared_fixtures"), _h4)))
+_t5 = target_of(tmp_tree({".neckbeard.json": "{ nope", "fx/data/broken.json": "{ "}))
+_h5 = (_t5.get("read_status") or {}).get("hooks", {})
+check("DF 4. an invalid .neckbeard.json declares nothing; its only note is the hooks search's own",
+      _t5.get("declared_fixtures") == [] and sum(".neckbeard.json" in n for n in _h5.get("notes", [])) == 1
+      and not any("not a folder under the target" in n for n in _h5.get("notes", [])) and _h5.get("state") == "partial", repr((_t5.get("declared_fixtures"), _h5)))
+_t6 = target_of(tmp_tree({".neckbeard.json": '{"other": 1}', "fx/data/broken.json": "{ "}))
+check("DF 4. a .neckbeard.json with no fixtures list declares nothing and adds no note of its own",
+      _t6.get("declared_fixtures") == [] and not any("neckbeard.json" in n for n in (_t6.get("read_status") or {}).get("hooks", {}).get("notes", [])), repr(_t6.get("declared_fixtures")))
+_t7 = target_of(ROOT)
+_st7 = {k: v.get("state") for k, v in (_t7.get("read_status") or {}).items()}
+check("DF 6. this repo's own tree: every section read or not-applicable, declared_fixtures is tools/fixtures",
+      bool(_st7) and set(_st7.values()) <= {"read", "not-applicable"} and _t7.get("declared_fixtures") == ["tools/fixtures"], repr(_st7) + repr(_t7.get("declared_fixtures")))
+_out7 = Path(tempfile.mkdtemp(prefix="read-status-vet-")); TEMPS.append(_out7)
+_r7 = subprocess.run([str(ROOT / "tools" / "vet"), str(ROOT), str(_out7 / "r.md"), "--facts"], capture_output=True, text=True,
+                     env={"PATH": os.environ["PATH"], "HOME": EMPTY})
+check("DF 6. tools/vet --facts on this repo: the badge line says read in full",
+      _r7.returncode == 0 and "read in full" in (_r7.stdout.strip().splitlines() or [""])[-1], (_r7.stdout[-300:] + _r7.stderr[-300:]))
+
+
 SITES = {
     "SK1": lambda: got(fixture("skill-unreadable"), "skills", "partial", "skills/b/SKILL.md"),
     "SK2": lambda: got(fixture("refused-entries"), "skills", "failed", "skills/x/SKILL.md", "resolves outside the target tree"),
@@ -289,6 +355,7 @@ SITES = {
     "MK8": gen_no_source,
     "HK15": lambda: got(fixture("hooks-search-dangling"), "hooks", "partial", "data/x.json", "could not be read"),
     "MK6": lambda: got(fixture("marketplace-entry-outside"), "marketplace", "partial", ".claude-plugin/marketplace.json", "elsewhere"),
+    "DF1": gen_df_bad_entry,
 }
 sys.path.insert(0, str(INVENTORY.parent))
 try:
