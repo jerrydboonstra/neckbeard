@@ -93,7 +93,7 @@ def _read_json(path):
 
 
 def find_declaration(root, name):
-    """Return one raw MCP declaration using the same precedence as inventory.py."""
+    """Return one raw MCP declaration using the same precedence as inventory_parts.py."""
     manifest = None
     for candidate in (os.path.join(root, ".claude-plugin", "plugin.json"),
                       os.path.join(root, "plugin.json")):
