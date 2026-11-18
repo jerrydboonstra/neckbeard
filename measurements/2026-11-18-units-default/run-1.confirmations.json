@@ -1,0 +1,16 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "hard_stop": true,
+   "why": "The sentence gives unlimited permission to retry an action on its own judgement, including one that was refused and could be destructive (rm -rf, force-push), against a rule requiring explicit go-ahead for destructive actions; it needs a limit such as 'only if not destructive'."
+  },
+  {
+   "cid": "c2",
+   "conflict": true,
+   "hard_stop": true,
+   "why": "The sentence gives the reviewer unlimited permission to retry a refused action on its own judgement, which could include destructive actions (rm -rf, force-push) that the safety rule forbids without the user's explicit go-ahead."
+  }
+ ]
+}

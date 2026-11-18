@@ -1,0 +1,289 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Capture skill setup text: meow lookup and who/owner conventions, plugin mechanics only.",
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Splitting is bookkeeping, not new scope: the items together cover exactly what was asked, nothing added.",
+   "why": "Capture procedure is unique; its scope rule matches the reader's.",
+   "covered_by": "4. The scope I asked for is the deliverable.",
+   "held_in": "rules/engineering.md",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue-and-claim before doing work is the plugin's own workflow mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Rescue-session procedure over the plugin's queue; mechanics only.",
+   "conflicts": []
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Riffing mode is specific to queue captures and replies.",
+   "conflicts": []
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Herd orchestration over meow pairs and hikes; plugin mechanics only.",
+   "conflicts": []
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Associate role for herd sessions; plugin mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Intro to the handoff role; plugin mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Retiring-session handoff steps using meow commands.",
+   "conflicts": []
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Staying-session handoff steps using meow commands.",
+   "conflicts": []
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "Push your branch to origin early and often, because a clone can be removed at any time and unpushed work with it.",
+   "why": "New-session handoff; its clone rules are tied to the herd tool.",
+   "conflicts": []
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Fixed chat lines for handoff steps; plugin mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer role header with plugin placeholders.",
+   "conflicts": []
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer setup template.",
+   "conflicts": []
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Do the tests fail without the change?",
+   "why": "Review procedure over meow; its test-failure check is already a reader rule.",
+   "covered_by": "3. A test is not done until it has been seen to fail.",
+   "held_in": "rules/engineering.md",
+   "conflicts": []
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer limits for the pair protocol; plugin mechanics.",
+   "conflicts": [
+    {
+     "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+     "held_in": "rules/safety.md",
+     "hard_stop": true
+    }
+   ]
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Reviewer stop and retire protocol; plugin mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Does the test pin the claim? Revert the change in your scratch copy and watch the test fail.",
+   "why": "Verifier checklist for rigor build; its core check is a reader rule.",
+   "covered_by": "3. A test is not done until it has been seen to fail.",
+   "held_in": "rules/engineering.md",
+   "conflicts": []
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Worker role in a pair; plugin mechanics.",
+   "conflicts": [
+    {
+     "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+     "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+     "held_in": "rules/safety.md",
+     "hard_stop": true
+    }
+   ]
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Never simplify away validation at a trust boundary, error handling that prevents data loss, or a security measure.",
+   "why": "Builder rules for rigor build; the validation and raw-evidence rules are general and not in the reader's rules.",
+   "star": true,
+   "conflicts": []
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona text, not a working procedure.",
+   "conflicts": []
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Queue setup and command skill; plugin mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Working-the-queue procedures over meow.",
+   "conflicts": []
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Overheard-block format for relaying sessions' messages; plugin convention.",
+   "conflicts": []
+  },
+  {
+   "id": "u31",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Only a worked example bullet of the question ledger.",
+   "conflicts": []
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Question ledger rules; plugin mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "The /meow command wrapper runs one quoted meow call.",
+   "conflicts": []
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "confirmations": [
+  {
+   "cid": "c1",
+   "conflict": true,
+   "hard_stop": true,
+   "why": "The sentence gives unlimited permission to retry an action on the model's own judgement, which could include destructive actions (rm -rf, force-push) that the rule forbids without an explicit go-ahead in the conversation."
+  }
+ ]
+}
