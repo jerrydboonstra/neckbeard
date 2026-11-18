@@ -57,7 +57,7 @@ def parse(out):
     """{(card, label): (rest of the label's line, [its `  - ` lines])}"""
     got, card, cur = {}, None, None
     for line in out.split("\n"):
-        m = re.match(r"^### (?:\U0001F7E2|\U0001F7E1|\U0001F534 )?(.+)$", line) or re.match(r"^<details><summary>(?:\U0001F7E2|\U0001F7E1|\U0001F534) <b>(.*?)</b>", line)
+        m = re.match(r"^### (.+)$", line) or re.match(r"^<details><summary>(?:\U0001F7E2|\U0001F7E1|\U0001F534) <b>(.*?)</b>", line)
         if m:
             card, cur = m.group(1), None
             continue
@@ -588,7 +588,7 @@ chk("CR4. a hostile dossier (</summary>, </details>, & and a newline in a skill 
 src_summary = next((l for l in out.split("\n") if l.startswith("<details><summary>") and "<b>Source</b>" in l), "")
 chk("CR4. the Source summary shows a hostile plugin name escaped once, never twice",
     "&lt;/summary&gt;&amp;&lt;x" in src_summary and "&amp;lt;" not in out and "&amp;amp;" not in out, src_summary)
-chk("CR4. a body line escapes `<` as `&lt;` and keeps `&` and `>` as they were", "a&lt;/summary>&lt;/details>&b" in out or "a&lt;/summary>&lt;/details>& b" in out, [l for l in out.split("\n") if "summary" in l and "<details>" not in l][:3])
+chk("CR4. a body line escapes `<` as `&lt;` and keeps `&` and `>` as they were", "  - a&lt;/summary>&lt;/details>& b: description every session" in out, [l for l in out.split("\n") if "summary" in l and "<details>" not in l][:3])
 
 # Done when 5: --read-state
 bad = []
@@ -613,6 +613,19 @@ chk("CR5. a section a card uses that is missing from read_status gives something
     subprocess.run([sys.executable, PART1, "--read-state", p], capture_output=True, text=True).stdout == "something unread\n" and markers(render(p)[1])[2] == R, markers(render(p)[1]))
 chk("CR5. hooks-note: Injects is red, Hooks green, and the overall word is something unread",
     subprocess.run([sys.executable, PART1, "--read-state", fx("hooks-note")], capture_output=True, text=True).stdout == "something unread\n", "")
+
+# reviewer's extra cases: Source on its own, a non-dict section, the other refusals
+for sec_, state_, want_m in (("plugin_json", "partial", [G, G, G, G, G, Y]), ("marketplace", "failed", [G, G, G, G, G, R]), ("skills", "partial", [Y, G, G, G, G, G])):
+    p = variant("plugin-found", lambda d, s=sec_, st=state_: d["target"]["read_status"][s].update(state=st, notes=["x: y"]))
+    chk(f"CR2. plugin-found with only {sec_} {state_}: markers {''.join(want_m)}", markers(render(p)[1]) == want_m, markers(render(p)[1]))
+p = variant("plugin-found", lambda d: d["target"]["read_status"].update(agents="read"))
+chk("CR2. a read_status section that is a string, not a dict, is failed: Subagents and commands is red, --read-state says something unread",
+    markers(render(p)[1]) == [G, G, R, G, G, G] and subprocess.run([sys.executable, PART1, "--read-state", p], capture_output=True, text=True).stdout == "something unread\n", markers(render(p)[1]))
+junk = os.path.join(tmp(), "junk.json"); open(junk, "w").write("not json")
+listrs = variant("plugin-found", lambda d: d["target"].update(read_status=[]))
+for what, arg, msg in (("a missing path", os.path.join(tmp(), "nope.json"), "cannot read a dossier from"), ("a file that is not JSON", junk, "cannot read a dossier from"), ("read_status as a list", listrs, "has no read_status")):
+    r = subprocess.run([sys.executable, PART1, "--read-state", arg], capture_output=True, text=True)
+    chk(f"CR5. --read-state on {what} exits 2 with part1's own message ({msg!r}), printing no word", (r.returncode, r.stdout, msg in r.stderr), (2, "", True))
 
 # Done when 7: card() is the only place card markup is written, and no judgement square sits in a facts card
 chk("CR7. a facts report's cards hold no \U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5 square", not any(sq in render(fx(f))[1] for f in every if f != "hostile" for sq in "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"), "")   # hostile plants a square on purpose
