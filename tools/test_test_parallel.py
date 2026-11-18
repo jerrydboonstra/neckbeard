@@ -50,7 +50,8 @@ def sh(args, cwd, env=None, **kw):
 
 
 def run(d, *args, env=None):
-    return sh([sys.executable, str(d / "tools" / "test-parallel"), *args], d, env)
+    # Pin the load below any core count so a loaded host still prints a bare FAIL; a check of the under-load form passes its own TEST_PARALLEL_LOAD.
+    return sh([sys.executable, str(d / "tools" / "test-parallel"), *args], d, {"TEST_PARALLEL_LOAD": "0.01", **(env or {})})
 
 
 OK, BAD = "import sys\nsys.exit(0)\n", "import sys\nprint('boom')\nsys.exit(1)\n"
@@ -150,7 +151,7 @@ sh(["git", "reset", "-q", "--hard", base], d3)
 (d3 / "src" / "b.py").write_text("changed b\n")
 sh(["git", "add", "-A"], d3)
 sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "b"], d3)
-r = sh([sys.executable, str(d3 / "tools" / "test-changed"), base], d3)
+r = sh([sys.executable, str(d3 / "tools" / "test-changed"), base], d3, {"TEST_PARALLEL_LOAD": "0.01"})
 check("--changed without --list runs the selection through tools/test-parallel, only test_b",
       r.returncode == 0 and "test_b start" in r.stdout and "test_a start" not in r.stdout, r.stdout[-300:] + r.stderr[-200:])
 
@@ -234,7 +235,7 @@ check("nan and inf in the time settings fall back to the defaults, and the run e
 slow = "import os, time\nopen(os.environ['PIDF'], 'w').write(str(os.getpid()))\ntime.sleep(60)\n"
 d7 = project({"test_slow": slow})
 pidf = d7 / "pid"
-proc = subprocess.Popen([sys.executable, str(d7 / "tools" / "test-parallel")], cwd=d7, env={**os.environ, "PIDF": str(pidf)},
+proc = subprocess.Popen([sys.executable, str(d7 / "tools" / "test-parallel")], cwd=d7, env={**os.environ, "TEST_PARALLEL_LOAD": "0.01", "PIDF": str(pidf)},
                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 for _ in range(100):
     if pidf.exists() and pidf.read_text():

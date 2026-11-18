@@ -57,7 +57,8 @@ def parse(out):
     """{(card, label): (rest of the label's line, [its `  - ` lines])}"""
     got, card, cur = {}, None, None
     for line in out.split("\n"):
-        m = re.match(r"^### (.+)$", line)
+        line = line.replace("&lt;", "<")   # card() escapes `<` in a body line
+        m = re.match(r"^### (.+)$", line) or re.match(r"^<details><summary>(?:\U0001F7E2|\U0001F7E1|\U0001F534) <b>(.*?)</b>", line)
         if m:
             card, cur = m.group(1), None
             continue
@@ -165,7 +166,7 @@ for f in every:
     a, b = render(fx(f), "--commit", "feed1234"), render(fx(f), "--commit", "feed1234")
     if a[1] != b[1] or a[0] != 0:
         bad.append(f"{f}: not identical or exit {a[0]}")
-    heads = re.findall(r"^### (.+)$", a[1], re.M)
+    heads = re.findall(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>(.*?)</b>", a[1], re.M)
     if not a[1].startswith("## What it adds\n") or heads != HEADINGS:
         bad.append(f"{f}: headings {heads}")
 chk(f"2. every fixture ({len(every)}) renders twice byte-identical, with the section heading and the six cards in order", not bad and len(every) >= 8, "; ".join(bad[:3]))
@@ -209,10 +210,10 @@ chk("4. a url as the script (deno run, npx), a second command after ; or &&, and
     all(hl.get(e) == w for e, w in (("Elicitation", UNP), ("ElicitationResult", UNP), ("Setup", "x.sh"), ("TaskCompleted", "./a.sh"), ("TeammateIdle", "http.server"), ("PostCompact", UNP))), hl)
 out = render(fx("hostile"))[1]
 got = parse(out)
-allowed = {"## What it adds"} | {f"### {h}" for h in HEADINGS}
+allowed = {"## What it adds"}
 forged = [l for l in out.split("\n") if re.match(r"^(#|>|\|)", l) and l not in allowed]
 chk("4. target strings with newlines, headings, a verdict line, a table row or the At a glance heading forge nothing: six cards, no other heading, quote or table line",
-    not forged and re.findall(r"^### (.+)$", out, re.M) == HEADINGS, forged)
+    not forged and re.findall(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>(.*?)</b>", out, re.M) == HEADINGS and "\n### " not in out, forged)
 ml = lines(got, "Reaches outside the session", "MCP servers")
 chk("4. MCP servers: a url shows scheme and host only (no userinfo, port, path or query); an env prefix, a list or a bad or non-string url print no secret and do not crash",
     render(fx("hostile"))[0] == 0 and any(l.startswith("web ") and l.endswith("(http, https://api.example.com)") for l in ml) and "envcmd (local-process, node)" in ml
@@ -257,7 +258,7 @@ chk("8. an unidentifiable_hooks item whose event name is not a plain capitalised
 p = variant("plugin-found", lambda d: d["target"]["read_status"]["hooks"].update(state="partial", notes=["hooks/hooks.json: unidentifiable hooks: ${CLAUDE_PLUGIN_ROOT}/x.sh --token SECRET9"]))
 out = render(p)[1]
 chk("8. an unidentifiable_hooks item with no event name at all prints <unparsed command>, never the command",
-    "SECRET9" not in out and "--token" not in out and "unidentifiable hooks: <unparsed command>" in out, [l for l in out.split("\n") if "unidentifiable" in l])
+    "SECRET9" not in out and "--token" not in out and "unidentifiable hooks: <unparsed command>" in out.replace("&lt;", "<"), [l for l in out.split("\n") if "unidentifiable" in l])
 p = variant("plugin-found", lambda d: d["target"]["hooks"]["events"].update(Stop=[{"matcher": None, "command": '"hooks/a.sh\n"'}]))
 got = parse(render(p)[1])
 chk("8. a quoted newline in a hook command cannot split the printed line", "  - Stop: <unparsed command>" in "\n".join("  - " + l for l in lines(got, "Hooks", "Hooks")), lines(got, "Hooks", "Hooks"))

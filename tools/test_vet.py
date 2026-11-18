@@ -55,22 +55,23 @@ glance = "## ⚡ At a glance\n\nOne line.\n"
 sec, _, rest = t[len(head):].partition(glance)
 chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
     (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
-chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"### {h}\n" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
 chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")
 chk("part1: with no git commit the section says commit not given", "Commit: commit not given" in r["text"], True)
 # a copy of vet with a tools/part1 that fails, or that prints a heading of its own: vet dies and says so
-def vet_with_part1(script):
+def vet_with_part1(script, **kw):
     fake = tempfile.mkdtemp()
     try:
         os.makedirs(os.path.join(fake, "tools"))
         shutil.copy(VET, os.path.join(fake, "tools", "vet"))
+        shutil.copy(os.path.join(HERE, "badge-logo"), os.path.join(fake, "tools", "badge-logo"))
         for link in ("skills", "examples", ".claude-plugin"):
             os.symlink(os.path.join(NB, link), os.path.join(fake, link))
         open(os.path.join(fake, "tools", "part1"), "w").write(script)
         os.chmod(os.path.join(fake, "tools", "part1"), 0o755)
-        return run("part1-fake", vet=os.path.join(fake, "tools", "vet"))
+        return run("part1-fake", vet=os.path.join(fake, "tools", "vet"), **kw)
     finally:
         shutil.rmtree(fake)
 
@@ -325,6 +326,21 @@ for case, setup, state, colour in (("read", None, "read in full", "brightgreen")
     msg = "1.0.0%20%C2%B7%20" + state.replace(" ", "%20")
     want_url = "https://img.shields.io/badge/neckbeard-" + msg + "-" + colour + "?logo=" + LOGO
     chk("badge: " + case + " reads " + state + ", " + colour, (b["rc"], badge_of(b).startswith("[![neckbeard: 1.0.0 \u00b7 " + state + "](" + want_url + ")]")), (0, True))
+    sec_ = b["text"].split("## What it adds\n", 1)[1].split("\nLoad timing is", 1)[0]
+    summ_ = "".join(l for l in sec_.split("\n") if l.startswith("<details><summary>"))   # the legend line holds all three markers
+    word_ = "something unread" if "\U0001F534" in summ_ else "partly read" if "\U0001F7E1" in summ_ else "read in full"
+    chk("badge: " + case + ": the badge word equals the overall read state of the cards in the report it wrote", (state, word_, len(re.findall(r"<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>", sec_))), (state, state, 6))
+    chk("badge: " + case + ": the cards hold no judgement square (\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5)", [q in sec_ for q in "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"], [False] * 4)
+# inventory cannot yield a read hooks section with an untraced injected text (it marks that section partial), so the hsec
+# rule that changes the badge word is shown here instead: vet's word is whatever `tools/part1 --read-state` prints, never its own
+FAKE_P1 = ("import sys\nif sys.argv[1] == '--read-state':\n    print('%s')\n    sys.exit(0)\n"
+           "print('## What it adds\\n\\n<details><summary>\\U0001F7E2 <b>Injects</b></summary>\\n\\n- x\\n\\n</details>\\n')\n")
+for word_, colour_ in (("something unread", "red"), ("partly read", "yellow"), ("read in full", "brightgreen")):
+    r = vet_with_part1(FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
+    chk("badge: vet takes the word from `tools/part1 --read-state` (" + word_ + "), whatever the cards say",
+        (r["rc"], "neckbeard: 1.0.0 \u00b7 " + word_ + "](" in badge_of(r), "-" + colour_ + "?logo=" in badge_of(r)), (0, True, True))
+vet_src = open(VET, encoding="utf-8").read()
+chk("badge: tools/vet computes no state from read_status itself: it holds neither `not-applicable` nor `\"failed\"`, and takes the word from tools/part1 --read-state", ("not-applicable" in vet_src, '"failed"' in vet_src, "--read-state" in vet_src), (False, False, True))
 chk("badge: linked to OUT's path as given", badge_of(b).endswith("](" + b["outpath"] + ")"), True)
 tmp = tempfile.mkdtemp()
 try:

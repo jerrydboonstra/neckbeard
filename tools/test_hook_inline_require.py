@@ -3,7 +3,7 @@
 the inventory. Fixtures: tools/fixtures/part1/hooks-inline-require.dossier.json (six hook commands, rendered by tools/part1) and the
 plugin tree tools/fixtures/read-status/hooks-inline-require (its .fx names renamed in a copy, so neckbeard's own inventory finds no hook
 in this repo). The two copies of the recogniser, inline_require_script, are kept equal here, as test_part1 keeps the plugin-root expanders."""
-import importlib.machinery, importlib.util, json, os, re, shutil, subprocess, sys, tempfile
+import html, importlib.machinery, importlib.util, json, os, re, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.dirname(HERE)
@@ -41,7 +41,7 @@ def hook_lines(dossier):
     """{event: printed script} from the Hooks card tools/part1 renders for a dossier."""
     out = subprocess.run([sys.executable, PART1, dossier], capture_output=True, text=True).stdout
     card = out.split("### Hooks\n", 1)[-1].split("\n### ", 1)[0]
-    return {m.group(1): m.group(2) for m in (re.match(r"^\s*- (\w+)(?: \([^)]*\))?: (.*)$", l) for l in card.split("\n")) if m}
+    return {m.group(1): html.unescape(m.group(2)) for m in (re.match(r"^\s*- (\w+)(?: \([^)]*\))?: (.*)$", l) for l in card.split("\n")) if m}
 
 
 # ---------------------------------------------------------------- hook-inline-require: `node -e require(...)` names its script
