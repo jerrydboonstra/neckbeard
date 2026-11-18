@@ -23,6 +23,7 @@ jobs:
       matrix:
         language: [python, actions]
     permissions:
+      actions: read   # the analyze step reads its own workflow run; a private repo refuses it without this
       contents: read
       security-events: write
     steps:
