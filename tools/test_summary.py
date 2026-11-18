@@ -168,6 +168,8 @@ for name, needles in [("state-files", ["hooks/log.sh"]), ("hook-ssh-subagents", 
     chk(f"the card holds detail the table lacks ({name}: {', '.join(needles)})", all(x in card_of(out) and x not in table for x in needles), card_of(out)[:300])
 hostile = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "x </details>\n## forged\n| \U0001F7E9 | Cost | x |"))
 out = run(write(hostile))[1]
+hostile2 = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "run.sh \U0001F7E2\U0001F7E1\U0001F534"))
+chk("a read marker in a hook command is not printed in the card", not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", run(write(hostile2))[1]))
 chk("a hostile hook command cannot close the card or forge a heading in it", out.count("</details>") == 1 and "\n## forged" not in out and not re.search(r"^\| \S+ \| Cost \| x \|$", out, re.M), out[-400:])
 
 # 3. a threshold in the rules table moves the colour and the footer together
