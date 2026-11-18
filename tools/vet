@@ -480,7 +480,6 @@ if [ "$credcopy" = yes ]; then
   login_scan || die "the judge's output held your login's secrets, so no report was written"
 fi
 [ "$prose_rc" = 0 ] || { show_call_errors; echo "vet: the prose judge said:" >&2; safe_tail "$work/prose.md.json" 5; }
-rm -f "$credtokens"
 [ "$prose_rc" = 0 ] || die "the prose judge exited non-zero"
 show_call_errors
 [ -s "$prose" ] || die "the prose judge wrote no prose to $prose"
@@ -496,6 +495,7 @@ python3 "$nb/tools/fit" "$verdictf" "$prose" --label "$label" --target "${name##
 part1_section "$dossier" "$commit" "$work/part1.md"
 { printf '%s\n\n%s\n\n' "$title" "$header"; cat "$work/fit.md"; printf '\n'; cat "$work/part1.md"; } >"$out"
 login_scan || die "the report held your login's secrets, so no report was written"
+rm -f "$credtokens"   # kept until here: the finished report, with part 1 from the dossier, is the last thing scanned; the work folder goes at exit
 for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do
   [ "$p" = / ] && continue
   grep -qF -- "$p" "$out" && { rm -f "$out"; die "$out names a local path ($p); fix it by hand or rerun"; }
