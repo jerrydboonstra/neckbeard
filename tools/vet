@@ -353,19 +353,16 @@ if [ "$facts" = yes ]; then
     echo
     echo "No reader's rules were read: this report lists facts only and carries no verdict."
   } >"$work/facts.md" || die "part 1 could not be rendered"
-  # the badge for it, as stdout's last line: the label, the target's version and how much of it was read, from the
-  # dossier's read_status alone (whoever's limit a gap is, it counts). Worked out before OUT is written, so a failure leaves no report.
-  badge=$(python3 - "$dossier" "$version" "$out_given" "$nb/tools/badge-logo" <<'EOF'
-import json, sys
+  # the badge for it, as stdout's last line: the label, the target's version and how much of it was read, the word from
+  # tools/part1 --read-state on the dossier (whoever's limit a gap is, it counts). Worked out before OUT is written, so a failure leaves no report.
+  read_word=$(python3 "$nb/tools/part1" --read-state "$dossier" 2>"$work/part1.err") || { cat "$work/part1.err" >&2; die "couldn't write the badge line"; }
+  badge=$(python3 - "$read_word" "$version" "$out_given" "$nb/tools/badge-logo" <<'EOF'
+import sys
 from urllib.parse import quote
-dossier, version, link, logo_file = sys.argv[1:]
-status = json.load(open(dossier)).get("target", {}).get("read_status")
-if not status:
-    sys.exit("the dossier has no read_status")
-states = {v.get("state") for v in status.values()}
-# green only when every section is read or does not apply; a state this code does not know is not "read in full"
-state, colour = (("something unread", "red") if "failed" in states
-                 else ("read in full", "brightgreen") if states <= {"read", "not-applicable"} else ("partly read", "yellow"))
+state, version, link, logo_file = sys.argv[1:]
+colour = {"read in full": "brightgreen", "partly read": "yellow", "something unread": "red"}.get(state)   # the word comes from tools/part1 --read-state
+if colour is None:
+    sys.exit("tools/part1 --read-state printed a word the badge does not know: " + state)
 message = (version + " \u00b7 " if version else "") + state
 shield = quote(message.replace("-", "--").replace("_", "__"), safe="")   # shields.io: "-" and "_" are doubled, the rest percent-encoded
 alt = message.replace("]", "\\]")

@@ -6,6 +6,10 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
+### Reports
+
+- **The facts layer is now six collapsible cards, each with a read marker and a gist computed by code.** "What it adds" starts with a legend (🟢 read in full, 🟡 partly read, 🔴 something unread), then one card each for Injects, Hooks, Subagents and commands, State it may leave, Reaches outside the session and Source. A card's marker is the read state of its own lines and says only how much neckbeard read, never whether the plugin is good. The summary line gives counts and sizes (skills and tokens, hooks and whether they reach subagents, agents and commands, files that may write state, MCP servers, source and commit). The lines inside are unchanged, except that `<` prints as `&lt;`. New `tools/cards.py` writes every card, so one function escapes the text. `tools/part1 --read-state DOSSIER` prints the overall read state, and the README badge and the published report take their word from it. The badge word can change for a dossier that has a hooks section read with an untraced injected text: it now says "something unread", as the Injects card does.
+
 ### Checks
 
 - **CodeQL now also scans the GitHub Actions workflows, and can be run on demand.** The CodeQL workflow analyses `actions` beside `python` and has a `workflow_dispatch` trigger, so it runs from the Actions tab or `gh workflow run codeql.yml` as well as on each push to main, each pull request and weekly.

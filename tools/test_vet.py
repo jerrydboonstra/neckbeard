@@ -55,7 +55,7 @@ glance = "## ⚡ At a glance\n\nOne line.\n"
 sec, _, rest = t[len(head):].partition(glance)
 chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
     (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
-chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"### {h}\n" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"<b>{h}</b>" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
 chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")
@@ -327,7 +327,8 @@ for case, setup, state, colour in (("read", None, "read in full", "brightgreen")
     want_url = "https://img.shields.io/badge/neckbeard-" + msg + "-" + colour + "?logo=" + LOGO
     chk("badge: " + case + " reads " + state + ", " + colour, (b["rc"], badge_of(b).startswith("[![neckbeard: 1.0.0 \u00b7 " + state + "](" + want_url + ")]")), (0, True))
     sec_ = b["text"].split("## What it adds\n", 1)[1].split("\nLoad timing is", 1)[0]
-    word_ = "something unread" if "\U0001F534" in sec_ else "partly read" if "\U0001F7E1" in sec_ else "read in full"
+    summ_ = "".join(l for l in sec_.split("\n") if l.startswith("<details><summary>"))   # the legend line holds all three markers
+    word_ = "something unread" if "\U0001F534" in summ_ else "partly read" if "\U0001F7E1" in summ_ else "read in full"
     chk("badge: " + case + ": the badge word equals the overall read state of the cards in the report it wrote", (state, word_, len(re.findall(r"<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>", sec_))), (state, state, 6))
     chk("badge: " + case + ": the cards hold no judgement square (\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5)", [q in sec_ for q in "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"], [False] * 4)
 # inventory cannot yield a read hooks section with an untraced injected text (it marks that section partial), so the hsec
