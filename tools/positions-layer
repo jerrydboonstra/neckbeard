@@ -7,15 +7,16 @@
 POSITIONS_JSON is what tools/positions writes: {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]},
 topics already in display order. No model call: the same input gives byte-identical output.
 
-A card's gist is `<n> · "<first quote>"`, the quote cut at 60 characters. Its body is one list item per position: the quote in
+A card's gist is `<n> · "<first quote>"`, the quote cut to 60 characters, the last one the "…". Its body is one list item per position: the quote in
 double quotes, then its place, `file:line` (`file` when line is null, a hook template) in code text. The place links to
 REPO/blob/COMMIT/FILE#L<line> when --repo is an https://github.com/ URL and --commit is one word, else it is plain code text;
 also_in places follow as plain text. Every quote and place goes through tools/part1's safe() (one line, paths cut to basenames,
 200 characters). A quote's `\\`, `[`, `]` and backtick are backslash-escaped in the body, so a quote cannot become a link, an image
 or a code span; the gist is not escaped, because its summary line is an HTML block and renders no Markdown. tools/cards.py's card()
-writes the card markup and escapes `<`.
+writes the card markup and escapes `<`, `>` and `&` in the name and gist and `<` in a body line.
 
-Exit 2, one line on stderr, for an unreadable file or JSON with no "topics" list."""
+Exit 2, one line on stderr, for bad arguments, an unreadable file or JSON with no "topics" list. A line that is not an integer is
+dropped (the place shows the file alone); a topic, position or also_in of the wrong type is skipped."""
 import importlib.machinery, importlib.util, json, os, re, sys
 from urllib.parse import quote
 
@@ -33,7 +34,7 @@ HEADING = "## Where it takes a position"
 NOTE = ("> Read from the plugin's instruction files (skills, commands, agents, rule files) and from the template text of hooks that "
         "build their output at run time. Text a hook injects from elsewhere, or builds in code, is not quoted. Topics come from a "
         "fixed list, grouped by code, with no judgement.")
-REPO = re.compile(r"^https://github\.com/[^\s()<>\[\]`]+$")
+REPO = re.compile(r"https://github\.com/[^\s()<>\[\]`]+")
 
 
 def md_escape(text):
@@ -45,15 +46,17 @@ def md_escape(text):
 def place(file, line):
     """A place's text and the URL path suffix for its link: ("file:line", "file#Lline")."""
     f = safe(file).replace("`", "'")
+    line = line if isinstance(line, int) and not isinstance(line, bool) else None   # anything else could carry Markdown
     return (f"{f}:{line}" if line is not None else f), quote(f, safe="/") + (f"#L{line}" if line is not None else "")
 
 
 def render(data, repo, commit):
-    link = repo and REPO.match(repo) and commit and not re.search(r"\s", commit)
+    link = repo and REPO.fullmatch(repo) and commit and not re.search(r"\s", commit)
     out = [HEADING, "", NOTE, ""]
     cards = []
     for topic in data["topics"]:
-        positions = [p for p in topic.get("positions", []) if isinstance(p, dict)] if isinstance(topic, dict) else []
+        positions = topic.get("positions") if isinstance(topic, dict) else None
+        positions = [p for p in positions if isinstance(p, dict)] if isinstance(positions, list) else []
         if not positions:
             continue
         lines = []
@@ -62,11 +65,12 @@ def render(data, repo, commit):
             code = f"`{text}`"
             if link:
                 code = f"[{code}]({repo.rstrip('/')}/blob/{quote(commit, safe='')}/{path})"
-            also = ", ".join(f"`{safe(a).replace('`', chr(39))}`" for a in p.get("also_in") or [])
+            also_in = p.get("also_in") if isinstance(p.get("also_in"), list) else []
+            also = ", ".join(f"`{safe(a).replace('`', chr(39))}`" for a in also_in if a)
             lines.append(f'- "{md_escape(safe(p.get("quote")))}" {code}' + (f" (also in {also})" if also else ""))
         first = safe(positions[0].get("quote"))
         first = first if len(first) <= 60 else first[:59] + "…"
-        cards.append(card("", topic.get("name", ""), f'{len(positions)} · "{first}"', lines))
+        cards.append(card("", safe(topic.get("name")), f'{len(positions)} · "{first}"', lines))
     if not cards:
         return out + ["No positions found."]
     for c in cards:
