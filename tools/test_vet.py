@@ -301,8 +301,8 @@ def bad_mcp(target):     # an .mcp.json that is not JSON: the mcp_servers sectio
 for case, setup, state, colour in (("read", None, "read in full", "brightgreen"), ("partial", big_skill, "partly read", "yellow"), ("failed", bad_mcp, "something unread", "red")):
     b = run("badge-" + case, extra=("--facts",), fake_body=NO_CLAUDE, setup=setup)
     msg = "1.0.0%20%C2%B7%20" + state.replace(" ", "%20")
-    want_url = "https://img.shields.io/badge/neckbeard%20report-" + msg + "-" + colour + "?logo=" + LOGO
-    chk("badge: " + case + " reads " + state + ", " + colour, (b["rc"], badge_of(b).startswith("[![neckbeard report: 1.0.0 \u00b7 " + state + "](" + want_url + ")]")), (0, True))
+    want_url = "https://img.shields.io/badge/neckbeard-" + msg + "-" + colour + "?logo=" + LOGO
+    chk("badge: " + case + " reads " + state + ", " + colour, (b["rc"], badge_of(b).startswith("[![neckbeard: 1.0.0 \u00b7 " + state + "](" + want_url + ")]")), (0, True))
 chk("badge: linked to OUT's path as given", badge_of(b).endswith("](" + b["outpath"] + ")"), True)
 tmp = tempfile.mkdtemp()
 try:
@@ -316,7 +316,7 @@ finally:
     shutil.rmtree(tmp)
 chk("badge: the report path line moved to stderr", ("vet: facts report " in b["stdout"], "vet: facts report " in b["out"]), (False, True))
 b = run("badge-escape", extra=("--facts",), fake_body=NO_CLAUDE, version="1.2.3-rc_1")
-chk("badge: a version 1.2.3-rc_1 is escaped 1.2.3--rc__1", "badge/neckbeard%20report-1.2.3--rc__1%20%C2%B7%20read%20in%20full-brightgreen?logo=" in badge_of(b), True)
+chk("badge: a version 1.2.3-rc_1 is escaped 1.2.3--rc__1", "badge/neckbeard-1.2.3--rc__1%20%C2%B7%20read%20in%20full-brightgreen?logo=" in badge_of(b), True)
 chk("badge: the judged path prints no badge", "img.shields.io" in run("badge-judged")["stdout"], False)
 
 # 11. make report-check: the tagged report must name the tagged version
@@ -347,9 +347,9 @@ makefile = open(os.path.join(NB, "Makefile"), encoding="utf-8").read()
 release = makefile.split("\nrelease:", 1)[1].split("\ndeploy:", 1)[0]
 chk("release runs report-check before any push, and stops when it fails", (bool(re.search(r"^\t@\$\(MAKE\) --no-print-directory report-check \|\| \{ [^}]*exit 1; \}$", release, re.M)), release.find("report-check") < release.find("git push")), (True, True))
 readme = open(os.path.join(NB, "README.md"), encoding="utf-8").read()
-chk("README: the neckbeard badge links the published report, with the logo the code uses", ("[![neckbeard report: " in readme, "](docs/neckbeard-report.md)" in readme, "logo=" + LOGO in readme), (True, True, True))
+chk("README: the neckbeard badge links the published report, with the logo the code uses", ("[![neckbeard: " in readme, "](docs/neckbeard-report.md)" in readme, "logo=" + LOGO in readme), (True, True, True))
 badge_line = readme.split("\n")[4]
-chk("README line 5: badges read CI, license, release, CodeQL, neckbeard report", [re.sub(r":.*", "", a) for a in re.findall(r"\[!\[([^\]]*)\]", badge_line)], ["CI", "license", "release", "CodeQL", "neckbeard report"])
+chk("README line 5: badges read CI, license, release, CodeQL, neckbeard", [re.sub(r":.*", "", a) for a in re.findall(r"\[!\[([^\]]*)\]", badge_line)], ["CI", "license", "release", "CodeQL", "neckbeard"])
 chk("the logo is URL-encoded: none of + & # ( ) [ ] = or a space raw", [c for c in "+&#()[]= " if c in LOGO], [])
 b = run("badge-precedence", extra=("--facts",), fake_body=NO_CLAUDE, setup=lambda t: (big_skill(t), bad_mcp(t)))
 chk("badge: a partial and a failed section give red, not yellow", "-red?logo=" in badge_of(b), True)

@@ -31,7 +31,7 @@
 # "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
 # (one stderr line says why, exit 0), with no claude needed. The reader is the config folder of the judge's session, so its
 # settings.json hooks run: vet only readers you trust.
-# --facts also prints, as the last line of stdout, one Markdown badge line for OUT (label "neckbeard report", message
+# --facts also prints, as the last line of stdout, one Markdown badge line for OUT (label "neckbeard", message
 # "<version> · <read state>", coloured by the dossier's read_status: failed gives red "something unread", partial yellow
 # "partly read", else brightgreen "read in full"), linked to OUT's path as given. Its other messages go to stderr.
 # The commit label (the header's "@ `...`", Source's "Commit:" line and the dossier's "(commit ...)") is the short sha of the target's
@@ -369,7 +369,7 @@ shield = quote(message.replace("-", "--").replace("_", "__"), safe="")   # shiel
 alt = message.replace("]", "\\]")
 logo = open(logo_file, encoding="utf-8").read().strip()
 link = link.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
-print(f"[![neckbeard report: {alt}](https://img.shields.io/badge/neckbeard%20report-{shield}-{colour}?logo={logo})]({link})")
+print(f"[![neckbeard: {alt}](https://img.shields.io/badge/neckbeard-{shield}-{colour}?logo={logo})]({link})")
 EOF
   ) || die "couldn't write the badge line"
   # the local-path check runs before OUT is written, so a report that names one never lands there
