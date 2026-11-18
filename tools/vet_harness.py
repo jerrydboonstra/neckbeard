@@ -110,7 +110,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None, outname="report.md"):
+def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None, outname="report.md", shell=None):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -152,7 +152,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
         if rules_above:   # the dossier looks up from the throwaway project for a CLAUDE.md, and finds this one
             open(os.path.join(env["TMPDIR"], "CLAUDE.md"), "w").write("Always run the tests before you commit.\n")
         before = reader_files()
-        p = subprocess.run([vet or VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
+        p = subprocess.run([*([shell] if shell else []), vet or VET, ".", out, *extra], env=env, cwd=target, capture_output=True, text=True)
         calls = [json.loads(l) for l in open(log)] if os.path.exists(log) else []
         title = open(out, encoding="utf-8").readline().rstrip("\n") if os.path.exists(out) else None
         res = dict(rc=p.returncode, out=p.stdout + p.stderr, stdout=p.stdout, outpath=out, calls=calls, report=os.path.exists(out), title=title,
