@@ -17,9 +17,9 @@ It also prints one Markdown badge line as the last line of its output, linked to
 
 | the badge says | colour | when |
 |---|---|---|
-| neckbeard report \| 1.2.3 · read in full | brightgreen | every section was read or does not apply |
-| neckbeard report \| 1.2.3 · partly read | yellow | at least one section was read in part, and none failed |
-| neckbeard report \| 1.2.3 · something unread | red | at least one section could not be read |
+| neckbeard \| 1.2.3 · read in full | brightgreen | every section was read or does not apply |
+| neckbeard \| 1.2.3 · partly read | yellow | at least one section was read in part, and none failed |
+| neckbeard \| 1.2.3 · something unread | red | at least one section could not be read |
 
 Every gap counts toward the colour, whether the gap is neckbeard's limit or the plugin's own. The report behind the badge lists each one, so a reader can tell which it is.
 
