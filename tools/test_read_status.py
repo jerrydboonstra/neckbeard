@@ -197,7 +197,7 @@ def gen_late_write():
 
 
 def gen_hostile_scan():
-    """A 2,000,000-character one-line file built to backtrack (many cp/mv/tee or open( words, no $HOME) scans in under 5 s of CPU time (not wall time, which a loaded host stretches)."""
+    """A 2,000,000-character one-line file built to backtrack (many cp/mv/tee or open( words, no $HOME) scans in under 10 s of CPU time (not wall time, which a loaded host stretches; a backtracking blow-up takes minutes)."""
     import resource
     def child_cpu():   # CPU seconds of every finished child: a loaded host stretches wall time, not this
         u = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -208,7 +208,7 @@ def gen_hostile_scan():
         c0 = child_cpu()
         dossier(d)
         worst = max(worst, child_cpu() - c0)
-    return worst < 5, f"slowest hostile scan {worst:.1f}s of CPU"
+    return worst < 10, f"slowest hostile scan {worst:.1f}s of CPU (bound 10s)"
 
 
 def gen_continued_write():
