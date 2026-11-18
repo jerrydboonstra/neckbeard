@@ -325,6 +325,12 @@ for case, setup, state, colour in (("read", None, "read in full", "brightgreen")
     msg = "1.0.0%20%C2%B7%20" + state.replace(" ", "%20")
     want_url = "https://img.shields.io/badge/neckbeard-" + msg + "-" + colour + "?logo=" + LOGO
     chk("badge: " + case + " reads " + state + ", " + colour, (b["rc"], badge_of(b).startswith("[![neckbeard: 1.0.0 \u00b7 " + state + "](" + want_url + ")]")), (0, True))
+    sec_ = b["text"].split("## What it adds\n", 1)[1].split("\nLoad timing is", 1)[0]
+    word_ = "something unread" if "\U0001F534" in sec_ else "partly read" if "\U0001F7E1" in sec_ else "read in full"
+    chk("badge: " + case + ": the badge word equals the overall read state of the cards in the report it wrote", (state, word_, len(re.findall(r"<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>", sec_))), (state, state, 6))
+    chk("badge: " + case + ": the cards hold no judgement square (\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5)", [q in sec_ for q in "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"], [False] * 4)
+vet_src = open(VET, encoding="utf-8").read()
+chk("badge: tools/vet computes no state from read_status itself: it holds neither `not-applicable` nor `\"failed\"`, and takes the word from tools/part1 --read-state", ("not-applicable" in vet_src, '"failed"' in vet_src, "--read-state" in vet_src), (False, False, True))
 chk("badge: linked to OUT's path as given", badge_of(b).endswith("](" + b["outpath"] + ")"), True)
 tmp = tempfile.mkdtemp()
 try:
