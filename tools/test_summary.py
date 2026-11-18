@@ -146,14 +146,23 @@ for state, want in (("partial", Y), ("failed", R)):
 
 # review round 1: Reach names a hook only when one is registered; the card holds the detail behind each row
 reach_text = lambda d: rows(run(write(d))[1])["Reach"][1]
-chk("Reach: inventory's real mod-only output (has_hooks true, no event registered) names the mod, not a hook",
-    "mod" in reach_text(load("mod-real")) and "a hook" not in reach_text(load("mod-real")), reach_text(load("mod-real")))
+chk("Reach: the shape inventory writes for a mod-only plugin (fixture trimmed from its output on read-status/mods-one: has_hooks true, no event registered) names the mod, not a hook",
+    "a Claude Code mod" in reach_text(load("mod-real")) and "a hook" not in reach_text(load("mod-real")), reach_text(load("mod-real")))
 chk("Reach: a hooks file with no registration and no mod stays green", colours(edit("green", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=0)))["Reach"] == G)
 for what, fn in [("has_hooks 'unknown'", lambda t: t["hooks"].update(has_hooks="unknown", events={}, hook_registrations=None)),
                  ("a hooks file whose registrations could not be counted", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=None))]:
     d = edit("green", fn)
     chk(f"Reach: {what} (events unreadable) is yellow and names a hook", colours(d)["Reach"] == Y and "a hook" in reach_text(d), reach_text(d))
+for what, fn in [("has_hooks 'partial' (a malformed event)", lambda t: t["hooks"].update(has_hooks="partial", events={"PreToolUse": []}, hook_registrations=0))]:
+    d = edit("green", fn)
+    chk(f"Reach: {what} is yellow, names a hook, and the card says the events could not be read",
+        colours(d)["Reach"] == Y and "a hook" in reach_text(d) and "events could not be read" in card_text(d), reach_text(d))
 chk("Reach: a registered hook with hook_registrations 1 and no readable command is yellow", colours(edit("green", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=1)))["Reach"] == Y)
+
+
+def card_text(d):
+    m = re.search(r"<details>.*?</details>", run(write(d))[1], re.S)
+    return m.group(0) if m else ""
 
 
 def card_of(out):
@@ -169,7 +178,8 @@ for name, needles in [("state-files", ["hooks/log.sh"]), ("hook-ssh-subagents", 
 hostile = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "x </details>\n## forged\n| \U0001F7E9 | Cost | x |"))
 out = run(write(hostile))[1]
 hostile2 = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "run.sh \U0001F7E2\U0001F7E1\U0001F534"))
-chk("a read marker in a hook command is not printed in the card", not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", run(write(hostile2))[1]))
+chk("a read marker in a hook command is not printed in the card, and the command still is",
+    not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", run(write(hostile2))[1]) and "run.sh" in card_of(run(write(hostile2))[1]))
 chk("a hostile hook command cannot close the card or forge a heading in it", out.count("</details>") == 1 and "\n## forged" not in out and not re.search(r"^\| \S+ \| Cost \| x \|$", out, re.M), out[-400:])
 
 # 3. a threshold in the rules table moves the colour and the footer together
