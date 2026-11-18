@@ -1,6 +1,6 @@
-# 🔍 neckbeard 1.17.7 · what it adds
+# 🔍 neckbeard 1.17.8 · what it adds
 
-`2026-11-15` · neckbeard 1.17.7 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.7 @ `v1.17.7`
+`2026-11-18` · neckbeard 1.17.8 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.8 @ `v1.17.8`
 
 ## What it adds
 
@@ -29,7 +29,7 @@
   - skills/neckbeard/inventory_parts.py
   - skills/neckbeard/mcp_live.py
   - skills/neckbeard/selfcheck.py
-  - and 21 more, in: tools/ 21
+  - and 22 more, in: tools/ 22
 
 ### Reaches outside the session
 - MCP servers: none
@@ -37,11 +37,11 @@
 ### Source
 - Kind: plugin
 - Name: neckbeard (from plugin.json)
-- Version: 1.17.7 (from plugin.json)
+- Version: 1.17.8 (from plugin.json)
 - plugin.json:
   - name and version, shown above
 - Marketplace: none
-- Commit: v1.17.7
+- Commit: v1.17.8
 - Declared fixtures: tools/fixtures (files there that the hooks and persistence scans can't read don't count against the badge)
 
 Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.

@@ -2,7 +2,7 @@
 
 # neckbeard
 
-[![CI](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![release](https://img.shields.io/github/v/release/jerrydboonstra/neckbeard)](https://github.com/jerrydboonstra/neckbeard/releases/latest) [![CodeQL](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml) [![neckbeard: 1.17.7 · read in full](https://img.shields.io/badge/neckbeard-1.17.7%20%C2%B7%20read%20in%20full-brightgreen?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
+[![CI](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![release](https://img.shields.io/github/v/release/jerrydboonstra/neckbeard)](https://github.com/jerrydboonstra/neckbeard/releases/latest) [![CodeQL](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml/badge.svg)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml) [![neckbeard: 1.17.8 · read in full](https://img.shields.io/badge/neckbeard-1.17.8%20%C2%B7%20read%20in%20full-brightgreen?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
 
 > **I read the whole thing. You’re welcome.**
 >
@@ -46,9 +46,9 @@ cat report.md
 The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and one section per kind of thing the plugin adds. This is neckbeard's own, cut down to its headings and top-level bullets ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
-> # 🔍 neckbeard 1.17.7 · what it adds
+> # 🔍 neckbeard 1.17.8 · what it adds
 >
-> `2026-11-15` · neckbeard 1.17.7 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.7 @ `v1.17.7`
+> `2026-11-18` · neckbeard 1.17.8 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.8 @ `v1.17.8`
 >
 > ### Injects
 > - Skills: 1 (neckbeard)
@@ -63,7 +63,7 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > - Commands: none
 >
 > ### State it may leave
-> - Persistence candidates: 31 (see the full report)
+> - Persistence candidates: 32 (see the full report)
 >
 > ### Reaches outside the session
 > - MCP servers: none
@@ -71,10 +71,10 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 > ### Source
 > - Kind: plugin
 > - Name: neckbeard (from plugin.json)
-> - Version: 1.17.7 (from plugin.json)
+> - Version: 1.17.8 (from plugin.json)
 > - plugin.json: 1 (name and version, shown above)
 > - Marketplace: none
-> - Commit: v1.17.7
+> - Commit: v1.17.8
 > - Declared fixtures: tools/fixtures (files there that the hooks and persistence scans can't read don't count against the badge)
 <!-- /report -->
 
