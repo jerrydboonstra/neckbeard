@@ -151,7 +151,7 @@ sh(["git", "reset", "-q", "--hard", base], d3)
 (d3 / "src" / "b.py").write_text("changed b\n")
 sh(["git", "add", "-A"], d3)
 sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "b"], d3)
-r = sh([sys.executable, str(d3 / "tools" / "test-changed"), base], d3)
+r = sh([sys.executable, str(d3 / "tools" / "test-changed"), base], d3, {"TEST_PARALLEL_LOAD": "0.01"})
 check("--changed without --list runs the selection through tools/test-parallel, only test_b",
       r.returncode == 0 and "test_b start" in r.stdout and "test_a start" not in r.stdout, r.stdout[-300:] + r.stderr[-200:])
 
