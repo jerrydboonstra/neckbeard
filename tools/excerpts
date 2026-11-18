@@ -2,8 +2,10 @@
 """Keep the report excerpts in README.md and CASE-STUDIES.md in step with the reports.
 
 Each case study that ran against a gallery plugin opens with that report's
-excerpt between two markers: a fit report's verdict and "At a glance" table, a
-facts report's title, header line and "What it adds" headings with their top-level bullets (a bullet that ends in ":" says how many items it held):
+excerpt between two markers. In the 2.0 layout (a "## How it affects you" heading): a fit report's summary table and its verdict
+strip; a facts report's title, header line and summary table, then one line per facts card under "What it adds" (its read marker,
+name and gist, from the card's summary line). In the old layout: a fit report's verdict and "At a glance" table, a facts report's
+title, header line and "What it adds" headings with their top-level bullets (a bullet that ends in ":" says how many items it held):
 
     <!-- report:superpowers -->
     ...
@@ -16,6 +18,7 @@ re-running the gallery cannot leave a page quoting an old report.
     tools/excerpts           rewrite every excerpt from its report
     tools/excerpts --check   exit 1, naming each excerpt that has drifted
 """
+import html
 import re
 import sys
 from pathlib import Path
@@ -78,11 +81,58 @@ def facts_excerpt(report):
     return "\n".join(("> " + l).rstrip() for l in out)
 
 
+CARD = re.compile(r"^<details>\s*<summary>(?:([^\s<]+) )?<b>(.+?)</b>(?: \u00b7 (.*))?</summary>$")
+
+
+def layered_excerpt(report):
+    """The excerpt of a 2.0-layout report: its summary table, and for a fit report the verdict strip, for a facts report the title,
+    the header line and one `- <marker> **<name>** \u00b7 <gist>` line per facts card (the card's summary line, unescaped). None when the
+    report has no summary table."""
+    lines = report.splitlines()
+    at = next((i for i, l in enumerate(lines) if l.strip() == "## How it affects you"), None)
+    if at is None:
+        return None
+    table = []
+    for l in lines[at + 1:]:
+        if l.startswith("|"):
+            table.append(l.rstrip())
+        elif table:
+            break
+    if not table:
+        return None
+    strip_at = next((i for i, l in enumerate(lines) if l.startswith("> **")), None)
+    if strip_at is not None:   # a fit report: the table, then the strip block
+        strip = []
+        for l in lines[strip_at:]:
+            if not l.startswith(">"):
+                break
+            strip.append(l.rstrip())
+        return "\n".join(table + [""] + strip)
+    title = next((l for l in lines if l.startswith("# ")), None)
+    facts = next((i for i, l in enumerate(lines) if l.strip() == "## What it adds"), None)
+    if not title or facts is None:
+        return None
+    header = next((l for l in lines[lines.index(title) + 1:] if l.strip()), None)
+    cards = []
+    for l in lines[facts + 1:]:
+        if l.strip() == "---" or l.startswith("## "):
+            break
+        m = CARD.match(l)
+        if m:
+            cards.append("- " + (m.group(1) + " " if m.group(1) else "") + f"**{html.unescape(m.group(2))}**" + (f" \u00b7 {html.unescape(m.group(3))}" if m.group(3) else ""))
+    if not header or not cards:
+        return None
+    return "\n".join(("> " + l).rstrip() for l in [title, "", header, ""] + table + [""] + cards)
+
+
 def excerpt(name):
     """From examples/<name>.md: a fit report's verdict and At-a-glance table, or a facts report's facts."""
     # A bare name is a gallery report; a name with a folder in it (docs/neckbeard-report) is that file in the repo.
     path = ROOT / f"{name}.md" if "/" in name else ROOT / "examples" / f"{name}.md"
     report = path.read_text()
+    new = layered_excerpt(report)   # the 2.0 layout first: its summary table would also match the old At-a-glance pattern below
+    if new:
+        return new
     # The verdict box: its headline and summary, without the closing
     # "Verdict is relative..." note, which the case study does not need.
     verdict = re.search(r"^> ## (.+\n(?:>.*\n)*?)>\n> Verdict is relative", report, re.M)

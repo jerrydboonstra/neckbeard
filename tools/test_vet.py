@@ -120,6 +120,8 @@ chk("layers: no read marker outside What it adds", any(m in r["text"].replace(L2
 first_line = (r["text"].partition("**Contents**")[2].split("\n") + ["", "", ""])[2].lower()
 chk("layers: a fit report's first Contents line names the fit and the verdict", [w in first_line for w in ("fit", "verdict")], [True, True])
 
+# tools/summary imports tools/part1 as a module, so a fake part1 that is imported (its __name__ is "part1") takes the real one's functions
+REAL_PART1 = "import importlib.machinery as m_, importlib.util as u_\nif __name__ != '__main__':\n    s_ = u_.spec_from_loader('real_part1', m_.SourceFileLoader('real_part1', %r)); r_ = u_.module_from_spec(s_); s_.loader.exec_module(r_)\n    globals().update({k: v for k, v in vars(r_).items() if not k.startswith('__')})\n" % os.path.join(HERE, "part1")
 # a copy of vet with one tool replaced by SCRIPT (a part1 that fails, say): vet dies and says so
 def vet_with_tool(tool, script, **kw):
     fake = tempfile.mkdtemp()
@@ -159,7 +161,7 @@ r = vet_with_tool("summary", "import sys\nprint('| | Row | In short |\\n|---|---
 chk("layers: a verdict strip in a published report is refused and no report is written", (r["rc"] != 0, r["report"], "verdict" in r["out"]), (True, False, True))
 r = vet_with_tool("summary", "import sys\nprint('<details><summary><b>Why this verdict</b></summary>\\n\\nx\\n\\n</details>')\n", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("layers: a fit card in a published report is refused and no report is written", (r["rc"] != 0, r["report"], "fit card" in r["out"]), (True, False, True))
-r = vet_with_tool("part1", "import sys\nif sys.argv[1] == '--read-state':\n    print('read in full')\nelse:\n    print('Not a heading.')\n", extra=("--facts",), fake_body=NO_CLAUDE)
+r = vet_with_tool("part1", REAL_PART1 + "if __name__ == '__main__':\n    import sys\n    print('read in full' if sys.argv[1] == '--read-state' else 'Not a heading.')\n", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("layers: a facts layer with no '## What it adds' heading is refused and no report is written", (r["rc"] != 0, r["report"], "What it adds" in r["out"]), (True, False, True))
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
@@ -267,7 +269,7 @@ chk("check: no header fails", (rc, "no header line" in out), (1, True))
 r = run("facts", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("facts: written, exit 0, claude never called", (r["rc"], r["report"], r["calls"]), (0, True, []))
 chk("facts: title line", r["title"], TITLE)
-chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "sample reader")], [False] * 3)
+chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "sample reader")], [False] * 2)
 chk("facts: closing line", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
 chk("facts: carries part 1", "\n## What it adds\n" in r["text"], True)
 chk("facts: temp folder removed", r["temp_left"], [])
@@ -407,10 +409,10 @@ for case, setup, state, colour in (("read", None, "read in full", "brightgreen")
     chk("badge: " + case + ": the cards hold no judgement square (\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5)", [q in sec_ for q in "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"], [False] * 4)
 # inventory cannot yield a read hooks section with an untraced injected text (it marks that section partial), so the hsec
 # rule that changes the badge word is shown here instead: vet's word is whatever `tools/part1 --read-state` prints, never its own
-FAKE_P1 = ("import sys\nif sys.argv[1] == '--read-state':\n    print('%s')\n    sys.exit(0)\n"
-           "print('## What it adds\\n\\n<details><summary>\\U0001F7E2 <b>Injects</b></summary>\\n\\n- x\\n\\n</details>\\n')\n")
+FAKE_P1 = ("if __name__ == '__main__':\n    import sys\n    if sys.argv[1] == '--read-state':\n        print('%s')\n        sys.exit(0)\n"
+           "    print('## What it adds\\n\\n<details><summary>\\U0001F7E2 <b>Injects</b></summary>\\n\\n- x\\n\\n</details>\\n')\n")
 for word_, colour_ in (("something unread", "red"), ("partly read", "yellow"), ("read in full", "brightgreen")):
-    r = vet_with_tool("part1", FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
+    r = vet_with_tool("part1", REAL_PART1 + FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
     chk("badge: vet takes the word from `tools/part1 --read-state` (" + word_ + "), whatever the cards say",
         (r["rc"], "neckbeard: 1.0.0 \u00b7 " + word_ + "](" in badge_of(r), "-" + colour_ + "?logo=" in badge_of(r)), (0, True, True))
 vet_src = open(VET, encoding="utf-8").read()
