@@ -17,6 +17,10 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 - **Large scripts are now read in full, up to 2 MB, when listing what a plugin may leave on disk.** A plugin with one script over 50 KB no longer gets "partly read" for that cut. A script over 2,000,000 characters is still noted as capped.
 
+### Checks
+
+- **Neckbeard's skill text now has a byte budget.** `tools/skill-budget.txt` sets a line for `skills/neckbeard/SKILL.md` (bytes) and for the skill descriptions together (characters), each about 5 percent over today's size, and every description must stay under 1,024 characters. `make check` runs `tools/test_skill_budget.py` and fails when a size passes its line. To raise a line, edit the file in a reviewed commit that says what the extra text buys.
+
 ## 1.17.7 (2026-11-15)
 
 ### Reports

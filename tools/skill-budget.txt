@@ -1,0 +1,8 @@
+# How big neckbeard's skill text may be, following Cat Herder's size rules (owner's decision 46a, 2026-11-17).
+# skills/<name>/SKILL.md: that whole file, in bytes, which loads when the skill activates.
+# descriptions: every skill's description together, in characters as the Agent Skills spec counts them (the parsed, folded frontmatter value, not the file lines), which every session loads. Each description is also held under 1024 characters.
+# Set at v1.17.7's sizes plus about 5 percent: SKILL.md 14535 bytes, the description 764 characters. tools/test_skill_budget.py, run by make check (and so by make release), fails when a size passes its line.
+# Raise a line only in a reviewed commit that says what the extra text buys.
+# The .py files under skills/neckbeard/ are scripts and have no cap. The SKILL.md files under examples/ and tools/fixtures/ are test material and are left out. neckbeard has no on-demand sections today, so nothing is exempted for them.
+descriptions: 802
+skills/neckbeard/SKILL.md: 15262
