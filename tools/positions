@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+"""positions DOSSIER OUT [--reader DIR]: find where the target tells the model what to do, and group it by a fixed topic list.
+
+Reads only the target: the instruction files tools/rule-units reads (skills and their companion files, commands, agents,
+rule files) from the dossier, plus any hook-injected text the dossier holds (hooks.injected_content entries that carry a
+"text"; a "resolved_file" gives the file and line numbers, else the entry's "file" and no line). A reader folder, if given,
+is accepted so callers can pass the same arguments as to tools/vet, and never opened. No model call: the same input gives
+byte-identical output.
+
+A position is one Markdown list item, one table row (cells joined by " | "; header and separator rows skipped) or one
+sentence of a paragraph (ends at . ! or ? then a space and a capital, or at the paragraph's end), outside code fences and
+frontmatter, holding a directive word from DIRECTIVES. It goes under the first topic in TOPICS holding one of its keywords,
+else under "other". The same quote in several files is listed once, under the first file in path order (then line order),
+with the other places in "also_in".
+
+OUT is {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]}: topics in TOPICS order, "other" last,
+empty ones left out; "line" is null for hook text with no resolved file. Part of 2.0's positions layer (report-positions).
+"""
+import json, re, sys
+
+DIRECTIVES = ["always", "never", "must", "should", "shall", "don't", "do not", "only", "prefer", "avoid", "use", "ask",
+              "stop", "keep", "run", "write", "make sure"]
+
+# The builder's first draft, one table: the spec's topic order is the match order, and a position goes under the first topic with a hit.
+# The reviewer checks it against mock-up v2's hand grouping of ponytail 5.3.3. Keywords are whole words, any case.
+TOPICS = [
+    ("Persona and activation", ["persona", "you are", "activate", "activation", "active", "mode", "session start", "stay on", "level", "levels"]),
+    ("Asking vs proceeding", ["ask", "asks", "asking", "question", "confirm", "clarify", "vague", "proactively", "offer", "pick", "choose"]),
+    ("Scope and size of changes", ["scope", "change", "changes", "smallest", "shortest", "minimal", "refactor", "caller", "callers", "diff",
+                                   "bug", "reach", "nobody asked"]),
+    ("Tests", ["test", "tests", "testing", "assert", "coverage", "fixture", "fixtures", "self-check"]),
+    ("Code style and comments", ["comment", "comments", "style", "naming", "format", "formatting", "lint", "readable", "readability",
+                                 "one-liner", "line", "lines", "function", "functions", "abstraction", "helper", "helpers"]),
+    ("Dependencies", ["dependency", "dependencies", "package", "packages", "library", "libraries", "install", "npm", "pip"]),
+    ("Commits and git", ["commit", "commits", "git", "branch", "branches", "rebase", "amend", "merge", "blame", "stash"]),
+    ("Pushes and releases", ["push", "pushes", "release", "releases", "tag", "publish", "deploy", "pull request", "version"]),
+    ("Reviews and audits", ["review", "reviews", "audit", "audits", "reviewer", "verdict", "findings"]),
+    ("Models and subagents", ["model", "models", "subagent", "subagents", "agent", "agents", "opus", "sonnet", "haiku", "delegate"]),
+    ("Replies and reporting", ["reply", "replies", "answer", "answers", "report", "reports", "summary", "output", "respond", "response",
+                               "explain", "message", "messages"]),
+    ("State and files", ["file", "files", "folder", "directory", "path", "config", "settings", "disk", "cache", "state", "memory"]),
+    ("Network", ["network", "http", "https", "url", "urls", "curl", "fetch", "download", "web", "internet", "api", "ssh"]),
+    ("Safety and permissions", ["security", "secret", "secrets", "credential", "credentials", "permission", "permissions", "destroy", "delete",
+                                "deletes", "force", "irreversible", "validation", "sandbox", "unsafe", "dangerous"]),
+]
+TOPIC_ORDER = [name for name, _ in TOPICS]
+
+
+def _words(items):
+    alt = "|".join(re.escape(w).replace(r"\ ", r"\s+") for w in sorted(items, key=len, reverse=True))
+    return re.compile(r"(?<![A-Za-z0-9])(?:" + alt + r")(?![A-Za-z0-9])", re.I)
+
+
+DIRECTIVE_RE = _words(DIRECTIVES)
+TOPIC_RES = [(name, _words(kws)) for name, kws in TOPICS]
+FENCE = re.compile(r"^\s*(```|~~~)")
+HEADING = re.compile(r"^\s{0,3}#{1,6}(\s|$)")
+LIST_ITEM = re.compile(r"^(\s*)(?:[-*+]|\d+[.)])\s+(.*)$")
+RULE_LINE = re.compile(r"^\s{0,3}([-*_])(\s*\1){2,}\s*$")
+TABLE_SEP = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
+SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
+SPACE = re.compile(r"\s+")
+
+
+def files(target):
+    """The same files tools/rule-units reads: (path, text) in dossier order."""
+    for kind in ("skills", "commands", "agents", "rule_files"):
+        for item in target.get(kind) or []:
+            if item.get("text"):
+                yield item.get("source") or item.get("path"), item["text"]
+            companions = item.get("companion_files") or []
+            if isinstance(companions, str):
+                companions = []
+            for c in companions:
+                if c.get("text"):
+                    yield c.get("path"), c["text"]
+    for entry in (target.get("hooks") or {}).get("injected_content") or []:
+        if entry.get("text"):
+            if entry.get("resolved_file"):
+                yield entry["resolved_file"], entry["text"]
+            else:
+                yield entry.get("script") or entry.get("file"), entry["text"], False
+
+
+def cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|") if c.strip()]
+
+
+def blocks(text):
+    """Yield (kind, first line number, [(line number, line)...]) for list items, table rows and paragraphs, with
+    frontmatter, code fences and headings left out. Line numbers count from 1 in the file as it is."""
+    lines = text.split("\n")
+    start = 0
+    if lines and lines[0].strip() == "---":
+        for i in range(1, len(lines)):
+            if lines[i].strip() == "---":
+                start = i + 1
+                break
+    fence, cur, kind = False, [], None
+
+    def flush():
+        nonlocal cur, kind
+        if cur:
+            out.append((kind, cur[0][0], cur))
+        cur, kind = [], None
+
+    out = []
+    for n in range(start, len(lines)):
+        line = lines[n]
+        if FENCE.match(line):
+            flush()
+            fence = not fence
+            continue
+        if fence:
+            continue
+        no = n + 1
+        if not line.strip() or HEADING.match(line) or RULE_LINE.match(line):
+            flush()
+        elif line.lstrip().startswith("|"):
+            if kind != "table":
+                flush()
+            kind = "table"
+            cur.append((no, line))
+        elif LIST_ITEM.match(line):
+            flush()
+            kind = "item"
+            cur.append((no, line))
+        elif kind == "item" and (line.startswith(" ") or line.startswith("\t")):
+            cur.append((no, line))
+        elif kind == "item":
+            # unindented text right after a list item continues it (lazy continuation)
+            cur.append((no, line))
+        else:
+            if kind != "para":
+                flush()
+            kind = "para"
+            cur.append((no, re.sub(r"^\s{0,3}>\s?", "", line)))
+    flush()
+    return out
+
+
+def quotes(text):
+    """Yield (quote, line) for each candidate position in the file: before the directive-word filter."""
+    for kind, first, cur in blocks(text):
+        if kind == "table":
+            rows = [(no, l) for no, l in cur]
+            for i, (no, l) in enumerate(rows):
+                if TABLE_SEP.match(l):
+                    continue
+                if i + 1 < len(rows) and TABLE_SEP.match(rows[i + 1][1]):
+                    continue
+                yield " | ".join(cells(l)), no
+        elif kind == "item":
+            body = LIST_ITEM.match(cur[0][1]).group(2) + " " + " ".join(l for _, l in cur[1:])
+            yield SPACE.sub(" ", body).strip(), first
+        else:
+            joined = "\n".join(l for _, l in cur)
+            starts = [0] + [m.end() for m in SENTENCE_END.finditer(joined)]
+            ends = [m.start() for m in SENTENCE_END.finditer(joined)] + [len(joined)]
+            for s, e in zip(starts, ends):
+                piece = joined[s:e]
+                lead = len(piece) - len(piece.lstrip())
+                line_no = cur[0][0] + joined.count("\n", 0, s + lead)
+                yield SPACE.sub(" ", piece).strip(), line_no
+
+
+def topic_of(quote):
+    for name, rx in TOPIC_RES:
+        if rx.search(quote):
+            return name
+    return "other"
+
+
+def build(target):
+    found = []  # (file, line or 0, has_line, quote)
+    for entry in files(target):
+        path, text = entry[0], entry[1]
+        has_line = len(entry) == 2
+        for quote, line in quotes(text):
+            if quote and DIRECTIVE_RE.search(quote):
+                found.append((path, line if has_line else 0, has_line, quote))
+    found = sorted(set(found), key=lambda f: (f[0], f[1]))
+    firsts, order = {}, []
+    for path, line, has_line, quote in found:
+        key = SPACE.sub(" ", quote)
+        place = f"{path}:{line}" if has_line else path
+        if key in firsts:
+            firsts[key]["also_in"].append(place)
+        else:
+            firsts[key] = {"quote": quote, "file": path, "line": line if has_line else None, "also_in": []}
+            order.append(key)
+    by_topic = {}
+    for key in order:
+        by_topic.setdefault(topic_of(firsts[key]["quote"]), []).append(firsts[key])
+    names = TOPIC_ORDER + ["other"]
+    return {"topics": [{"name": n, "positions": by_topic[n]} for n in names if by_topic.get(n)]}
+
+
+def main():
+    args = sys.argv[1:]
+    if "--reader" in args:  # accepted, never read
+        i = args.index("--reader")
+        args = args[:i] + args[i + 2:]
+    if len(args) != 2:
+        sys.exit("usage: positions DOSSIER OUT [--reader DIR]")
+    target = json.load(open(args[0], encoding="utf-8"))["target"]
+    result = build(target)
+    with open(args[1], "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=1, ensure_ascii=False)
+        f.write("\n")
+    n = sum(len(t["positions"]) for t in result["topics"])
+    print(f"{n} positions in {len(result['topics'])} topics")
+
+
+if __name__ == "__main__":
+    main()
