@@ -1,0 +1,168 @@
+{
+ "verdict": "COPY RULES, SKIP PLUGIN",
+ "counts": {
+  "units": 9,
+  "conflicts": 2,
+  "covered": 1,
+  "keep": 3,
+  "dropped": 5,
+  "new_standing": 2,
+  "new_skill": 1,
+  "kept_rules": 2,
+  "kept_skills": 1,
+  "skills_kept": 0,
+  "units_with_conflict": 3
+ },
+ "units": [
+  {
+   "id": "u1",
+   "file": "skills/a/SKILL.md",
+   "heading": "(top)",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "new-standing",
+   "quote": "Never cut protection to make a change smaller.",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": true,
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "file": "skills/a/SKILL.md",
+   "heading": "Tests",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "new-standing",
+   "quote": "New non-trivial logic ships with one small test.",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "file": "skills/b/SKILL.md",
+   "heading": "Review",
+   "kind": "skill",
+   "skill": "drop",
+   "rules": "new-skill-text",
+   "quote": "Review a change by reading the callers.",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "file": "skills/a/SKILL.md",
+   "heading": "Levels",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": [
+    {
+     "n": 1,
+     "quote": "A vague request gets the smallest version.",
+     "reader_rule": "rules/safety.md: If a request is ambiguous and the wrong reading is costly, ask.",
+     "held_in": "rules/safety.md",
+     "hard_stop": true
+    }
+   ]
+  },
+  {
+   "id": "u5",
+   "file": "commands/a.toml",
+   "heading": "(top)",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": [
+    {
+     "n": 2,
+     "quote": "A deferred shortcut gets a comment shortcut:",
+     "reader_rule": "rules/engineering.md: Leave deliberate shortcuts marked: TODO(debt):",
+     "held_in": "rules/engineering.md",
+     "hard_stop": false
+    }
+   ]
+  },
+  {
+   "id": "u6",
+   "file": "commands/b.toml",
+   "heading": "(top)",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": [
+    {
+     "n": 2,
+     "quote": "A deferred shortcut gets a comment shortcut:",
+     "reader_rule": "rules/engineering.md: Leave deliberate shortcuts marked: TODO(debt):",
+     "held_in": "rules/engineering.md",
+     "hard_stop": false
+    }
+   ]
+  },
+  {
+   "id": "u7",
+   "file": "skills/a/SKILL.md",
+   "heading": "Reuse",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "duplicate",
+   "quote": "Reuse the codebase first.",
+   "why": "",
+   "covered_by": "Rule 1, Reuse before writing",
+   "held_in": "rules/engineering.md",
+   "star": false,
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "file": "skills/c/SKILL.md",
+   "heading": "Help",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "file": "skills/d/SKILL.md",
+   "heading": "Persona",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": []
+  }
+ ]
+}

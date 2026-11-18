@@ -1,0 +1,8 @@
+{
+ "why": "It injects rules at every session start. Two short rules and one review skill are worth having, copied as text.",
+ "do_this": [
+  "Skip the plugin. Copy the two rules from the Keep card.",
+  "If you install anyway, never use the smallest-version reading for a vague request."
+ ],
+ "patch": "Add to rules/engineering.md:\n\n```diff\n+8. **Never cut protection to make a change smaller.**\n```"
+}

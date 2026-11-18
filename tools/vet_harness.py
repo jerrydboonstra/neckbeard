@@ -83,7 +83,10 @@ if "ANSWERING JUDGE" in prompt:   # the one call that answers every unit (verdic
 if "PROSE JUDGE" in prompt:   # the one call that writes the three free texts
     m = re.search(r"Write the prose to (\S+) as JSON", prompt)
     why = {"states": "Verdict: 🟥 DON'T INSTALL, with 99 conflicts and 99 kept."}.get(os.environ.get("FAKE_PROSE", ""), "FAKE WHY.")
-    json.dump({"why": why, "do_this": ["Fake step one."], "patch": "Fake patch."}, open(m.group(1), "w"))
+    if os.environ.get("FAKE_PROSE") == "leak":   # a prose text that names a local path
+        why = "See " + os.environ["HOME"] + "/notes."
+    if os.environ.get("FAKE_PROSE") != "none":   # "none": the judge writes no prose file
+        json.dump({"why": why, "do_this": ["Fake step one."], "patch": "Fake patch."}, open(m.group(1), "w"))
     reply("done")
 if os.environ.get("FAKE_JUDGE_FAIL") and "Vet one plugin" in prompt:   # the main judge exits non-zero with its message on stdout
     print("judge noise line"); print(os.environ.get("FAKE_FAIL_MSG", "fake-judge-error: out of credit")); sys.exit(1)

@@ -184,4 +184,29 @@ code, out = run("units-verdict", U, J("json.json", {"answers": rows}))
 chk("without --json the text line stays", code == 0 and ": COPY RULES, SKIP PLUGIN;" in out and "units with a conflict 2" in out, out)
 code, out = run("units-verdict", U, one("jbad.json", u1={"rules": "duplicate"}), "--json")
 chk("--json on a refused answers file still refuses, exit 2, and prints no JSON document", code == 2 and "covered_by" in out and not out.lstrip().startswith("{"), out)
+
+# the renderer's input is what units-verdict prints: tools/fixtures/fit/verdict.json is units-verdict --json on units.json and answers.json
+FXD = os.path.join(HERE, "fixtures", "fit")
+code, out = run("units-verdict", os.path.join(FXD, "units.json"), os.path.join(FXD, "answers.json"), "--json")
+try:
+    same = json.loads(out) == json.load(open(os.path.join(FXD, "verdict.json"), encoding="utf-8"))
+except ValueError:
+    same = False
+chk("units-verdict --json on the committed units and answers equals tools/fixtures/fit/verdict.json, the input of the fit golden", code == 0 and same, out[:300])
+# the counting rules: a unit is in exactly one of covered, keep, dropped
+def counted(*rows):
+    code, out = run("units-verdict", U, J("cnt.json", {"answers": [{"id": f"u{i + 1}", "conflicts": [], "why": "w", "quote": "q", "covered_by": "c", "held_in": "rules/x.md", **r} for i, r in enumerate(rows)] + [{"id": f"u{i}", "skill": "drop", "rules": "none", "conflicts": []} for i in range(len(rows) + 1, 6)]}), "--json")
+    try:
+        d = json.loads(out)
+    except ValueError:
+        return {}, {}
+    return d.get("counts", {}), {r["id"]: r for r in d.get("units", [])}
+c, rr = counted({"skill": "keep", "rules": "duplicate"})
+chk("a unit with skill keep and rules duplicate counts in keep, not covered, and is kind skill", (c.get("keep"), c.get("covered"), c.get("dropped"), rr.get("u1", {}).get("kind")), (1, 0, 4, "skill"))
+c, rr = counted({"skill": "keep", "rules": "new-standing"})
+chk("a unit with skill keep and rules new-standing lands in new_standing, not new_skill, and is kind skill", (c.get("new_standing"), c.get("new_skill"), c.get("keep"), c.get("kept_skills"), c.get("kept_rules"), rr.get("u1", {}).get("kind")), (1, 0, 1, 1, 0, "skill"))
+c, rr = counted({"skill": "keep", "rules": "none"})
+chk("a unit with skill keep and nothing else is in keep and counts in neither new row", (c.get("keep"), c.get("new_standing"), c.get("new_skill"), c.get("kept_skills")), (1, 0, 0, 1))
+c, rr = counted({"skill": "drop", "rules": "duplicate"}, {"skill": "drop", "rules": "none", "conflicts": [{"quote": "q", "reader_rule": "r", "held_in": "rules/x.md", "hard_stop": True}]})
+chk("covered is rules duplicate and not keep; a unit with a conflict is still counted once, among dropped", (c.get("covered"), c.get("dropped"), c.get("conflicts"), c.get("keep")), (1, 4, 1, 0))
 sys.exit(1 if fails else 0)

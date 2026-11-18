@@ -21,6 +21,12 @@ __pycache__/
 # _baselines/ so a baseline is never part of the tree a fixture's own inventory reads. A hook config or
 # install script is stored as <name>.fx, and the test copies the tree and drops the suffix, so this
 # repo's own inventory never finds a fixture's hooks.
+!tools/fixtures/fit/units.json
+!tools/fixtures/fit/answers.json
+!tools/fixtures/fit/verdict.json
+!tools/fixtures/fit/verdict-empty.json
+!tools/fixtures/fit/prose.json
+!tools/fixtures/fit/prose-hostile.json
 !tools/fixtures/read-status/_outside.json
 !tools/fixtures/read-status/_baselines/*.baseline.json
 !tools/fixtures/read-status/*/.mcp.json

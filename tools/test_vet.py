@@ -11,19 +11,20 @@ import vet_harness
 from vet_harness import *
 
 
-# 0. --units (prototype): the verdict comes from the per-unit answers, and the banner must carry it
-r = run("units", extra=("--units",), units="units-install")
-chk("units: answers that compute INSTALL, banner INSTALL: exit 0", r["rc"], 0)
-chk("units: the judge got the unit list and the written tests", "UNITS PROTOTYPE" in judge(r)[0]["prompt"] and "new-standing" in judge(r)[0]["prompt"], True)
-r = run("units-mismatch", extra=("--units",), units="units-mismatch")
-chk("units: banner INSTALL but answers compute COPY RULES: refused", (r["rc"], "computed verdict is COPY RULES" in r["out"]), (1, True))
-r = run("units-missing", extra=("--units",), units="units-none")
+def first(r, word):
+    return next(iter(isolated(r, word)), {"prompt": ""})["prompt"]
+
+# 0. the answers: the answering judge gets the unit list and the written tests; the verdict is units-verdict's, whatever the answers compute
+r = run("units", units="units-install")
+chk("units: answers that compute INSTALL: exit 0, strip INSTALL", (r["rc"], "> **\U0001F7E9 INSTALL**" in r["text"]), (0, True))
+chk("units: the answering judge got the unit list and the written tests", ("ANSWERING JUDGE" in first(r, "ANSWERING JUDGE") and "new-standing" in first(r, "ANSWERING JUDGE"), "UNITS:" in first(r, "ANSWERING JUDGE")), (True, True))
+r = run("units-mismatch", units="units-mismatch")
+chk("units: answers that compute COPY RULES give that strip, with no refusal (no judge banner exists to differ from it)", (r["rc"], "> **\U0001F7E8 COPY RULES, SKIP PLUGIN**" in r["text"]), (0, True))
+r = run("units-missing", units="units-none")
 chk("units: an answer missing for a unit: refused", (r["rc"], "answers were refused" in r["out"]), (1, True))
 # 0a. verdict-stability-rules: the units path is the default; the verdict and counts come from code
 STRIP = re.compile(r"^> \*\*(.+?)\*\* \u00b7 (.*?)  $", re.M)
 KINDS = ("FIND PASS", "CONFIRM CALL", "ANSWERING JUDGE", "PROSE JUDGE", "Vet one plugin")
-def first(r, word):
-    return next(iter(isolated(r, word)), {"prompt": ""})["prompt"]
 def kinds(r):
     return [next((k for k in KINDS if k in c["prompt"]), "?") for c in r["calls"] if "single word ok" not in c["prompt"]]
 r = run("order", units="units-install", finds="one", confirm="yes")
@@ -51,9 +52,10 @@ r = run("confirm-fields", units="units-install", finds="one", confirm="yes")
 c = first(r, "CONFIRM CALL")
 chk("confirm: the call asks for hard_stop and sees the reader file's label and heading", ("hard_stop" in c, "rules/safety.md" in c, "Safety: hard stops" in c), (True, True, True))
 r = run("hardstop", units="units-install", finds="one", confirm="yes", fake_env=dict(FAKE_HARDSTOP="0"))
-chk("confirm: a conflict confirmed with hard_stop false is drawn \U0001F7E7 in the Conflicts card, true \U0001F7E5", ("| \U0001F7E7 |" in r["text"], "| \U0001F7E5 |" in r["text"]), (True, False))
+cardtext = lambda r, name: re.search(r"<b>" + name + r"</b>.*?\n</details>", r["text"], re.S).group(0) if re.search(r"<b>" + name + r"</b>", r["text"]) else ""
+chk("confirm: a conflict confirmed with hard_stop false is drawn \U0001F7E7 in the Conflicts card, not \U0001F7E5", ("| \U0001F7E7 |" in cardtext(r, "Conflicts"), "| \U0001F7E5 |" in cardtext(r, "Conflicts")), (True, False))
 r = run("hardstop-yes", units="units-install", finds="one", confirm="yes")
-chk("confirm: a conflict confirmed with hard_stop true is \U0001F7E5 and names the file it is held in", ("| \U0001F7E5 |" in r["text"], "| rules/safety.md |" in r["text"]), (True, True))
+chk("confirm: a conflict confirmed with hard_stop true is \U0001F7E5 in the Conflicts card and names the file it is held in", ("| \U0001F7E5 |" in cardtext(r, "Conflicts"), "| rules/safety.md |" in cardtext(r, "Conflicts")), (True, True))
 r = run("header", units="units-install")
 lines = r["text"].split("\n")
 chk("header: vet writes the title and the header line itself, in the form --check reads", (lines[0], bool(re.match(r"^`\d{4}-\d\d-\d\d` \u00b7 neckbeard \S+ \u00b7 demo 1.0.0", lines[2]))), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", True))
@@ -74,57 +76,61 @@ if out != open(os.path.join(FX, "expected.md"), encoding="utf-8").read():
 chk("fit golden: the seven cards are in mock-up v2's order", re.findall(r"^<details><summary>\S+ <b>(Why this verdict|Conflicts|Already covered|Keep|Dropped|Do this|Proposed rules patch)</b>", out, re.M),
     ["Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch"])
 v = json.load(open(os.path.join(FX, "verdict.json")))
-for verdict_, mark in (("INSTALL", "\U0001F7E9"), ("INSTALL WITH CHANGES", "\U0001F7E8"), ("COPY RULES, SKIP PLUGIN", "\U0001F7E8"), ("SKIP PLUGIN", ""), ("DON'T INSTALL", "\U0001F7E5")):
+for verdict_, mark in (("INSTALL", "\U0001F7E9"), ("INSTALL WITH CHANGES", "\U0001F7E8"), ("COPY RULES, SKIP PLUGIN", "\U0001F7E8"), ("DON'T INSTALL", "\U0001F7E5")):
     alt = tempfile.mkdtemp()
     try:
         json.dump({**v, "verdict": verdict_}, open(os.path.join(alt, "v.json"), "w"))
         p = subprocess.run([sys.executable, FIT, os.path.join(alt, "v.json"), os.path.join(FX, "prose.json"), *FITARGS], capture_output=True, text=True)
-        first = p.stdout.split("\n")[0]
-        chk("fit: the strip's colour for " + verdict_, first.startswith("> **" + (mark + " " if mark else "") + verdict_ + "**"), first)
+        strip_line = p.stdout.split("\n")[0]
+        chk("fit: the strip's colour for " + verdict_, strip_line.startswith("> **" + mark + " " + verdict_ + "**"), strip_line)
     finally:
         shutil.rmtree(alt)
+alt = tempfile.mkdtemp()
+try:
+    json.dump({**v, "verdict": "SKIP PLUGIN"}, open(os.path.join(alt, "v.json"), "w"))
+    p = subprocess.run([sys.executable, FIT, os.path.join(alt, "v.json"), os.path.join(FX, "prose.json"), *FITARGS], capture_output=True, text=True)
+    chk("fit: a verdict units-verdict cannot print is refused, exit 2, nothing on stdout", (p.returncode, p.stdout), (2, ""))
+finally:
+    shutil.rmtree(alt)
 rc, out, err = fit(*FITARGS, prose="prose-hostile.json")
-chk("fit: a hostile prose text (</details>, a | and a newline) closes no card early and breaks no table", (rc, out.count("<details>"), out.count("</details>")), (0, 9, 9))
+chk("fit: a hostile prose text (</details>, </summary>, a | and a newline) opens and closes the seven cards and the Rule files block, no more, and comes out escaped",
+    (rc, out.count("<details>"), out.count("</details>"), "&lt;/details>" in out, "&lt;/summary>" in out), (0, 8, 8, True, True))
 rc, out, err = fit(*FITARGS, verdict="verdict-empty.json")
-chk("fit: a report with nothing kept, covered or in conflict still prints seven cards, each saying None", (rc, len(re.findall(r"^<details><summary>\S+ <b>(?:Conflicts|Already covered|Keep)</b>", out, re.M)), out.count("\nNone.\n")), (0, 3, 3))
+chk("fit: a report with nothing kept, covered or in conflict still prints all seven cards, Conflicts, Already covered and Keep each saying None",
+    (rc, re.findall(r"^<details><summary>\S+ <b>(Why this verdict|Conflicts|Already covered|Keep|Dropped|Do this|Proposed rules patch)</b>", out, re.M), out.count("\nNone.\n")),
+    (0, ["Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch"], 3))
 
 # 0b. --units pools three find passes and confirms each candidate alone; only confirmed conflicts count
-r = run("units-find-none", extra=("--units",), units="units-install")
+r = run("units-find-none", units="units-install")
 chk("pool: three find passes, no candidates, no confirm call, exit 0", (r["rc"], len(isolated(r, "FIND PASS")), len(isolated(r, "CONFIRM CALL"))), (0, 3, 0))
-r = run("units-confirmed", extra=("--units",), units="units-install", finds="one", confirm="yes")
+r = run("units-confirmed", units="units-install", finds="one", confirm="yes")
 chk("pool: the same candidate in three passes is confirmed once", len(isolated(r, "CONFIRM CALL")), 1)
-chk("confirm: a confirmed conflict counts, so INSTALL becomes INSTALL WITH CHANGES and the banner is refused",
-    (r["rc"], "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
-c = isolated(r, "CONFIRM CALL")[0]
+chk("confirm: a confirmed conflict counts, so INSTALL becomes INSTALL WITH CHANGES in the strip",
+    (r["rc"], "> **\U0001F7E8 INSTALL WITH CHANGES**" in r["text"]), (0, True))
+c = next(iter(isolated(r, "CONFIRM CALL")), {"prompt": "", "args": ["--allowedTools", "?"]})
 chk("confirm: the call sees the sentence and the written test, not the units or the dossier",
     ("Always run the tests before you commit." in c["prompt"], "Never run anything destructive without my explicit go-ahead" in c["prompt"], "permits, with no limit" in c["prompt"], "UNITS:" in c["prompt"], "dossier" in c["prompt"].lower()),
     (True, True, True, False, False))
 chk("confirm: the reader rule is the reader's own text; the finder's argument never reaches the call",
     ("FINDER ARGUMENT" in c["prompt"], "rules/safety.md: 1. **Never run anything destructive" in c["prompt"]), (False, True))
 chk("confirm: the call is allowed no tools", c["args"][c["args"].index("--allowedTools") + 1], "")
-r = run("units-rejected", extra=("--units",), units="units-install", finds="one", confirm="no")
+r = run("units-rejected", units="units-install", finds="one", confirm="no")
 chk("confirm: a rejected candidate does not count, exit 0", (r["rc"], "0 of 1 candidates confirmed" in r["out"]), (0, True))
-r = run("units-flaky", extra=("--units",), units="units-install", finds="one", confirm="flaky")
-chk("confirm: a call with no JSON is retried once, and the second answer counts", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (2, True))
-r = run("units-garbage", extra=("--units",), units="units-install", finds="one", confirm="garbage")
+r = run("units-flaky", units="units-install", finds="one", confirm="flaky")
+chk("confirm: a call with no JSON is retried once, and the second answer counts", (len(isolated(r, "CONFIRM CALL")), "> **\U0001F7E8 INSTALL WITH CHANGES**" in r["text"]), (2, True))
+r = run("units-garbage", units="units-install", finds="one", confirm="garbage")
 chk("confirm: two calls with no JSON fail the vet and show what was said", (r["rc"], "gave no usable answer: 'no json here" in r["out"]), (1, True))
-r = run("units-late", extra=("--units",), units="units-install", finds="late", confirm="yes")
-chk("pool: a candidate found in one pass of three is still confirmed", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
-r = run("units-invented", extra=("--units",), units="units-install", finds="invented", confirm="yes")
+r = run("units-late", units="units-install", finds="late", confirm="yes")
+chk("pool: a candidate found in one pass of three is still confirmed", (len(isolated(r, "CONFIRM CALL")), "> **\U0001F7E8 INSTALL WITH CHANGES**" in r["text"]), (1, True))
+r = run("units-invented", units="units-install", finds="invented", confirm="yes")
 chk("pool: a quote that is not in the unit is dropped before any confirm call", (r["rc"], len(isolated(r, "CONFIRM CALL"))), (0, 0))
 chk("cost: the vet prints calls and dollars", "units cost: 3 find and confirm calls, $0.03" in r["out"], True)
-r = run("no-units")
-chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)[0]["prompt"], False)
 
-# 0c. part 1 ("What it adds", tools/part1) goes in the report immediately before At a glance, and nothing else moves
-r = run("part1", commit=True)
-t = re.sub(r"\n`\d{4}-\d\d-\d\d` \u00b7 neckbeard [^\n]*\n\nBaseline: .*?</details>\n", "", r["text"], count=1, flags=re.S)   # the baseline block is tools/vet's own, tested below
-head = "# 🔍 demo 1.0.0 · vetted against the sample reader\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n"
-glance = "## ⚡ At a glance\n\nOne line.\n"
-sec, _, rest = t[len(head):].partition(glance)
-chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
-    (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
-chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+# 0c. part 1 ("What it adds", tools/part1) goes in the report after the fit cards (report-assembly-2-0 reorders the layers), and nothing else moves
+r = run("part1", commit=True, units="units-install")
+sec = r["text"].partition("</details>\n\n## What it adds\n")[2]
+chk("part1: exit 0, one section after the last fit card, ending the report", (r["rc"], r["text"].count("\n## What it adds\n"), r["text"].rstrip().endswith("</details>")), (0, 1, True))
+chk("part1: the section holds the six cards", all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), True)
 chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")
@@ -148,10 +154,6 @@ def vet_with_part1(script, **kw):
 r = vet_with_part1("import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
 chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
     (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
-r = vet_with_part1("print('## What it adds\\n\\n## \\u26a1 At a glance')\n")
-chk("part1: a section that holds the At a glance heading itself fails vet", (r["rc"], "At a glance" in r["out"]), (1, True))
-r = run("part1-missing-heading", report="noglance")
-chk("part1: a report with no At a glance heading fails vet, and the message names it", (r["rc"], "At a glance" in r["out"]), (1, True))
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
 r = run("web")
@@ -216,17 +218,13 @@ chk("no unguarded empty-array expansion under set -u in tools/", sorted(bare), [
 r = run("forced", login="default", uname="Darwin", extra=("--judge", "reader"))
 chk("forced reader: exit 1, no report, one line naming the reason and --judge own", (r["rc"], r["report"], "--judge reader can't log in" in r["out"], "reader mode logs in only on Linux" in r["out"], "--judge own" in r["out"]), (1, False, True, True, True))
 
-# 4. the judge writes no report
-r = run("none", report="none")
-chk("no report: exit 1", r["rc"], 1)
-chk("no report: says so", "wrote no report" in r["out"], True)
+# 4. the prose judge writes no prose file
+r = run("none", units="units-install", fake_env=dict(FAKE_PROSE="none"))
+chk("no prose: exit 1, no report", (r["rc"], r["report"]), (1, False))
+chk("no prose: says so", "wrote no prose" in r["out"], True)
 
-# 5. a report with no verdict banner
-r = run("noverdict", report="noverdict")
-chk("no verdict: exit 1", r["rc"], 1)
-
-# 6. a report that names the target's local path
-r = run("leak", report="leak")
+# 6. a prose text that names a local path
+r = run("leak", units="units-install", fake_env=dict(FAKE_PROSE="leak"))
 chk("leak: exit 1", r["rc"], 1)
 chk("leak: says so", "names a local path" in r["out"], True)
 
