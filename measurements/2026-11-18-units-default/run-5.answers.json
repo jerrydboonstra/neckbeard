@@ -1,0 +1,289 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u2",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "The scope I asked for is the deliverable.",
+   "why": "Splitting adds nothing beyond what was asked, which engineering rule 4 already states.",
+   "covered_by": "4. The scope I asked for is the deliverable.",
+   "held_in": "rules/engineering.md",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u5",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u6",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u7",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u8",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u10",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u11",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u12",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u13",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u14",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u15",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "A diff that both restructures code and changes behaviour, so you can't tell which lines do which, is a finding: split the refactor out and make the change wait on it.",
+   "why": "Reader has no rule on separating refactors from behaviour changes.",
+   "conflicts": []
+  },
+  {
+   "id": "u16",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "A finding outside the item's scope goes in your note as a suggestion, not a reason to reopen.",
+   "why": "Scope discipline is covered by engineering rule 4.",
+   "covered_by": "4. The scope I asked for is the deliverable.",
+   "held_in": "rules/engineering.md",
+   "conflicts": [
+    {
+     "quote": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+     "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+     "held_in": "rules/safety.md",
+     "hard_stop": true
+    }
+   ]
+  },
+  {
+   "id": "u17",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u18",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Name the failure you fear: write \"I claim X; the failure I fear is Y\", then try to produce Y. A verdict is never silence; list what you didn't check.",
+   "why": "Adds adversarial verification and honest unchecked lists beyond the reader's see-it-fail rule.",
+   "star": true,
+   "conflicts": []
+  },
+  {
+   "id": "u19",
+   "skill": "keep",
+   "rules": "duplicate",
+   "quote": "Leave deliberate shortcuts marked: TODO(debt):",
+   "why": "Deprecation markers become debt comments naming ceiling and upgrade path, covered by engineering rule 5.",
+   "covered_by": "5. Leave deliberate shortcuts marked",
+   "held_in": "rules/engineering.md",
+   "conflicts": [
+    {
+     "quote": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+     "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+     "held_in": "rules/safety.md",
+     "hard_stop": true
+    }
+   ]
+  },
+  {
+   "id": "u20",
+   "skill": "keep",
+   "rules": "new-standing",
+   "quote": "Report what you observed, never the verdict: paste raw commands, exit codes and output; \"All 12 tests pass\" is an observation, \"verified\" is the reviewer's call.",
+   "why": "Reader has no rule on evidence reporting; the coding rules in it are already duplicated.",
+   "conflicts": []
+  },
+  {
+   "id": "u21",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u22",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u23",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u24",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u25",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u26",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u27",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "Cat voice and persona; not a work rule.",
+   "conflicts": []
+  },
+  {
+   "id": "u28",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u29",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u30",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u31",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u32",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  },
+  {
+   "id": "u33",
+   "skill": "keep",
+   "rules": "none",
+   "quote": "",
+   "why": "Plugin's own queue mechanics.",
+   "conflicts": []
+  }
+ ]
+}
