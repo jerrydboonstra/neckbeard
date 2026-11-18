@@ -1,0 +1,44 @@
+{
+ "topics": [
+  {
+   "name": "/Users/someone/.claude/secret/notes",
+   "positions": [
+    {
+     "quote": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "file": "a.md",
+     "line": 1,
+     "also_in": 5
+    },
+    {
+     "quote": null,
+     "file": "b`c.md",
+     "line": 2,
+     "also_in": [
+      "d`e.md:1"
+     ]
+    }
+   ]
+  },
+  {
+   "name": null,
+   "positions": null
+  },
+  {
+   "name": "Empty",
+   "positions": []
+  },
+  "junk",
+  {
+   "name": "Rest",
+   "positions": [
+    "junk",
+    {
+     "quote": "last",
+     "file": "e.md",
+     "line": 1,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}

@@ -21,11 +21,12 @@ skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_judge test_vet_stabil
 # Tools
 tools/vet test_vet test_vet_judge test_vet_stability
 tools/badge-logo test_vet test_vet_judge
-tools/part1 test_part1 test_part1_cards test_vet test_mcp_live test_hook_inline_require
-tools/cards.py test_part1_cards test_part1 test_vet test_mcp_live
+tools/part1 test_part1 test_part1_cards test_vet test_mcp_live test_hook_inline_require test_positions_layer
+tools/cards.py test_part1_cards test_part1 test_vet test_mcp_live test_positions_layer
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
-tools/positions test_positions
+tools/positions test_positions test_positions_layer
+tools/positions-layer test_positions_layer
 tools/rule-units test_units
 tools/units-verdict test_units
 tools/units-confirm test_units test_vet test_vet_judge
@@ -47,9 +48,11 @@ tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_part1.py test_part1
 tools/test_part1_cards.py test_part1_cards
 tools/test_positions.py test_positions
+tools/test_positions_layer.py test_positions_layer
 tools/excerpts test_excerpts
 tools/test_excerpts.py test_excerpts
 tools/fixtures/part1/** test_part1 test_part1_cards test_hook_inline_require
+tools/fixtures/positions-layer/** test_positions_layer
 tools/test_read_status.py test_read_status
 tools/test_hook_echo.py test_hook_echo
 tools/test_hook_inline_require.py test_hook_inline_require

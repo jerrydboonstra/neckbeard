@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+"""positions-layer POSITIONS_JSON [--repo URL] [--commit REF]: print "## Where it takes a position", one collapsible card per topic.
+
+POSITIONS_JSON is what tools/positions writes: {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]},
+topics already in display order. No model call: the same input gives byte-identical output.
+
+A card's gist is `<n> · "<first quote>"`, the quote cut to 60 characters, the last one the "…". Its body is one list item per position: the quote in
+double quotes, then its place, `file:line` (`file` when line is null, a hook template) in code text. The place links to
+REPO/blob/COMMIT/FILE#L<line> when --repo is an https://github.com/ URL and --commit is one word, else it is plain code text;
+also_in places follow as plain text. Every quote and place goes through tools/part1's safe() (one line, paths cut to basenames,
+200 characters). A quote's `\\`, `[`, `]` and backtick are backslash-escaped in the body, so a quote makes no Markdown link, image
+or code span of its own (a bare URL in a quote is left as written, and GitHub autolinks it, showing its own address); the gist is not escaped, because its summary line is an HTML block and renders no Markdown. tools/cards.py's card()
+writes the card markup and escapes `<`, `>` and `&` in the name and gist and `<` in a body line.
+
+Exit 2, one line on stderr, for bad arguments, an unreadable file or JSON with no "topics" list. A line that is not an integer is
+dropped (the place shows the file alone); a topic, position or also_in of the wrong type is skipped."""
+import importlib.machinery, importlib.util, json, os, re, sys
+from urllib.parse import quote
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from cards import card
+
+_spec = importlib.util.spec_from_loader("part1", importlib.machinery.SourceFileLoader("part1", os.path.join(HERE, "part1")))
+_part1 = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_part1)
+safe = _part1.safe
+
+USAGE = "usage: positions-layer POSITIONS_JSON [--repo URL] [--commit REF]"
+HEADING = "## Where it takes a position"
+NOTE = ("> Read from the plugin's instruction files (skills, commands, agents, rule files) and from the template text of hooks that "
+        "build their output at run time. Text a hook injects from elsewhere, or builds in code, is not quoted. Topics come from a "
+        "fixed list, grouped by code, with no judgement.")
+REPO = re.compile(r"https://github\.com/[^\s()<>\[\]`]+")
+
+
+def md_escape(text):
+    for ch in "\\[]`":
+        text = text.replace(ch, "\\" + ch)
+    return text
+
+
+def place(file, line):
+    """A place's text and the URL path suffix for its link: ("file:line", "file#Lline")."""
+    f = safe(file).replace("`", "'")
+    line = line if isinstance(line, int) and not isinstance(line, bool) else None   # anything else could carry Markdown
+    return (f"{f}:{line}" if line is not None else f), quote(f, safe="/") + (f"#L{line}" if line is not None else "")
+
+
+def render(data, repo, commit):
+    link = repo and REPO.fullmatch(repo) and commit and not re.search(r"\s", commit)
+    out = [HEADING, "", NOTE, ""]
+    cards = []
+    for topic in data["topics"]:
+        positions = topic.get("positions") if isinstance(topic, dict) else None
+        positions = [p for p in positions if isinstance(p, dict)] if isinstance(positions, list) else []
+        if not positions:
+            continue
+        lines = []
+        for p in positions:
+            text, path = place(p.get("file", ""), p.get("line"))
+            code = f"`{text}`"
+            if link:
+                code = f"[{code}]({repo.rstrip('/')}/blob/{quote(commit, safe='')}/{path})"
+            also_in = p.get("also_in") if isinstance(p.get("also_in"), list) else []
+            also = ", ".join(f"`{safe(a).replace('`', chr(39))}`" for a in also_in if a)
+            lines.append(f'- "{md_escape(safe(p.get("quote")))}" {code}' + (f" (also in {also})" if also else ""))
+        first = safe(positions[0].get("quote"))
+        first = first if len(first) <= 60 else first[:59] + "…"
+        cards.append(card("", safe(topic.get("name")), f'{len(positions)} · "{first}"', lines))
+    if not cards:
+        return out + ["No positions found."]
+    for c in cards:
+        out += c + [""]
+    return out[:-1]
+
+
+def main(argv):
+    path, repo, commit, rest = None, None, None, list(argv)
+    while rest:
+        a = rest.pop(0)
+        if a in ("--repo", "--commit") and rest:
+            if a == "--repo":
+                repo = rest.pop(0)
+            else:
+                commit = rest.pop(0)
+        elif path is None and not a.startswith("--"):
+            path = a
+        else:
+            print(USAGE, file=sys.stderr)
+            return 2
+    if path is None:
+        print(USAGE, file=sys.stderr)
+        return 2
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"positions-layer: cannot read {os.path.basename(path)}: {type(e).__name__}", file=sys.stderr)
+        return 2
+    if not isinstance(data, dict) or not isinstance(data.get("topics"), list):
+        print(f'positions-layer: {os.path.basename(path)} has no "topics" list', file=sys.stderr)
+        return 2
+    print("\n".join(render(data, repo, commit)))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
