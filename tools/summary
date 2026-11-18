@@ -17,10 +17,14 @@ read in full is never 🟩: a 🟩 outcome becomes 🟨. A section that is not-a
                       Code mod, or a hook running curl, wget or nc or holding an http(s) URL; 🟨 any hook command; 🟩 none.
   Read completeness   tools/part1's overall read state, as its colour.
 
-A command word is the first word of each piece of the command after splitting on `|`, `&&`, `||`, `;` and `&`, with leading NAME=value
-words skipped (tools/part1's words()), compared by basename. Inline code (`bash -c`, `node -e`) and hook script bodies are not searched.
+A command word is the first word of each piece of the command, cut at newlines and at `|`, `&&`, `||`, `;` and `&` outside quotes, with
+leading NAME=value words skipped (tools/part1's words()), compared by basename; an MCP server's command and each of its args are
+compared the same way. Inline code (`bash -c`, `node -e`), hook script bodies and commands behind a wrapper (sudo, timeout, command,
+nohup, exec, xargs, subshells, `$( )`, backticks) are not searched. A hook command over tools/part1's MAX_COMMAND characters is too long to
+read and makes Live surface 🟧. A size that is not a whole number, or a list field of the wrong type, counts as an unread input.
+A refused skill, agent or rule entry counts 0 toward Cost.
 A dossier with no read_status exits 2."""
-import importlib.machinery, importlib.util, json, os, re, sys
+import importlib.machinery, importlib.util, json, os, re, shlex, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -58,14 +62,38 @@ def as_list(v):
     return v if isinstance(v, list) else []
 
 
+def size_of(v):
+    """A size from the dossier: a whole number that is not negative (a bool is not one), else None."""
+    return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else None
+
+
 def command_words(command):
-    """The first word of each piece of a command, as a basename."""
+    """The first word of each piece of a command, as a basename. The command is cut at newlines, then at | && || ; and & outside
+    quotes (a piece the shell would not cut, such as 'cd /app && x' inside quotes, stays whole); a line shlex cannot parse is cut
+    at those characters wherever they stand. Each piece goes through tools/part1's words()."""
     out = []
-    for piece in SEPARATORS.split(command) if isinstance(command, str) else []:
-        w = part1.words(piece)
-        if w:
-            out.append(os.path.basename(w[0]))
+    for line in command.split("\n") if isinstance(command, str) else []:
+        try:
+            lex = shlex.shlex(line, posix=True, punctuation_chars=True)
+            lex.whitespace_split = True
+            toks, groups = list(lex), [[]]
+            for t in toks:
+                if t and set(t) <= set("|&;"):
+                    groups.append([])
+                else:
+                    groups[-1].append(t)
+            pieces = [shlex.join(g) for g in groups if g]
+        except ValueError:
+            pieces = SEPARATORS.split(line)
+        for piece in pieces:
+            w = part1.words(piece)
+            if w:
+                out.append(os.path.basename(w[0]))
     return out
+
+
+def too_long(command):
+    return isinstance(command, str) and len(command) > part1.MAX_COMMAND
 
 
 def hook_commands(hooks):
@@ -74,17 +102,33 @@ def hook_commands(hooks):
             if isinstance(c, dict) and isinstance(c.get("command"), str)]
 
 
-def never_green(colour, states):
-    return Y if colour == G and part1.read_state(states) != "read in full" else colour
+def finish(colour, line, states):
+    """A row's colour, line and input states, after the never-green rule: a 🟩 whose inputs were not all read in full is 🟨, and
+    any row not read in full says so, so a line never claims an absence nobody read."""
+    if part1.read_state(states) == "read in full":
+        return colour, line
+    return (Y if colour == G else colour), f"{line} (input not read in full)"
 
 
 def cost(t, sec, hooks, hsec):
+    states = [sec("skills")[0], sec("agents")[0], sec("rule_files")[0], hsec[0]]
     desc = lambda e: len(str(e.get("description") or "")) if isinstance(e, dict) and not e.get("refused") else 0
     skills = sum(desc(s) for s in as_list(t.get("skills")))
     agents = sum(desc(a) for a in as_list(t.get("agents")))
-    rules = sum(r["bytes"] for r in as_list(t.get("rule_files")) if isinstance(r, dict) and isinstance(r.get("bytes"), int) and not r.get("refused"))
+    rules = hook = 0
+    for r in as_list(t.get("rule_files")):
+        if isinstance(r, dict) and not r.get("refused") and r.get("bytes") is not None:
+            if size_of(r["bytes"]) is None:
+                states.append("failed")   # a size that is not a whole number is not a size
+            else:
+                rules += r["bytes"]
     inj = as_list(hooks.get("injected_content"))
-    hook = sum(i["bytes"] for i in inj if isinstance(i, dict) and isinstance(i.get("bytes"), int))
+    for i in inj:
+        if isinstance(i, dict) and i.get("bytes") is not None:
+            if size_of(i["bytes"]) is None:
+                states.append("failed")
+            else:
+                hook += i["bytes"]
     twice = hooks.get("hooks_reach_subagents") is True
     total = skills + agents + rules + hook * (2 if twice else 1)
     b = RULES["cost_bands"]
@@ -93,7 +137,7 @@ def cost(t, sec, hooks, hsec):
     line = (f"{'at least ' if lower else ''}{n(total)} added to every session, ~{n((total + 2) // 4)} tokens"
             f" ({n(skills)} skill descriptions, {n(agents)} agent descriptions, {n(rules)} rule files, {n(hook)} hook text"
             f"{', counted twice: hooks reach subagents' if twice and hook else ''})")
-    return never_green(colour, [sec("skills")[0], sec("agents")[0], sec("rule_files")[0], hsec[0]]), line
+    return finish(colour, line, states)
 
 
 def reach(t, sec, hooks):
@@ -101,6 +145,9 @@ def reach(t, sec, hooks):
     mods = bool(as_list(hooks.get("mods")))
     rules = bool(as_list(t.get("rule_files")))
     r = hooks.get("hooks_reach_subagents")
+    states = [sec("hooks")[0], sec("rule_files")[0]]
+    if "mods" in hooks and not isinstance(hooks["mods"], list):
+        states.append("failed")
     if has_hook and r is True:
         colour, line = R, "a hook runs in every session and in every subagent too"
     elif has_hook or mods or rules:
@@ -108,37 +155,49 @@ def reach(t, sec, hooks):
         colour, line = Y, f"{', '.join(what)} in every main session" + (", subagent reach unknown" if has_hook and r is None else "")
     else:
         colour, line = G, "on demand only"
-    return never_green(colour, [sec("hooks")[0], sec("rule_files")[0]]), line
+    return finish(colour, line, states)
 
 
 def leaves(t, sec):
-    files = as_list(t.get("persistence_candidates"))
-    state = sec("persistence_candidates")[0]
+    pc = t.get("persistence_candidates")
+    files = as_list(pc)
+    states = [sec("persistence_candidates")[0]] + (["failed"] if pc is not None and not isinstance(pc, list) else [])
     if files:
         return O, f"{n(len(files))} files that may write state"
-    colour = never_green(G, [state])
-    return colour, "nothing found" + ("" if state in ("read", "not-applicable") else f", but the scan was {'partial' if state == 'partial' else 'not read'}")
+    return finish(G, "nothing found", states)
 
 
 def live(t, sec, hooks):
     cmds = hook_commands(hooks)
     mods = as_list(hooks.get("mods"))
-    servers = [s for s in as_list((t.get("mcp_servers") or {}).get("servers")) if isinstance(s, dict)] if isinstance(t.get("mcp_servers"), dict) else []
-    words = {w for c in cmds for w in command_words(c)}
+    mcp = t.get("mcp_servers")
+    states = [sec("hooks")[0], sec("mcp_servers")[0]]
+    if isinstance(mcp, dict) and not isinstance(mcp.get("servers"), (list, type(None))) or mcp is not None and not isinstance(mcp, dict) \
+            or "mods" in hooks and not isinstance(hooks["mods"], list):
+        states.append("failed")
+    servers = [s for s in as_list(mcp.get("servers")) if isinstance(s, dict)] if isinstance(mcp, dict) else []
+    long_cmd = any(too_long(c) for c in cmds)
+    hook_words = {w for c in cmds if not too_long(c) for w in command_words(c)}
+    words = set(hook_words)
     for s in servers:
-        words |= {os.path.basename(str(a)) for a in [*(command_words(s.get("command")) or [None])[:1], *as_list(s.get("args"))] if a is not None}
+        args = s.get("args")
+        if args is not None and not isinstance(args, list):
+            states.append("failed")
+        first = [] if too_long(s.get("command")) else command_words(s.get("command"))[:1]
+        words |= {os.path.basename(str(a)) for a in [*first, *as_list(args)]}
+    net = bool(hook_words & set(RULES["network"])) or any(URL.search(c) for c in cmds) or long_cmd
     if words & set(RULES["remote_shell"]):
         colour, line = R, "runs " + ", ".join(sorted(words & set(RULES["remote_shell"]))) + " (a remote shell)"
-    elif servers or mods or words & set(RULES["network"]) or any(URL.search(c) for c in cmds):
+    elif servers or mods or net:
         what = [f"{len(servers)} MCP servers"] if servers else []
         what += [f"{len(mods)} Claude Code mods"] if mods else []
-        what += ["hook commands that may reach the network"] if (words & set(RULES["network"]) or any(URL.search(c) for c in cmds)) else []
+        what += ["hook commands that may reach the network" + (" (one too long to read)" if long_cmd else "")] if net else []
         colour, line = O, ", ".join(what)
     elif cmds:
         colour, line = Y, f"{len(cmds)} hook commands, local scripts only"
     else:
-        colour, line = G, "no hook commands, MCP servers or mods"
-    return never_green(colour, [sec("hooks")[0], sec("mcp_servers")[0]]), line
+        colour, line = G, "no hook commands, MCP servers or mods found"
+    return finish(colour, line, states)
 
 
 def footer():
@@ -148,12 +207,13 @@ def footer():
         "",
         f"- Cost: 🟩 under {n(b[0])}; 🟨 {n(b[0])} to {n(b[1] - 1)}; 🟧 {n(b[1])} to {n(b[2] - 1)}; 🟥 {n(b[2])} and over. "
         "Size is skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); "
-        "hook text counts twice when hooks reach subagents.",
+        "hook text counts twice when hooks reach subagents; an entry that was refused or has no usable size counts as 0.",
         "- Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).",
         "- Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.",
         f"- Live surface: 🟥 a hook or MCP command runs {', '.join(RULES['remote_shell'])}; "
-        f"🟧 any MCP server, any Claude Code mod, a hook running {', '.join(RULES['network'])} or holding an http:// or https:// URL; 🟨 any hook command; 🟩 none. "
-        "A command word is the first word of each piece split on | && || ; &, after NAME=value words, by basename; inline code (bash -c, node -e) and hook script bodies are not searched.",
+        f"🟧 any MCP server, any Claude Code mod, a hook running {', '.join(RULES['network'])} or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. "
+        "A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command and each of its args are compared the same way. "
+        "Inline code (bash -c, node -e), hook script bodies and commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks) are not searched.",
         "- Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.",
     ]
 
