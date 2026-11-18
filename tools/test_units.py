@@ -39,7 +39,7 @@ chk("rule-units: ids are u1.. in order", [u["id"] for u in units] == ["u1", "u2"
 U = os.path.join(d, "units.json")
 
 # units-verdict: the verdict rule, from two answers per unit
-C = [{"quote": "q", "reader_rule": "r"}]
+C = [{"quote": "q", "reader_rule": "r", "held_in": "rules/x.md", "hard_stop": False}]
 def answers(name, pairs):
     return J(name, {"answers": [{"id": f"u{i + 1}", "skill": k, "rules": "none" if r == "conflict" else r,
                                  "conflicts": C if r == "conflict" else [], "why": "x"} for i, (k, r) in enumerate(pairs)]})
@@ -114,13 +114,14 @@ chk("pool: a reader_rule that matches no reader rule drops the candidate", [x["c
 code, out = run("units-confirm", "pool", U2, DOS, C2, os.path.join(d, "nope.json"))
 chk("pool: an unreadable find pass is skipped, not fatal", code == 0 and "0 candidates" in out, out)
 code, out = run("units-confirm", "pool", U2, DOS, C2, f1, f2, f3)
-cc = lambda name, rows: J(name, {"confirmations": [{"cid": cid, "conflict": v, "why": "w"} for cid, v in rows]})
+cc = lambda name, rows: J(name, {"confirmations": [{"cid": cid, "conflict": v, "hard_stop": True, "why": "w"} for cid, v in rows]})
 ans = lambda: answers("m.json", [("keep", "none"), D])
 code, out = run("units-confirm", "merge", C2, cc("c1.json", [("c1", True), ("c2", False), ("c3", False)]), ans())
 code2, out2 = run("units-verdict", U2, os.path.join(d, "m.json"))
 chk("merge: a confirmed candidate becomes the unit's conflict, a rejected one does not", code == 0 and "1 of 3 candidates confirmed" in out and "INSTALL WITH CHANGES" in out2 and "units with a conflict 1" in out2, out + out2)
 got = json.load(open(os.path.join(d, "m.json")))["answers"]
-chk("merge: it carries the confirmed sentence and rule", got[0]["conflicts"] == [{"quote": "You may try the same action, on your own judgement.", "reader_rule": R1}] and got[1]["conflicts"] == [], got)
+chk("merge: it carries the confirmed sentence and rule, the reader file it is held in, and whether it is a hard stop",
+    got[0]["conflicts"] == [{"quote": "You may try the same action, on your own judgement.", "reader_rule": R1, "held_in": "rules/safety.md", "hard_stop": True}] and got[1]["conflicts"] == [], got)
 code, out = run("units-confirm", "merge", C2, cc("c2.json", [("c1", False), ("c2", False), ("c3", False)]), answers("m2.json", [("keep", "conflict"), D]))
 code2, out2 = run("units-verdict", U2, os.path.join(d, "m2.json"))
 chk("merge: a conflict the judge wrote itself is replaced, so none confirmed means INSTALL", code == 0 and ": INSTALL;" in out2 and "units with a conflict 0" in out2, out + out2)
@@ -128,6 +129,59 @@ code, out = run("units-confirm", "merge", C2, cc("c3.json", [("c1", True)]), ans
 chk("merge: a candidate with no confirmation is refused, exit 2", code == 2 and "c2" in out, out)
 code, out = run("units-confirm", "merge", C2, J("c4.json", {"confirmations": [{"cid": "c1", "conflict": "yes"}, {"cid": "c2", "conflict": True}, {"cid": "c3", "conflict": True}]}), ans())
 chk("merge: a confirmation that is not true or false is refused", code == 2 and "c1" in out, out)
+code, out = run("units-confirm", "merge", C2, J("c5.json", {"confirmations": [{"cid": "c1", "conflict": True, "why": "w"}, {"cid": "c2", "conflict": False}, {"cid": "c3", "conflict": False}]}), ans())
+chk("merge: a confirmed conflict with no hard_stop answer is refused, exit 2 (verdict-stability-rules, Done when 4)", code == 2 and "c1" in out and "hard_stop" in out, out)
 code, out = run("units-confirm")
 chk("units-confirm with no arguments prints usage, exit 2", code == 2, out)
+
+# verdict-stability-rules, Done when 4: the answer fields the fit cards read are validated
+CF = {"quote": "q", "reader_rule": "rules/x.md: r", "held_in": "rules/x.md", "hard_stop": False}
+def one(name, **over):
+    rows = [{"id": f"u{i}", "skill": "drop", "rules": "none", "conflicts": [], "why": "x"} for i in range(1, 6)]
+    rows[0].update(over.pop("u1", {}))
+    for k, v in over.items():
+        rows[int(k[1:]) - 1].update(v)
+    return J(name, {"answers": rows})
+code, out = run("units-verdict", U, one("nh.json", u1={"conflicts": [{k: v for k, v in CF.items() if k != "held_in"}]}))
+chk("a conflict with no held_in is refused, naming the field", code == 2 and "u1" in out and "held_in" in out, out)
+code, out = run("units-verdict", U, one("nhs.json", u1={"conflicts": [{k: v for k, v in CF.items() if k != "hard_stop"}]}))
+chk("a conflict with no hard_stop is refused, naming the field", code == 2 and "u1" in out and "hard_stop" in out, out)
+code, out = run("units-verdict", U, one("nhb.json", u1={"conflicts": [{**CF, "hard_stop": "yes"}]}))
+chk("a conflict whose hard_stop is not true or false is refused", code == 2 and "hard_stop" in out, out)
+code, out = run("units-verdict", U, one("dup1.json", u1={"rules": "duplicate", "held_in": "rules/x.md"}))
+chk("a duplicate answer with no covered_by is refused, naming the field", code == 2 and "u1" in out and "covered_by" in out, out)
+code, out = run("units-verdict", U, one("dup2.json", u1={"rules": "duplicate", "covered_by": "Rule 1"}))
+chk("a duplicate answer with no held_in is refused, naming the field", code == 2 and "u1" in out and "held_in" in out, out)
+code, out = run("units-verdict", U, one("star2.json", u1={"rules": "new-standing", "star": True}, u2={"rules": "new-standing", "star": True}))
+chk("two starred units are refused, naming star", code == 2 and "star" in out, out)
+code, out = run("units-verdict", U, one("star0.json", u1={"star": True}))
+chk("a star on a unit that is not kept is refused", code == 2 and "star" in out and "u1" in out, out)
+code, out = run("units-verdict", U, one("star1.json", u1={"rules": "new-standing", "star": True}))
+chk("one starred kept unit is accepted", code == 0, out)
+
+# units-verdict --json: the verdict, the counts and one record per unit, which tools/fit reads
+CX = {"quote": "A deferred shortcut gets a comment", "reader_rule": "rules/engineering.md: Leave deliberate shortcuts marked", "held_in": "rules/engineering.md", "hard_stop": False}
+rows = [{"id": "u1", "skill": "drop", "rules": "new-standing", "quote": "Never cut protection.", "star": True, "conflicts": [], "why": "w1"},
+        {"id": "u2", "skill": "drop", "rules": "duplicate", "quote": "Reuse first.", "covered_by": "Rule 1, Reuse before writing", "held_in": "rules/engineering.md", "conflicts": [], "why": "w2"},
+        {"id": "u3", "skill": "drop", "rules": "none", "conflicts": [CX], "why": "w3"},
+        {"id": "u4", "skill": "drop", "rules": "none", "conflicts": [CX], "why": "w4"},
+        {"id": "u5", "skill": "drop", "rules": "new-skill-text", "quote": "Review by reading callers.", "conflicts": [], "why": "w5"}]
+code, out = run("units-verdict", U, J("json.json", {"answers": rows}), "--json")
+try:
+    got = json.loads(out)
+except ValueError:
+    got = {}
+chk("--json prints one JSON document with the verdict", code == 0 and got.get("verdict") == "COPY RULES, SKIP PLUGIN", out)
+want = {"units": 5, "conflicts": 1, "covered": 1, "keep": 2, "dropped": 2, "new_standing": 1, "new_skill": 1, "kept_rules": 1, "kept_skills": 1, "units_with_conflict": 2}
+chk("--json counts: each unit in exactly one of covered, keep, dropped; a conflict shared by two units is one", {k: got.get("counts", {}).get(k) for k in want} == want, got.get("counts"))
+recs = {r["id"]: r for r in got.get("units", [])} or {f"u{i}": {} for i in range(1, 6)}
+chk("--json has one record per unit with id, file, heading, kind, skill, rules, quote, why, covered_by, held_in, star, conflicts",
+    sorted(recs) == ["u1", "u2", "u3", "u4", "u5"] and all(k in recs["u1"] for k in ("id", "file", "heading", "kind", "skill", "rules", "quote", "why", "covered_by", "held_in", "star", "conflicts")), recs)
+chk("--json: kind is rule for a new standing rule and skill for new-skill-text; star is carried; a duplicate carries covered_by and held_in",
+    tuple(recs[a].get(b) for a, b in (("u1", "kind"), ("u5", "kind"), ("u1", "star"), ("u2", "covered_by"), ("u2", "held_in"))) == ("rule", "skill", True, "Rule 1, Reuse before writing", "rules/engineering.md"), recs)
+chk("--json: units with the same conflict share its number, numbered from 1", [c["n"] for c in recs["u3"].get("conflicts", [])] == [1] == [c["n"] for c in recs["u4"].get("conflicts", [])], recs["u3"])
+code, out = run("units-verdict", U, J("json.json", {"answers": rows}))
+chk("without --json the text line stays", code == 0 and ": COPY RULES, SKIP PLUGIN;" in out and "units with a conflict 2" in out, out)
+code, out = run("units-verdict", U, one("jbad.json", u1={"rules": "duplicate"}), "--json")
+chk("--json on a refused answers file still refuses, exit 2, and prints no JSON document", code == 2 and "covered_by" in out and not out.lstrip().startswith("{"), out)
 sys.exit(1 if fails else 0)

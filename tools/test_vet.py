@@ -19,6 +19,75 @@ r = run("units-mismatch", extra=("--units",), units="units-mismatch")
 chk("units: banner INSTALL but answers compute COPY RULES: refused", (r["rc"], "computed verdict is COPY RULES" in r["out"]), (1, True))
 r = run("units-missing", extra=("--units",), units="units-none")
 chk("units: an answer missing for a unit: refused", (r["rc"], "answers were refused" in r["out"]), (1, True))
+# 0a. verdict-stability-rules: the units path is the default; the verdict and counts come from code
+STRIP = re.compile(r"^> \*\*(.+?)\*\* \u00b7 (.*?)  $", re.M)
+KINDS = ("FIND PASS", "CONFIRM CALL", "ANSWERING JUDGE", "PROSE JUDGE", "Vet one plugin")
+def first(r, word):
+    return next(iter(isolated(r, word)), {"prompt": ""})["prompt"]
+def kinds(r):
+    return [next((k for k in KINDS if k in c["prompt"]), "?") for c in r["calls"] if "single word ok" not in c["prompt"]]
+r = run("order", units="units-install", finds="one", confirm="yes")
+chk("order: with no --units the calls are three find passes, one confirm, the answering judge, then the prose judge, and never the whole-report call (Done when 1)",
+    (r["rc"], kinds(r)), (0, ["FIND PASS"] * 3 + ["CONFIRM CALL", "ANSWERING JUDGE", "PROSE JUDGE"]))
+chk("order: the report's strip and counts are units-verdict's (a kept skill with a confirmed conflict is INSTALL WITH CHANGES, one conflict, one kept)",
+    (STRIP.search(r["text"]) and STRIP.search(r["text"]).group(1), "\u26d4 **1** conflicts" in r["text"], "\U0001F7E9 **1** keep" in r["text"]), ("\U0001F7E8 INSTALL WITH CHANGES", True, True))
+chk("order: the report has the strip and the seven fit cards", [n for n in re.findall(r"^<details><summary>\S+ <b>(.*?)</b>", r["text"], re.M) if n in ("Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch")],
+    ["Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch"])
+chk("order: the units, answers and prose are kept beside the report", [f for f in ("report.units.json", "report.answers.json", "report.prose.json") if f in r["side_left"]], ["report.units.json", "report.answers.json", "report.prose.json"])
+r = run("units-noop", extra=("--units",), units="units-install")
+chk("--units stays accepted and changes nothing: same calls, exit 0", (r["rc"], kinds(r)), (0, ["FIND PASS"] * 3 + ["ANSWERING JUDGE", "PROSE JUDGE"]))
+u = run("usage", extra=("--bogus",), fake_body=NO_CLAUDE)
+chk("--units is a no-op, said in the usage line", "--units is a no-op" in u["out"], True)
+r = run("prose-states", units="units-install", fake_env=dict(FAKE_PROSE="states"))
+chk("prose: a judge text that states its own verdict and counts changes neither the strip nor the counts, and vet does not refuse (Done when 3)",
+    (r["rc"], STRIP.search(r["text"]).group(1) if STRIP.search(r["text"]) else None, "\u26d4 **0** conflicts" in r["text"], "99 conflicts" in r["text"].split("<details>")[0]), (0, "\U0001F7E9 INSTALL", True, False))
+p_ = first(r, "PROSE JUDGE")
+chk("prose: the prose judge gets the computed verdict, counts and unit records, and is asked for why, do_this and patch only",
+    ("INSTALL" in p_, '"counts"' in p_, "u1" in p_, all(w in p_ for w in ("why", "do_this", "patch")), "banner" in p_.lower()), (True, True, True, True, False))
+a_ = first(r, "ANSWERING JUDGE")
+chk("answering judge: asked for covered_by, held_in and star; no verdict banner, counts or tool run asked of it",
+    (all(w in a_ for w in ("covered_by", "held_in", "star")), "banner" in a_.lower(), "units-verdict" in a_, "units-confirm" in a_), (True, False, False, False))
+r = run("confirm-fields", units="units-install", finds="one", confirm="yes")
+c = first(r, "CONFIRM CALL")
+chk("confirm: the call asks for hard_stop and sees the reader file's label and heading", ("hard_stop" in c, "rules/safety.md" in c, "Safety: hard stops" in c), (True, True, True))
+r = run("hardstop", units="units-install", finds="one", confirm="yes", fake_env=dict(FAKE_HARDSTOP="0"))
+chk("confirm: a conflict confirmed with hard_stop false is drawn \U0001F7E7 in the Conflicts card, true \U0001F7E5", ("| \U0001F7E7 |" in r["text"], "| \U0001F7E5 |" in r["text"]), (True, False))
+r = run("hardstop-yes", units="units-install", finds="one", confirm="yes")
+chk("confirm: a conflict confirmed with hard_stop true is \U0001F7E5 and names the file it is held in", ("| \U0001F7E5 |" in r["text"], "| rules/safety.md |" in r["text"]), (True, True))
+r = run("header", units="units-install")
+lines = r["text"].split("\n")
+chk("header: vet writes the title and the header line itself, in the form --check reads", (lines[0], bool(re.match(r"^`\d{4}-\d\d-\d\d` \u00b7 neckbeard \S+ \u00b7 demo 1.0.0", lines[2]))), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", True))
+chk("header: the Baseline sits inside Why this verdict, with the Verdict is relative line and the Rule files block", ("<b>Why this verdict</b>" in r["text"] and r["text"].find("Baseline: ") > r["text"].find("<b>Why this verdict</b>"), "Verdict is relative to the [sample reader]" in r["text"], "<details><summary>Rule files</summary>" in r["text"]), (True, True, True))
+
+# 0a2. tools/fit renders units-verdict --json and the prose into the strip and seven fit cards (Done when 2)
+FIT = os.path.join(HERE, "fit")
+FX = os.path.join(HERE, "fixtures", "fit")
+def fit(*args, verdict="verdict.json", prose="prose.json"):
+    p = subprocess.run([sys.executable, FIT, os.path.join(FX, verdict), os.path.join(FX, prose), *args], capture_output=True, text=True)
+    return p.returncode, p.stdout, p.stderr
+FITARGS = ("--label", "the sample reader", "--target", "demo", "--verdict-text", "Verdict is relative to the sample reader.", "--baseline", os.path.join(FX, "baseline.md"))
+rc, out, err = fit(*FITARGS)
+chk("fit golden: a fixed units-verdict --json and fixed prose print the strip and the seven cards, byte for byte", (rc, out == open(os.path.join(FX, "expected.md"), encoding="utf-8").read()), (0, True))
+if out != open(os.path.join(FX, "expected.md"), encoding="utf-8").read():
+    import difflib
+    print("".join(list(difflib.unified_diff(open(os.path.join(FX, "expected.md"), encoding="utf-8").read().splitlines(1), out.splitlines(1)))[:40]))
+chk("fit golden: the seven cards are in mock-up v2's order", re.findall(r"^<details><summary>\S+ <b>(Why this verdict|Conflicts|Already covered|Keep|Dropped|Do this|Proposed rules patch)</b>", out, re.M),
+    ["Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch"])
+v = json.load(open(os.path.join(FX, "verdict.json")))
+for verdict_, mark in (("INSTALL", "\U0001F7E9"), ("INSTALL WITH CHANGES", "\U0001F7E8"), ("COPY RULES, SKIP PLUGIN", "\U0001F7E8"), ("SKIP PLUGIN", ""), ("DON'T INSTALL", "\U0001F7E5")):
+    alt = tempfile.mkdtemp()
+    try:
+        json.dump({**v, "verdict": verdict_}, open(os.path.join(alt, "v.json"), "w"))
+        p = subprocess.run([sys.executable, FIT, os.path.join(alt, "v.json"), os.path.join(FX, "prose.json"), *FITARGS], capture_output=True, text=True)
+        first = p.stdout.split("\n")[0]
+        chk("fit: the strip's colour for " + verdict_, first.startswith("> **" + (mark + " " if mark else "") + verdict_ + "**"), first)
+    finally:
+        shutil.rmtree(alt)
+rc, out, err = fit(*FITARGS, prose="prose-hostile.json")
+chk("fit: a hostile prose text (</details>, a | and a newline) closes no card early and breaks no table", (rc, out.count("<details>"), out.count("</details>")), (0, 9, 9))
+rc, out, err = fit(*FITARGS, verdict="verdict-empty.json")
+chk("fit: a report with nothing kept, covered or in conflict still prints seven cards, each saying None", (rc, len(re.findall(r"^<details><summary>\S+ <b>(?:Conflicts|Already covered|Keep)</b>", out, re.M)), out.count("\nNone.\n")), (0, 3, 3))
+
 # 0b. --units pools three find passes and confirms each candidate alone; only confirmed conflicts count
 r = run("units-find-none", extra=("--units",), units="units-install")
 chk("pool: three find passes, no candidates, no confirm call, exit 0", (r["rc"], len(isolated(r, "FIND PASS")), len(isolated(r, "CONFIRM CALL"))), (0, 3, 0))

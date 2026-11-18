@@ -108,6 +108,85 @@ chk("a report with no verdict banner is refused", rc == 2 and "no verdict banner
 rc, out = run(report("INSTALL", [A]))
 chk("one report is a usage error", rc == 2, out)
 
+# verdict-stability-rules (Done when 4a): the fit layout. tools/vet-stability reads the verdict strip and the fit cards, and compares the
+# verdict, every card's count and every colour across runs; a difference names the card.
+def fit_report(verdict="\U0001F7E8 COPY RULES, SKIP PLUGIN", conflicts=(("rules/engineering.md rule 6", "\U0001F7E5"),), covered=1, keep=(("a rule", "\u2b50"), ("b rule", "\U0001F7E9")), dropped=2):
+    crow = "\n".join(f'| {i + 1} | "q" | "rule" | {h} | {m} |' for i, (h, m) in enumerate(conflicts))
+    krow = "\n".join(f"| {i + 1} | {t} (f.md) | rule | {m} |" for i, (t, m) in enumerate(keep))
+    return f"""# 🔍 x 1.0 · vetted against the sample reader
+
+`2026-11-18` · neckbeard 2.0.0 · x 1.0
+
+> **{verdict}** · keep two rules as text  
+> ⛔ **{len(conflicts)}** conflicts · 🔁 **{covered}** covered · 🟩 **{len(keep)}** keep ({len(keep)} rules) · 🗑️ **{dropped}** dropped  
+> *against the sample reader (x)*
+
+<details><summary>📝 <b>Why this verdict</b> · keep two rules as text</summary>
+
+Why.
+
+**How its rules sorted**
+
+| | verdict | count | |
+|:--:|---|:--:|---|
+| ⛔ | **conflicts** with a rule you run | **{len(conflicts)}** | x |
+| 🔁 | **already covered** | **{covered}** | x |
+| 🆕 | **new, standing rule** | **{len(keep)}** | x |
+| 🆕 | **new, on-demand skill** | **0** | |
+| 🗑️ | **dropped** (persona, extras, no value) | **{dropped}** | x |
+
+</details>
+
+<details><summary>⛔ <b>Conflicts</b> · {len(conflicts)} · q</summary>
+
+| # | it says | collides with | held in | |
+|:--:|---|---|---|:--:|
+{crow}
+
+</details>
+
+<details><summary>🔁 <b>Already covered</b> · {covered} · r</summary>
+
+| its rule | covered by | held in |
+|---|---|---|
+| r | c | rules/engineering.md |
+
+</details>
+
+<details><summary>🟩 <b>Keep</b> · {len(keep)} rules · a</summary>
+
+| # | rule or skill | kind | |
+|:--:|---|:--:|:--:|
+{krow}
+
+</details>
+
+<details><summary>🗑️ <b>Dropped</b> · {dropped} · f</summary>
+
+`f.md`
+
+</details>
+"""
+
+rc, out = run(fit_report(), fit_report())
+chk("fit layout: two identical reports are stable, the conflict found in 2 of 2", rc == 0 and "stable" in out and "found in 2 of 2: rules/engineering.md rule 6" in out, out)
+rc, out = run(fit_report(), fit_report(verdict="\U0001F7E9 INSTALL"))
+chk("fit layout: a different verdict in the strip is not stable", rc == 1 and "COPY RULES, SKIP PLUGIN in 1 of 2" in out, out)
+rc, out = run(fit_report(), fit_report(covered=2))
+chk("fit layout: two reports differing in one card's count name that card, and only it", rc == 1 and "card Already covered" in out and "count" in out and "card Conflicts" not in out and "card Keep" not in out and "card Dropped" not in out, out)
+rc, out = run(fit_report(), fit_report(conflicts=(("rules/engineering.md rule 6", "\U0001F7E7"),)))
+chk("fit layout: two reports differing in one card's colour name that card, and only it", rc == 1 and "card Conflicts" in out and "colour" in out and "card Keep" not in out and "card Already covered" not in out, out)
+rc, out = run(fit_report(), fit_report(keep=(("a rule", "\U0001F7E9"), ("b rule", "\u2b50"))))
+chk("fit layout: the star moving to another row is a Keep colour difference, and only that card is named", rc == 1 and "card Keep" in out and "colour" in out and "card Conflicts" not in out, out)
+rc, out = run(fit_report(), fit_report(dropped=3))
+chk("fit layout: a Dropped count difference names Dropped", rc == 1 and "card Dropped" in out and "count" in out, out)
+rc, out = run(fit_report(conflicts=()), fit_report(conflicts=()))
+chk("fit layout: no conflicts in any report is stable", rc == 0 and "no conflicts" in out, out)
+rc, out = run(fit_report(), fit_report(conflicts=(("rules/engineering.md rule 6", "\U0001F7E5"), ("rules/safety.md rule 5", "\U0001F7E7"))))
+chk("fit layout: a conflict found in one report of two is still caught, and the Conflicts card is named", rc == 1 and "found in 1 of 2: rules/safety.md rule 5" in out and "card Conflicts" in out, out)
+rc, out = run("# no strip here\n", fit_report())
+chk("fit layout: a report with no verdict strip and no banner is refused", rc == 2, out)
+
 # vet-repeat, with a stub for tools/vet that writes the next canned report
 d = tempfile.mkdtemp()
 canned = [report("INSTALL", [A]), report("INSTALL", [A]), report("COPY RULES, SKIP PLUGIN", [A, B])]

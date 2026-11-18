@@ -67,7 +67,24 @@ if "CONFIRM CALL" in prompt:
         reply("I would rather not say.")
     if os.environ.get("FAKE_CONFIRM") == "garbage":
         reply("no json here")
-    reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") in ("yes", "flaky"), "why": "fake"}))
+    reply(json.dumps({"conflict": os.environ.get("FAKE_CONFIRM") in ("yes", "flaky"), "hard_stop": os.environ.get("FAKE_HARDSTOP", "1") == "1", "why": "fake"}))
+if "ANSWERING JUDGE" in prompt:   # the one call that answers every unit (verdict-stability-rules)
+    m = re.search(r"Write the answers to (\S+) as JSON", prompt)
+    units = json.load(open(re.search(r"UNITS: (.+?)\. Each unit", prompt).group(1)))["units"]
+    pick = {"units-install": ("keep", "none"), "units-mismatch": ("drop", "new-standing"), "units-duplicate": ("drop", "duplicate")}.get(os.environ.get("FAKE_UNITS", ""))
+    answers = []
+    for u in units if pick else []:
+        a = {"id": u["id"], "skill": pick[0], "rules": pick[1], "quote": "Always run the tests before you commit.", "conflicts": [], "why": "x"}
+        if pick[1] == "duplicate":
+            a.update(covered_by="Rule 1, Reuse before writing", held_in="rules/engineering.md")
+        answers.append(a)
+    json.dump({"answers": answers}, open(m.group(1), "w"))
+    reply("done")
+if "PROSE JUDGE" in prompt:   # the one call that writes the three free texts
+    m = re.search(r"Write the prose to (\S+) as JSON", prompt)
+    why = {"states": "Verdict: 🟥 DON'T INSTALL, with 99 conflicts and 99 kept."}.get(os.environ.get("FAKE_PROSE", ""), "FAKE WHY.")
+    json.dump({"why": why, "do_this": ["Fake step one."], "patch": "Fake patch."}, open(m.group(1), "w"))
+    reply("done")
 if os.environ.get("FAKE_JUDGE_FAIL") and "Vet one plugin" in prompt:   # the main judge exits non-zero with its message on stdout
     print("judge noise line"); print(os.environ.get("FAKE_FAIL_MSG", "fake-judge-error: out of credit")); sys.exit(1)
 out = re.search(r"REPORT FILE \(the only file you create\): (\S+)", prompt).group(1)
