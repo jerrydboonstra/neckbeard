@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""summary DOSSIER: print the "How it affects you" table (tools/vet writes its heading), five rows computed by code from the dossier, each a judgement colour
+(🟩🟨🟧🟥), a name and one line. No model call. Same style as tools/part1: reads only the dossier's `target`, prints Markdown,
+and two runs on one dossier are byte-identical.
+
+The rules live in one table, RULES, and the footer under the table is printed from that same table, so a reader can check them.
+A row's rules are checked top to bottom: the first that matches wins. A row whose input sections (target.read_status) are not all
+read in full is never 🟩: a 🟩 outcome becomes 🟨. A section that is not-applicable counts as read in full, as in tools/part1.
+
+  Cost                the size a plugin adds to every session: skill and agent descriptions, rule files that load every
+                      session, and hook-injected text (a built-at-run-time hook's "at least N bytes" lower bound). When
+                      hooks_reach_subagents is true the hook text alone counts twice (it enters every subagent too); anything
+                      else counts once. Size is the dossier's figure (bytes, or characters where the inventory fell back).
+  Reach               🟥 a hook and hooks_reach_subagents true; 🟨 a hook, a Claude Code mod or a rule file; 🟩 neither.
+  Leaves state        🟧 files that may write state; 🟨 nothing found but the scan was not whole; 🟩 nothing found, full scan.
+  Live surface        🟥 ssh, mosh, telnet, rsh or rlogin as a command word of a hook or MCP command; 🟧 any MCP server, any Claude
+                      Code mod, or a hook running curl, wget or nc or holding an http(s) URL; 🟨 any hook command; 🟩 none.
+  Read completeness   tools/part1's overall read state, as its colour.
+
+A command word is the first word of each piece of the command after splitting on `|`, `&&`, `||`, `;` and `&`, with leading NAME=value
+words skipped (tools/part1's words()), compared by basename. Inline code (`bash -c`, `node -e`) and hook script bodies are not searched.
+A dossier with no read_status exits 2."""
+import importlib.machinery, importlib.util, json, os, re, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from cards import card
+
+
+def _load(name):
+    spec = importlib.util.spec_from_loader(name, importlib.machinery.SourceFileLoader(name, os.path.join(HERE, name)))
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+part1 = _load("part1")
+
+G, Y, O, R = "\U0001F7E9", "\U0001F7E8", "\U0001F7E7", "\U0001F7E5"
+ROW_NAMES = ["Cost", "Reach", "Leaves state", "Live surface", "Read completeness"]
+
+# The rules table: every threshold and word list the colours and the footer use.
+RULES = {
+    "cost_bands": [2000, 8000, 32000],   # 🟩 under the first; 🟨 up to the second; 🟧 up to the third; 🟥 from the third on
+    "remote_shell": ["ssh", "mosh", "telnet", "rsh", "rlogin"],
+    "network": ["curl", "wget", "nc"],
+}
+READ_COLOUR = {"read in full": G, "partly read": Y, "something unread": R}
+URL = re.compile(r"https?://")
+SEPARATORS = re.compile(r"\|\||&&|[|;&]")
+
+
+def n(x):
+    return f"{x:,}"
+
+
+def as_list(v):
+    return v if isinstance(v, list) else []
+
+
+def command_words(command):
+    """The first word of each piece of a command, as a basename."""
+    out = []
+    for piece in SEPARATORS.split(command) if isinstance(command, str) else []:
+        w = part1.words(piece)
+        if w:
+            out.append(os.path.basename(w[0]))
+    return out
+
+
+def hook_commands(hooks):
+    ev = hooks.get("events")
+    return [c["command"] for cmds in (ev.values() if isinstance(ev, dict) else []) for c in as_list(cmds)
+            if isinstance(c, dict) and isinstance(c.get("command"), str)]
+
+
+def never_green(colour, states):
+    return Y if colour == G and part1.read_state(states) != "read in full" else colour
+
+
+def cost(t, sec, hooks, hsec):
+    desc = lambda e: len(str(e.get("description") or "")) if isinstance(e, dict) and not e.get("refused") else 0
+    skills = sum(desc(s) for s in as_list(t.get("skills")))
+    agents = sum(desc(a) for a in as_list(t.get("agents")))
+    rules = sum(r["bytes"] for r in as_list(t.get("rule_files")) if isinstance(r, dict) and isinstance(r.get("bytes"), int) and not r.get("refused"))
+    inj = as_list(hooks.get("injected_content"))
+    hook = sum(i["bytes"] for i in inj if isinstance(i, dict) and isinstance(i.get("bytes"), int))
+    twice = hooks.get("hooks_reach_subagents") is True
+    total = skills + agents + rules + hook * (2 if twice else 1)
+    b = RULES["cost_bands"]
+    colour = G if total < b[0] else Y if total < b[1] else O if total < b[2] else R
+    lower = any(isinstance(i, dict) and i.get("built_at_run_time") for i in inj)
+    line = (f"{'at least ' if lower else ''}{n(total)} added to every session, ~{n((total + 2) // 4)} tokens"
+            f" ({n(skills)} skill descriptions, {n(agents)} agent descriptions, {n(rules)} rule files, {n(hook)} hook text"
+            f"{', counted twice: hooks reach subagents' if twice and hook else ''})")
+    return never_green(colour, [sec("skills")[0], sec("agents")[0], sec("rule_files")[0], hsec[0]]), line
+
+
+def reach(t, sec, hooks):
+    has_hook = bool(hook_commands(hooks)) or hooks.get("has_hooks") is True
+    mods = bool(as_list(hooks.get("mods")))
+    rules = bool(as_list(t.get("rule_files")))
+    r = hooks.get("hooks_reach_subagents")
+    if has_hook and r is True:
+        colour, line = R, "a hook runs in every session and in every subagent too"
+    elif has_hook or mods or rules:
+        what = [w for w, on in (("a hook", has_hook), ("a Claude Code mod", mods), ("a rule file", rules)) if on]
+        colour, line = Y, f"{', '.join(what)} in every main session" + (", subagent reach unknown" if has_hook and r is None else "")
+    else:
+        colour, line = G, "on demand only"
+    return never_green(colour, [sec("hooks")[0], sec("rule_files")[0]]), line
+
+
+def leaves(t, sec):
+    files = as_list(t.get("persistence_candidates"))
+    state = sec("persistence_candidates")[0]
+    if files:
+        return O, f"{n(len(files))} files that may write state"
+    colour = never_green(G, [state])
+    return colour, "nothing found" + ("" if state in ("read", "not-applicable") else f", but the scan was {'partial' if state == 'partial' else 'not read'}")
+
+
+def live(t, sec, hooks):
+    cmds = hook_commands(hooks)
+    mods = as_list(hooks.get("mods"))
+    servers = [s for s in as_list((t.get("mcp_servers") or {}).get("servers")) if isinstance(s, dict)] if isinstance(t.get("mcp_servers"), dict) else []
+    words = {w for c in cmds for w in command_words(c)}
+    for s in servers:
+        words |= {os.path.basename(str(a)) for a in [*(command_words(s.get("command")) or [None])[:1], *as_list(s.get("args"))] if a is not None}
+    if words & set(RULES["remote_shell"]):
+        colour, line = R, "runs " + ", ".join(sorted(words & set(RULES["remote_shell"]))) + " (a remote shell)"
+    elif servers or mods or words & set(RULES["network"]) or any(URL.search(c) for c in cmds):
+        what = [f"{len(servers)} MCP servers"] if servers else []
+        what += [f"{len(mods)} Claude Code mods"] if mods else []
+        what += ["hook commands that may reach the network"] if (words & set(RULES["network"]) or any(URL.search(c) for c in cmds)) else []
+        colour, line = O, ", ".join(what)
+    elif cmds:
+        colour, line = Y, f"{len(cmds)} hook commands, local scripts only"
+    else:
+        colour, line = G, "no hook commands, MCP servers or mods"
+    return never_green(colour, [sec("hooks")[0], sec("mcp_servers")[0]]), line
+
+
+def footer():
+    b = RULES["cost_bands"]
+    return [
+        "These colours follow written rules, checked top to bottom, the first match wins. A row whose input was not read in full is never 🟩.",
+        "",
+        f"- Cost: 🟩 under {n(b[0])}; 🟨 {n(b[0])} to {n(b[1] - 1)}; 🟧 {n(b[1])} to {n(b[2] - 1)}; 🟥 {n(b[2])} and over. "
+        "Size is skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); "
+        "hook text counts twice when hooks reach subagents.",
+        "- Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).",
+        "- Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.",
+        f"- Live surface: 🟥 a hook or MCP command runs {', '.join(RULES['remote_shell'])}; "
+        f"🟧 any MCP server, any Claude Code mod, a hook running {', '.join(RULES['network'])} or holding an http:// or https:// URL; 🟨 any hook command; 🟩 none. "
+        "A command word is the first word of each piece split on | && || ; &, after NAME=value words, by basename; inline code (bash -c, node -e) and hook script bodies are not searched.",
+        "- Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.",
+    ]
+
+
+def render(d):
+    t = d["target"]
+    sec = part1.sec_of(t["read_status"])
+    hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
+    hsec = part1.hooks_sec(sec, hooks)
+    state = part1.overall_read_state(t)
+    result = [("Cost", *cost(t, sec, hooks, hsec)), ("Reach", *reach(t, sec, hooks)), ("Leaves state", *leaves(t, sec)),
+              ("Live surface", *live(t, sec, hooks)), ("Read completeness", READ_COLOUR[state], state)]
+    out = ["| | Row | In short |", "|---|---|---|"]
+    out += [f"| {c} | {name} | {line} |" for name, c, line in result]
+    out += [""] + card("", "At a glance in full", "", [f"- {name} {c}: {line}" for name, c, line in result]) + [""]
+    return "\n".join(out + footer()) + "\n"
+
+
+def main(argv):
+    if len(argv) != 1:
+        print("usage: summary DOSSIER", file=sys.stderr)
+        return 2
+    try:
+        d = json.load(open(argv[0], encoding="utf-8"))
+        t = d["target"]
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"summary: cannot read a dossier from {argv[0]}: {e}", file=sys.stderr)
+        return 2
+    if not isinstance(t, dict) or not isinstance(t.get("read_status"), dict) or not t["read_status"]:
+        print("summary: dossier has no read_status; rerun inventory.py", file=sys.stderr)
+        return 2
+    try:
+        text = render(d)
+    except Exception as e:   # a dossier shape this tool does not know: fail rather than print a colour that may be wrong
+        print(f"summary: could not render this dossier ({type(e).__name__}: {part1.safe(e, cap=200)})", file=sys.stderr)
+        return 2
+    sys.stdout.write(text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
