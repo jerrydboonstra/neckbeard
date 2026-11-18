@@ -1,4 +1,5 @@
-# CodeQL analysis of neckbeard's Python (skills/neckbeard/*.py and tools/).
+# CodeQL analysis of neckbeard's Python (skills/neckbeard/*.py and tools/) and of its GitHub Actions workflows (.github/workflows/).
+# Runs on push to main, on pull requests, weekly, and on demand (Actions tab, or `gh workflow run codeql.yml`).
 name: CodeQL
 
 on:
@@ -8,21 +9,28 @@ on:
     branches: [main]
   schedule:
     - cron: "17 5 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   analyze:
+    name: analyze (${{ matrix.language }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, actions]
     permissions:
+      actions: read   # the analyze step reads its own workflow run; a private repo refuses it without this
       contents: read
       security-events: write
     steps:
       - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v4
         with:
-          languages: python
+          languages: ${{ matrix.language }}
       - uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:python"
+          category: "/language:${{ matrix.language }}"
