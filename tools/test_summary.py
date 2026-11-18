@@ -98,7 +98,7 @@ for sec, row in [("persistence_candidates", "Leaves state"), ("mcp_servers", "Li
                  ("rule_files", "Reach"), ("skills", "Cost"), ("agents", "Cost"), ("rule_files", "Cost"), ("hooks", "Cost")]:
     for state in ("partial", "failed"):
         got = colours(edit("green", lambda t: t["read_status"].__setitem__(sec, {"state": state, "notes": ["x"]})))
-        chk(f"2 {sec} {state}: {row} is not {G}", got[row] not in (G, None), str(got))
+        chk(f"2 {sec} {state}: {row} is not {G}", got[row] in (Y, O, R), str(got))
         if sec == "persistence_candidates":
             chk(f"2 {sec} {state} with nothing found: Leaves state is exactly {Y}", got[row] == Y, str(got))
 for state in ("partial", "failed"):
@@ -126,6 +126,22 @@ for cmd, want in [("grep ssh log", Y), ("FOO=1 ssh h", R), ("echo hi && ssh h", 
     chk(f"2a hook command {cmd!r}", colours(hook_cmd(cmd))["Live surface"] == want, colours(hook_cmd(cmd))["Live surface"])
 chk("2a MCP server running ssh: red", colours(edit("mcp-local", lambda t: t["mcp_servers"]["servers"][0].update(command="ssh")))["Live surface"] == R)
 chk("2a MCP server with an ssh arg: red", colours(edit("mcp-local", lambda t: t["mcp_servers"]["servers"][0].update(args=["/usr/bin/ssh", "h"])))["Live surface"] == R)
+
+# swarm round 1: quotes, newlines, honest lines, wrong types, odd sizes, long commands, Read completeness
+for cmd, want in [("ssh box 'cd /app && ./deploy.sh'", R), ('ssh -o "ProxyCommand=a|b" host', R), ("echo ok\nssh host", R), ("echo 'a && b' ; ssh h", R),
+                  ("echo 'ssh h'", Y), ("run.sh " + "x " * 3000, O)]:
+    chk(f"2a hook command {cmd[:40]!r}", colours(hook_cmd(cmd))["Live surface"] == want, colours(hook_cmd(cmd))["Live surface"])
+chk("2a an unread Live surface does not claim an absence", "not read in full" in rows(run(fx("unread"))[1])["Live surface"][1], rows(run(fx("unread"))[1])["Live surface"][1])
+chk("2a a read, empty Live surface says what was found", "found" in rows(run(fx("green"))[1])["Live surface"][1])
+for what, fn, row in [("mcp_servers.servers as a dict", lambda t: t.update(mcp_servers={"servers": {"a": 1}}), "Live surface"),
+                      ("hooks.mods as a dict", lambda t: t["hooks"].update(mods={"a": 1}), "Live surface"),
+                      ("persistence_candidates as a dict", lambda t: t.update(persistence_candidates={"a": 1}), "Leaves state"),
+                      ("a rule file with a negative size", lambda t: t.update(rule_files=[{"path": "r", "bytes": -5000}]), "Cost"),
+                      ("a rule file with a string size", lambda t: t.update(rule_files=[{"path": "r", "bytes": "7000"}]), "Cost"),
+                      ("hook text with a true size", lambda t: t["hooks"].update(injected_content=[{"file": "h", "bytes": True}]), "Cost")]:
+    chk(f"2 {what}: {row} is not {G}", colours(edit("green", fn))[row] in (Y, O, R), str(colours(edit("green", fn))))
+for state, want in (("partial", Y), ("failed", R)):
+    chk(f"2 a {state} section: Read completeness is {want}", colours(edit("green", lambda t: t["read_status"].__setitem__("persistence_candidates", {"state": state, "notes": ["x"]})))["Read completeness"] == want)
 
 # 3. a threshold in the rules table moves the colour and the footer together
 spec = importlib.util.spec_from_loader("summary_tool", importlib.machinery.SourceFileLoader("summary_tool", SUMMARY))
