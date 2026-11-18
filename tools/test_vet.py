@@ -348,6 +348,8 @@ release = makefile.split("\nrelease:", 1)[1].split("\ndeploy:", 1)[0]
 chk("release runs report-check before any push, and stops when it fails", (bool(re.search(r"^\t@\$\(MAKE\) --no-print-directory report-check \|\| \{ [^}]*exit 1; \}$", release, re.M)), release.find("report-check") < release.find("git push")), (True, True))
 readme = open(os.path.join(NB, "README.md"), encoding="utf-8").read()
 chk("README: the neckbeard badge links the published report, with the logo the code uses", ("[![neckbeard report: " in readme, "](docs/neckbeard-report.md)" in readme, "logo=" + LOGO in readme), (True, True, True))
+badge_line = readme.split("\n")[4]
+chk("README line 5: badges read CI, license, release, CodeQL, neckbeard report", [re.sub(r":.*", "", a) for a in re.findall(r"\[!\[([^\]]*)\]", badge_line)], ["CI", "license", "release", "CodeQL", "neckbeard report"])
 chk("the logo is URL-encoded: none of + & # ( ) [ ] = or a space raw", [c for c in "+&#()[]= " if c in LOGO], [])
 b = run("badge-precedence", extra=("--facts",), fake_body=NO_CLAUDE, setup=lambda t: (big_skill(t), bad_mcp(t)))
 chk("badge: a partial and a failed section give red, not yellow", "-red?logo=" in badge_of(b), True)
