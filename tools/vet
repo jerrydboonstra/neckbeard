@@ -47,6 +47,8 @@
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
 # Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
 # has no header to read.
+# Targets bash 3.2, the /bin/bash on a Mac (what `#!/usr/bin/env bash` finds when Homebrew is not on PATH): no bash-4 features,
+# and an array that may be empty is expanded as ${a[@]+"${a[@]}"}, because under set -u bash before 4.4 calls an empty one unbound.
 set -u
 usage() {
   echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]" >&2
@@ -425,7 +427,7 @@ if [ "$units" = yes ]; then
   call() { # call TOOLS PROMPT-FILE
     local rc
     rm -f "${2%.md}.failed"
-    (cd "$project" && "${ucfg[@]}" claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") >"$2.json"
+    (cd "$project" && ${ucfg[@]+"${ucfg[@]}"} claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") >"$2.json"
     rc=$?
     [ "$rc" = 0 ] || { : >"${2%.md}.failed"; return "$rc"; }   # its own error is already in the call's .err file
     python3 -c 'import json,sys
@@ -495,7 +497,7 @@ fi
 cfg=()
 [ "$judge" = reader ] && cfg=(env CLAUDE_CONFIG_DIR="$reader")
 rm -f "$out"
-(cd "$project" && "${cfg[@]}" claude -p --model "$model" --allowedTools Bash,Read,Write,Edit,Glob,Grep --output-format text < "$prompt") >"$work/judge.out"
+(cd "$project" && ${cfg[@]+"${cfg[@]}"} claude -p --model "$model" --allowedTools Bash,Read,Write,Edit,Glob,Grep --output-format text < "$prompt") >"$work/judge.out"
 judge_rc=$?
 if [ "$credcopy" = yes ]; then
   [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the judge rewrote its login file, so you may need to log in again" >&2

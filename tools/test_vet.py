@@ -120,6 +120,28 @@ chk("mac: falls back to own config", "judge: own" in r["out"] and "can't log in"
 j = judge(r)
 chk("mac: judge has no config folder", bool(j) and j[0]["cfg"], "")
 
+# 2b. bash 3.2 (the Mac's /bin/bash, what `env bash` finds without Homebrew): the judge's empty config array is expanded under set -u
+# (vet-bash32-empty-cfg). Where /bin/bash is 3.2 this is the failing case on an unfixed vet; elsewhere it still has to pass.
+if os.path.exists("/bin/bash"):
+    r = run("bash32-own", login="default", extra=("--judge", "own"), shell="/bin/bash")
+    chk("bash 3.2: --judge own runs the judge past the empty config array, exit 0, report written",
+        (r["rc"], r["report"], len(judge(r)), "unbound variable" in r["out"]), (0, True, 1, False))
+    r = run("bash32-units", login="default", units="units-install", extra=("--units", "--judge", "own"), shell="/bin/bash")
+    chk("bash 3.2: --units --judge own gets its isolated calls past the empty config array too",
+        (r["rc"], len(isolated(r, "FIND PASS")), "unbound variable" in r["out"]), (0, 3, False))
+
+# 2c. no other empty-array expansion under set -u in the bash scripts of tools/ (vet-repeat's "${reports[@]}" is behind its own
+# count check, at least two); a new one needs the ${a[@]+"${a[@]}"} form or the same guard
+bare = []
+for name in sorted(os.listdir(os.path.dirname(VET))):
+    path = os.path.join(os.path.dirname(VET), name)
+    if os.path.isfile(path) and not name.endswith((".py", ".md", ".txt")):
+        with open(path, encoding="utf-8", errors="replace") as f:
+            lines = f.read().split("\n")
+        if lines and lines[0].startswith("#!") and "bash" in lines[0] and any(l.strip() == "set -u" for l in lines):
+            bare += [(name, m) for l in lines if not l.lstrip().startswith("#") for m in re.findall(r'(?<![+])"\$\{(\w+)\[@\]\}"', l)]
+chk("no unguarded empty-array expansion under set -u in tools/", sorted(bare), [("vet-repeat", "reports")])
+
 # 3. --judge reader on a Mac: no fallback, so the run fails
 r = run("forced", login="default", uname="Darwin", extra=("--judge", "reader"))
 chk("forced reader: exit 1, no report, one line naming the reason and --judge own", (r["rc"], r["report"], "--judge reader can't log in" in r["out"], "reader mode logs in only on Linux" in r["out"], "--judge own" in r["out"]), (1, False, True, True, True))
