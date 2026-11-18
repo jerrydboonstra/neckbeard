@@ -6,6 +6,10 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## Unreleased
 
+### Reports
+
+- **A `node -e` hook that only requires one plugin script now names and reads that script (2.0.0).** A hook command of the form `node -e "require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/x.js'))"` (ponytail's form, `path.resolve` and the backslash fix included) printed `<unparsed command>` in the report, and the inventory could not identify its script. Both now take `hooks/x.js` as the hook's script. Any other inline code, a `..` in the path or a body that does more than that one require stays unparsed.
+
 ### Checks
 
 - **CodeQL now also scans the GitHub Actions workflows, and can be run on demand.** The CodeQL workflow analyses `actions` beside `python` and has a `workflow_dispatch` trigger, so it runs from the Actions tab or `gh workflow run codeql.yml` as well as on each push to main, each pull request and weekly.
