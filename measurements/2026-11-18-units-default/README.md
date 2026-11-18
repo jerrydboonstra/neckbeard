@@ -14,14 +14,14 @@ Five runs of `tools/vet` (the fit report, now on the units path by default) on t
 `vet-stability.txt` is the tool's own output: **NOT stable**.
 
 - **Verdict:** INSTALL WITH CHANGES in 5 of 5 (October's 0.40.3 runs: 5 of 5 too).
-- **Conflicts:** the conflict is against `rules/safety.md` in all five runs, but the Conflicts card has 2 rows in four runs and 1 in run 3. The difference is one unit, `skills/herd/roles/worker.md > The worker, in a pair` (u19): confirmed a conflict in 4 runs, not in run 3. In October the two sentences on 0.40.3 were confirmed in 5 of 5 runs.
+- **Conflicts:** the conflict is against `rules/safety.md` in all five runs, but the Conflicts card has 2 rows in four runs and 1 in run 3. The cause is a pool miss, not a confirm decision. The sentence is in `skills/herd/roles/worker.md > The worker, in a pair` (u19, "may try an action"); run 3's three find passes never offered it (`run-3.finds-1..3.json` do not contain it; `run-3.log`: "1 candidates from 3 passes", the one candidate being u16, `reviewer.md > Limits`). The find passes offered it in 3 of 3 passes in run 2, 2 of 3 in runs 1 and 4, 1 of 3 in run 5 and 0 of 3 in run 3. Every pooled candidate was confirmed in all five runs (2 of 2 in runs 1, 2, 4 and 5; 1 of 1 in run 3, from the logs), so the confirm step rejected nothing. The two causes need different fixes: a fourth find pass helps only a pool miss. In October the two sentences on 0.40.3 were confirmed in 5 of 5 runs, so this run is the first to miss one in pooling on this target.
 - **Keep:** 25 skills in runs 1 to 3, 26 in runs 4 and 5. The difference is `skills/queue/SKILL.md > Questions for you` (u31, skill answer keep 2, drop 3). The starred row (the ⭐) sits at a different place in the runs that kept 25 and the runs that kept 26, so the Keep colours differ between those two groups.
 - **Dropped:** 8 in runs 1 to 3, 7 in runs 4 and 5, the same unit.
 - **Already covered:** 0 in all five.
 - **Rules answers** (`units-verdict.txt`): 28 of 33 units answered alike in all five runs. The five that differ are u2, u15, u16, u18 and u19 (duplicate against none or new-standing). This moves the "new standing rule" row (2, 1, 2, 2, 3) and the "new, on-demand skill" row (23, 24, 23, 24, 23).
 - **Units:** the same 33 units in every run (`run-N.units.json` are identical), so the differences are in the answers, not the unit list.
 
-So the verdict code, the units list and the card counts agree on everything except three units' answers (u19 conflict, u31 skill, and the rules answers). The disagreement lines name each card that differs: Conflicts, Keep and Dropped, by count, and Conflicts and Keep by colour. That is a finding for the planner, not a failure of the item (the item's cold read).
+So the verdict, the units list and the Already covered count agree in all five runs. The Conflicts, Keep and Dropped cards differ because of three things: a pool miss of u19 in run 3, the skill answer for u31, and the rules answers of five units. The disagreement lines name each card that differs: Conflicts, Keep and Dropped by count, Conflicts and Keep by colour. That is a finding for the planner, not a failure of the item (the item's cold read).
 
 ## Files
 
