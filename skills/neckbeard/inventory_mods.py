@@ -31,7 +31,7 @@ def read_mods(hooks_json, base_dir, plugin_root, label, notes):
         _note(notes, f"{label}: \"modules\" is not a list of strings; no mods recorded from it", cause="target-fault")
         return []
     mods = []
-    for m in listed:
+    for m in listed:   # debt: no cap on the list, so a hooks file with tens of thousands of mods costs a note and a line each; cap it with a note when one appears
         path = os.path.normpath(os.path.join(base_dir, m))   # an absolute m drops the base, and _within then refuses it
         rel = os.path.relpath(path, plugin_root)
         if not _within(path, plugin_root):
@@ -42,5 +42,5 @@ def read_mods(hooks_json, base_dir, plugin_root, label, notes):
             _note(notes, f"{rel}: mod file not found", cause="target-fault")
         else:
             mods.append({"path": rel, "exists": True, "refused": False})
-            _note(notes, f"{rel}: a Claude Code mod; it runs unsandboxed in the session and its source is not read", cause="tool-limit")
+            _note(notes, f"{rel}: a Claude Code mod; it runs in the session with no sandbox, and its source is not read", cause="tool-limit")
     return mods

@@ -40,7 +40,7 @@
       },
       "hooks": {
         "notes": [
-          "hooks/band/register.tsx: a Claude Code mod; it runs unsandboxed in the session and its source is not read"
+          "hooks/band/register.tsx: a Claude Code mod; it runs in the session with no sandbox, and its source is not read"
         ],
         "state": "partial"
       },

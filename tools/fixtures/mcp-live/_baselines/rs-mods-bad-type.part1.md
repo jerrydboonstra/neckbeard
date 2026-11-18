@@ -22,7 +22,7 @@
 <details><summary>🟡 <b>Claude Code mods</b> · 0 mods</summary>
 
 - Mods: partly read
-  - a mod is code that runs inside the session with your permissions, unsandboxed; neckbeard lists the files a plugin names and does not read their source
+  - a mod is code that runs inside the session with your permissions and no sandbox; neckbeard lists the files a plugin names and does not read their source
   - not read: hooks/hooks.json: "modules" is not a list of strings; no mods recorded from it
 
 </details>

@@ -230,7 +230,7 @@ def toks(n):
     return f"{n} bytes, ~{n // 4} tokens"
 
 
-MODS_NOTE = ("a mod is code that runs inside the session with your permissions, unsandboxed; neckbeard lists the files "
+MODS_NOTE = ("a mod is code that runs inside the session with your permissions and no sandbox; neckbeard lists the files "
              "a plugin names and does not read their source")
 BUILT_NOTE = ("built at run time: read from the script's own text, not run; commands it runs are not followed "
               "and may print or write files")

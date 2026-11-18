@@ -407,7 +407,7 @@ SITES = {
     "MK5": lambda: got(fixture("marketplace-entries"), "marketplace", "partial", ".claude-plugin/marketplace.json", "gone"),
     "MK7": lambda: got(fixture("marketplace-outside"), "marketplace", "failed", ".claude-plugin/marketplace.json", "resolves outside the target tree"),
     "MK8": gen_no_source,
-    "HK16": lambda: got(fixture("mods-one"), "hooks", "partial", "hooks/band/register.tsx", "unsandboxed"),
+    "HK16": lambda: got(fixture("mods-one"), "hooks", "partial", "hooks/band/register.tsx", "no sandbox"),
     "HK17": lambda: got(fixture("mods-outside"), "hooks", "partial", "_outside.txt", "resolves outside the target tree"),
     "HK18": lambda: got(fixture("mods-missing"), "hooks", "partial", "hooks/gone.js", "not found"),
     "HK19": lambda: got(fixture("mods-bad-type"), "hooks", "partial", "not a list of strings"),

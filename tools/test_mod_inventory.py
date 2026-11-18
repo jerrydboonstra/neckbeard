@@ -62,8 +62,8 @@ def notes_of(rs):
 h, rs, d = hooks_of(FX / "mods-one")
 check("MI2. when a hooks file lists one mod, the dossier's hooks.mods holds that one entry",
       h.get("mods") == [{"path": "hooks/band/register.tsx", "exists": True, "refused": False}], repr(h.get("mods")))
-check("MI2. ... and read_status.hooks is partial, with a note naming the mod and that it runs unsandboxed (cause tool-limit)",
-      rs.get("state") == "partial" and "hooks/band/register.tsx" in notes_of(rs) and "unsandboxed" in notes_of(rs) and rs.get("causes") == ["tool-limit"], repr(rs))
+check("MI2. ... and read_status.hooks is partial, with a note naming the mod and that it runs with no sandbox (cause tool-limit)",
+      rs.get("state") == "partial" and "hooks/band/register.tsx" in notes_of(rs) and "no sandbox" in notes_of(rs) and rs.get("causes") == ["tool-limit"], repr(rs))
 check("MI2. ... and an empty hooks object beside it adds no event", h.get("events") == {}, repr(h.get("events")))
 
 # ---------------------------------------------------------------- MI3: tools/part1 prints the card after Hooks
@@ -73,8 +73,8 @@ check("MI3. when tools/part1 renders that dossier, it prints a Claude Code mods 
       heads[:3] == ["Injects", "Hooks", "Claude Code mods"] and len(heads) == 7, heads)
 card_text = out.split("<b>Claude Code mods</b>", 1)[-1].split("</details>", 1)[0]
 summary = next((l for l in out.split("\n") if "<b>Claude Code mods</b>" in l), "")
-check("MI3. ... naming the mod file, saying it runs inside the session with the user's permissions, unsandboxed, and counting 1 mod in the gist",
-      "hooks/band/register.tsx" in card_text and "unsandboxed" in card_text and "permissions" in card_text and summary.endswith("· 1 mod</summary>"), (summary, card_text[:400]))
+check("MI3. ... naming the mod file, saying it runs inside the session with the user's permissions and no sandbox, and counting 1 mod in the gist",
+      "hooks/band/register.tsx" in card_text and "no sandbox" in card_text and "permissions" in card_text and summary.endswith("· 1 mod</summary>"), (summary, card_text[:400]))
 check("MI3. ... and the card's marker says partly read (the mod's source is not read)", "🟡 <b>Claude Code mods</b>" in out, out[:600])
 
 # ---------------------------------------------------------------- MI4: outside, missing, wrong type
@@ -83,7 +83,7 @@ check("MI4. when a mod path points outside the tree, it is listed as refused and
       h.get("mods") == [{"path": "../_outside.txt", "exists": False, "refused": True}] and rs.get("state") == "partial"
       and "resolves outside the target tree" in notes_of(rs) and rs.get("causes") == ["tool-limit"], repr((h.get("mods"), rs)))
 # _outside.txt holds the words "outside the tree"; the refusal note says "outside the target tree", so the two do not collide
-check("MI4. ... and the outside file's content is nowhere in the whole dossier (it was not opened)", "outside the tree" not in json.dumps(d), "")
+check("MI4. ... and the outside file's content is nowhere in the whole dossier", "outside the tree" not in json.dumps(d), "")
 ABS = tmp_tree({"abs.txt": "ABSOLUTE-MOD-MARKER outside the plugin\n"}) / "abs.txt"
 h, rs, d = hooks_of(tmp_tree({"hooks/hooks.json": json.dumps({"hooks": {}, "modules": [str(ABS)]})}))
 check("MI4. when a mod path is absolute (os.path.join would drop the base), it is refused, not opened, with the tool-limit note",
@@ -124,6 +124,25 @@ check("MI6. an inline hooks object in plugin.json resolves its mod from the plug
 h, rs, d = hooks_of(FX / "hooks-none")
 check("MI7. a plugin whose hooks files have no modules key has no mods key in its hooks dossier (existing baselines stay as they are)", "mods" not in h, repr(sorted(h)))
 check("MI7. ... and tools/part1 prints six cards for it, no mods card", len(re.findall(r"<summary>\S+ <b>", part1(d))) == 6)
+
+# ---------------------------------------------------------------- "not opened": the reader never touches a refused path
+sys.path.insert(0, str(INVENTORY.parent))
+import builtins
+import inventory_mods
+base = tmp_tree({"hooks/keep": ""}) / "hooks"
+plugin = base.parent
+out_file = tmp_tree({"secret.txt": "x\n"}) / "secret.txt"
+listed = ["../../" + os.path.relpath(out_file, "/"), str(out_file), "../" + os.path.relpath(out_file, plugin)]
+touched = []
+_isfile, _open = os.path.isfile, builtins.open
+os.path.isfile = lambda p, *a: (touched.append(str(p)), _isfile(p, *a))[1]
+builtins.open = lambda f, *a, **k: (touched.append(str(f)), _open(f, *a, **k))[1]
+try:
+    got_mods = inventory_mods.read_mods({"modules": listed}, str(base), str(plugin), "hooks/hooks.json", [])
+finally:
+    os.path.isfile, builtins.open = _isfile, _open
+check("MI4. a refused mod path (a relative escape, an absolute path, a path up and over to the file) is never passed to isfile or open: the reader does not touch it",
+      [m["refused"] for m in got_mods] == [True, True, True] and not [t for t in touched if "secret.txt" in t], repr((got_mods, touched)))
 
 print(f"test_mod_inventory: {len(failures)} failed" if failures else "test_mod_inventory: all passed")
 sys.exit(1 if failures else 0)

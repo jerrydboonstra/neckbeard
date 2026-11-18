@@ -296,10 +296,10 @@ def add_read_status(dossier):
       HK13 resolve_injected_text -> hooks: a hook script is read only to 20000 characters
       HK14 hooks_outside_manifest -> hooks: a JSON file over the read limit is not searched
       HK15 hooks_outside_manifest -> hooks: a JSON file whose size cannot be read (a dangling symlink)
-      HK16 _read_mods -> hooks: a mod a hooks file lists exists; it runs unsandboxed and its source is not read (tool-limit)
-      HK17 _read_mods -> hooks: a mod path that resolves outside the tree is refused and not opened (tool-limit)
-      HK18 _read_mods -> hooks: a mod file that is not found (target-fault)
-      HK19 _read_mods -> hooks: "modules" is not a list of strings, so no mods are recorded from it (target-fault)
+      HK16 read_mods -> hooks: a mod a hooks file lists exists; it runs with no sandbox and its source is not read (tool-limit)
+      HK17 read_mods -> hooks: a mod path that resolves outside the tree is refused and not opened (tool-limit)
+      HK18 read_mods -> hooks: a mod file that is not found (target-fault)
+      HK19 read_mods -> hooks: "modules" is not a list of strings, so no mods are recorded from it (target-fault)
       MC1 mcp_servers -> mcp_servers: .mcp.json exists and does not parse (absent is read, no entries)
       MC2 mcp_servers -> mcp_servers: .mcp.json parses to something that is not an object
       MC3 mcp_servers -> mcp_servers: mcpServers is not an object

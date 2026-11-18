@@ -23,7 +23,7 @@
 
 - Mods: partly read
   - ../_outside.txt (outside the plugin, not opened)
-  - a mod is code that runs inside the session with your permissions, unsandboxed; neckbeard lists the files a plugin names and does not read their source
+  - a mod is code that runs inside the session with your permissions and no sandbox; neckbeard lists the files a plugin names and does not read their source
   - not read: ../_outside.txt: mod path resolves outside the target tree; not opened
 
 </details>

@@ -7,7 +7,7 @@
 - Skills: none
 - Rule files: none
 - Hook-injected text: partly read
-  - not read: hooks/m.js: a Claude Code mod; it runs unsandboxed in the session and its source is not read
+  - not read: hooks/m.js: a Claude Code mod; it runs in the session with no sandbox, and its source is not read
 
 </details>
 
@@ -15,7 +15,7 @@
 
 - Hooks: partly read
   - reaches subagents: false (no event known to fire in a subagent)
-  - not read: hooks/m.js: a Claude Code mod; it runs unsandboxed in the session and its source is not read
+  - not read: hooks/m.js: a Claude Code mod; it runs in the session with no sandbox, and its source is not read
 
 </details>
 
@@ -23,8 +23,8 @@
 
 - Mods: partly read
   - hooks/m.js
-  - a mod is code that runs inside the session with your permissions, unsandboxed; neckbeard lists the files a plugin names and does not read their source
-  - not read: hooks/m.js: a Claude Code mod; it runs unsandboxed in the session and its source is not read
+  - a mod is code that runs inside the session with your permissions and no sandbox; neckbeard lists the files a plugin names and does not read their source
+  - not read: hooks/m.js: a Claude Code mod; it runs in the session with no sandbox, and its source is not read
 
 </details>
 
