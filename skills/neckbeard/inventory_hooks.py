@@ -32,6 +32,10 @@ SUBAGENT_TOOL_EVENTS_LIKELY = {"PostToolUseFailure", "Stop", "PermissionRequest"
 # write_text, appendFileSync, createWriteStream -- because a persistence scan
 # that only catches the obvious calls gives false confidence. Treat any match
 # as a candidate to verify by hand, not a verdict. See CASE-STUDIES.md, round 9.
+# A script is read in full up to this many characters; the patterns have unbounded
+# spans, so reading in windows could split a match.
+PERSIST_READ_CEILING = 2_000_000
+
 PERSIST_PATTERNS = [
     # node/js
     re.compile(r"\b(writeFileSync|appendFileSync|createWriteStream|copyFileSync|mkdirSync|rmSync)\b"),
@@ -626,12 +630,12 @@ def _persistence_walk(plugin_root, notes):
                 except OSError:
                     _note(notes, f"{rel_fp}: could not be read; not scanned", cause="tool-limit")
                     continue
-            text = read_text(fp, limit=50_000)
+            text = read_text(fp, limit=PERSIST_READ_CEILING)
             if text is None:
                 _note(notes, f"{rel_fp}: could not be read; not scanned", cause="tool-limit")
                 text = ""
-            elif len(text) >= 50_000 and os.path.getsize(fp) > 50_000:
-                _note(notes, f"{rel_fp}: read capped at 50000 bytes", cause="tool-limit")
+            elif len(text) >= PERSIST_READ_CEILING and os.path.getsize(fp) > PERSIST_READ_CEILING:
+                _note(notes, f"{rel_fp}: read capped at {PERSIST_READ_CEILING} characters", cause="tool-limit")
             for pat in PERSIST_PATTERNS:
                 if pat.search(text):
                     hits.append(os.path.relpath(fp, plugin_root))

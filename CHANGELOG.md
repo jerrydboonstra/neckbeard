@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.8 (unreleased)
+
+### Reports
+
+- **Large scripts are now read in full, up to 2 MB, when listing what a plugin may leave on disk.** A plugin with one script over 50 KB no longer gets "partly read" for that cut. A script over 2,000,000 characters is still noted as capped.
+
 ## 1.17.7 (2026-11-15)
 
 ### Reports
