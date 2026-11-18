@@ -26,7 +26,8 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "dropped"
   },
   {
    "id": "u2",
@@ -40,7 +41,8 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "dropped"
   }
  ]
 }

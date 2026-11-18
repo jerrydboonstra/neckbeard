@@ -7,7 +7,11 @@
 #      synced skills), and that must never land in this checkout
 #   2. inventory TARGET with that copy as the config folder and an empty project, so the only rules in force are
 #      the reader's; refuse if the dossier read anything outside the copy
-#   3. judge in a separate `claude -p` session started in the empty project, following SKILL.md Steps 2 to 4.
+#   3. the fit report, from a fixed list of the plugin's rule units (verdict-stability-rules): tools/rule-units lists the units;
+#      three find passes pool their conflict candidates and tools/units-confirm confirms each in a call of its own; the answering
+#      judge (tools/vet-units.md) answers every unit; tools/units-verdict computes the verdict and counts by code; the prose judge
+#      (tools/vet-prose.md) writes only the Why paragraph, the Do this steps and the rules patch; tools/fit draws the verdict strip
+#      and the seven fit cards. Every call is a separate `claude -p` session started in the empty project.
 #      --judge reader (what the default tries first) gives it the copy as its config folder too, so it starts with the reader's
 #      rules and nothing else; that needs a login from the environment, as a web session has, or on Linux a copy of
 #      your login file for the run (for the default judge and for an explicit --judge reader alike). Where the default judge can't
@@ -15,13 +19,10 @@
 #      and why: the judge is told to ignore those instructions but still starts with them. The fallback is for the default judge
 #      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and
 #      --judge own. The report carries a "Judge:" line beside the Baseline line saying which judge ran.
-#   4. check the report: it exists, carries a verdict and a title line; put tools/part1's "What it adds" (what the target
-#      injects, reaches and leaves behind, read from the dossier, with no reference to the reader) immediately before its
-#      "## ⚡ At a glance" (the report fails if that line is missing); set its title line, which says the verdict is
-#      against the sample reader; and check it names no local path
-# --units (a prototype, verdict-prototype-units): number the target's sections with tools/rule-units, have the judge
-# answer every one by the written tests in tools/vet-units.md, and take the verdict from tools/units-verdict. Keeps
-# OUT's stem .units.json and .answers.json beside the report; fails when the answers or the banner don't match.
+#   4. the report: the title and header lines (written here), the fit strip and cards, then tools/part1's "What it adds" (what the
+#      target injects, reaches and leaves behind, read from the dossier, with no reference to the reader); check it names no local path
+# OUT's stem .units.json, .answers.json, .verdict.json, .prose.json, .candidates.json, .confirmations.json, .confirmed.json and
+# .finds-N.json are kept beside the report: the evidence for its verdict. --units is a no-op, kept for 2.0 (the units path is the default).
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
 # --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The header
@@ -52,15 +53,16 @@
 set -u
 usage() {
   echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]" >&2
+  echo "       --units is a no-op: the units path is the default" >&2
   echo "       --facts takes only --repo and --release-tag" >&2
   echo "       tools/vet --check REPORT TARGET" >&2
   exit 2
 }
 # While a login copy exists (credcopy=yes), no token of it may reach vet's output or a file beside OUT. login_scan checks OUT,
-# the judge's stdout and the --units files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
+# the judge's stdout and the files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
 login_files() {   # the files to check, one per NUL-terminated entry, so a path with spaces stays whole
   local stem=${out%.md} f
-  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json "${work:-/nonexistent}"/*.err "${work:-/nonexistent}"/find-*.out; do
+  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".verdict.json "$stem".prose.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json "${work:-/nonexistent}"/*.err "${work:-/nonexistent}"/find-*.out "${work:-/nonexistent}"/answer.out "${work:-/nonexistent}"/prose.out; do
     [ -e "$f" ] && printf '%s\0' "$f"
   done
 }
@@ -127,25 +129,13 @@ for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
     try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
     except Exception: pass' "$1"; }
 
-# insert_part1 REPORT DOSSIER COMMIT: put tools/part1's "## What it adds" immediately before the report's "## ⚡ At a glance"
-insert_part1() {
-  local section=$work/part1.md
-  if [ -n "$3" ]; then
-    python3 "$nb/tools/part1" "$2" --commit "$3" >"$section" 2>"$work/part1.err"
+# part1_section DOSSIER COMMIT OUTFILE: tools/part1's "## What it adds" section, written to OUTFILE
+part1_section() {
+  if [ -n "$2" ]; then
+    python3 "$nb/tools/part1" "$1" --commit "$2" >"$3" 2>"$work/part1.err"
   else
-    python3 "$nb/tools/part1" "$2" >"$section" 2>"$work/part1.err"
+    python3 "$nb/tools/part1" "$1" >"$3" 2>"$work/part1.err"
   fi || { cat "$work/part1.err" >&2; die "part 1 could not be rendered"; }
-  python3 - "$1" "$section" <<'PYEOF' || die "$1 has no '## ⚡ At a glance' line to put \"What it adds\" before"
-import sys
-glance = "## \u26a1 At a glance\n"
-text = open(sys.argv[1], encoding="utf-8").read()
-if ("\n" + text).count("\n" + glance) != 1:
-    sys.exit(1)
-text = ("\n" + text).replace("\n" + glance, "\n" + open(sys.argv[2], encoding="utf-8").read() + "\n" + glance, 1)[1:]
-if ("\n" + text).count("\n" + glance) != 1:   # the section must not hold the heading itself
-    sys.exit(1)
-open(sys.argv[1], "w", encoding="utf-8").write(text)
-PYEOF
 }
 
 if [ "${1:-}" = --check ]; then
@@ -167,13 +157,13 @@ for line in open(sys.argv[1], encoding="utf-8"):
 fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2 out_given=$2; shift 2
-judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" units=no facts=no judgeflags=no readerdir="" releasetag=""
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" facts=no judgeflags=no readerdir="" releasetag=""
 while [ $# -gt 0 ]; do case $1 in
   --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
   --model) [ $# -ge 2 ] || usage; model=$2; judgeflags=yes; shift 2 ;;
   --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
   --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
-  --units) units=yes; judgeflags=yes; shift ;;
+  --units) judgeflags=yes; shift ;;   # a no-op: the units path is the default
   --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
   --release-tag) [ $# -ge 2 ] && [ -n "$2" ] || usage; case $2 in *[!A-Za-z0-9._-]*) usage ;; esac; releasetag=$2; shift 2 ;;   # a plain tag name: it goes into a public header line
   --facts) facts=yes; shift ;;
@@ -339,7 +329,6 @@ source=$name
 header_lines() {
   echo "# 🔍 ${name##*/}${version:+ $version} · $title_tail"
   echo "\`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}"
-  [ -z "${baseline_file:-}" ] || cat "$baseline_file"   # the judged report's third part; --facts has none
 }
 if [ "$facts" = yes ]; then
   title_tail="what it adds"
@@ -390,82 +379,62 @@ else
   reader_noun="the reader $label" reader_cite="their path inside the reader (for example rules/safety.md), never by the folder above"
   verdict_text="Verdict is relative to $label's $nfiles rule files (fingerprint $fingerprint), not a judgment of the plugin's quality."
 fi
-prompt=$work/prompt.md
-cat > "$prompt" <<EOF
-Vet one plugin with neckbeard against ${reader_noun/the sample reader/the SAMPLE READER} and write the report.
-
-TARGET: $name${version:+ $version}, checked out at $target${commit:+ (commit $commit)}.
-DOSSIER (already built, read-only): $dossier. It was built with $reader_noun as the config folder and an empty project, so current_rules is exactly $reader_noun's files, under $reader. Those are the only rules already in force. Ignore every other instruction file in your own context (any CLAUDE.md, memory or skill you were started with): they are not the reader's.
-METHOD: $nb/skills/neckbeard/SKILL.md. Step 1 is done (the dossier). Follow Steps 2 to 4 as written, using the report shape in Step 3 exactly.
-REPORT FILE (the only file you create): $out
-
-Header line to use: $header
-Title line to use: $title
-Put this paragraph in the verdict block, after the summary: "${note:+$note }$verdict_text"
-
-Rules:
-- Read only the target, the dossier, the method and $reader_noun. Judge from those and form your own view: if the target ships an earlier neckbeard report, treat it as documentation, not as an answer.
-- Write nothing except the REPORT FILE. Edit nothing else. No git commands that change anything.
-- Cite reader rules as $reader_cite. Quote rules only as short phrases. Name no local path in the report: nothing under $target, $work or a home folder; cite the target's files by their path inside the target.
-- Plain prose: no em dashes, one line per paragraph, counts that match the grids, the Key line on one line. Reread the report once it is written and fix any count that doesn't match.
-
-Reply with the verdict line and the counts (conflicts / covered / new standing / new skill / dropped).
-EOF
-if [ "$units" = yes ]; then
-  stem=${out%.md}
-  unitsf=$stem.units.json answers=$stem.answers.json cands=$stem.candidates.json confs=$stem.confirmations.json confirmed=$stem.confirmed.json
-  rm -f "$answers" "$cands" "$confs" "$confirmed" "$stem".finds-*.json
-  python3 "$nb/tools/rule-units" "$dossier" "$unitsf" >&2 || die "rule-units failed"
-  test_text=$(cat "$nb/tools/vet-conflict-test.md")
-  ucfg=()
-  [ "$judge" = reader ] && ucfg=(env CLAUDE_CONFIG_DIR="$reader")
-  usage_log=$work/usage.log
-  # an isolated judge call: PROMPT-FILE in, its text answer on stdout; its cost and time go to the usage log
-  call() { # call TOOLS PROMPT-FILE
-    local rc
-    rm -f "${2%.md}.failed"
-    (cd "$project" && ${ucfg[@]+"${ucfg[@]}"} claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") >"$2.json"
-    rc=$?
-    [ "$rc" = 0 ] || { : >"${2%.md}.failed"; return "$rc"; }   # its own error is already in the call's .err file
-    python3 -c 'import json,sys
+stem=${out%.md}
+unitsf=$stem.units.json answers=$stem.answers.json cands=$stem.candidates.json confs=$stem.confirmations.json confirmed=$stem.confirmed.json verdictf=$stem.verdict.json prose=$stem.prose.json
+rm -f "$out" "$answers" "$cands" "$confs" "$confirmed" "$verdictf" "$prose" "$stem".finds-*.json
+python3 "$nb/tools/rule-units" "$dossier" "$unitsf" >&2 || die "rule-units failed"
+test_text=$(cat "$nb/tools/vet-conflict-test.md")
+ucfg=()
+[ "$judge" = reader ] && ucfg=(env CLAUDE_CONFIG_DIR="$reader")
+usage_log=$work/usage.log
+# an isolated judge call: PROMPT-FILE in, its text answer on stdout; its cost and time go to the usage log
+call() { # call TOOLS PROMPT-FILE
+  local rc
+  rm -f "${2%.md}.failed"
+  (cd "$project" && ${ucfg[@]+"${ucfg[@]}"} claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") >"$2.json"
+  rc=$?
+  [ "$rc" = 0 ] || { : >"${2%.md}.failed"; return "$rc"; }   # its own error is already in the call's .err file
+  python3 -c 'import json,sys
 r = json.load(sys.stdin)
 print(r.get("result", ""))
 open(sys.argv[1], "a").write("%s %s\n" % (r.get("total_cost_usd", 0), r.get("duration_ms", 0)))' "$usage_log" <"$2.json"
-  }
-  # 3a. three find passes, side by side, each writing its own candidates
-  for i in 1 2 3; do
-    python3 -c 'import sys
+}
+# 3a. three find passes, side by side, each writing its own candidates
+for i in 1 2 3; do
+  python3 -c 'import sys
 print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossier=sys.argv[3], finds=sys.argv[4], test=sys.argv[5]))' \
-      "$nb/tools/vet-find.md" "$unitsf" "$dossier" "$stem.finds-$i.json" "$test_text" >"$work/find-$i.md"
-    call Read,Write,Glob,Grep "$work/find-$i.md" >"$work/find-$i.out" 2>"$work/find-$i.err" &
-  done
-  wait
-  show_call_errors
-  for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.out" "$work/find-$i.err"))"; done
-  python3 "$nb/tools/units-confirm" pool "$unitsf" "$dossier" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
-  # 3b. each candidate confirmed alone: it sees the reader rule, the sentence and the written test, and nothing else
-  python3 -c 'import json,sys
+    "$nb/tools/vet-find.md" "$unitsf" "$dossier" "$stem.finds-$i.json" "$test_text" >"$work/find-$i.md"
+  call Read,Write,Glob,Grep "$work/find-$i.md" >"$work/find-$i.out" 2>"$work/find-$i.err" &
+done
+wait
+show_call_errors
+for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.out" "$work/find-$i.err"))"; done
+python3 "$nb/tools/units-confirm" pool "$unitsf" "$dossier" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
+# 3b. each candidate confirmed alone: it sees the reader rule (with its file and heading), the sentence and the written test, and nothing else
+python3 -c 'import json,sys
 for c in json.load(open(sys.argv[1]))["candidates"]:
     open("%s/confirm-%s.rule" % (sys.argv[2], c["cid"]), "w").write(c["reader_rule"])
+    open("%s/confirm-%s.label" % (sys.argv[2], c["cid"]), "w").write(c["reader_rule"].split(": ", 1)[0])
+    open("%s/confirm-%s.heading" % (sys.argv[2], c["cid"]), "w").write(c.get("heading", ""))
     open("%s/confirm-%s.sentence" % (sys.argv[2], c["cid"]), "w").write(c["quote"])' "$cands" "$work"
-  for f in "$work"/confirm-*.rule; do
-    [ -e "$f" ] || break
-    cid=${f##*/confirm-}; cid=${cid%.rule}
-    python3 -c 'import sys
-print(open(sys.argv[1], encoding="utf-8").read().format(rule=open(sys.argv[2]).read(), sentence=open(sys.argv[3]).read(), test=sys.argv[4]))' \
-      "$nb/tools/vet-confirm.md" "$f" "$work/confirm-$cid.sentence" "$test_text" >"$work/confirm-$cid.md"
-    call "" "$work/confirm-$cid.md" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err" &
-  done
-  wait
-  show_call_errors
-  # a confirm call that answered with no JSON (a refusal, a hiccup) gets one more try, alone
-  for f in "$work"/confirm-*.md; do
-    [ -e "$f" ] || break
-    cid=${f##*/confirm-}; cid=${cid%.md}
-    grep -q '"conflict"' "$work/confirm-$cid.out" || call "" "$f" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err"
-  done
-  show_call_errors   # a retry that failed again
-  python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF' || die "a confirm call gave no usable answer"
+for f in "$work"/confirm-*.rule; do
+  [ -e "$f" ] || break
+  cid=${f##*/confirm-}; cid=${cid%.rule}
+  python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(rule=open(sys.argv[2]).read(), sentence=open(sys.argv[3]).read(), test=sys.argv[4], label=open(sys.argv[5]).read(), heading=open(sys.argv[6]).read()))' \
+    "$nb/tools/vet-confirm.md" "$f" "$work/confirm-$cid.sentence" "$test_text" "$work/confirm-$cid.label" "$work/confirm-$cid.heading" >"$work/confirm-$cid.md"
+  call "" "$work/confirm-$cid.md" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err" &
+done
+wait
+show_call_errors
+# a confirm call that answered with no JSON (a refusal, a hiccup) gets one more try, alone
+for f in "$work"/confirm-*.md; do
+  [ -e "$f" ] || break
+  cid=${f##*/confirm-}; cid=${cid%.md}
+  grep -q '"conflict"' "$work/confirm-$cid.out" || call "" "$f" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err"
+done
+show_call_errors   # a retry that failed again
+python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF2' || die "a confirm call gave no usable answer"
 import json, re, sys
 cands = json.load(open(sys.argv[1]))["candidates"]
 confs, kept = [], []
@@ -475,78 +444,58 @@ for c in cands:
         text = open(f"{sys.argv[2]}/confirm-{c['cid']}.out", encoding="utf-8").read()
         a = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
         assert isinstance(a["conflict"], bool)
+        assert isinstance(a.get("hard_stop"), bool) or not a["conflict"]   # a confirmed conflict says whether its rule is a hard stop
     except Exception:
         print(f"vet: the confirm call for {c['cid']} gave no usable answer: {text[:200]!r}", file=sys.stderr)
         sys.exit(1)
-    confs.append({"cid": c["cid"], "conflict": a["conflict"], "why": str(a.get("why", ""))})
+    confs.append({"cid": c["cid"], "conflict": a["conflict"], "hard_stop": a.get("hard_stop") is True, "why": str(a.get("why", ""))})
     if a["conflict"]:
-        kept.append({**c, "why": str(a.get("why", ""))})
+        kept.append({**c, "hard_stop": a["hard_stop"], "why": str(a.get("why", ""))})
 json.dump({"confirmations": confs}, open(sys.argv[3], "w"), indent=1)
 json.dump({"confirmed": kept}, open(sys.argv[4], "w"), indent=1)
 print(f"vet: units: {len(kept)} of {len(cands)} candidates confirmed", file=sys.stderr)
-PYEOF
-  python3 - "$nb/tools/vet-units.md" "$unitsf" "$answers" "$nb" "$confirmed" "$cands" "$confs" >>"$prompt" <<'PYEOF' || die "couldn't write the units addendum"
-import sys
-print("\n" + open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], answers=sys.argv[3], nb=sys.argv[4], confirmed=sys.argv[5], cands=sys.argv[6], confs=sys.argv[7]))
-print("The ANSWERS file above is the one file you may write besides the REPORT FILE.")
-PYEOF
-fi
-cfg=()
-[ "$judge" = reader ] && cfg=(env CLAUDE_CONFIG_DIR="$reader")
-rm -f "$out"
-(cd "$project" && ${cfg[@]+"${cfg[@]}"} claude -p --model "$model" --allowedTools Bash,Read,Write,Edit,Glob,Grep --output-format text < "$prompt") >"$work/judge.out"
-judge_rc=$?
+PYEOF2
+# 3c. the answering judge: one call that answers every unit
+python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossier=sys.argv[3], answers=sys.argv[4]))' "$nb/tools/vet-units.md" "$unitsf" "$dossier" "$answers" >"$work/answer.md" || die "couldn't write the answering prompt"
+call Read,Write,Glob,Grep "$work/answer.md" >"$work/answer.out" 2>"$work/answer.err" || { show_call_errors; echo "vet: the answering judge said:" >&2; safe_tail "$work/answer.md.json" 5; die "the answering judge exited non-zero"; }
+show_call_errors
+login_scan || die "the judge's output held your login's secrets, so no report was written"
+[ -s "$answers" ] || die "the answering judge wrote no answers to $answers ($(head -c 300 "$work/answer.out" "$work/answer.err"))"
+# whatever the judge wrote under conflicts, only the confirmed ones count: put them in, with the file each is held in and whether its rule is a hard stop
+python3 "$nb/tools/units-confirm" merge "$cands" "$confs" "$answers" >/dev/null || die "couldn't put the confirmed conflicts into the answers"
+# 3d. the verdict and counts, by code
+computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers") || { echo "$computed" >&2; die "the judge's answers were refused"; }
+echo "vet: units: $computed" >&2
+python3 "$nb/tools/units-verdict" "$unitsf" "$answers" --json >"$verdictf" || die "couldn't write the verdict records"
+# 3e. the prose judge: only the Why paragraph, the Do this steps and the rules patch
+python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(reader_noun=sys.argv[2], reader_cite=sys.argv[3], name=sys.argv[4], target=sys.argv[5], dossier=sys.argv[6], verdict_json=open(sys.argv[7], encoding="utf-8").read(), prose=sys.argv[8]))' \
+  "$nb/tools/vet-prose.md" "$reader_noun" "$reader_cite" "$name${version:+ $version}" "$target" "$dossier" "$verdictf" "$prose" >"$work/prose.md" || die "couldn't write the prose prompt"
+call Read,Write,Glob,Grep "$work/prose.md" >"$work/prose.out" 2>"$work/prose.err"
+prose_rc=$?
 if [ "$credcopy" = yes ]; then
   [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the judge rewrote its login file, so you may need to log in again" >&2
   login_scan || die "the judge's output held your login's secrets, so no report was written"
 fi
-[ "$judge_rc" = 0 ] || { echo "vet: the judge said:" >&2; safe_tail "$work/judge.out" 5; }
+[ "$prose_rc" = 0 ] || { show_call_errors; echo "vet: the prose judge said:" >&2; safe_tail "$work/prose.md.json" 5; }
 rm -f "$credtokens"
-[ "$judge_rc" = 0 ] || die "the judge exited non-zero"
-cat "$work/judge.out"
-
-# 4. the report
-[ -s "$out" ] || die "the judge wrote no report to $out"
-grep -qE '^> ## (🟥|🟧|🟨|🟩) ' "$out" || die "$out carries no verdict banner"
-if [ "$units" = yes ]; then
-  # whatever the judge wrote under conflicts, only the confirmed ones count: put them in again, as the judge was told to
-  python3 "$nb/tools/units-confirm" merge "$cands" "$confs" "$answers" >/dev/null || die "couldn't put the confirmed conflicts into the answers"
-  computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers") || { echo "$computed" >&2; die "the judge's answers were refused"; }
-  echo "vet: units: $computed" >&2
-  python3 - "$usage_log" "$SECONDS" <<'PYEOF' >&2
+[ "$prose_rc" = 0 ] || die "the prose judge exited non-zero"
+show_call_errors
+[ -s "$prose" ] || die "the prose judge wrote no prose to $prose"
+python3 - "$usage_log" "$SECONDS" <<'PYEOF2' >&2
 import sys
 try: rows = [l.split() for l in open(sys.argv[1]) if l.strip()]
 except OSError: rows = []
-print(f"vet: units cost: {len(rows)} find and confirm calls, ${sum(float(r[0]) for r in rows):.2f}, {sum(int(float(r[1])) for r in rows) // 1000} s of call time; whole vet {sys.argv[2]} s (the report pass is not in the dollars)")
-PYEOF
-  v=$(printf '%s\n' "$computed" | sed -E 's/^[^:]*: ([^;]+);.*/\1/')
-  bv=$(grep -E '^> ## ' "$out" | head -n 1 | sed -E 's/^> ## [^ ]+ //; s/ · .*//')
-  case $bv in "$v"|"$v /"*) ;; *) die "the banner says $bv, but the computed verdict is $v" ;; esac
-fi
-# the title says whose rules these are; a judge started with its own rules has been seen to write "your rules"
-case $(head -n 1 "$out") in "# 🔍 "*) ;; *) die "$out has no 🔍 title line" ;; esac
-insert_part1 "$out" "$dossier" "$commit"
-python3 - "$out" "$title" <<'EOF'
-import sys
-lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
-if lines[0] != sys.argv[2]:
-    print(f"vet: title was {lines[0]!r}, set to {sys.argv[2]!r}", file=sys.stderr)
-    lines[0] = sys.argv[2]
-    open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
-EOF
-# the baseline goes in by tools/vet, after the header line the judge wrote (after the title when it wrote none)
-python3 - "$out" "$header" "$baseline_file" <<'EOF'
-import sys
-lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
-block = open(sys.argv[3], encoding="utf-8").read().rstrip("\n").split("\n")
-if sys.argv[2] in lines:
-    lines[lines.index(sys.argv[2]) + 1:lines.index(sys.argv[2]) + 1] = block
-else:   # the judge wrote no header line, so vet writes it, where vet --check reads it (line 3)
-    lines[1:1] = ["", sys.argv[2]] + block
-open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
-EOF
+print(f"vet: units cost: {len(rows)} calls, ${sum(float(r[0]) for r in rows):.2f}, {sum(int(float(r[1])) for r in rows) // 1000} s of call time; whole vet {sys.argv[2]} s")
+PYEOF2
+
+# 4. the report: title, header, the fit strip and cards, then part 1
+python3 "$nb/tools/fit" "$verdictf" "$prose" --label "$label" --target "${name##*/}" --verdict-text "${note:+$note }$verdict_text" --baseline "$baseline_file" >"$work/fit.md" || die "the fit report could not be drawn from $verdictf and $prose"
+part1_section "$dossier" "$commit" "$work/part1.md"
+{ printf '%s\n\n%s\n\n' "$title" "$header"; cat "$work/fit.md"; printf '\n'; cat "$work/part1.md"; } >"$out"
 for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do
   [ "$p" = / ] && continue
-  grep -qF -- "$p" "$out" && die "$out names a local path ($p); fix it by hand or rerun"
+  grep -qF -- "$p" "$out" && { rm -f "$out"; die "$out names a local path ($p); fix it by hand or rerun"; }
 done
 echo "vet: report $out (judge: $judge)"

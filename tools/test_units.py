@@ -42,7 +42,8 @@ U = os.path.join(d, "units.json")
 C = [{"quote": "q", "reader_rule": "r", "held_in": "rules/x.md", "hard_stop": False}]
 def answers(name, pairs):
     return J(name, {"answers": [{"id": f"u{i + 1}", "skill": k, "rules": "none" if r == "conflict" else r,
-                                 "conflicts": C if r == "conflict" else [], "why": "x"} for i, (k, r) in enumerate(pairs)]})
+                                 "conflicts": C if r == "conflict" else [], "why": "x",
+                                 **({"covered_by": "Rule 1", "held_in": "rules/x.md"} if r == "duplicate" else {})} for i, (k, r) in enumerate(pairs)]})
 D = ("drop", "none")
 cases = [
     ([("keep", "none"), D, D, ("drop", "duplicate"), D], "INSTALL"),
@@ -175,8 +176,8 @@ chk("--json prints one JSON document with the verdict", code == 0 and got.get("v
 want = {"units": 5, "conflicts": 1, "covered": 1, "keep": 2, "dropped": 2, "new_standing": 1, "new_skill": 1, "kept_rules": 1, "kept_skills": 1, "units_with_conflict": 2}
 chk("--json counts: each unit in exactly one of covered, keep, dropped; a conflict shared by two units is one", {k: got.get("counts", {}).get(k) for k in want} == want, got.get("counts"))
 recs = {r["id"]: r for r in got.get("units", [])} or {f"u{i}": {} for i in range(1, 6)}
-chk("--json has one record per unit with id, file, heading, kind, skill, rules, quote, why, covered_by, held_in, star, conflicts",
-    sorted(recs) == ["u1", "u2", "u3", "u4", "u5"] and all(k in recs["u1"] for k in ("id", "file", "heading", "kind", "skill", "rules", "quote", "why", "covered_by", "held_in", "star", "conflicts")), recs)
+chk("--json has one record per unit with id, file, heading, kind, bucket, skill, rules, quote, why, covered_by, held_in, star, conflicts",
+    sorted(recs) == ["u1", "u2", "u3", "u4", "u5"] and all(k in recs["u1"] for k in ("id", "file", "heading", "kind", "bucket", "skill", "rules", "quote", "why", "covered_by", "held_in", "star", "conflicts")), recs)
 chk("--json: kind is rule for a new standing rule and skill for new-skill-text; star is carried; a duplicate carries covered_by and held_in",
     tuple(recs[a].get(b) for a, b in (("u1", "kind"), ("u5", "kind"), ("u1", "star"), ("u2", "covered_by"), ("u2", "held_in"))) == ("rule", "skill", True, "Rule 1, Reuse before writing", "rules/engineering.md"), recs)
 chk("--json: units with the same conflict share its number, numbered from 1", [c["n"] for c in recs["u3"].get("conflicts", [])] == [1] == [c["n"] for c in recs["u4"].get("conflicts", [])], recs["u3"])
@@ -202,11 +203,11 @@ def counted(*rows):
         return {}, {}
     return d.get("counts", {}), {r["id"]: r for r in d.get("units", [])}
 c, rr = counted({"skill": "keep", "rules": "duplicate"})
-chk("a unit with skill keep and rules duplicate counts in keep, not covered, and is kind skill", (c.get("keep"), c.get("covered"), c.get("dropped"), rr.get("u1", {}).get("kind")), (1, 0, 4, "skill"))
+chk("a unit with skill keep and rules duplicate counts in keep, not covered, in the on-demand skill row, and is kind skill", (c.get("keep"), c.get("covered"), c.get("dropped"), c.get("new_skill"), rr.get("u1", {}).get("kind")), (1, 0, 4, 1, "skill"))
 c, rr = counted({"skill": "keep", "rules": "new-standing"})
 chk("a unit with skill keep and rules new-standing lands in new_standing, not new_skill, and is kind skill", (c.get("new_standing"), c.get("new_skill"), c.get("keep"), c.get("kept_skills"), c.get("kept_rules"), rr.get("u1", {}).get("kind")), (1, 0, 1, 1, 0, "skill"))
 c, rr = counted({"skill": "keep", "rules": "none"})
-chk("a unit with skill keep and nothing else is in keep and counts in neither new row", (c.get("keep"), c.get("new_standing"), c.get("new_skill"), c.get("kept_skills")), (1, 0, 0, 1))
+chk("a unit with skill keep and nothing else is in keep, in the on-demand skill row and not the standing rule row", (c.get("keep"), c.get("new_standing"), c.get("new_skill"), c.get("kept_skills")), (1, 0, 1, 1))
 c, rr = counted({"skill": "drop", "rules": "duplicate"}, {"skill": "drop", "rules": "none", "conflicts": [{"quote": "q", "reader_rule": "r", "held_in": "rules/x.md", "hard_stop": True}]})
 chk("covered is rules duplicate and not keep; a unit with a conflict is still counted once, among dropped", (c.get("covered"), c.get("dropped"), c.get("conflicts"), c.get("keep")), (1, 4, 1, 0))
 sys.exit(1 if fails else 0)

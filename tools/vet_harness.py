@@ -40,7 +40,7 @@ if "single word ok" in prompt:
     print("ok"); sys.exit(0)
 def reply(text):
     if "--output-format" in args and args[args.index("--output-format") + 1] == "json":
-        print(json.dumps({"result": text, "total_cost_usd": 0.01, "duration_ms": 1000}))
+        print(json.dumps({"result": text + os.environ.get("FAKE_SAY", ""), "total_cost_usd": 0.01, "duration_ms": 1000}))
     else:
         print(text + os.environ.get("FAKE_SAY", ""))
     sys.exit(0)
@@ -79,10 +79,16 @@ if "ANSWERING JUDGE" in prompt:   # the one call that answers every unit (verdic
             a.update(covered_by="Rule 1, Reuse before writing", held_in="rules/engineering.md")
         answers.append(a)
     json.dump({"answers": answers}, open(m.group(1), "w"))
+    if os.environ.get("FAKE_SIDE"):
+        open(m.group(1), "a").write(os.environ["FAKE_SIDE"])
     reply("done")
 if "PROSE JUDGE" in prompt:   # the one call that writes the three free texts
+    if os.environ.get("FAKE_JUDGE_FAIL"):   # exits non-zero with its message on stdout
+        print("judge noise line"); print(os.environ.get("FAKE_FAIL_MSG", "fake-judge-error: out of credit")); sys.exit(1)
     m = re.search(r"Write the prose to (\S+) as JSON", prompt)
     why = {"states": "Verdict: 🟥 DON'T INSTALL, with 99 conflicts and 99 kept."}.get(os.environ.get("FAKE_PROSE", ""), "FAKE WHY.")
+    if os.environ.get("FAKE_PROSE") == "secret":   # a prose text that holds the login's token
+        why = "The login is " + os.environ.get("FAKE_SECRET", "") + "."
     if os.environ.get("FAKE_PROSE") == "leak":   # a prose text that names a local path
         why = "See " + os.environ["HOME"] + "/notes."
     if os.environ.get("FAKE_PROSE") != "none":   # "none": the judge writes no prose file
@@ -130,7 +136,7 @@ def reader_files():
     return sorted(os.path.relpath(os.path.join(d, f), root) for d, _, fs in os.walk(root) for f in fs)
 
 
-def run(case, login="env", report="good", extra=(), remote=None, units="", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None, outname="report.md", shell=None):
+def run(case, login="env", report="good", extra=(), remote=None, units="units-install", finds="none", confirm="no", commit=False, vet=None, fake_body=None, rules_above=False, setup=None, version=None, caller=None, uname=None, fake_env=None, outname="report.md", shell=None):
     tmp = tempfile.mkdtemp()
     try:
         bindir = os.path.join(tmp, "bin"); os.mkdir(bindir)
@@ -186,6 +192,7 @@ def run(case, login="env", report="good", extra=(), remote=None, units="", finds
 
 judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"] and "--output-format" in c["args"] and c["args"][c["args"].index("--output-format") + 1] == "text"]
 isolated = lambda r, word: [c for c in r["calls"] if word in c["prompt"]]
+judges = lambda r: isolated(r, "ANSWERING JUDGE") + isolated(r, "PROSE JUDGE")   # the two calls that judge
 
 # shared with the judge module
 NO_CLAUDE = """#!/usr/bin/env python3

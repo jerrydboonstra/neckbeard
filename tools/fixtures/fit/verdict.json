@@ -26,7 +26,8 @@
    "covered_by": "",
    "held_in": "",
    "star": true,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "keep"
   },
   {
    "id": "u2",
@@ -40,7 +41,8 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "keep"
   },
   {
    "id": "u3",
@@ -54,7 +56,8 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "keep"
   },
   {
    "id": "u4",
@@ -76,7 +79,8 @@
      "held_in": "rules/safety.md",
      "hard_stop": true
     }
-   ]
+   ],
+   "bucket": "dropped"
   },
   {
    "id": "u5",
@@ -98,7 +102,8 @@
      "held_in": "rules/engineering.md",
      "hard_stop": false
     }
-   ]
+   ],
+   "bucket": "dropped"
   },
   {
    "id": "u6",
@@ -120,7 +125,8 @@
      "held_in": "rules/engineering.md",
      "hard_stop": false
     }
-   ]
+   ],
+   "bucket": "dropped"
   },
   {
    "id": "u7",
@@ -134,7 +140,8 @@
    "covered_by": "Rule 1, Reuse before writing",
    "held_in": "rules/engineering.md",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "covered"
   },
   {
    "id": "u8",
@@ -148,7 +155,8 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "dropped"
   },
   {
    "id": "u9",
@@ -162,7 +170,8 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": []
+   "conflicts": [],
+   "bucket": "dropped"
   }
  ]
 }

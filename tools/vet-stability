@@ -5,7 +5,9 @@
 
 Reads the reports tools/vet wrote (the same target, run more than once) and prints the verdict
 and the five counts of each, then every conflict with the number of reports that found it
-("found in 4 of 5"). Needs only python3: no claude, no login, no model cost. Exit 0 when every
+("found in 4 of 5"), then every data card (Conflicts, Already covered, Keep, Dropped) whose count or colours
+differ between reports ("card Keep: colour differs"). The verdict is read from the verdict strip
+(`> **🟨 COPY RULES, SKIP PLUGIN** · ...`) or, in a 1.x report, the banner. Needs only python3: no claude, no login, no model cost. Exit 0 when every
 report has the same verdict and the same conflict list, 1 when they differ, 2 on bad input.
 
 A conflict is identified by the rule it breaks, not by its wording or its source, since the
@@ -22,6 +24,10 @@ import collections, re, sys
 # debt: the key leans on the table layout in SKILL.md Step 4 (it says | collides with | held in);
 # a change there needs the same change here. The test builds reports in that shape.
 VERDICT_RE = re.compile(r"^> ## (?:🟥|🟧|🟨|🟩) (.+?)(?: · .*)?$", re.M)
+STRIP_RE = re.compile(r"^> \*\*(?:🟥|🟧|🟨|🟩) (.+?)\*\*", re.M)   # the 2.0 strip, which tools/fit writes
+CARD_RE = re.compile(r"^<details><summary>\S+ <b>(.*?)</b>(?: · (.*?))?</summary>\n(.*?)^</details>$", re.M | re.S)
+DATA_CARDS = ["Conflicts", "Already covered", "Keep", "Dropped"]   # cards drawn from the records; the prose cards are not compared
+MARKS = "🟥🟧🟨🟩⬜⬛⭐"
 SORT_ROWS = ["conflicts", "covered", "new standing", "new skill", "dropped"]
 COUNT_RE = re.compile(r"^\| \S+ \| \*\*(conflicts|already covered|new, standing rule|new, on-demand skill|dropped)[^|]*\| \*\*(\d+)\*\*", re.M)
 LABEL = {"conflicts": "conflicts", "already covered": "covered", "new, standing rule": "new standing",
@@ -44,14 +50,33 @@ def rule_key(collides, held):
 
 def conflicts_section(text):
     m = re.search(r"^## ⛔ Conflicts.*?\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-    return m.group(1) if m else ""
+    if m:
+        return m.group(1)
+    return next((body for name, _, body in CARD_RE.findall(text) if name == "Conflicts"), "")
+
+
+def cards(text):
+    """{card name: (count, marks in row order)} for each data card of a 2.0 report; the count is the first number of its gist, 0 for "none" """
+    out = {}
+    for name, gist, body in CARD_RE.findall(text):
+        if name not in DATA_CARDS:
+            continue
+        first = (gist or "").split(" ")[0]
+        count = int(first) if first.isdigit() else 0 if first == "none" else None
+        marks = []
+        for row in body.splitlines():
+            cells = [c.strip() for c in row.strip().strip("|").split("|")]
+            if row.startswith("|") and cells and cells[0].isdigit() and cells[-1] and all(ch in MARKS for ch in cells[-1]):
+                marks.append(cells[-1])
+        out[name] = (count, tuple(marks))
+    return out
 
 
 def parse(path):
     text = open(path, encoding="utf-8").read()
-    v = VERDICT_RE.search(text)
+    v = STRIP_RE.search(text) or VERDICT_RE.search(text)
     if not v:
-        print(f"vet-stability: {path} has no verdict banner", file=sys.stderr)
+        print(f"vet-stability: {path} has no verdict strip and no verdict banner", file=sys.stderr)
         sys.exit(2)
     counts = {LABEL[k]: int(n) for k, n in COUNT_RE.findall(text)}
     keys = []
@@ -59,7 +84,7 @@ def parse(path):
         cells = [c.strip() for c in row.strip().strip("|").split("|")]
         if len(cells) >= 4 and cells[0].isdigit():
             keys.append(rule_key(cells[2], cells[3]))
-    return v.group(1).strip(), counts, keys, len(keys)
+    return v.group(1).strip(), counts, keys, len(keys), cards(text)
 
 
 def main(paths):
@@ -69,18 +94,28 @@ def main(paths):
     runs = [parse(p) for p in paths]
     n = len(runs)
     print(f"{n} reports")
-    for p, (verdict, counts, keys, rows) in zip(paths, runs):
+    for p, (verdict, counts, keys, rows, _) in zip(paths, runs):
         print(f"  {p}: {verdict}; " + " / ".join(f"{counts.get(r, '?')}" for r in SORT_ROWS) + "  (conflicts / covered / new standing / new skill / dropped)")
         if rows != len(set(keys)):
             print(f"    note: {rows} conflict rows but {len(set(keys))} distinct rules; findings against one rule are counted once")
-    verdicts = collections.Counter(v for v, _, _, _ in runs)
+    verdicts = collections.Counter(v for v, _, _, _, _ in runs)
     print("verdicts: " + ", ".join(f"{v} in {c} of {n}" for v, c in verdicts.most_common()))
-    seen = collections.Counter(k for _, _, keys, _ in runs for k in set(keys))
+    seen = collections.Counter(k for _, _, keys, _, _ in runs for k in set(keys))
     for key, c in seen.most_common():
         print(f"  conflict found in {c} of {n}: {key}")
     if not seen:
         print("  no conflicts in any report")
-    stable = len(verdicts) == 1 and all(c == n for c in seen.values())
+    differing = 0
+    for name in DATA_CARDS:
+        have = [cd[name] for _, _, _, _, cd in runs if name in cd]
+        if len(have) < 2:
+            continue
+        for what, vals in (("count", [h[0] for h in have]), ("colour", [h[1] for h in have])):
+            if len(set(vals)) > 1:
+                differing += 1
+                tally = collections.Counter(vals)
+                print(f"  card {name}: {what} differs (" + "; ".join(f"{('/'.join(v) or 'none') if what == 'colour' else v} in {c} of {n}" for v, c in tally.most_common()) + ")")
+    stable = len(verdicts) == 1 and all(c == n for c in seen.values()) and not differing
     print("stable" if stable else "NOT stable: the reports disagree")
     return 0 if stable else 1
 

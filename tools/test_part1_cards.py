@@ -238,7 +238,7 @@ for top in ("tools", "skills"):
         for f_ in fn:
             fp_ = os.path.join(dp, f_)
             rel = os.path.relpath(fp_, NB)
-            if f_.startswith("test_") or rel == os.path.join("tools", "cards.py"):
+            if f_.startswith("test_") or rel in (os.path.join("tools", "cards.py"), os.path.join("tools", "vet-stability")):   # vet-stability reads cards, it writes none
                 continue
             try:
                 txt = open(fp_, encoding="utf-8").read()
@@ -246,7 +246,7 @@ for top in ("tools", "skills"):
                 continue
             if "<details><summary>" in txt:
                 found.append(rel)
-chk("CR7. `<details><summary>` is written nowhere in tools/ or skills/ outside tools/cards.py, tests, fixtures and tools/vet's Rule files block",
+chk("CR7. `<details><summary>` is written nowhere in tools/ or skills/ outside tools/cards.py, tests, fixtures, tools/vet-stability (a reader) and tools/vet's Rule files block",
     os.path.exists(os.path.join(HERE, "cards.py")) and found == ["tools/vet"], found)
 vet_txt = open(os.path.join(HERE, "vet"), encoding="utf-8").read()
 chk("CR7. in tools/vet the only `<details><summary>` is the Rule files block", re.findall(r"<details><summary>([^<]*)</summary>", vet_txt) == ["Rule files"], "")
