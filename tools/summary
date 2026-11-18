@@ -150,11 +150,11 @@ def cost(t, sec, hooks, hsec):
 
 def hook_present(hooks):
     """Whether the plugin has a hook: one is registered (a command, or a registration count above 0), or the events could not
-    be read. A hooks file with no registration is no hook (a plugin whose only addition is a mod has such a file)."""
+    be read (has_hooks "unknown" or "partial", for instance a malformed event). A hooks file with no registration is no hook (a plugin whose only addition is a mod has such a file)."""
     reg = hooks.get("hook_registrations")
     if hook_commands(hooks) or (isinstance(reg, int) and not isinstance(reg, bool) and reg > 0):
         return True
-    return hooks.get("has_hooks") == "unknown" or (hooks.get("has_hooks") is True and reg is None)
+    return hooks.get("has_hooks") in ("unknown", "partial") or (hooks.get("has_hooks") is True and reg is None)
 
 
 def reach(t, sec, hooks):
@@ -246,7 +246,8 @@ def details(t, hooks, sec):
     out["Cost"] += [f"rule file {rel(r)}: {n(r['bytes'])}" for r in as_list(t.get("rule_files")) if isinstance(r, dict) and size_of(r.get("bytes")) is not None and not r.get("refused")]
     twice = " (counted twice: hooks reach subagents)" if hooks.get("hooks_reach_subagents") is True else ""
     out["Cost"] += [f"hook text {rel(i)}: {n(i['bytes'])}{twice}" for i in as_list(hooks.get("injected_content")) if isinstance(i, dict) and size_of(i.get("bytes")) is not None]
-    out["Reach"] = ([f"hook: {safe(c, cap=200)}" for c in hook_commands(hooks)] + [f"mod: {rel(m)}" for m in as_list(hooks.get("mods"))]
+    unreadable = ["hook: the events could not be read"] if hook_present(hooks) and not hook_commands(hooks) and not (isinstance(hooks.get("hook_registrations"), int) and hooks["hook_registrations"] > 0) else []
+    out["Reach"] = (unreadable + [f"hook: {safe(c, cap=200)}" for c in hook_commands(hooks)] + [f"mod: {rel(m)}" for m in as_list(hooks.get("mods"))]
                     + [f"rule file: {rel(r)}" for r in as_list(t.get("rule_files"))])
     if hooks.get("hooks_reach_subagents_basis"):
         out["Reach"].append(f"subagent reach: {safe(hooks['hooks_reach_subagents_basis'])}")
