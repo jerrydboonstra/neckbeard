@@ -5,8 +5,9 @@
 """positions DOSSIER OUT [--reader DIR]: find where the target tells the model what to do, and group it by a fixed topic list.
 
 Reads only the target: the instruction files tools/rule-units reads (skills and their companion files, commands, agents,
-rule files) from the dossier, plus any hook-injected text the dossier holds (hooks.injected_content entries that carry a
-"text"; a "resolved_file" gives the file and line numbers, else the entry's "file" and no line). A reader folder, if given,
+rule files) from the dossier, plus the text of hooks that build their output at run time (hooks.injected_content entries with a
+"template": the hook script's name, no line). A hook's injected file the dossier holds only by name and size is read as an
+instruction file where it is one, and otherwise gives nothing. A reader folder, if given,
 is accepted so callers can pass the same arguments as to tools/vet, and never opened. No model call: the same input gives
 byte-identical output.
 
@@ -17,32 +18,44 @@ else under "other". The same quote in several files is listed once, under the fi
 with the other places in "also_in".
 
 OUT is {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]}: topics in TOPICS order, "other" last,
-empty ones left out; "line" is null for hook text with no resolved file. Part of 2.0's positions layer (report-positions).
+empty ones left out; "line" is null for hook template text. Part of 2.0's positions layer (report-positions).
 """
-import json, re, sys
+import json, os, re, sys
 
+# The spec's starting list, extended with the imperative verbs a hand reading of ponytail 5.3.3 turned up (take, list, check,
+# name, end, ...) and "no" ("No abstraction ... nobody asked for").
 DIRECTIVES = ["always", "never", "must", "should", "shall", "don't", "do not", "only", "prefer", "avoid", "use", "ask",
-              "stop", "keep", "run", "write", "make sure"]
+              "stop", "keep", "run", "write", "make sure",
+              "no", "take", "list", "check", "name", "end", "skip", "propose", "read", "explain", "report", "print", "send",
+              "pick", "finish", "add", "put", "offer", "split", "match", "answer", "review", "treat", "load", "set", "say",
+              "build", "leave", "limit", "count", "grep", "find", "look", "give", "show", "start", "need", "needs"]
 
-# The builder's first draft, one table: the spec's topic order is the match order, and a position goes under the first topic with a hit.
-# The reviewer checks it against mock-up v2's hand grouping of ponytail 5.3.3. Keywords are whole words, any case.
+# The builder's first draft, one table. The list is the order a position is matched in (the first topic holding one of its
+# keywords wins) and the order the topics are shown in: narrow topics first, the broad ones (style, scope, safety) last.
+# Keywords are whole words or phrases, any case. Checked against mock-up v2's hand grouping of ponytail 5.3.3 (the done note
+# says how many of its positions land in the same topic).
 TOPICS = [
-    ("Persona and activation", ["persona", "you are", "activate", "activation", "active", "mode", "session start", "stay on", "level", "levels"]),
-    ("Asking vs proceeding", ["ask", "asks", "asking", "question", "confirm", "clarify", "vague", "proactively", "offer", "pick", "choose"]),
-    ("Scope and size of changes", ["scope", "change", "changes", "smallest", "shortest", "minimal", "refactor", "caller", "callers", "diff",
-                                   "bug", "reach", "nobody asked"]),
-    ("Tests", ["test", "tests", "testing", "assert", "coverage", "fixture", "fixtures", "self-check"]),
-    ("Code style and comments", ["comment", "comments", "style", "naming", "format", "formatting", "lint", "readable", "readability",
-                                 "one-liner", "line", "lines", "function", "functions", "abstraction", "helper", "helpers"]),
-    ("Dependencies", ["dependency", "dependencies", "package", "packages", "library", "libraries", "install", "npm", "pip"]),
-    ("Commits and git", ["commit", "commits", "git", "branch", "branches", "rebase", "amend", "merge", "blame", "stash"]),
-    ("Pushes and releases", ["push", "pushes", "release", "releases", "tag", "publish", "deploy", "pull request", "version"]),
-    ("Reviews and audits", ["review", "reviews", "audit", "audits", "reviewer", "verdict", "findings"]),
+    ("Network", ["network", "http", "https", "url", "urls", "curl", "download", "marketplace", "package manager", "ssh", "update", "updates",
+                 "update flow", "internet", "fetch"]),
     ("Models and subagents", ["model", "models", "subagent", "subagents", "agent", "agents", "opus", "sonnet", "haiku", "delegate"]),
+    ("Pushes and releases", ["push", "pushes", "release", "releases", "publish", "deploy", "pull request"]),
+    ("Commits and git", ["commit", "commits", "uncommitted", "git", "rebase", "amend", "blame", "stash"]),
+    ("Reviews and audits", ["read the diff", "review", "reviews", "audit", "audits", "reviewer", "verdict", "finding", "findings", "propose", "case",
+                            "must fix", "should fix"]),
+    ("Tests", ["test", "tests", "testing", "assert", "coverage", "fixture", "fixtures", "self-check"]),
     ("Replies and reporting", ["reply", "replies", "answer", "answers", "report", "reports", "summary", "output", "respond", "response",
-                               "explain", "message", "messages"]),
-    ("State and files", ["file", "files", "folder", "directory", "path", "config", "settings", "disk", "cache", "state", "memory"]),
-    ("Network", ["network", "http", "https", "url", "urls", "curl", "fetch", "download", "web", "internet", "api", "ssh"]),
+                               "explain", "message", "messages", "print", "say", "figure", "card", "tell"]),
+    ("State and files", ["file", "files", "folder", "directory", "path", "disk", "cache", "state", "memory", "persist", "ledger",
+                         "flag", "flags", "settings"]),
+    ("Persona and activation", ["persona", "you are", "activate", "deactivate", "activation", "session start", "whole session", "stay on",
+                                "mode", "level", "levels", "on and off"]),
+    ("Asking vs proceeding", ["ask", "asks", "asking", "question", "confirm", "clarify", "vague", "proactively", "offer", "pick", "choose"]),
+    ("Dependencies", ["dependency", "dependencies", "package", "packages", "install", "installed", "npm", "pip"]),
+    ("Code style and comments", ["comment", "comments", "style", "naming", "format", "formatting", "lint", "readable", "readability",
+                                 "one-liner", "line", "lines", "function", "functions", "abstraction", "decoding", "values"]),
+    ("Scope and size of changes", ["scope", "change", "changes", "smallest", "shortest", "minimal", "refactor", "caller", "callers", "diff",
+                                   "bug", "reach", "nobody asked", "never cut", "codebase", "standard library", "platform", "existing",
+                                   "already", "structure", "root cause", "edit", "solution", "task", "option", "options", "deletion", "edge cases"]),
     ("Safety and permissions", ["security", "secret", "secrets", "credential", "credentials", "permission", "permissions", "destroy", "delete",
                                 "deletes", "force", "irreversible", "validation", "sandbox", "unsafe", "dangerous"]),
 ]
@@ -65,24 +78,41 @@ SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
 SPACE = re.compile(r"\s+")
 
 
+def label(item, root):
+    """The file a dossier item came from, as a path inside the target. The inventory is not uniform: a skill's "source" is its
+    relative path (its "path" is absolute); a command's or agent's "source" is the kind ("command") and its "path" the
+    relative path; the root CLAUDE.md has source "target-CLAUDE.md" and an absolute "path", its imports an absolute path."""
+    source, path = item.get("source") or "", item.get("path") or ""
+    if source == "target-CLAUDE.md":
+        return "CLAUDE.md"
+    if path and not os.path.isabs(path):
+        return path
+    if source and not os.path.isabs(source) and source not in ("command", "agent") and not source.endswith(" import"):
+        return source
+    return os.path.relpath(path, root) if path and root else path or source
+
+
 def files(target):
-    """The same files tools/rule-units reads: (path, text) in dossier order."""
+    """The same files tools/rule-units reads, as (file, text, has_line) in dossier order, then hook text with has_line False."""
+    root = next((os.path.dirname(i["path"]) for i in target.get("rule_files") or []
+                 if i.get("source") == "target-CLAUDE.md" and os.path.isabs(i.get("path") or "")), None)
     for kind in ("skills", "commands", "agents", "rule_files"):
         for item in target.get(kind) or []:
             if item.get("text"):
-                yield item.get("source") or item.get("path"), item["text"]
+                yield label(item, root), item["text"], True
             companions = item.get("companion_files") or []
             if isinstance(companions, str):
                 companions = []
             for c in companions:
                 if c.get("text"):
-                    yield c.get("path"), c["text"]
+                    yield c.get("path"), c["text"], True
+    # Hook-injected text: the dossier holds a hook's injected file by name and size only, and a file that is itself an
+    # instruction file is read above. What it does hold as text is the template of a hook script that builds its output at
+    # run time (injected_content entries with "template"): those lines are a position source, under the script's name, no line.
     for entry in (target.get("hooks") or {}).get("injected_content") or []:
-        if entry.get("text"):
-            if entry.get("resolved_file"):
-                yield entry["resolved_file"], entry["text"]
-            else:
-                yield entry.get("script") or entry.get("file"), entry["text"], False
+        template = entry.get("template")
+        if isinstance(template, list) and template:
+            yield entry.get("file"), "\n".join(t for t in template if isinstance(t, str)), False
 
 
 def cells(line):
@@ -176,9 +206,7 @@ def topic_of(quote):
 
 def build(target):
     found = []  # (file, line or 0, has_line, quote)
-    for entry in files(target):
-        path, text = entry[0], entry[1]
-        has_line = len(entry) == 2
+    for path, text, has_line in files(target):
         for quote, line in quotes(text):
             if quote and DIRECTIVE_RE.search(quote):
                 found.append((path, line if has_line else 0, has_line, quote))

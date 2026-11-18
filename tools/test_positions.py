@@ -35,7 +35,7 @@ You are a careful assistant. Never skip the checklist. Greet the user.
 
 Some background prose with nothing to act on.
 
-- Always run the tests before you commit.
+- Always run the tests before you finish.
 - Keep comments short.
 - Chat freely.
 
@@ -52,35 +52,43 @@ Never do this inside a fence.
 Do not push without a go-ahead.
 Stop after the release.
 """
+# The shapes the inventory writes (skills/neckbeard/inventory_parts.py): a skill's "source" is its relative path and its "path"
+# absolute; a command's "source" is the kind and its "path" relative; the root CLAUDE.md is source "target-CLAUDE.md" with an
+# absolute path; a hook's injected file is {"file", "bytes"}, and a hook built at run time adds its "template" lines.
 dossier = {"target": {
-    "skills": [{"source": "skills/fx/SKILL.md", "text": skill, "companion_files": [{"path": "skills/fx/roles/w.md", "text": "# W\n\nChat freely.\n"}]}],
-    "commands": [{"source": "commands/c.md", "text": "Always run the tests before you commit.\n"}],
-    "agents": [], "rule_files": [],
+    "skills": [{"source": "skills/fx/SKILL.md", "path": "/abs/root/skills/fx/SKILL.md", "text": skill,
+                "companion_files": [{"path": "skills/fx/roles/w.md", "text": "# W\n\nChat freely.\n"}]}],
+    "commands": [{"source": "command", "path": "commands/c.md", "text": "Always run the tests before you finish.\n"}],
+    "agents": [],
+    "rule_files": [{"source": "target-CLAUDE.md", "path": "/abs/root/CLAUDE.md", "text": "Always use tabs.\n"},
+                   {"source": "target-CLAUDE.md import", "path": "/abs/root/docs/imp.md", "text": "Never fetch the page.\n"}],
     "hooks": {"injected_content": [
-        {"file": "hooks/h.js", "text": "Always stay concise.\nUse the cache.\n"},
-        {"file": "hooks/run.sh", "resolved_file": "hooks/inj.md", "text": "\nNever commit secrets.\n"},
-        {"file": "hooks/none.md", "bytes": 4}]}}}
+        {"file": "skills/fx/SKILL.md", "bytes": 400},
+        {"file": "hooks/h.sh", "bytes": 60, "events": ["SessionStart"], "built_at_run_time": True,
+         "template": ["Always stay concise.", "Use the cache.", "Never commit secrets."], "writes": [], "at_least": False}]}}}
 D = os.path.join(d, "dossier.json")
 json.dump(dossier, open(D, "w"))
 P = lambda quote, file, line, also=(): {"quote": quote, "file": file, "line": line, "also_in": list(also)}
 golden = {"topics": [
-    {"name": "Tests", "positions": [P("Always run the tests before you commit.", "commands/c.md", 1, ["skills/fx/SKILL.md:12"])]},
-    {"name": "Code style and comments", "positions": [P("Keep comments short.", "skills/fx/SKILL.md", 13)]},
-    {"name": "Dependencies", "positions": [P("Dependencies | Never add a package for one call", "skills/fx/SKILL.md", 22)]},
-    {"name": "Commits and git", "positions": [P("Never commit secrets.", "hooks/inj.md", 2)]},
+    {"name": "Network", "positions": [P("Never fetch the page.", "docs/imp.md", 1)]},
     {"name": "Pushes and releases", "positions": [P("Do not push without a go-ahead.", "skills/fx/SKILL.md", 26),
                                                   P("Stop after the release.", "skills/fx/SKILL.md", 27)]},
-    {"name": "State and files", "positions": [P("Use the cache.", "hooks/h.js", None)]},
-    {"name": "other", "positions": [P("Always stay concise.", "hooks/h.js", None), P("Never skip the checklist.", "skills/fx/SKILL.md", 8)]},
+    {"name": "Commits and git", "positions": [P("Never commit secrets.", "hooks/h.sh", None)]},
+    {"name": "Tests", "positions": [P("Always run the tests before you finish.", "commands/c.md", 1, ["skills/fx/SKILL.md:12"])]},
+    {"name": "State and files", "positions": [P("Use the cache.", "hooks/h.sh", None)]},
+    {"name": "Dependencies", "positions": [P("Dependencies | Never add a package for one call", "skills/fx/SKILL.md", 22)]},
+    {"name": "Code style and comments", "positions": [P("Keep comments short.", "skills/fx/SKILL.md", 13)]},
+    {"name": "other", "positions": [P("Always use tabs.", "CLAUDE.md", 1), P("Always stay concise.", "hooks/h.sh", None),
+                                    P("Never skip the checklist.", "skills/fx/SKILL.md", 8)]},
 ]}
 O1, O2 = os.path.join(d, "o1.json"), os.path.join(d, "o2.json")
 code, out = run(D, O1)
 got = json.load(open(O1))
-chk("1. golden OUT: topics, quotes, files, lines, other last, empty topics left out, a hook with no resolved file has no line",
+chk("1. golden OUT: topics, quotes, files, lines, other last, empty topics left out, a command is named by its path, a root CLAUDE.md and an import by their relative path, hook template text has no line",
     code == 0 and got == golden, json.dumps(got, indent=1))
-chk("1b. prints the count", "9 positions in 7 topics" in out, out)
+chk("1b. prints the count", "11 positions in 8 topics" in out, out)
 chk("1c. a duplicate quote is listed once, under the first file in path order, with the other place in also_in",
-    got["topics"][0]["positions"][0]["file"] == "commands/c.md" and got["topics"][0]["positions"][0]["also_in"] == ["skills/fx/SKILL.md:12"])
+    [(p["file"], p["also_in"]) for t in got["topics"] for p in t["positions"] if p["quote"].startswith("Always run")] == [("commands/c.md", ["skills/fx/SKILL.md:12"])])
 
 run(D, O2)
 chk("2. two runs give byte-identical OUT", open(O1, "rb").read() == open(O2, "rb").read())
@@ -92,11 +100,11 @@ chk("3b. a table's header row is not a position", not any(q.startswith("Rule |")
 
 reader = os.path.join(d, "reader")
 os.makedirs(reader)
-open(os.path.join(reader, "CLAUDE.md"), "w").write("Never use tabs.\nAlways run the linter.\n")
+open(os.path.join(reader, "CLAUDE.md"), "w").write("Never use semicolons.\nAlways run the linter.\n")
 O3 = os.path.join(d, "o3.json")
 code, out = run(D, O3, "--reader", reader)
 chk("4. given a reader folder, the tool reads none of it: no reader line in OUT, and OUT is the same as without it",
-    code == 0 and b"tabs" not in open(O3, "rb").read() and b"linter" not in open(O3, "rb").read() and open(O3, "rb").read() == open(O1, "rb").read(), out)
+    code == 0 and b"semicolons" not in open(O3, "rb").read() and b"linter" not in open(O3, "rb").read() and open(O3, "rb").read() == open(O1, "rb").read(), out)
 
 code, out = run(D)
 chk("usage error with one argument", code != 0 and "usage" in out, out)
