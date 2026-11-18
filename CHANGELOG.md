@@ -9,6 +9,9 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 ### Docs
 
 - **The README badge row now reads CI, license, release, CodeQL, then the neckbeard report.** The "self-check" badge is renamed "CI" (the workflow's name is now `CI`; its file name is unchanged). New badges: MIT license, latest release, and CodeQL, which analyses the Python in `skills/neckbeard` and `tools` on each push to main, each pull request and weekly.
+### Reports
+
+- **Large scripts are now read in full, up to 2 MB, when listing what a plugin may leave on disk.** A plugin with one script over 50 KB no longer gets "partly read" for that cut. A script over 2,000,000 characters is still noted as capped.
 
 ## 1.17.7 (2026-11-15)
 
