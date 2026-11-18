@@ -15,6 +15,10 @@ def chk(name, ok, detail=""):
     print(f"  {'ok  ' if ok else 'FAIL'}  {name}" + ("" if ok else f": {detail}"))
 
 
+def eq(name, got, want):
+    chk(name, got == want, f"got {got!r}, want {want!r}")
+
+
 def run(tool, *args):
     r = subprocess.run([sys.executable, os.path.join(HERE, tool), *args], capture_output=True, text=True)
     return r.returncode, r.stdout + r.stderr
@@ -203,11 +207,11 @@ def counted(*rows):
         return {}, {}
     return d.get("counts", {}), {r["id"]: r for r in d.get("units", [])}
 c, rr = counted({"skill": "keep", "rules": "duplicate"})
-chk("a unit with skill keep and rules duplicate counts in keep, not covered, in the on-demand skill row, and is kind skill", (c.get("keep"), c.get("covered"), c.get("dropped"), c.get("new_skill"), rr.get("u1", {}).get("kind")), (1, 0, 4, 1, "skill"))
+eq("a unit with skill keep and rules duplicate counts in keep, not covered, in the on-demand skill row, and is kind skill", (c.get("keep"), c.get("covered"), c.get("dropped"), c.get("new_skill"), rr.get("u1", {}).get("kind")), (1, 0, 4, 1, "skill"))
 c, rr = counted({"skill": "keep", "rules": "new-standing"})
-chk("a unit with skill keep and rules new-standing lands in new_standing, not new_skill, and is kind skill", (c.get("new_standing"), c.get("new_skill"), c.get("keep"), c.get("kept_skills"), c.get("kept_rules"), rr.get("u1", {}).get("kind")), (1, 0, 1, 1, 0, "skill"))
+eq("a unit with skill keep and rules new-standing lands in new_standing, not new_skill, and is kind skill", (c.get("new_standing"), c.get("new_skill"), c.get("keep"), c.get("kept_skills"), c.get("kept_rules"), rr.get("u1", {}).get("kind")), (1, 0, 1, 1, 0, "skill"))
 c, rr = counted({"skill": "keep", "rules": "none"})
-chk("a unit with skill keep and nothing else is in keep, in the on-demand skill row and not the standing rule row", (c.get("keep"), c.get("new_standing"), c.get("new_skill"), c.get("kept_skills")), (1, 0, 1, 1))
+eq("a unit with skill keep and nothing else is in keep, in the on-demand skill row and not the standing rule row", (c.get("keep"), c.get("new_standing"), c.get("new_skill"), c.get("kept_skills")), (1, 0, 1, 1))
 c, rr = counted({"skill": "drop", "rules": "duplicate"}, {"skill": "drop", "rules": "none", "conflicts": [{"quote": "q", "reader_rule": "r", "held_in": "rules/x.md", "hard_stop": True}]})
-chk("covered is rules duplicate and not keep; a unit with a conflict is still counted once, among dropped", (c.get("covered"), c.get("dropped"), c.get("conflicts"), c.get("keep")), (1, 4, 1, 0))
+eq("covered is rules duplicate and not keep; a unit with a conflict is still counted once, among dropped", (c.get("covered"), c.get("dropped"), c.get("conflicts"), c.get("keep")), (1, 4, 1, 0))
 sys.exit(1 if fails else 0)
