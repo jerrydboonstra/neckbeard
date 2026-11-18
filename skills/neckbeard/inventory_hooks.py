@@ -41,7 +41,7 @@ PERSIST_READ_CEILING = 2_000_000
 # quadratically; upgrade path: scan per line in bounded pieces.
 _SPAN = 400
 _SHELL_WORD = re.compile(r"\b(cp|mv|rm|mkdir|touch|tee|install)\b")
-_HOME_NEXT_LINE = re.compile(r"\s[\"']?(\$HOME|~)/")
+_HOME_NEXT_LINE = re.compile(r"\s+[\"']?(\$HOME|~)/")
 _HOME_ARG = re.compile(r"\s[\"']?(\$HOME|~)/")
 
 
