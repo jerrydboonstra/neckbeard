@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tools/summary: "## How it affects you", the five summary rows (Cost, Reach, Leaves state, Live surface, Read completeness),
+"""tools/summary: the "How it affects you" table (tools/vet writes the heading, so tools/summary prints none), the five summary rows (Cost, Reach, Leaves state, Live surface, Read completeness),
 each a judgement colour computed by code from the dossier under a written rule, and the rules printed as a footer from the
 same table. Fixtures are tools/fixtures/summary/<name>.dossier.json (small, written by hand); edge cases are edits of one."""
 import collections, copy, importlib.machinery, importlib.util, json, os, re, subprocess, sys, tempfile
@@ -78,6 +78,7 @@ CASES = [
     ("hook-ssh-subagents", [G, R, G, R, G]),
     ("hook-curl", [G, Y, G, O, G]),
     ("mod-only", [G, Y, G, O, G]),
+    ("mod-partial", [Y, Y, G, O, Y]),
     ("mcp-local", [G, G, G, O, G]),
     ("state-files", [G, G, O, G, G]),
     ("scan-partial", [G, G, Y, G, Y]),
@@ -93,11 +94,21 @@ for c, f in {G: lambda t: skill_chars(1999)(t), Y: skill_chars(2000), O: skill_c
     chk(f"1 Cost {c}", colours(edit("green", f))["Cost"] == c)
 
 # 2. a row whose input section is partial or failed is never green
-for sec, row in [("persistence_candidates", "Leaves state"), ("mcp_servers", "Live surface"), ("hooks", "Reach"), ("skills", "Cost"),
-                 ("agents", "Cost"), ("rule_files", "Cost")]:
+for sec, row in [("persistence_candidates", "Leaves state"), ("mcp_servers", "Live surface"), ("hooks", "Live surface"), ("hooks", "Reach"),
+                 ("rule_files", "Reach"), ("skills", "Cost"), ("agents", "Cost"), ("rule_files", "Cost"), ("hooks", "Cost")]:
     for state in ("partial", "failed"):
         got = colours(edit("green", lambda t: t["read_status"].__setitem__(sec, {"state": state, "notes": ["x"]})))
         chk(f"2 {sec} {state}: {row} is not {G}", got[row] not in (G, None), str(got))
+        if sec == "persistence_candidates":
+            chk(f"2 {sec} {state} with nothing found: Leaves state is exactly {Y}", got[row] == Y, str(got))
+for state in ("partial", "failed"):
+    got = colours(edit("state-files", lambda t: t["read_status"].__setitem__("persistence_candidates", {"state": state, "notes": ["x"]})))
+    chk(f"2 persistence_candidates {state} with files found: Leaves state is {O}", got["Leaves state"] == O, str(got))
+
+# Reach: a rule file alone, a hook with unknown subagent reach, and subagent reach with no hook
+chk("2 Reach: a rule file alone is yellow", colours(edit("green", lambda t: t.update(rule_files=[{"path": "r.md", "bytes": 10}])))["Reach"] == Y)
+chk("2 Reach: a hook with hooks_reach_subagents null is yellow", colours(edit("hook-local", lambda t: t["hooks"].update(hooks_reach_subagents=None)))["Reach"] == Y)
+chk("2 Reach: hooks_reach_subagents true with no hook and no rule file stays green", colours(edit("green", lambda t: t["hooks"].update(hooks_reach_subagents=True)))["Reach"] == G)
 chk("2 a not-applicable section counts as read in full", colours(edit("green", lambda t: t["read_status"].__setitem__("agents", {"state": "not-applicable", "notes": []})))["Cost"] == G)
 
 # 2a. mod only, local-process MCP only, ssh hook only
@@ -111,7 +122,7 @@ def hook_cmd(cmd):
 
 
 for cmd, want in [("grep ssh log", Y), ("FOO=1 ssh h", R), ("echo hi && ssh h", R), ("a & ssh h", R), ("/usr/bin/mosh h", R),
-                  ("wget x", O), ("run.sh https://example.com/x", O), ("run.sh | nc h 1", O), ("bash -c 'ssh h'", Y), ("run.sh", Y)]:
+                  ("true; ssh h", R), ("false || ssh h", R), ("run.sh http://example.com/x", O), ("wget x", O), ("run.sh https://example.com/x", O), ("run.sh | nc h 1", O), ("bash -c 'ssh h'", Y), ("run.sh", Y)]:
     chk(f"2a hook command {cmd!r}", colours(hook_cmd(cmd))["Live surface"] == want, colours(hook_cmd(cmd))["Live surface"])
 chk("2a MCP server running ssh: red", colours(edit("mcp-local", lambda t: t["mcp_servers"]["servers"][0].update(command="ssh")))["Live surface"] == R)
 chk("2a MCP server with an ssh arg: red", colours(edit("mcp-local", lambda t: t["mcp_servers"]["servers"][0].update(args=["/usr/bin/ssh", "h"])))["Live surface"] == R)
@@ -162,12 +173,29 @@ def once(t):
 
 chk("4 skills and rule files count once under subagent reach", "1,100" in rows(run(write(edit("green", once)))[1])["Cost"][1])
 
+
+
+def built(reach):
+    def f(t):
+        skill_chars(100)(t)
+        t["hooks"] = {"has_hooks": True, "events": {"SessionStart": [{"matcher": "", "command": "run.sh"}]}, "hooks_reach_subagents": reach,
+                      "injected_content": [{"file": "h.sh", "bytes": 400, "built_at_run_time": True, "events": ["SessionStart"]}]}
+    return edit("green", f)
+
+
+for reach, total in ((False, "500"), (True, "900")):
+    cost_row = rows(run(write(built(reach)))[1])["Cost"][1]
+    chk(f"4 built-at-run-time hook text counts its lower bound (reach {reach}): at least {total}", f"at least {total}" in cost_row, cost_row)
+
 # 6, and the shape of the output
 for name, _ in CASES:
     code, out, err = run(fx(name))
     chk(f"6 {name}: no read marker, five rows, a rules footer, the full card", code == 0 and not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", out) and list(rows(out)) == ROWS
         and "<summary>" in out and "At a glance in full" in out and "2,000" in out, f"{code} {err[:200]}")
     chk(f"  {name}: two runs are byte-identical", run(fx(name))[1] == out)
+chk("the output holds no `## How it affects you` line", "## How it affects you" not in run(fx("green"))[1])
+chk("tools/vet writes the layer heading: tools/summary prints none, and its card has no marker",
+    "## " not in run(fx("green"))[1] and "<details><summary><b>At a glance in full</b>" in run(fx("green"))[1], run(fx("green"))[1][:120])
 d = load("green")
 del d["target"]["read_status"]
 chk("a dossier with no read_status exits 2", run(write(d))[0] == 2)
