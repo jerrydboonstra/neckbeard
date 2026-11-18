@@ -85,11 +85,24 @@ chk("layers: Contents has one numbered line per layer, with its anchor", [x in c
 chk("layers: in a published report the first Contents line leaves out the fit and the verdict, and is there", ("how it affects you" in (contents.split("\n") + ["", "", ""])[2].lower(), [w in (contents.split("\n") + ["", "", ""])[2].lower() for w in ("fit", "verdict")]), (True, [False, False]))
 chk("layers: the summary layer holds the five rows from tools/summary", [re.search(r"^\| [" + SQUARES + r"] \| " + n + r" \|", L1, re.M) is not None for n in ("Cost", "Reach", "Leaves state", "Live surface", "Read completeness")], [True] * 5)
 chk("layers: a published report has no verdict strip and no fit card", ("\n> **" in r["text"], any("<b>" + c + "</b>" in r["text"] for c in FIT_CARDS)), (False, False))
-chk("layers: no judgement colour inside What it adds, no read marker outside it", (any(q in L2 for q in SQUARES), any(m in L1 + L3 + r["text"].split("**Contents**", 1)[0] for m in MARKERS)), (False, False))
+chk("layers: no judgement colour inside What it adds, no read marker outside it (Contents included)", (any(q in L2 for q in SQUARES), any(m in r["text"].replace(L2, "") for m in MARKERS)), (False, False))
 chk("layers: What it adds holds part 1's six cards and the commit vet holds", (all("<b>" + h + "</b>" in L2 for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), f"Commit: {r['sha']}" in L2 and r["sha"] != ""), (True, True))
 chk("layers: Where it takes a position holds tools/positions-layer's cards", ("<b>Commits and git</b>" in L3, L3.count("\n## ")), (True, 1))
 chk("layers: the closing line ends the report", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
 chk("layers: no reader rule or local path in the report", ("READER" in r["text"], os.path.realpath(r["target"]) in r["text"], "/tmp" in r["text"]), (False, False, False))
+# the excerpt of the report vet really writes: the summary table and one line per facts card (drift between vet and tools/excerpts shows here)
+ex_root = tempfile.mkdtemp()
+try:
+    os.makedirs(os.path.join(ex_root, "tools")); os.makedirs(os.path.join(ex_root, "examples"))
+    shutil.copy(os.path.join(HERE, "excerpts"), os.path.join(ex_root, "tools", "excerpts"))
+    open(os.path.join(ex_root, "examples", "demo.md"), "w", encoding="utf-8").write(r["text"])
+    open(os.path.join(ex_root, "CASE-STUDIES.md"), "w").write("<!-- report:demo -->\nold\n<!-- /report -->\n")
+    xr = subprocess.run([sys.executable, os.path.join(ex_root, "tools", "excerpts")], capture_output=True, text=True)
+    ex_text = open(os.path.join(ex_root, "CASE-STUDIES.md"), encoding="utf-8").read()
+finally:
+    shutil.rmtree(ex_root)
+chk("layers: tools/excerpts reads the report vet --facts wrote: its summary table and one line per facts card, no card body",
+    (xr.returncode, "| Cost |" in ex_text and "| Read completeness |" in ex_text, len([l for l in ex_text.splitlines() if l.startswith("> - ")]), "Load timing" in ex_text), (0, True, 6, False))
 r0 = run("part1-no-commit", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("layers: with no git commit the Source card says commit not given", "Commit: commit not given" in r0["text"], True)
 
@@ -103,7 +116,7 @@ chk("layers: the strip and the seven fit cards come after the summary rows, insi
 why = r["text"].split("<b>Why this verdict</b>", 1)[1].split("<b>Conflicts</b>", 1)[0]
 chk("layers: the Baseline line, the Judge line and the --note sentence each appear once, inside Why this verdict, in order",
     ([r["text"].count(x) for x in ("\nBaseline: ", "\nJudge: ", "A self-vetting notice.")], 0 < why.find("A self-vetting notice.") < why.find("Verdict is relative") < why.find("Baseline: ") < why.find("Judge: ") < why.find("Rule files")), ([1, 1, 1], True))
-chk("layers: no read marker outside What it adds", any(m in L1 + L3 + r["text"].split("**Contents**", 1)[0] for m in MARKERS), False)
+chk("layers: no read marker outside What it adds", any(m in r["text"].replace(L2, "") for m in MARKERS), False)
 first_line = (r["text"].partition("**Contents**")[2].split("\n") + ["", "", ""])[2].lower()
 chk("layers: a fit report's first Contents line names the fit and the verdict", [w in first_line for w in ("fit", "verdict")], [True, True])
 
@@ -134,6 +147,20 @@ for tool in ("summary", "positions", "positions-layer"):
         r = vet_with_tool(tool, "import sys\nsys.stderr.write('%s: broken on purpose\\n')\nsys.exit(2)\n" % tool, **kw)
         chk(f"layers: a {mode} report: when tools/{tool} exits non-zero vet stops with its stderr and writes no report",
             (r["rc"] != 0, r["report"], f"{tool}: broken on purpose" in r["out"]), (True, False, True))
+        if mode == "fit":   # the renderers run before the judge, so a broken one costs no judge call
+            chk(f"layers: with tools/{tool} broken no find, confirm, answering or prose call is made",
+                [c["prompt"][:40] for c in r["calls"] if "single word ok" not in c["prompt"]], [])
+
+# vet's own checks on the report it assembled: the three layer headings in order, and no verdict in a published report
+r = vet_with_tool("positions-layer", "import sys\nprint('Nothing to see.')\n", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("layers: a positions layer with no '## Where it takes a position' heading: vet stops naming it and writes no report",
+    (r["rc"] != 0, r["report"], "Where it takes a position" in r["out"]), (True, False, True))
+r = vet_with_tool("summary", "import sys\nprint('| | Row | In short |\\n|---|---|---|\\n\\n> **\\U0001F7E9 INSTALL** \\u00b7 fine  ')\n", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("layers: a verdict strip in a published report is refused and no report is written", (r["rc"] != 0, r["report"], "verdict" in r["out"]), (True, False, True))
+r = vet_with_tool("summary", "import sys\nprint('<details><summary><b>Why this verdict</b></summary>\\n\\nx\\n\\n</details>')\n", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("layers: a fit card in a published report is refused and no report is written", (r["rc"] != 0, r["report"], "fit card" in r["out"]), (True, False, True))
+r = vet_with_tool("part1", "import sys\nif sys.argv[1] == '--read-state':\n    print('read in full')\nelse:\n    print('Not a heading.')\n", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("layers: a facts layer with no '## What it adds' heading is refused and no report is written", (r["rc"] != 0, r["report"], "What it adds" in r["out"]), (True, False, True))
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
 r = run("web")
