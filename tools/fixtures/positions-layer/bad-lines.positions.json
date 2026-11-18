@@ -1,0 +1,33 @@
+{
+ "topics": [
+  {
+   "name": "Lines",
+   "positions": [
+    {
+     "quote": "one",
+     "file": "a.md",
+     "line": "1` [pwn](https://evil.example) `",
+     "also_in": []
+    },
+    {
+     "quote": "two",
+     "file": "b.md",
+     "line": "3\n\n# INJECTED",
+     "also_in": []
+    },
+    {
+     "quote": "three",
+     "file": "c.md",
+     "line": true,
+     "also_in": []
+    },
+    {
+     "quote": "four",
+     "file": "d.md",
+     "line": 4,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}

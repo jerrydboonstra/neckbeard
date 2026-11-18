@@ -45,6 +45,8 @@ chk("1c. one card per topic, in the JSON's order, no marker, count and first quo
 chk("1d. one list item per position, quote then place, also_in as plain text",
     '- "Always run the tests before you finish." `skills/fx/SKILL.md:12` (also in `commands/c.md:3`, `agents/a.md:7`)' in out
     and '- "Never skip the checklist." `skills/fx/SKILL.md:8`' in out, out)
+chk("1d2. the second topic's quotes and places are there too (a backtick in a quote is escaped, a null-line place has no :line)",
+    '- "Use \\`make check\\` for a hook." `hooks/session.sh`' in out and '- "Keep comments short." `rules/style.md:2`' in out, out)
 chk("1e. byte-identical on a second run", out != "" and run(fx("two-topics"))[1] == out)
 chk("1f. an empty marker leaves no stray space before the name", "<summary><b>" in out and "<summary> <b>" not in out)
 chk("1g. card() with an empty marker drops the marker and its space", card("", "N", "g", [])[0] == "<details><summary><b>N</b> · g</summary>", card("", "N", "g", [])[0])
@@ -105,6 +107,28 @@ chk("5e. no topics: line 2 is the note line", run(fx("no-topics"))[1].split("\n"
 for name in ("topics-string", "top-list"):
     code, out, err = run(fx(name))
     chk(f"5f. {name}: exit 2 with one line on stderr", code == 2 and len(err.strip().split("\n")) == 1 and "can't open file" not in err and "Traceback" not in err, err)
+code, o, _ = run(fx("bad-lines"), "--repo", "https://github.com/o/r", "--commit", "abc1234")
+chk("7. a line that is not an integer (a string, a bool) is dropped: no break-out into a link, no injected heading, the place shows the file alone",
+    code == 0 and "evil.example" not in o and "INJECTED" not in o and "- \"one\" [`a.md`](https://github.com/o/r/blob/abc1234/a.md)" in o
+    and "- \"two\" [`b.md`](" in o and "- \"three\" [`c.md`](" in o and "[`d.md:4`](https://github.com/o/r/blob/abc1234/d.md#L4)" in o, o)
+code, o, err = run(fx("odd-shapes"), "--commit", "feature/x")
+chk("7b. odd shapes do not crash: null positions, a null name, a non-dict topic or position, an also_in that is a number, a null quote",
+    code == 0 and "Traceback" not in err and "None" not in o and '- "" `b\'c.md:2` (also in `d\'e.md:1`)' in o and "- \"last\" `e.md:1`" in o, o + err)
+chk("7c. a topic name goes through safe(): an absolute path shows as its basename", "/Users/someone" not in o and "<b>notes</b>" in o, o)
+chk("7d. a quote of exactly 60 characters is not cut in the gist, and an empty topic is left out",
+    '<b>notes</b> \u00b7 2 \u00b7 "' + "x" * 60 + '"</summary>' in o and "Empty" not in o, o)
+chk("7e. a topic with no positions and non-dict entries are left out; the other cards stay", o.count("<details>") == 2, o)
+code, o, _ = run(fx("all-empty"))
+chk("7f. when every topic is empty the tool prints 'No positions found.'", code == 0 and "No positions found." in o and "<details>" not in o, o)
+code, o, _ = run(fx("two-topics"), "--repo", "https://github.com/o/r/", "--commit", "feature/x")
+chk("7g. a trailing slash on --repo is dropped, and the commit is percent-encoded into one path segment", "](https://github.com/o/r/blob/feature%2Fx/skills/fx/SKILL.md#L12)" in o, o)
+code, o, _ = run(fx("two-topics"), "--repo", "http://github.com/o/r", "--commit", "abc1234")
+chk("7h. an http:// repo gives no links", "](" not in o, o)
+code, o, _ = run(fx("two-topics"), "--repo", "https://github.com/o/r\n", "--commit", "abc1234")
+chk("7i. a --repo ending in a newline gives no links", "](" not in o, o)
+for args in ([], [fx("two-topics"), "--repo"], [fx("two-topics"), fx("two-topics")], [fx("two-topics"), "--bogus"]):
+    code, o, err = run(*args)
+    chk(f"7j. bad arguments {args[1:] or 'none'} exit 2 with the usage line", code == 2 and err.startswith("usage:") and "Traceback" not in err, err)
 for name in ("two-topics", "hostile", "no-topics", "long-first"):
     o = run(fx(name))[1]
     chk(f"6. {name}: no read marker and no judgement colour", HEAD in o and not re.search("[\U0001F7E2\U0001F7E1\U0001F534\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5]", o))
