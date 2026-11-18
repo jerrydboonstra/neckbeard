@@ -69,7 +69,7 @@ chk("3. a quote holding </details> or <script> opens no tag and cannot close the
 chk("3b. an absolute path shows as its basename", "/Users/someone" not in out and "file.txt" in out, out)
 chk("3c. a quote cannot become an image or a link; backticks and brackets are escaped",
     "![](" not in out and "[a](" not in out and "\\[a\\]" in out and "\\`unpaired" in out, out)
-chk("3d. also_in places go through safe() too", "also in `a b/c.md:1`" in out, out)
+chk("3d. also_in places go through safe() too: an absolute path shows as its basename", "also in `a b/c.md:1`, `z.md:2`)" in out and "/Users/someone" not in out, out)
 
 code, o, _ = run(fx("spaced"), "--repo", "https://github.com/o/r", "--commit", "abc1234")
 chk("2e. a position's own file path is percent-encoded in its link",

@@ -14,7 +14,8 @@
      "file": "skills/s/SKILL.md",
      "line": 5,
      "also_in": [
-      "a b/c.md:1"
+      "a b/c.md:1",
+      "/Users/someone/secret/z.md:2"
      ]
     },
     {
