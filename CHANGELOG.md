@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+### Checks
+
+- **CodeQL now also scans the GitHub Actions workflows, and can be run on demand.** The CodeQL workflow analyses `actions` beside `python` and has a `workflow_dispatch` trigger, so it runs from the Actions tab or `gh workflow run codeql.yml` as well as on each push to main, each pull request and weekly.
+
 ## 1.17.8 (2026-11-18)
 
 ### Reports
