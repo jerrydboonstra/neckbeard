@@ -27,6 +27,7 @@ Field (under target) -> label (card), the section whose read_status gives its st
   rule_files[]                    Rule files (Injects)           rule_files
   hooks.injected_content[]        Hook-injected text (Injects)   hooks
   hooks.events                    Hooks (Hooks)                  hooks      (+ hooks_reach_subagents, its _basis)
+  hooks.mods[]                    Mods (Claude Code mods, a card after Hooks, only when present)   hooks   (each mod's path; a refused one says so, a missing one too)
   agents[]                        Agents (Subagents and commands)    agents
   commands[]                      Commands (Subagents and commands)  commands
   persistence_candidates[]        Persistence candidates (State it may leave)   persistence_candidates
@@ -229,6 +230,8 @@ def toks(n):
     return f"{n} bytes, ~{n // 4} tokens"
 
 
+MODS_NOTE = ("a mod is code that runs inside the session with your permissions and no sandbox; neckbeard lists the files "
+             "a plugin names and does not read their source")
 BUILT_NOTE = ("built at run time: read from the script's own text, not run; commands it runs are not followed "
               "and may print or write files")
 
@@ -386,7 +389,8 @@ def card_states(t):
     sec = sec_of(t["read_status"])
     hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
     st = lambda *names: [sec(n)[0] for n in names]
-    return {"Injects": st("skills", "rule_files") + [hooks_sec(sec, hooks)[0]], "Hooks": st("hooks"), "Subagents and commands": st("agents", "commands"),
+    mods = {"Claude Code mods": st("hooks")} if isinstance(hooks.get("mods"), list) else {}   # a seventh card, only when a hooks file lists mods
+    return {"Injects": st("skills", "rule_files") + [hooks_sec(sec, hooks)[0]], "Hooks": st("hooks"), **mods, "Subagents and commands": st("agents", "commands"),
             "State it may leave": st("persistence_candidates"), "Reaches outside the session": st("mcp_servers"), "Source": st("plugin_json", "marketplace")}
 
 
@@ -483,6 +487,9 @@ def render(d, commit):
     states = card_states(t)
     marker = lambda name: MARKER[read_state(states[name])]
     nots = lambda name: all(x == "failed" for x in states[name])   # every section the card reads failed: its gist is "not read"
+    mod_list = hooks.get("mods") if isinstance(hooks.get("mods"), list) else None
+    mod_entries = [(safe(m.get("path"), root) or "(unnamed)") + (" (outside the plugin, not opened)" if m.get("refused") else " (not found)" if m.get("exists") is False else "")
+                   if isinstance(m, dict) else "(unreadable entry)" for m in as_list(mod_list)]
     shown, ptail = cap_entries(persist)
     skills_ok = counted(sec("skills")[0], len(skills))
     readable = [s_ for s_ in as_list(t.get("skills")) if not unread(s_)]
@@ -494,6 +501,7 @@ def render(d, commit):
                            f"~{sum(len(str(s_.get('description') or '')) for s_ in readable)} chars of skill descriptions every session"] if skills_ok else []),
                         f"hook text {read_state([hsec[0]])}"),
         "Hooks": gist(f"{hn} hooks" if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
+        "Claude Code mods": gist(f"{len(mod_entries)} mod{'' if len(mod_entries) == 1 else 's'}"),
         "Subagents and commands": gist((f"{len(agents)} agents" if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
                                        f"{len(commands)} commands" if counted(sec("commands")[0], len(commands)) else ""),
         "State it may leave": gist(f"{len(persist)} files that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
@@ -502,11 +510,12 @@ def render(d, commit):
         "Source": gist(kind, f"{plain_name}{' ' + plain_version if plain_version else ''}{' from plugin.json' if pj.get('name') or pj.get('version') else ''}",
                        f"commit {safe(commit)[:7]}" if commit else "", marketplace_word),
     }
-    lines = {"Injects": [], "Hooks": [], "Subagents and commands": [], "State it may leave": [], "Reaches outside the session": [], "Source": []}
+    lines = {"Injects": [], "Hooks": [], "Claude Code mods": [], "Subagents and commands": [], "State it may leave": [], "Reaches outside the session": [], "Source": []}
     lines["Injects"] += block("Skills", sec("skills"), skills, root)
     lines["Injects"] += block("Rule files", sec("rule_files"), rules, root)
     lines["Injects"] += block("Hook-injected text", hsec, injected, root, tail=built_note)
     lines["Hooks"] += block("Hooks", sec("hooks"), events, root, tail=[reach_line])
+    lines["Claude Code mods"] += block("Mods", sec("hooks"), mod_entries, root, tail=[MODS_NOTE])
     lines["Subagents and commands"] += block("Agents", sec("agents"), agents, root) + block("Commands", sec("commands"), commands, root)
     lines["State it may leave"] += block("Persistence candidates", sec("persistence_candidates"), shown, root, tail=ptail, cap=NOTES_SHOWN)
     lines["Reaches outside the session"] += block("MCP servers", sec("mcp_servers"), servers, root)

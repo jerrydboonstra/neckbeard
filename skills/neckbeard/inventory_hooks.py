@@ -10,6 +10,7 @@ import re
 import shlex
 
 from hook_shell import trace_shell_hook
+from inventory_mods import events_of, read_mods
 from inventory_core import (
     READ_LIMIT, _mark_scan, _note, _prune_skipped, _walk_error, _walk_gaps, _within, measure, read_json, read_text,
 )
@@ -353,7 +354,7 @@ def inventory_hooks(plugin_root, plugin_json, notes=None):
     # the top level. Anything else (a list, a string, a number) is neither, and
     # must be handled explicitly rather than assumed. See CASE-STUDIES.md,
     # round 8.
-    events = hooks_json.get("hooks", hooks_json) if isinstance(hooks_json, dict) else None
+    events = events_of(hooks_json)
     if not isinstance(events, dict):
         # Name the value that is actually wrong. Reporting type(hooks_json)
         # produced "parsed as dict, not an object of events" for {"hooks": []},
@@ -365,45 +366,56 @@ def inventory_hooks(plugin_root, plugin_json, notes=None):
                 "parse_error": f"events container is {type(inner).__name__}, "
                                "expected an object of event names; read it by hand"}
 
-    return _parse_events(events, rel, plugin_root, notes)
+    result = _parse_events(events, rel, plugin_root, notes)
+    mods = read_mods(hooks_json, plugin_root if hooks_path is None else os.path.dirname(hooks_path), plugin_root, rel, notes)
+    if mods is not None:
+        result["mods"] = mods
+    return result
 
 
 def _merge_hook_list(plugin_root, refs, notes=None):
     """plugin.json's "hooks" as a list: each entry is a path to a hooks file or an inline
     object of events. Every path passes the same containment and parse checks as a single
-    file, and a bad entry makes the whole answer "unknown" rather than a quiet partial."""
-    merged, names = {}, []
+    file, and a bad entry makes the whole answer "unknown" rather than a quiet partial. The mods of
+    every entry read so far join one list in reading order, and stay on the answer when a later entry fails."""
+    merged, names, mods, saw_modules = {}, [], [], False
+    keep = lambda r: {**r, "mods": mods} if saw_modules else r   # mods gathered from earlier entries survive a later failure
     for ref in refs:
         if isinstance(ref, dict):
-            name, hooks_json = "plugin.json (inline hooks)", ref
+            name, hooks_json, base = "plugin.json (inline hooks)", ref, plugin_root
         else:
             path = os.path.normpath(os.path.join(plugin_root, ref))
             name = os.path.relpath(path, plugin_root)
+            base = os.path.dirname(path)
             if not _within(path, plugin_root):
-                return {"has_hooks": "unknown", "hooks_file": name, "events": {},
-                        "hook_scripts": None, "hook_registrations": None,
-                        "hooks_reach_subagents": None,
-                        "refused": "hooks file resolves outside the target tree; not read"}
+                return keep({"has_hooks": "unknown", "hooks_file": name, "events": {},
+                             "hook_scripts": None, "hook_registrations": None,
+                             "hooks_reach_subagents": None,
+                             "refused": "hooks file resolves outside the target tree; not read"})
             hooks_json = read_json(path) if os.path.isfile(path) else None
             if hooks_json is None:
-                return {"has_hooks": "unknown", "hooks_file": name, "events": {},
-                        "hook_scripts": None, "hook_registrations": None,
-                        "hooks_reach_subagents": None,
-                        "parse_error": "hooks file is missing or not valid JSON; read it by hand"}
-        events = hooks_json.get("hooks", hooks_json) if isinstance(hooks_json, dict) else None
+                return keep({"has_hooks": "unknown", "hooks_file": name, "events": {},
+                             "hook_scripts": None, "hook_registrations": None,
+                             "hooks_reach_subagents": None,
+                             "parse_error": "hooks file is missing or not valid JSON; read it by hand"})
+        events = events_of(hooks_json)
         if not isinstance(events, dict):
-            return {"has_hooks": "unknown", "hooks_file": name, "events": {},
-                    "hook_scripts": None, "hook_registrations": None,
-                    "hooks_reach_subagents": None,
-                    "parse_error": "hooks entry is not an object of event names; read it by hand"}
+            return keep({"has_hooks": "unknown", "hooks_file": name, "events": {},
+                         "hook_scripts": None, "hook_registrations": None,
+                         "hooks_reach_subagents": None,
+                         "parse_error": "hooks entry is not an object of event names; read it by hand"})
         names.append(name)
+        got = read_mods(hooks_json, base, plugin_root, name, notes)
+        if got is not None:
+            saw_modules = True
+            mods.extend(got)
         for event, groups in events.items():
             merged.setdefault(event, [])
             if isinstance(groups, list):
                 merged[event].extend(groups)
             else:
                 merged[event] = groups  # malformed: _parse_events reports it
-    return _parse_events(merged, ", ".join(names), plugin_root, notes)
+    return keep(_parse_events(merged, ", ".join(names), plugin_root, notes))
 
 
 def _parse_events(events, rel, plugin_root, notes=None):
