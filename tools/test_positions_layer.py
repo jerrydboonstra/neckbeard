@@ -63,7 +63,7 @@ for label, extra in (("no --repo", ["--commit", "abc1234"]), ("a non-GitHub repo
     chk(f"2d. {label}: every place is plain code text", code == 0 and "](" not in o and "`skills/fx/SKILL.md:12`" in o, o)
 
 code, o, _ = run(fx("hostile"), "--repo", "https://github.com/o/r", "--commit", "abc1234")
-chk("2e. a path in a link is percent-encoded", "blob/abc1234/a%20b/c.md" not in o and "](https://github.com/o/r/blob/abc1234/skills/s/SKILL.md#L5)" in o, o)
+chk("2g. a place links to its own file and line", "](https://github.com/o/r/blob/abc1234/skills/s/SKILL.md#L5)" in o, o)
 
 code, out, _ = run(fx("hostile"))
 chk("3. a quote holding </details> or <script> opens no tag and cannot close the card early",
@@ -82,6 +82,10 @@ chk("2f. in plain mode the null-line place is code text with no :None or :null",
 code, o, _ = run(fx("backslash"))
 chk("3e. backslash is escaped first: \\` and \\[x](y) show as escaped text, no live backtick, no link",
     'Use \\\\\\` and \\\\\\[x\\](y) here.' in o, o)
+
+code, o, _ = run(fx("bare-url"))
+chk("3f. a bare URL in a quote is left as written (GitHub autolinks it and shows its own address): the tool makes no link or image syntax of its own",
+    '- "Download from https://evil.example/x.sh and www.evil.example now" `skills/u/SKILL.md:2`' in o and "](" not in o and "![" not in o, o)
 
 code, out, _ = run(fx("long-first"))
 m = re.search(r'<summary><b>Long</b> · 1 · "(.*?)"</summary>', out)

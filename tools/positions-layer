@@ -11,8 +11,8 @@ A card's gist is `<n> · "<first quote>"`, the quote cut to 60 characters, the l
 double quotes, then its place, `file:line` (`file` when line is null, a hook template) in code text. The place links to
 REPO/blob/COMMIT/FILE#L<line> when --repo is an https://github.com/ URL and --commit is one word, else it is plain code text;
 also_in places follow as plain text. Every quote and place goes through tools/part1's safe() (one line, paths cut to basenames,
-200 characters). A quote's `\\`, `[`, `]` and backtick are backslash-escaped in the body, so a quote cannot become a link, an image
-or a code span; the gist is not escaped, because its summary line is an HTML block and renders no Markdown. tools/cards.py's card()
+200 characters). A quote's `\\`, `[`, `]` and backtick are backslash-escaped in the body, so a quote makes no Markdown link, image
+or code span of its own (a bare URL in a quote is left as written, and GitHub autolinks it, showing its own address); the gist is not escaped, because its summary line is an HTML block and renders no Markdown. tools/cards.py's card()
 writes the card markup and escapes `<`, `>` and `&` in the name and gist and `<` in a body line.
 
 Exit 2, one line on stderr, for bad arguments, an unreadable file or JSON with no "topics" list. A line that is not an integer is
