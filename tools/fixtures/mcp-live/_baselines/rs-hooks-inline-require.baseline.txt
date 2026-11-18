@@ -1,0 +1,83 @@
+{
+  "current_rules": {
+    "items": [],
+    "project_root": "<EMPTY>"
+  },
+  "target": {
+    "agents": [],
+    "commands": [],
+    "hooks": {
+      "events": {
+        "SessionStart": [
+          {
+            "command": "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/greet-session.js'))\"",
+            "matcher": null
+          }
+        ]
+      },
+      "has_hooks": true,
+      "hook_registrations": 1,
+      "hook_scripts": 1,
+      "hooks_file": "hooks/hooks.json",
+      "hooks_reach_subagents": false,
+      "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+      "injected_bytes_total_estimate": null,
+      "injected_content": null,
+      "injected_content_note": "1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.",
+      "unresolved_hooks": [
+        "SessionStart: hooks/greet-session.js"
+      ]
+    },
+    "is_plugin": false,
+    "kind": "generic-pack",
+    "mcp_servers": null,
+    "path": "<ROOT>",
+    "persistence_candidates": [],
+    "read_status": {
+      "agents": {
+        "notes": [],
+        "state": "read"
+      },
+      "commands": {
+        "notes": [],
+        "state": "read"
+      },
+      "hooks": {
+        "notes": [
+          "hooks/hooks.json: 1 hook(s) have unknown behaviour, which is not the same as none: 1 whose script was found but whose payload could not be traced. Read them by hand.",
+          "hooks/hooks.json: unresolved hooks: SessionStart: hooks/greet-session.js"
+        ],
+        "state": "partial"
+      },
+      "marketplace": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "mcp_servers": {
+        "notes": [],
+        "state": "read"
+      },
+      "persistence_candidates": {
+        "notes": [],
+        "state": "read"
+      },
+      "plugin_json": {
+        "notes": [],
+        "state": "not-applicable"
+      },
+      "rule_files": {
+        "notes": [],
+        "state": "read"
+      },
+      "skills": {
+        "notes": [],
+        "state": "read"
+      }
+    },
+    "readme_excerpt": null,
+    "requested_target": "<ROOT>",
+    "resolved_via": "local-path",
+    "rule_files": [],
+    "skills": []
+  }
+}

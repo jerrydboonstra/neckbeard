@@ -1,0 +1,103 @@
+{
+ "current_rules": {
+  "items": [
+   {
+    "bytes": 49,
+    "name": "CLAUDE",
+    "path": "/Users/someone/.claude/CLAUDE.md",
+    "text": "READER-MARKER-7: the reader's private rule text."
+   }
+  ]
+ },
+ "target": {
+  "hooks": {
+   "events": {
+    "PostToolUse": [
+     {
+      "command": "bash -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/greet-session.js'))\"",
+      "matcher": null
+     }
+    ],
+    "PreToolUse": [
+     {
+      "command": "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/../x.js'))\"",
+      "matcher": null
+     }
+    ],
+    "SessionStart": [
+     {
+      "command": "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/greet-session.js'))\"",
+      "matcher": null
+     }
+    ],
+    "Stop": [
+     {
+      "command": "node -e \"console.log(1);require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/greet-session.js'))\"",
+      "matcher": null
+     }
+    ],
+    "SubagentStart": [
+     {
+      "command": "node -e 'require(require(\"path\").resolve(process.env.CLAUDE_PLUGIN_ROOT.split(String.fromCharCode(92)).join(\"/\"),\"hooks/greet-session.js\"))'",
+      "matcher": null
+     }
+    ],
+    "UserPromptSubmit": [
+     {
+      "command": "node -e \"require( require('path').join( process.env.CLAUDE_PLUGIN_ROOT , 'hooks/greet-session.js' ) )\"",
+      "matcher": null
+     }
+    ]
+   },
+   "has_hooks": "read",
+   "hook_registrations": 6,
+   "hook_scripts": 1,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": null,
+   "hooks_reach_subagents_basis": null,
+   "injected_content": null
+  },
+  "is_plugin": true,
+  "kind": "plugin",
+  "path": "/Users/someone/proj/demo",
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "notes": [],
+    "state": "read"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "read"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "read"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "requested_target": "/Users/someone/proj/demo"
+ }
+}
