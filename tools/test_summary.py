@@ -65,6 +65,11 @@ def edit(name, fn):
     return d
 
 
+def card_text(d):
+    m = re.search(r"<details>.*?</details>", run(write(d))[1], re.S)
+    return m.group(0) if m else ""
+
+
 def skill_chars(n):
     def f(t):
         t["skills"][0]["description"] = "d" * n
@@ -158,11 +163,6 @@ for what, fn in [("has_hooks 'partial' (a malformed event)", lambda t: t["hooks"
     chk(f"Reach: {what} is yellow, names a hook, and the card says the events could not be read",
         colours(d)["Reach"] == Y and "a hook" in reach_text(d) and "events could not be read" in card_text(d), reach_text(d))
 chk("Reach: a registered hook with hook_registrations 1 and no readable command is yellow", colours(edit("green", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=1)))["Reach"] == Y)
-
-
-def card_text(d):
-    m = re.search(r"<details>.*?</details>", run(write(d))[1], re.S)
-    return m.group(0) if m else ""
 
 
 def card_of(out):
