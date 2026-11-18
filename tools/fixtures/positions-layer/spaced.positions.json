@@ -1,0 +1,15 @@
+{
+ "topics": [
+  {
+   "name": "Spaced",
+   "positions": [
+    {
+     "quote": "Never skip it.",
+     "file": "skills/a b/SKILL.md",
+     "line": 3,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}

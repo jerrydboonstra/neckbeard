@@ -10,6 +10,7 @@ import re
 import shlex
 
 from hook_shell import trace_shell_hook
+from inventory_mods import events_of, read_mods
 from inventory_core import (
     READ_LIMIT, _mark_scan, _note, _prune_skipped, _walk_error, _walk_gaps, _within, measure, read_json, read_text,
 )
@@ -204,6 +205,34 @@ def _expand_plugin_root(s, plugin_root):
     return re.sub(r"\$CLAUDE_PLUGIN_ROOT(?![A-Za-z0-9_])", lambda _: plugin_root, s)
 
 
+INLINE_REQUIRE_RE = re.compile(
+    r"""^require\(require\((['"])path\1\)\.(?:join|resolve)\(process\.env\.CLAUDE_PLUGIN_ROOT"""
+    r"""(?:\.split\(String\.fromCharCode\(92\)\)\.join\((['"])/\2\))?,(['"])([^'"]*)\3\)\)\Z""")
+INLINE_REQUIRE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")
+
+
+def inline_require_script(command):
+    """The plugin-relative script of the one allowed inline form, else None. The form is `node -e <body>` where the body, with
+    whitespace outside its string literals removed, is `require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT<N>,'<rel>'))`:
+    path.join or path.resolve, either quote, <N> empty or the backslash fix `.split(String.fromCharCode(92)).join('/')`. <rel> is
+    a relative plain path with no . or .. segment. Any other command, or a body that does more, is None. The same function, with the
+    same body, is in tools/part1 and skills/neckbeard/inventory_hooks.py; tools/test_hook_inline_require.py keeps the two equal."""
+    if not isinstance(command, str) or len(command) > 4000:   # the length guard script_of has
+        return None
+    try:
+        toks = shlex.split(command)
+    except ValueError:
+        return None
+    if len(toks) != 3 or toks[0] != "node" or toks[1] != "-e":
+        return None
+    body = re.sub(r"""('[^']*'|"[^"]*")|\s+""", lambda m: m.group(1) or "", toks[2])
+    m = INLINE_REQUIRE_RE.match(body)
+    rel = m.group(4) if m else None
+    if rel is None or not INLINE_REQUIRE_WORD.match(rel) or {".", ".."} & set(rel.split("/")):
+        return None
+    return rel
+
+
 def _identify_hook_script(cmd, plugin_root):
     """The file a hook command actually runs, or None if it cannot be worked out.
 
@@ -212,6 +241,11 @@ def _identify_hook_script(cmd, plugin_root):
     whitespace-separated token, strips quotes, and returns the first that
     exists as a file inside the tree. Anything else is unidentifiable, which
     is a reportable state, not silence."""
+    rel = inline_require_script(cmd)
+    if rel:   # node -e require(<plugin root>/<rel>): the script is <rel>, read as any hook script is
+        c = os.path.normpath(os.path.join(plugin_root, rel))
+        if os.path.isfile(c) and _within(c, plugin_root):
+            return c
     # Expand to a token with no whitespace first, so a default word with spaces
     # still splits as the shell would, and a plugin root with spaces in its path
     # is never split; the real root goes in per token.
@@ -320,7 +354,7 @@ def inventory_hooks(plugin_root, plugin_json, notes=None):
     # the top level. Anything else (a list, a string, a number) is neither, and
     # must be handled explicitly rather than assumed. See CASE-STUDIES.md,
     # round 8.
-    events = hooks_json.get("hooks", hooks_json) if isinstance(hooks_json, dict) else None
+    events = events_of(hooks_json)
     if not isinstance(events, dict):
         # Name the value that is actually wrong. Reporting type(hooks_json)
         # produced "parsed as dict, not an object of events" for {"hooks": []},
@@ -332,45 +366,56 @@ def inventory_hooks(plugin_root, plugin_json, notes=None):
                 "parse_error": f"events container is {type(inner).__name__}, "
                                "expected an object of event names; read it by hand"}
 
-    return _parse_events(events, rel, plugin_root, notes)
+    result = _parse_events(events, rel, plugin_root, notes)
+    mods = read_mods(hooks_json, plugin_root if hooks_path is None else os.path.dirname(hooks_path), plugin_root, rel, notes)
+    if mods is not None:
+        result["mods"] = mods
+    return result
 
 
 def _merge_hook_list(plugin_root, refs, notes=None):
     """plugin.json's "hooks" as a list: each entry is a path to a hooks file or an inline
     object of events. Every path passes the same containment and parse checks as a single
-    file, and a bad entry makes the whole answer "unknown" rather than a quiet partial."""
-    merged, names = {}, []
+    file, and a bad entry makes the whole answer "unknown" rather than a quiet partial. The mods of
+    every entry read so far join one list in reading order, and stay on the answer when a later entry fails."""
+    merged, names, mods, saw_modules = {}, [], [], False
+    keep = lambda r: {**r, "mods": mods} if saw_modules else r   # mods gathered from earlier entries survive a later failure
     for ref in refs:
         if isinstance(ref, dict):
-            name, hooks_json = "plugin.json (inline hooks)", ref
+            name, hooks_json, base = "plugin.json (inline hooks)", ref, plugin_root
         else:
             path = os.path.normpath(os.path.join(plugin_root, ref))
             name = os.path.relpath(path, plugin_root)
+            base = os.path.dirname(path)
             if not _within(path, plugin_root):
-                return {"has_hooks": "unknown", "hooks_file": name, "events": {},
-                        "hook_scripts": None, "hook_registrations": None,
-                        "hooks_reach_subagents": None,
-                        "refused": "hooks file resolves outside the target tree; not read"}
+                return keep({"has_hooks": "unknown", "hooks_file": name, "events": {},
+                             "hook_scripts": None, "hook_registrations": None,
+                             "hooks_reach_subagents": None,
+                             "refused": "hooks file resolves outside the target tree; not read"})
             hooks_json = read_json(path) if os.path.isfile(path) else None
             if hooks_json is None:
-                return {"has_hooks": "unknown", "hooks_file": name, "events": {},
-                        "hook_scripts": None, "hook_registrations": None,
-                        "hooks_reach_subagents": None,
-                        "parse_error": "hooks file is missing or not valid JSON; read it by hand"}
-        events = hooks_json.get("hooks", hooks_json) if isinstance(hooks_json, dict) else None
+                return keep({"has_hooks": "unknown", "hooks_file": name, "events": {},
+                             "hook_scripts": None, "hook_registrations": None,
+                             "hooks_reach_subagents": None,
+                             "parse_error": "hooks file is missing or not valid JSON; read it by hand"})
+        events = events_of(hooks_json)
         if not isinstance(events, dict):
-            return {"has_hooks": "unknown", "hooks_file": name, "events": {},
-                    "hook_scripts": None, "hook_registrations": None,
-                    "hooks_reach_subagents": None,
-                    "parse_error": "hooks entry is not an object of event names; read it by hand"}
+            return keep({"has_hooks": "unknown", "hooks_file": name, "events": {},
+                         "hook_scripts": None, "hook_registrations": None,
+                         "hooks_reach_subagents": None,
+                         "parse_error": "hooks entry is not an object of event names; read it by hand"})
         names.append(name)
+        got = read_mods(hooks_json, base, plugin_root, name, notes)
+        if got is not None:
+            saw_modules = True
+            mods.extend(got)
         for event, groups in events.items():
             merged.setdefault(event, [])
             if isinstance(groups, list):
                 merged[event].extend(groups)
             else:
                 merged[event] = groups  # malformed: _parse_events reports it
-    return _parse_events(merged, ", ".join(names), plugin_root, notes)
+    return keep(_parse_events(merged, ", ".join(names), plugin_root, notes))
 
 
 def _parse_events(events, rel, plugin_root, notes=None):

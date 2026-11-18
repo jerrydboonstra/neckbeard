@@ -11,22 +11,24 @@
 # The skill
 skills/neckbeard/inventory.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_hook_echo
 skills/neckbeard/inventory_core.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_hook_echo
-skills/neckbeard/inventory_hooks.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1 test_hook_echo
+skills/neckbeard/inventory_hooks.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1 test_hook_echo test_hook_inline_require test_mod_inventory
+skills/neckbeard/inventory_mods.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1 test_hook_echo test_hook_inline_require test_mod_inventory
 skills/neckbeard/hook_shell.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_part1 test_hook_echo
 skills/neckbeard/inventory_parts.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_hook_echo
-skills/neckbeard/inventory_dossier.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_hook_echo
+skills/neckbeard/inventory_dossier.py test_nested_plugin test_selfcheck test_layout test_mutate_selfcheck test_vet test_vet_judge test_read_status test_mcp_live test_hook_echo test_mod_inventory
 skills/neckbeard/mcp_live.py test_mcp_live test_selfcheck test_read_status
 skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
 skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_judge test_vet_stability test_mcp_live test_skill_budget
 # Tools
 tools/vet test_vet test_vet_judge test_vet_stability
 tools/badge-logo test_vet test_vet_judge
-tools/part1 test_part1 test_part1_cards test_summary test_vet test_mcp_live
-tools/cards.py test_part1_cards test_summary test_part1 test_vet test_mcp_live
+tools/part1 test_part1 test_part1_cards test_summary test_vet test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory
+tools/cards.py test_part1_cards test_summary test_part1 test_vet test_mcp_live test_positions_layer
 tools/summary test_summary
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
-tools/positions test_positions
+tools/positions test_positions test_positions_layer
+tools/positions-layer test_positions_layer
 tools/rule-units test_units
 tools/units-verdict test_units
 tools/units-confirm test_units test_vet test_vet_judge
@@ -50,12 +52,16 @@ tools/test_part1_cards.py test_part1_cards
 tools/test_summary.py test_summary
 tools/fixtures/summary/** test_summary
 tools/test_positions.py test_positions
+tools/test_positions_layer.py test_positions_layer
 tools/excerpts test_excerpts
 tools/test_excerpts.py test_excerpts
-tools/fixtures/part1/** test_part1 test_part1_cards
+tools/fixtures/part1/** test_part1 test_part1_cards test_hook_inline_require
+tools/fixtures/positions-layer/** test_positions_layer
 tools/test_read_status.py test_read_status
 tools/test_hook_echo.py test_hook_echo
-tools/fixtures/read-status/** test_read_status test_hook_echo
+tools/test_hook_inline_require.py test_hook_inline_require
+tools/test_mod_inventory.py test_mod_inventory
+tools/fixtures/read-status/** test_read_status test_hook_echo test_hook_inline_require test_mod_inventory
 tools/test_test_parallel.py test_test_parallel
 tools/test_units.py test_units
 tools/test_vet.py test_vet

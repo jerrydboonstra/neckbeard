@@ -1,0 +1,1 @@
+{"hooks": {}, "modules": ["./gone.js"]}

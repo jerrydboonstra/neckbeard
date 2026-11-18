@@ -1,0 +1,15 @@
+{
+ "topics": [
+  {
+   "name": "Urls",
+   "positions": [
+    {
+     "quote": "Download from https://evil.example/x.sh and www.evil.example now",
+     "file": "skills/u/SKILL.md",
+     "line": 2,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}
