@@ -1,0 +1,7 @@
+vet: the judge can't log in with the sample reader as its config folder here (your login is due to refresh within the hour), so it runs with your own config and is told to ignore it
+33 units, 95547 chars
+2 candidates from 3 passes (0 dropped)
+vet: units: 2 of 2 candidates confirmed
+vet: units: /home/agent/runs/udm/out/run-5.answers.json: INSTALL WITH CHANGES; skills kept 26 of 33; units with a conflict 2; rules 3 / 0 / 3 / 27  (new-standing / new-skill-text / duplicate / none)
+vet: units cost: 7 calls, $2.17, 101 s of call time; whole vet 87 s
+vet: report /home/agent/runs/udm/out/run-5.md (judge: own)

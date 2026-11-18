@@ -1,0 +1,18 @@
+5 reports
+  measurements/2026-11-18-units-default/run-1.md: INSTALL WITH CHANGES; 2 / 0 / 2 / 23 / 8  (conflicts / covered / new standing / new skill / dropped)
+    note: 2 conflict rows but 1 distinct rules; findings against one rule are counted once
+  measurements/2026-11-18-units-default/run-2.md: INSTALL WITH CHANGES; 2 / 0 / 1 / 24 / 8  (conflicts / covered / new standing / new skill / dropped)
+    note: 2 conflict rows but 1 distinct rules; findings against one rule are counted once
+  measurements/2026-11-18-units-default/run-3.md: INSTALL WITH CHANGES; 1 / 0 / 2 / 23 / 8  (conflicts / covered / new standing / new skill / dropped)
+  measurements/2026-11-18-units-default/run-4.md: INSTALL WITH CHANGES; 2 / 0 / 2 / 24 / 7  (conflicts / covered / new standing / new skill / dropped)
+    note: 2 conflict rows but 1 distinct rules; findings against one rule are counted once
+  measurements/2026-11-18-units-default/run-5.md: INSTALL WITH CHANGES; 2 / 0 / 3 / 23 / 7  (conflicts / covered / new standing / new skill / dropped)
+    note: 2 conflict rows but 1 distinct rules; findings against one rule are counted once
+verdicts: INSTALL WITH CHANGES in 5 of 5
+  conflict found in 5 of 5: rules/safety.md
+  card Conflicts: count differs (2 in 4 of 5; 1 in 1 of 5)
+  card Conflicts: colour differs (🟥/🟥 in 4 of 5; 🟥 in 1 of 5)
+  card Keep: count differs (25 skills in 3 of 5; 26 skills in 2 of 5)
+  card Keep: colour differs (🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/⭐/🟩/🟩/🟩/🟩/🟩 in 3 of 5; 🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩/⭐/🟩/🟩/🟩/🟩/🟩/🟩/🟩/🟩 in 2 of 5)
+  card Dropped: count differs (8 in 3 of 5; 7 in 2 of 5)
+NOT stable: the reports disagree
