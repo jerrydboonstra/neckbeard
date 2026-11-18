@@ -25,7 +25,7 @@ tools/part1 test_part1 test_part1_cards test_vet test_mcp_live test_positions_la
 tools/cards.py test_part1_cards test_part1 test_vet test_mcp_live test_positions_layer
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
-tools/positions test_positions
+tools/positions test_positions test_positions_layer
 tools/positions-layer test_positions_layer
 tools/rule-units test_units
 tools/units-verdict test_units

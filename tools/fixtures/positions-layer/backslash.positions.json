@@ -1,0 +1,15 @@
+{
+ "topics": [
+  {
+   "name": "Slashes",
+   "positions": [
+    {
+     "quote": "Use \\` and \\[x](y) here.",
+     "file": "skills/s/SKILL.md",
+     "line": 9,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}

@@ -71,6 +71,16 @@ chk("3c. a quote cannot become an image or a link; backticks and brackets are es
     "![](" not in out and "[a](" not in out and "\\[a\\]" in out and "\\`unpaired" in out, out)
 chk("3d. also_in places go through safe() too", "also in `a b/c.md:1`" in out, out)
 
+code, o, _ = run(fx("spaced"), "--repo", "https://github.com/o/r", "--commit", "abc1234")
+chk("2e. a position's own file path is percent-encoded in its link",
+    "](https://github.com/o/r/blob/abc1234/skills/a%20b/SKILL.md#L3)" in o and "[`skills/a b/SKILL.md:3`]" in o, o)
+code, o, _ = run(fx("two-topics"))
+chk("2f. in plain mode the null-line place is code text with no :None or :null",
+    "`hooks/session.sh`" in o and ":None" not in o and ":null" not in o, o)
+code, o, _ = run(fx("backslash"))
+chk("3e. backslash is escaped first: \\` and \\[x](y) show as escaped text, no live backtick, no link",
+    'Use \\\\\\` and \\\\\\[x\\](y) here.' in o, o)
+
 code, out, _ = run(fx("long-first"))
 m = re.search(r'<summary><b>Long</b> · 1 · "(.*?)"</summary>', out)
 chk("4. a first quote over 60 characters is cut at 60 with an ellipsis in the gist",
@@ -91,6 +101,10 @@ open(os.path.join(d, "bad.json"), "w").write("{not json")
 code, out, err = run(os.path.join(d, "bad.json"))
 chk("5d. an unreadable file exits 2", code == 2 and len(err.strip().split("\n")) == 1 and "can't open file" not in err, err)
 
+chk("5e. no topics: line 2 is the note line", run(fx("no-topics"))[1].split("\n")[2:3] and run(fx("no-topics"))[1].split("\n")[2].startswith("> "))
+for name in ("topics-string", "top-list"):
+    code, out, err = run(fx(name))
+    chk(f"5f. {name}: exit 2 with one line on stderr", code == 2 and len(err.strip().split("\n")) == 1 and "can't open file" not in err and "Traceback" not in err, err)
 for name in ("two-topics", "hostile", "no-topics", "long-first"):
     o = run(fx(name))[1]
     chk(f"6. {name}: no read marker and no judgement colour", HEAD in o and not re.search("[\U0001F7E2\U0001F7E1\U0001F534\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5]", o))
