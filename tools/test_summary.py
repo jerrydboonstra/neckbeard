@@ -79,6 +79,7 @@ CASES = [
     ("hook-curl", [G, Y, G, O, G]),
     ("mod-only", [G, Y, G, O, G]),
     ("mod-partial", [Y, Y, G, O, Y]),
+    ("mod-real", [Y, Y, G, O, Y]),
     ("mcp-local", [G, G, G, O, G]),
     ("state-files", [G, G, O, G, G]),
     ("scan-partial", [G, G, Y, G, Y]),
@@ -142,6 +143,32 @@ for what, fn, row in [("mcp_servers.servers as a dict", lambda t: t.update(mcp_s
     chk(f"2 {what}: {row} is not {G}", colours(edit("green", fn))[row] in (Y, O, R), str(colours(edit("green", fn))))
 for state, want in (("partial", Y), ("failed", R)):
     chk(f"2 a {state} section: Read completeness is {want}", colours(edit("green", lambda t: t["read_status"].__setitem__("persistence_candidates", {"state": state, "notes": ["x"]})))["Read completeness"] == want)
+
+# review round 1: Reach names a hook only when one is registered; the card holds the detail behind each row
+reach_text = lambda d: rows(run(write(d))[1])["Reach"][1]
+chk("Reach: inventory's real mod-only output (has_hooks true, no event registered) names the mod, not a hook",
+    "mod" in reach_text(load("mod-real")) and "a hook" not in reach_text(load("mod-real")), reach_text(load("mod-real")))
+chk("Reach: a hooks file with no registration and no mod stays green", colours(edit("green", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=0)))["Reach"] == G)
+for what, fn in [("has_hooks 'unknown'", lambda t: t["hooks"].update(has_hooks="unknown", events={}, hook_registrations=None)),
+                 ("a hooks file whose registrations could not be counted", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=None))]:
+    d = edit("green", fn)
+    chk(f"Reach: {what} (events unreadable) is yellow and names a hook", colours(d)["Reach"] == Y and "a hook" in reach_text(d), reach_text(d))
+chk("Reach: a registered hook with hook_registrations 1 and no readable command is yellow", colours(edit("green", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=1)))["Reach"] == Y)
+
+
+def card_of(out):
+    m = re.search(r"<details>.*?</details>", out, re.S)
+    return m.group(0) if m else ""
+
+
+for name, needles in [("state-files", ["hooks/log.sh"]), ("hook-ssh-subagents", ["ssh box uptime", "hooks/h.txt"]), ("mcp-local", ["local-process"]),
+                      ("mod-real", ["hooks/band/register.tsx"]), ("green", ["skills/a/SKILL.md"]), ("unread", ["mcp_servers"])]:
+    out = run(fx(name))[1]
+    table = out.split("<details>")[0]
+    chk(f"the card holds detail the table lacks ({name}: {', '.join(needles)})", all(x in card_of(out) and x not in table for x in needles), card_of(out)[:300])
+hostile = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "x </details>\n## forged\n| \U0001F7E9 | Cost | x |"))
+out = run(write(hostile))[1]
+chk("a hostile hook command cannot close the card or forge a heading in it", out.count("</details>") == 1 and "\n## forged" not in out and not re.search(r"^\| \S+ \| Cost \| x \|$", out, re.M), out[-400:])
 
 # 3. a threshold in the rules table moves the colour and the footer together
 spec = importlib.util.spec_from_loader("summary_tool", importlib.machinery.SourceFileLoader("summary_tool", SUMMARY))
