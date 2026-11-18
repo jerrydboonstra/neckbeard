@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tools/summary: the "How it affects you" table (tools/vet writes the heading, so tools/summary prints none), the five summary rows (Cost, Reach, Leaves state, Live surface, Read completeness),
+"""tools/summary: the "How it affects you" table (tools/summary prints no layer heading: the report that uses it writes its own), the five summary rows (Cost, Reach, Leaves state, Live surface, Read completeness),
 each a judgement colour computed by code from the dossier under a written rule, and the rules printed as a footer from the
 same table. Fixtures are tools/fixtures/summary/<name>.dossier.json (small, written by hand); edge cases are edits of one."""
 import collections, copy, importlib.machinery, importlib.util, json, os, re, subprocess, sys, tempfile
@@ -210,7 +210,7 @@ for name, _ in CASES:
         and "<summary>" in out and "At a glance in full" in out and "2,000" in out, f"{code} {err[:200]}")
     chk(f"  {name}: two runs are byte-identical", run(fx(name))[1] == out)
 chk("the output holds no `## How it affects you` line", "## How it affects you" not in run(fx("green"))[1])
-chk("tools/vet writes the layer heading: tools/summary prints none, and its card has no marker",
+chk("tools/summary prints no layer heading, and its card has no marker",
     "## " not in run(fx("green"))[1] and "<details><summary><b>At a glance in full</b>" in run(fx("green"))[1], run(fx("green"))[1][:120])
 d = load("green")
 del d["target"]["read_status"]

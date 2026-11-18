@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""summary DOSSIER: print the "How it affects you" table (tools/vet writes its heading), five rows computed by code from the dossier, each a judgement colour
+"""summary DOSSIER: print the "How it affects you" table, five rows computed by code from the dossier, each a judgement colour
 (🟩🟨🟧🟥), a name and one line. No model call. Same style as tools/part1: reads only the dossier's `target`, prints Markdown,
 and two runs on one dossier are byte-identical.
 
-The rules live in one table, RULES, and the footer under the table is printed from that same table, so a reader can check them.
+It prints no layer heading: the report that uses the table writes its own. The Cost bands and the command-word lists live in one table,
+RULES, and the footer prints them from it, so changing one changes the colour and the footer together; the other footer rules are written
+by hand and kept in step with the code by hand.
 A row's rules are checked top to bottom: the first that matches wins. A row whose input sections (target.read_status) are not all
 read in full is never 🟩: a 🟩 outcome becomes 🟨. A section that is not-applicable counts as read in full, as in tools/part1.
 
@@ -18,10 +20,11 @@ read in full is never 🟩: a 🟩 outcome becomes 🟨. A section that is not-a
   Read completeness   tools/part1's overall read state, as its colour.
 
 A command word is the first word of each piece of the command, cut at newlines and at `|`, `&&`, `||`, `;` and `&` outside quotes, with
-leading NAME=value words skipped (tools/part1's words()), compared by basename; an MCP server's command and each of its args are
-compared the same way. Inline code (`bash -c`, `node -e`), hook script bodies and commands behind a wrapper (sudo, timeout, command,
+leading NAME=value words skipped (tools/part1's words()), compared by basename; an MCP server's command is compared by its first
+word and each of its args whole, by basename. Inline code (`bash -c`, `node -e`), hook script bodies and commands behind a wrapper (sudo, timeout, command,
 nohup, exec, xargs, subshells, `$( )`, backticks) are not searched. A hook command over tools/part1's MAX_COMMAND characters is too long to
-read and makes Live surface 🟧. A size that is not a whole number, or a list field of the wrong type, counts as an unread input.
+read and makes Live surface 🟧. A size that is not a whole number counts as an unread input, and so does a wrong-typed mcp_servers.servers, hooks.mods or
+persistence_candidates; a wrong-typed skills, agents, rule_files or injected_content list counts as 0.
 A refused skill, agent or rule entry counts 0 toward Cost.
 A dossier with no read_status exits 2."""
 import importlib.machinery, importlib.util, json, os, re, shlex, sys
@@ -56,6 +59,11 @@ SEPARATORS = re.compile(r"\|\||&&|[|;&]")
 
 def n(x):
     return f"{x:,}"
+
+
+def many(count, noun):
+    """'1 file', '2 files'."""
+    return f"{n(count)} {noun}" + ("" if count == 1 else "s")
 
 
 def as_list(v):
@@ -107,7 +115,7 @@ def finish(colour, line, states):
     any row not read in full says so, so a line never claims an absence nobody read."""
     if part1.read_state(states) == "read in full":
         return colour, line
-    return (Y if colour == G else colour), f"{line} (input not read in full)"
+    return (Y if colour == G else colour), f"{line} (not read in full)"
 
 
 def cost(t, sec, hooks, hsec):
@@ -134,9 +142,9 @@ def cost(t, sec, hooks, hsec):
     b = RULES["cost_bands"]
     colour = G if total < b[0] else Y if total < b[1] else O if total < b[2] else R
     lower = any(isinstance(i, dict) and i.get("built_at_run_time") for i in inj)
-    line = (f"{'at least ' if lower else ''}{n(total)} added to every session, ~{n((total + 2) // 4)} tokens"
+    line = (f"adds {'at least ' if lower else ''}{n(total)} to every session, ~{n((total + 2) // 4)} tokens"
             f" ({n(skills)} skill descriptions, {n(agents)} agent descriptions, {n(rules)} rule files, {n(hook)} hook text"
-            f"{', counted twice: hooks reach subagents' if twice and hook else ''})")
+            f"{', counted twice because hooks reach subagents' if twice and hook else ''})")
     return finish(colour, line, states)
 
 
@@ -163,7 +171,7 @@ def leaves(t, sec):
     files = as_list(pc)
     states = [sec("persistence_candidates")[0]] + (["failed"] if pc is not None and not isinstance(pc, list) else [])
     if files:
-        return O, f"{n(len(files))} files that may write state"
+        return O, f"{many(len(files), 'file')} that may write state"
     return finish(G, "nothing found", states)
 
 
@@ -189,12 +197,12 @@ def live(t, sec, hooks):
     if words & set(RULES["remote_shell"]):
         colour, line = R, "runs " + ", ".join(sorted(words & set(RULES["remote_shell"]))) + " (a remote shell)"
     elif servers or mods or net:
-        what = [f"{len(servers)} MCP servers"] if servers else []
-        what += [f"{len(mods)} Claude Code mods"] if mods else []
+        what = [many(len(servers), "MCP server")] if servers else []
+        what += [many(len(mods), "Claude Code mod")] if mods else []
         what += ["hook commands that may reach the network" + (" (one too long to read)" if long_cmd else "")] if net else []
         colour, line = O, ", ".join(what)
     elif cmds:
-        colour, line = Y, f"{len(cmds)} hook commands, local scripts only"
+        colour, line = Y, f"{many(len(cmds), 'hook command')}, local scripts only"
     else:
         colour, line = G, "no hook commands, MCP servers or mods found"
     return finish(colour, line, states)
@@ -203,17 +211,17 @@ def live(t, sec, hooks):
 def footer():
     b = RULES["cost_bands"]
     return [
-        "These colours follow written rules, checked top to bottom, the first match wins. A row whose input was not read in full is never 🟩.",
+        "The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.",
         "",
         f"- Cost: 🟩 under {n(b[0])}; 🟨 {n(b[0])} to {n(b[1] - 1)}; 🟧 {n(b[1])} to {n(b[2] - 1)}; 🟥 {n(b[2])} and over. "
-        "Size is skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); "
-        "hook text counts twice when hooks reach subagents; an entry that was refused or has no usable size counts as 0.",
+        "Size counts skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); "
+        "text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.",
         "- Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).",
         "- Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.",
-        f"- Live surface: 🟥 a hook or MCP command runs {', '.join(RULES['remote_shell'])}; "
+        f"- Live surface: 🟥 a hook or MCP command runs {', '.join(RULES['remote_shell'])} (each a remote shell); "
         f"🟧 any MCP server, any Claude Code mod, a hook running {', '.join(RULES['network'])} or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. "
-        "A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command and each of its args are compared the same way. "
-        "Inline code (bash -c, node -e), hook script bodies and commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks) are not searched.",
+        "A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. "
+        "The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).",
         "- Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.",
     ]
 
