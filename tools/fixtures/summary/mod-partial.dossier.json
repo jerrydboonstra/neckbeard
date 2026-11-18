@@ -1,0 +1,71 @@
+{
+ "target": {
+  "agents": [],
+  "commands": [],
+  "hooks": {
+   "has_hooks": false,
+   "hooks_reach_subagents": null,
+   "mods": [
+    {
+     "file": "hooks/register.js"
+    }
+   ]
+  },
+  "kind": "plugin",
+  "mcp_servers": null,
+  "path": "/x/demo",
+  "persistence_candidates": [],
+  "read_status": {
+   "agents": {
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "causes": [
+     "tool-limit"
+    ],
+    "notes": [
+     "a mod was listed, not read"
+    ],
+    "state": "partial"
+   },
+   "marketplace": {
+    "notes": [],
+    "state": "not-applicable"
+   },
+   "mcp_servers": {
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "notes": [],
+    "state": "not-applicable"
+   },
+   "rule_files": {
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "rule_files": [],
+  "skills": [
+   {
+    "bytes": 900,
+    "description": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "name": "a",
+    "path": "/x/demo/skills/a/SKILL.md"
+   }
+  ]
+ }
+}

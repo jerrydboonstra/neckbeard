@@ -1,0 +1,81 @@
+{
+ "target": {
+  "agents": [],
+  "commands": [],
+  "hooks": {
+   "events": {},
+   "has_hooks": true,
+   "hook_registrations": 0,
+   "hook_scripts": 0,
+   "hooks_file": "hooks/hooks.json",
+   "hooks_reach_subagents": false,
+   "hooks_reach_subagents_basis": "no event known to fire in a subagent",
+   "injected_bytes_total_estimate": null,
+   "injected_content": null,
+   "mods": [
+    {
+     "exists": true,
+     "path": "hooks/band/register.tsx",
+     "refused": false
+    }
+   ]
+  },
+  "kind": "generic-pack",
+  "mcp_servers": null,
+  "path": "/x/mods-real",
+  "persistence_candidates": [],
+  "read_status": {
+   "agents": {
+    "causes": [],
+    "notes": [],
+    "state": "read"
+   },
+   "commands": {
+    "causes": [],
+    "notes": [],
+    "state": "read"
+   },
+   "hooks": {
+    "causes": [
+     "tool-limit"
+    ],
+    "notes": [
+     "hooks/band/register.tsx: a Claude Code mod; it runs in the session with no sandbox, and its source is not read"
+    ],
+    "state": "partial"
+   },
+   "marketplace": {
+    "causes": [],
+    "notes": [],
+    "state": "not-applicable"
+   },
+   "mcp_servers": {
+    "causes": [],
+    "notes": [],
+    "state": "read"
+   },
+   "persistence_candidates": {
+    "causes": [],
+    "notes": [],
+    "state": "read"
+   },
+   "plugin_json": {
+    "causes": [],
+    "notes": [],
+    "state": "not-applicable"
+   },
+   "rule_files": {
+    "causes": [],
+    "notes": [],
+    "state": "read"
+   },
+   "skills": {
+    "causes": [],
+    "notes": [],
+    "state": "read"
+   }
+  },
+  "rule_files": [],
+  "skills": []
+ }
+}

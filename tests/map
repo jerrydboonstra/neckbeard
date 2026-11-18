@@ -22,8 +22,9 @@ skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_judge test_vet_stabil
 # Tools
 tools/vet test_vet test_vet_judge test_vet_stability test_vet_report
 tools/badge-logo test_vet test_vet_judge
-tools/part1 test_part1 test_part1_cards test_vet test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory
-tools/cards.py test_part1_cards test_part1 test_vet test_mcp_live test_positions_layer
+tools/part1 test_part1 test_part1_cards test_summary test_vet test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory
+tools/cards.py test_part1_cards test_summary test_part1 test_vet test_mcp_live test_positions_layer
+tools/summary test_summary
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
 tools/positions test_positions test_positions_layer
@@ -52,6 +53,8 @@ tools/fixtures/mcp-live/** test_mcp_live test_read_status
 tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_part1.py test_part1
 tools/test_part1_cards.py test_part1_cards
+tools/test_summary.py test_summary
+tools/fixtures/summary/** test_summary
 tools/test_positions.py test_positions
 tools/test_positions_layer.py test_positions_layer
 tools/excerpts test_excerpts
