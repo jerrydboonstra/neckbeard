@@ -100,7 +100,8 @@ def layered_excerpt(report):
             break
     if not table:
         return None
-    strip_at = next((i for i, l in enumerate(lines) if l.startswith("> **")), None)
+    facts = next((i for i, l in enumerate(lines) if l.strip() == "## What it adds"), None)
+    strip_at = next((i for i, l in enumerate(lines[:facts] if facts is not None else lines) if i > at and l.startswith("> **")), None)   # the strip sits in the summary layer
     if strip_at is not None:   # a fit report: the table, then the strip block
         strip = []
         for l in lines[strip_at:]:
@@ -109,13 +110,12 @@ def layered_excerpt(report):
             strip.append(l.rstrip())
         return "\n".join(table + [""] + strip)
     title = next((l for l in lines if l.startswith("# ")), None)
-    facts = next((i for i, l in enumerate(lines) if l.strip() == "## What it adds"), None)
     if not title or facts is None:
         return None
     header = next((l for l in lines[lines.index(title) + 1:] if l.strip()), None)
     cards = []
-    for l in lines[facts + 1:]:
-        if l.strip() == "---" or l.startswith("## "):
+    for i, l in enumerate(lines[facts + 1:], facts + 1):
+        if l.startswith("## ") or (l.strip() == "---" and re.match(r"\*\*\d \u00b7 ", (lines[i + 2] if i + 2 < len(lines) else ""))):   # the next layer's rule and label, not a rule inside a card
             break
         m = CARD.match(l)
         if m:
@@ -126,7 +126,7 @@ def layered_excerpt(report):
 
 
 def excerpt(name):
-    """From examples/<name>.md: a fit report's verdict and At-a-glance table, or a facts report's facts."""
+    """From examples/<name>.md: a fit report's summary table and verdict strip (2.0 layout) or its verdict and At-a-glance table (old), or a facts report's facts."""
     # A bare name is a gallery report; a name with a folder in it (docs/neckbeard-report) is that file in the repo.
     path = ROOT / f"{name}.md" if "/" in name else ROOT / "examples" / f"{name}.md"
     report = path.read_text()

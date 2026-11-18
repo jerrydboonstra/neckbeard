@@ -120,6 +120,8 @@ if m:
 reply("🟩 INSTALL · 0/0/0/1/0")
 '''
 
+TITLE = "# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position"
+
 fail = checks = 0
 
 

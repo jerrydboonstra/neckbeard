@@ -17,7 +17,6 @@ hline = lambda r: r["text"].split("\n")[2]   # the header line, which vet --chec
 
 # 0c. the 2.0 layout (report-assembly-2-0): the title, the header line, a Contents list, then three layers, each opened by a `---`
 # rule and its label line and then its heading. tools/vet writes no card markup: the layers are what the renderers print.
-TITLE = "# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position"
 HEADINGS = ["## How it affects you", "## What it adds", "## Where it takes a position"]
 LABELS = ["**1 \u00b7 Summary \u00b7 carries a judgement**", "**2 \u00b7 Facts \u00b7 written by code \u00b7 no judgement**", "**3 \u00b7 Positions \u00b7 the plugin's own words \u00b7 no judgement**"]
 SQUARES = "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"
@@ -50,7 +49,7 @@ chk("layers: in a published report the first Contents line leaves out the fit an
 chk("layers: the summary layer holds the five rows from tools/summary", [re.search(r"^\| [" + SQUARES + r"] \| " + n + r" \|", L1, re.M) is not None for n in ("Cost", "Reach", "Leaves state", "Live surface", "Read completeness")], [True] * 5)
 chk("layers: a published report has no verdict strip and no fit card", ("\n> **" in r["text"], any("<b>" + c + "</b>" in r["text"] for c in FIT_CARDS)), (False, False))
 chk("layers: no judgement colour inside What it adds, no read marker outside it (Contents included)", (any(q in L2 for q in SQUARES), any(m in r["text"].replace(L2, "") for m in MARKERS)), (False, False))
-chk("layers: What it adds holds part 1's six cards and the commit vet holds", (all("<b>" + h + "</b>" in L2 for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), f"Commit: {r['sha']}" in L2 and r["sha"] != ""), (True, True))
+chk("layers: What it adds holds part 1's six cards and the commit vet holds", (all(re.search(r"^<details><summary>[" + MARKERS + r"] <b>" + h + r"</b>", L2, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), f"Commit: {r['sha']}" in L2 and r["sha"] != ""), (True, True))
 chk("layers: Where it takes a position holds tools/positions-layer's cards", ("<b>Commits and git</b>" in L3, L3.count("\n## ")), (True, 1))
 chk("layers: the closing line ends the report", r["text"].rstrip("\n").split("\n")[-1] == "No reader's rules were read: this report lists facts only and carries no verdict.", True)
 chk("layers: no reader rule or local path in the report", ("READER" in r["text"], os.path.realpath(r["target"]) in r["text"], "/tmp" in r["text"]), (False, False, False))

@@ -247,6 +247,14 @@ check("2.0 fit: the summary table and the verdict strip are both there, the tabl
 check("2.0 fit: the strip keeps its counts and its reader line", "⛔ **0** conflicts" in text and "*against the sample reader (demo)*" in text, text)
 check("2.0 fit: the cards and the facts layer are left out", not any(s in text for s in ("Why this verdict", "Verdict is relative", "Injects", "Commits and git")), text)
 
+# odd 2.0 reports: a card body with a rule line, and a "> **" line outside the summary layer
+ODD = NEW_FACTS.replace("- Skills:\n  - demo: description every session (13 chars)", "- Skills:\n\n---\n\n  - demo: description every session (13 chars)")
+r, text = run(ODD)
+check("2.0 facts: a '---' line inside a card body does not end the card list", "\n> - 🟡 **Hooks** · partly read\n" in text and "R&D" in text, text)
+ODD2 = NEW_FACTS.replace("- Hooks: partly read\n", "- Hooks: partly read\n> **x**\n")
+r, text = run(ODD2)
+check("2.0 facts: a '> **' line in a card body does not make it a fit report", "\n> - 🟢 **Injects**" in text and "COPY RULES" not in text, text)
+
 # an old-layout report still gives today's excerpt (the gallery regenerates in gallery-2-0)
 r, text = run(FACTS)
 check("old layout: a facts report still gives its ### headings and bullets", r.returncode == 0 and "> ### Injects" in text and "> - Rule files: none" in text, r.stderr + text)
