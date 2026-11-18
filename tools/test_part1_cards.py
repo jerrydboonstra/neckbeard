@@ -193,9 +193,20 @@ for f in every:
 chk(f"CR5. --read-state prints one line, the overall read state, and exits 0 on every fixture with read_status ({len(every)}), agreeing with the worst card marker", not bad, "; ".join(bad[:3]))
 r = subprocess.run([sys.executable, PART1, "--read-state", fx("old-dossier")], capture_output=True, text=True)
 chk("CR5. --read-state on old-dossier (no read_status) exits 2", (r.returncode, r.stdout), (2, ""))
-chk("CR5. --read-state with a second argument, or with --commit, or with no dossier, exits 2 and prints the usage",
-    all(subprocess.run([sys.executable, PART1, *a], capture_output=True, text=True).returncode == 2
-        for a in (["--read-state", fx("plugin-found"), fx("plugin-found")], ["--read-state", fx("plugin-found"), "--commit", "abc"], ["--read-state"])), "")
+runs_ = [subprocess.run([sys.executable, PART1, *a], capture_output=True, text=True)
+         for a in (["--read-state", fx("plugin-found"), fx("plugin-found")], ["--read-state", fx("plugin-found"), "--commit", "abc"], ["--read-state"])]
+chk("CR5. --read-state with a second argument, or with --commit, or with no dossier, exits 2, prints the usage and no word",
+    all(r.returncode == 2 and r.stdout == "" and "usage: part1" in r.stderr and "--read-state" in r.stderr for r in runs_), [(r.returncode, r.stderr[:60]) for r in runs_])
+emp = variant("plugin-found", lambda d: d["target"].update(read_status={}))
+r = subprocess.run([sys.executable, PART1, "--read-state", emp], capture_output=True, text=True)
+chk("CR5. --read-state on an empty read_status exits 2 as vet did before (no read_status)", (r.returncode, r.stdout, "has no read_status" in r.stderr), (2, "", True))
+# a partly read section with nothing found makes no count claim; a read one with nothing found does
+for sec_, label_ in (("agents", "Subagents and commands"), ("mcp_servers", "Reaches outside the session"), ("hooks", "Hooks")):
+    def edit(d, s=sec_):
+        d["target"]["read_status"][s].update(state="partial", notes=["x: y"])
+        d["target"][{"agents": "agents", "mcp_servers": "mcp_servers", "hooks": "hooks"}[s]] = [] if s == "agents" else ({"servers": []} if s == "mcp_servers" else {"events": {}, "injected_content": [], "hooks_reach_subagents": None})
+    g_ = card_gist(render(variant("plugin-found", edit))[1], label_) or ""
+    chk(f"CR1. {sec_} partly read with nothing found: the gist claims no zero ('no agents', 'no MCP servers', '0 hooks')", not re.search(r"\bno agents\b|\bno MCP servers\b|\b0 hooks\b", g_), g_)
 p = variant("plugin-found", lambda d: d["target"]["read_status"].update(extra_section={"state": "failed", "notes": ["x"]}))
 chk("CR5. a read_status section no card uses counts in the overall state but changes no card",
     subprocess.run([sys.executable, PART1, "--read-state", p], capture_output=True, text=True).stdout == "something unread\n" and markers(render(p)[1]) == [G] * 6, "")

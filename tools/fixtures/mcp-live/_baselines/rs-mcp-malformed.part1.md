@@ -11,7 +11,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Hooks</b> · 0 hooks · partly read</summary>
+<details><summary>🟡 <b>Hooks</b> · partly read</summary>
 
 - Hooks: partly read
   - reaches subagents: unknown

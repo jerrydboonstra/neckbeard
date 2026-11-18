@@ -370,9 +370,10 @@ def gist(*parts):
     return " \u00b7 ".join(p for p in parts if p)
 
 
-def counted(state):
-    """Whether a section's count is known: read, or partly read (then a lower bound)."""
-    return state in ("read", "partial")
+def counted(state, n=1):
+    """Whether a section's count is known: a read section's, or a partly read one's when it found something (a lower bound;
+    a partly read section with nothing found has no known count, so no "no agents" or "0 hooks")."""
+    return state == "read" or (state == "partial" and n > 0)
 
 
 def render(d, commit):
@@ -452,7 +453,7 @@ def render(d, commit):
     marker = lambda name: MARKER[read_state(states[name])]
     nots = lambda name: all(x == "failed" for x in states[name])   # every section the card reads failed: its gist is "not read"
     shown, ptail = cap_entries(persist)
-    skills_ok = counted(sec("skills")[0])
+    skills_ok = counted(sec("skills")[0], len(skills))
     readable = [s_ for s_ in as_list(t.get("skills")) if not unread(s_)]
     hn = sum(1 for _ in events)
     reach_phrase = "reach subagents" if reach is True else "stay in the main session" if reach is False else ""
@@ -461,12 +462,12 @@ def render(d, commit):
         "Injects": gist(*([f"{len(skills)} skills", f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
                            f"~{sum(len(str(s_.get('description') or '')) for s_ in readable)} chars of skill descriptions every session"] if skills_ok else []),
                         f"hook text {read_state([hsec[0]])}"),
-        "Hooks": gist(f"{hn} hooks" if counted(sec("hooks")[0]) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
-        "Subagents and commands": gist((f"{len(agents)} agents" if agents else "no agents") if counted(sec("agents")[0]) else "",
-                                       f"{len(commands)} commands" if counted(sec("commands")[0]) else ""),
-        "State it may leave": gist(f"{len(persist)} files that may write state" if counted(sec("persistence_candidates")[0]) else "",
-                                   f"{len(shown)} named" if ptail and counted(sec("persistence_candidates")[0]) else ""),
-        "Reaches outside the session": gist((f"{len(servers)} MCP servers" if servers else "no MCP servers") if counted(sec("mcp_servers")[0]) else ""),
+        "Hooks": gist(f"{hn} hooks" if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
+        "Subagents and commands": gist((f"{len(agents)} agents" if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
+                                       f"{len(commands)} commands" if counted(sec("commands")[0], len(commands)) else ""),
+        "State it may leave": gist(f"{len(persist)} files that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
+                                   f"{len(shown)} named" if ptail and counted(sec("persistence_candidates")[0], len(persist)) else ""),
+        "Reaches outside the session": gist((f"{len(servers)} MCP servers" if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
         "Source": gist(kind, f"{plain_name}{' ' + plain_version if plain_version else ''}{' from plugin.json' if pj.get('name') or pj.get('version') else ''}",
                        f"commit {safe(commit)[:7]}" if commit else "", marketplace_word),
     }
@@ -517,6 +518,9 @@ def main(argv):
         print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
         return 2
     if only_state:
+        if not t["read_status"]:
+            print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
+            return 2
         try:
             print(overall_read_state(t))
         except Exception as e:

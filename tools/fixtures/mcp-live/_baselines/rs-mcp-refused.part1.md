@@ -11,7 +11,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Hooks</b> · 0 hooks · partly read</summary>
+<details><summary>🟡 <b>Hooks</b> · partly read</summary>
 
 - Hooks: partly read
   - reaches subagents: unknown
@@ -26,7 +26,7 @@
 
 </details>
 
-<details><summary>🟡 <b>State it may leave</b> · 0 files that may write state</summary>
+<details><summary>🟡 <b>State it may leave</b></summary>
 
 - Persistence candidates: partly read
   - not read: .mcp.json: resolves outside the target tree; not scanned

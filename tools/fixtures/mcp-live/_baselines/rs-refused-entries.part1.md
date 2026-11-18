@@ -23,7 +23,7 @@
 
 </details>
 
-<details><summary>🟡 <b>State it may leave</b> · 0 files that may write state</summary>
+<details><summary>🟡 <b>State it may leave</b></summary>
 
 - Persistence candidates: partly read
   - not read: CLAUDE.md: resolves outside the target tree; not scanned; agents/a.md: resolves outside the target tree; not scanned; commands/c.md: resolves outside the target tree; not scanned; skills/x/SKILL.md: resolves outside the target tree; not scanned

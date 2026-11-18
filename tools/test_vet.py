@@ -55,7 +55,7 @@ glance = "## ⚡ At a glance\n\nOne line.\n"
 sec, _, rest = t[len(head):].partition(glance)
 chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
     (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
-chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(f"<b>{h}</b>" in sec for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
 chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")

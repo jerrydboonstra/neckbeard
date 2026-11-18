@@ -23,7 +23,7 @@
 
 </details>
 
-<details><summary>🟡 <b>State it may leave</b> · 0 files that may write state</summary>
+<details><summary>🟡 <b>State it may leave</b></summary>
 
 - Persistence candidates: partly read
   - not read: .claude-plugin/plugin.json: resolves outside the target tree; not scanned

@@ -11,7 +11,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Hooks</b> · 0 hooks · stay in the main session · partly read</summary>
+<details><summary>🟡 <b>Hooks</b> · stay in the main session · partly read</summary>
 
 - Hooks: partly read
   - reaches subagents: false (no event known to fire in a subagent)
