@@ -35,6 +35,8 @@ __pycache__/
 
 # Fixtures for tools/test_part1.py: dossiers written by hand, each named by its .dossier.json suffix.
 !tools/fixtures/part1/*.dossier.json
+# Fixtures for tools/test_positions_layer.py: positions JSON written by hand, each named by its .positions.json suffix.
+!tools/fixtures/positions-layer/*.positions.json
 
 # Evaluations quote the rules they compared against, for the same reason.
 evaluations/

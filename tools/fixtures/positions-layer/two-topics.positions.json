@@ -1,0 +1,41 @@
+{
+ "topics": [
+  {
+   "name": "Testing",
+   "positions": [
+    {
+     "quote": "Always run the tests before you finish.",
+     "file": "skills/fx/SKILL.md",
+     "line": 12,
+     "also_in": [
+      "commands/c.md:3",
+      "agents/a.md:7"
+     ]
+    },
+    {
+     "quote": "Never skip the checklist.",
+     "file": "skills/fx/SKILL.md",
+     "line": 8,
+     "also_in": []
+    }
+   ]
+  },
+  {
+   "name": "other",
+   "positions": [
+    {
+     "quote": "Use `make check` for a hook.",
+     "file": "hooks/session.sh",
+     "line": null,
+     "also_in": []
+    },
+    {
+     "quote": "Keep comments short.",
+     "file": "rules/style.md",
+     "line": 2,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}

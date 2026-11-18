@@ -1,0 +1,29 @@
+{
+ "topics": [
+  {
+   "name": "Safety",
+   "positions": [
+    {
+     "quote": "Never </details> close early <script>alert(1)</script> at /Users/someone/secret/file.txt now.",
+     "file": "skills/s/SKILL.md",
+     "line": 4,
+     "also_in": []
+    },
+    {
+     "quote": "Click ![](https://x) or [a](javascript:alert(1)) and `unpaired",
+     "file": "skills/s/SKILL.md",
+     "line": 5,
+     "also_in": [
+      "a b/c.md:1"
+     ]
+    },
+    {
+     "quote": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "file": "skills/s/SKILL.md",
+     "line": 6,
+     "also_in": []
+    }
+   ]
+  }
+ ]
+}

@@ -29,7 +29,7 @@ def run(*args):
 
 
 def fx(name):
-    return os.path.join(FX, name + ".json")
+    return os.path.join(FX, name + ".positions.json")
 
 
 HEAD = "## Where it takes a position"
@@ -84,7 +84,7 @@ chk("5. no topics: heading, note line, 'No positions found.', exit 0",
     code == 0 and out.split("\n")[0] == HEAD and "No positions found." in out and "<details>" not in out, out)
 code, out, err = run(fx("no-list"))
 chk("5b. JSON without a topics list exits 2 with one line on stderr", code == 2 and len(err.strip().split("\n")) == 1 and "can't open file" not in err, err)
-code, out, err = run(os.path.join(FX, "missing.json"))
+code, out, err = run(os.path.join(FX, "missing.positions.json"))
 chk("5c. a missing file exits 2 with one line on stderr", code == 2 and len(err.strip().split("\n")) == 1 and "can't open file" not in err, err)
 d = tempfile.mkdtemp()
 open(os.path.join(d, "bad.json"), "w").write("{not json")
