@@ -51,36 +51,89 @@ r = run("units-invented", units="units-install", finds="invented", confirm="yes"
 chk("pool: a quote that is not in the unit is dropped before any confirm call", (r["rc"], len(isolated(r, "CONFIRM CALL"))), (0, 0))
 chk("cost: the vet prints calls and dollars", "units cost: 5 calls, $0.05" in r["out"], True)
 
-# 0c. part 1 ("What it adds", tools/part1) goes in the report after the fit cards (report-assembly-2-0 reorders the layers), and nothing else moves
-r = run("part1", commit=True, units="units-install")
-sec = r["text"].partition("</details>\n\n## What it adds\n")[2]
-chk("part1: exit 0, one section after the last fit card, ending the report", (r["rc"], r["text"].count("\n## What it adds\n"), r["text"].index("\n## What it adds\n") > r["text"].index("<b>Proposed rules patch</b>")), (0, 1, True))
-chk("part1: the section holds the six cards", all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), True)
-chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
-chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
-r = run("part1-no-commit")
-chk("part1: with no git commit the section says commit not given", "Commit: commit not given" in r["text"], True)
-# a copy of vet with a tools/part1 that fails, or that prints a heading of its own: vet dies and says so
-def vet_with_part1(script, **kw):
+# 0c. the 2.0 layout (report-assembly-2-0): the title, the header line, a Contents list, then three layers, each opened by a `---`
+# rule and its label line and then its heading. tools/vet writes no card markup: the layers are what the renderers print.
+TITLE = "# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position"
+HEADINGS = ["## How it affects you", "## What it adds", "## Where it takes a position"]
+LABELS = ["**1 \u00b7 Summary \u00b7 carries a judgement**", "**2 \u00b7 Facts \u00b7 written by code \u00b7 no judgement**", "**3 \u00b7 Positions \u00b7 the plugin's own words \u00b7 no judgement**"]
+SQUARES = "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"
+MARKERS = "\U0001F7E2\U0001F7E1\U0001F534"
+FIT_CARDS = ("Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch")
+
+
+def at(text, needle):
+    return text.find("\n" + needle + "\n")
+
+
+def layers(text):
+    """The three layers' texts: from the layer's rule to the next layer's rule, the last to the end of the report."""
+    cuts = [text.find("\n---\n\n" + l + "\n") for l in LABELS] + [len(text)]
+    return [text[cuts[i]:cuts[i + 1]] if cuts[i] >= 0 else "" for i in range(3)]
+
+
+def ordered(text):
+    spots = [at(text, "**Contents**")] + [at(text, x) for pair in zip(LABELS, HEADINGS) for x in pair]
+    return all(s >= 0 for s in spots) and spots == sorted(spots)
+
+
+r = run("layers-facts", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
+L1, L2, L3 = layers(r["text"])
+chk("layers: a published report: exit 0, the 2.0 title, the header line on line 3", (r["rc"], r["title"], hline(r).startswith("`") and " \u00b7 neckbeard " in hline(r)), (0, TITLE, True))
+chk("layers: the Contents list, then each layer's rule, label line and heading, in order", (ordered(r["text"]), all("\n---\n\n" + l + "\n\n" + h + "\n" in r["text"] for l, h in zip(LABELS, HEADINGS))), (True, True))
+contents = r["text"].partition("**Contents**")[2].split("\n---\n", 1)[0]
+chk("layers: Contents has one numbered line per layer, with its anchor", [x in contents for x in ("1. [How it affects you](#how-it-affects-you)", "2. [What it adds](#what-it-adds)", "3. [Where it takes a position](#where-it-takes-a-position)")], [True] * 3)
+chk("layers: in a published report the first Contents line leaves out the fit and the verdict, and is there", ("how it affects you" in (contents.split("\n") + ["", "", ""])[2].lower(), [w in (contents.split("\n") + ["", "", ""])[2].lower() for w in ("fit", "verdict")]), (True, [False, False]))
+chk("layers: the summary layer holds the five rows from tools/summary", [re.search(r"^\| [" + SQUARES + r"] \| " + n + r" \|", L1, re.M) is not None for n in ("Cost", "Reach", "Leaves state", "Live surface", "Read completeness")], [True] * 5)
+chk("layers: a published report has no verdict strip and no fit card", ("\n> **" in r["text"], any("<b>" + c + "</b>" in r["text"] for c in FIT_CARDS)), (False, False))
+chk("layers: no judgement colour inside What it adds, no read marker outside it", (any(q in L2 for q in SQUARES), any(m in L1 + L3 + r["text"].split("**Contents**", 1)[0] for m in MARKERS)), (False, False))
+chk("layers: What it adds holds part 1's six cards and the commit vet holds", (all("<b>" + h + "</b>" in L2 for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), f"Commit: {r['sha']}" in L2 and r["sha"] != ""), (True, True))
+chk("layers: Where it takes a position holds tools/positions-layer's cards", ("<b>Commits and git</b>" in L3, L3.count("\n## ")), (True, 1))
+chk("layers: the closing line ends the report", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
+chk("layers: no reader rule or local path in the report", ("READER" in r["text"], os.path.realpath(r["target"]) in r["text"], "/tmp" in r["text"]), (False, False, False))
+r0 = run("part1-no-commit", extra=("--facts",), fake_body=NO_CLAUDE)
+chk("layers: with no git commit the Source card says commit not given", "Commit: commit not given" in r0["text"], True)
+
+r = run("layers-fit", commit=True, units="units-install", extra=("--note", "A self-vetting notice."))
+L1, L2, L3 = layers(r["text"])
+chk("layers: a fit report: exit 0, the title ends against the sample reader", (r["rc"], r["title"]), (0, TITLE + " \u00b7 against the sample reader"))
+chk("layers: a fit report holds the same layers in order", ordered(r["text"]), True)
+strip, last_row = r["text"].find("\n> **\U0001F7E9 INSTALL**"), r["text"].find("| Read completeness |")
+cards = [r["text"].find("<b>" + c + "</b>") for c in FIT_CARDS]
+chk("layers: the strip and the seven fit cards come after the summary rows, inside layer 1", (0 < last_row < strip < cards[0], cards == sorted(cards) and all(c > 0 for c in cards), all(c in L1 for c in ("<b>Why this verdict</b>", "<b>Proposed rules patch</b>"))), (True, True, True))
+why = r["text"].split("<b>Why this verdict</b>", 1)[1].split("<b>Conflicts</b>", 1)[0]
+chk("layers: the Baseline line, the Judge line and the --note sentence each appear once, inside Why this verdict, in order",
+    ([r["text"].count(x) for x in ("\nBaseline: ", "\nJudge: ", "A self-vetting notice.")], 0 < why.find("A self-vetting notice.") < why.find("Verdict is relative") < why.find("Baseline: ") < why.find("Judge: ") < why.find("Rule files")), ([1, 1, 1], True))
+chk("layers: no read marker outside What it adds", any(m in L1 + L3 + r["text"].split("**Contents**", 1)[0] for m in MARKERS), False)
+first_line = (r["text"].partition("**Contents**")[2].split("\n") + ["", "", ""])[2].lower()
+chk("layers: a fit report's first Contents line names the fit and the verdict", [w in first_line for w in ("fit", "verdict")], [True, True])
+
+# a copy of vet with one tool replaced by SCRIPT (a part1 that fails, say): vet dies and says so
+def vet_with_tool(tool, script, **kw):
     fake = tempfile.mkdtemp()
     try:
         os.makedirs(os.path.join(fake, "tools"))
         shutil.copy(VET, os.path.join(fake, "tools", "vet"))
         for f_ in os.listdir(HERE):   # every other tool, as it is: only part1 is faked
-            if f_ not in ("vet", "part1", "__pycache__") and not os.path.exists(os.path.join(fake, "tools", f_)):
+            if f_ not in ("vet", tool, "__pycache__") and not os.path.exists(os.path.join(fake, "tools", f_)):
                 os.symlink(os.path.join(HERE, f_), os.path.join(fake, "tools", f_))
         for link in ("skills", "examples", ".claude-plugin"):
             os.symlink(os.path.join(NB, link), os.path.join(fake, link))
-        open(os.path.join(fake, "tools", "part1"), "w").write(script)
-        os.chmod(os.path.join(fake, "tools", "part1"), 0o755)
-        return run("part1-fake", vet=os.path.join(fake, "tools", "vet"), **kw)
+        open(os.path.join(fake, "tools", tool), "w").write(script)
+        os.chmod(os.path.join(fake, "tools", tool), 0o755)
+        return run(tool + "-fake", vet=os.path.join(fake, "tools", "vet"), **kw)
     finally:
         shutil.rmtree(fake)
 
 
-r = vet_with_part1("import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
+r = vet_with_tool("part1", "import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
 chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
     (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
+
+for tool in ("summary", "positions", "positions-layer"):
+    for mode, kw in (("published", dict(extra=("--facts",), fake_body=NO_CLAUDE)), ("fit", dict(units="units-install"))):
+        r = vet_with_tool(tool, "import sys\nsys.stderr.write('%s: broken on purpose\\n')\nsys.exit(2)\n" % tool, **kw)
+        chk(f"layers: a {mode} report: when tools/{tool} exits non-zero vet stops with its stderr and writes no report",
+            (r["rc"] != 0, r["report"], f"{tool}: broken on purpose" in r["out"]), (True, False, True))
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
 r = run("web")
@@ -95,14 +148,14 @@ chk("web: every call's config is a copy, not the checkout",
 chk("web: every call starts outside the target", bool(j) and all(not os.path.realpath(c["cwd"]).startswith(os.path.realpath(r["target"])) for c in j), True)
 chk("web: examples/reader untouched", r["reader_untouched"], True)
 chk("web: temp folder removed", r["temp_left"], [])
-chk("web: title names the sample reader", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
+chk("web: title names the sample reader", r["title"], TITLE + " · against the sample reader")
 
 header = hline
 chk("web: header names the target plainly", header(r).endswith("· demo 1.0.0"), True)
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
 r = run("remote", remote="git@github.com:someone/demo.git")
-chk("remote: title uses the repo's short name", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
+chk("remote: title uses the repo's short name", r["title"], TITLE + " · against the sample reader")
 chk("remote: header links the repo once", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r)
     and header(r).count("https://github.com/someone/demo") == 1, True)
 
@@ -186,8 +239,8 @@ chk("check: no header fails", (rc, "no header line" in out), (1, True))
 # 8. --facts: the report with no reader, no verdict and no model call
 r = run("facts", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("facts: written, exit 0, claude never called", (r["rc"], r["report"], r["calls"]), (0, True, []))
-chk("facts: title line", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 what it adds")
-chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "sample reader", "\U0001F7E5", "\U0001F7E7", "\U0001F7E8", "\U0001F7E9")], [False] * 7)
+chk("facts: title line", r["title"], TITLE)
+chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "sample reader")], [False] * 3)
 chk("facts: closing line", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
 chk("facts: carries part 1", "\n## What it adds\n" in r["text"], True)
 chk("facts: temp folder removed", r["temp_left"], [])
@@ -242,7 +295,7 @@ f = run("facts-header", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
 want = [hline(j)]
 got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 neckbeard " in l]
 chk("facts and judged header lines are equal", (len(want), got), (1, want))
-chk("judged title still says vetted", j["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
+chk("judged title names the reader it is against", j["title"], TITLE + " \u00b7 against the sample reader")
 
 # 9. --reader and the baseline line
 BASELINE = re.compile(r"^Baseline: (.+) \u00b7 (\d+) rule files \u00b7 (\d+) bytes \u00b7 sha256 ([0-9a-f]{12})$", re.M)
@@ -251,8 +304,8 @@ r = run("baseline-default")
 m = BASELINE.search(r["text"])
 chk("baseline: default reader names the sample reader, 4 rule files, a 12-hex fingerprint", (m.group(1), m.group(2)) if m else None, ("the sample reader", str(len(reader_files()))))
 chk("baseline: byte total is the files' own", int(m.group(3)) if m else None, sum(os.path.getsize(os.path.join(DEFAULT_READER, f)) for f in reader_files()))
-chk("baseline: the file list is a details block of relative paths", [w in r["text"] for w in ("<details><summary>Rule files</summary>", "- `rules/safety.md`", "</details>")], [True] * 3)
-chk("baseline: the title still says the sample reader", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
+chk("baseline: the file list is a details block of relative paths", [w in r["text"] for w in ("<details><summary><b>Rule files</b></summary>", "- `rules/safety.md`", "</details>")], [True] * 3)
+chk("baseline: the title still names the sample reader", r["title"], TITLE + " \u00b7 against the sample reader")
 
 tmp = tempfile.mkdtemp()
 try:
@@ -265,7 +318,7 @@ try:
     chk("reader: two paths, one fingerprint", (fp(ra) is not None, fp(ra) == fp(rb)), (True, True))
     chk("reader: one byte changed, a different fingerprint", fp(rc_) not in (None, fp(ra)), True)
     chk("reader: label is the folder's basename", BASELINE.search(ra["text"]).group(1) if BASELINE.search(ra["text"]) else None, "readerdir")
-    chk("reader: title names the label", ra["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against readerdir")
+    chk("reader: title names the label", ra["title"], TITLE + " \u00b7 against readerdir")
     leaks = [x for d in (a, os.path.dirname(a)) for x in (d, os.path.realpath(d))]   # macOS prints /private/var for /var
     chk("reader: no absolute path of the folder in the report", ([x for x in leaks if x in ra["text"] + ra["out"]], ra["rc"]), ([], 0))
     # the header line is vet's own, and the Baseline block sits inside Why this verdict, under its paragraph; --check reads the report
@@ -286,7 +339,7 @@ try:
     chk("reader: a renamed rule file, a different fingerprint", fp(run("fp-moved", extra=("--reader", moved))) not in (None, fp(ra)), True)
     # the default named on the command line is still the sample reader
     d = run("explicit-default", extra=("--reader", DEFAULT_READER))
-    chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", "the sample reader", True))
+    chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), (TITLE + " \u00b7 against the sample reader", "the sample reader", True))
     # vet --check reads a judged report that carries the Baseline block
     chk("reader: --check passes on a judged report with a Baseline block", facts_check_text(ra["text"], "1.0.0"), 0)
     prompt = [vline(ra)]
@@ -298,7 +351,7 @@ try:
     empty = os.path.join(tmp, "emptyreader"); os.mkdir(empty)
     open(os.path.join(empty, "notes.txt"), "w").write("not a rule file\n")
     e = run("empty-reader", extra=("--reader", empty), fake_body=NO_CLAUDE)
-    chk("reader: no rule files gives the facts report, no claude call, exit 0", (e["rc"], e["calls"], e["title"], "no rule files" in e["out"]), (0, [], "# \U0001F50D demo 1.0.0 \u00b7 what it adds", True))
+    chk("reader: no rule files gives the facts report, no claude call, exit 0", (e["rc"], e["calls"], e["title"], "no rule files" in e["out"]), (0, [], TITLE, True))
     chk("reader: that report has no baseline and no verdict", ("Baseline:" in e["text"], "vetted against" in e["text"]), (False, False))
     chk("reader: a missing folder is an error", run("no-reader", extra=("--reader", os.path.join(tmp, "nope")))["rc"], 1)
     chk("reader: an empty --reader is a usage error", run("empty-arg", extra=("--reader", ""), fake_body=NO_CLAUDE)["rc"], 2)
@@ -330,7 +383,7 @@ for case, setup, state, colour in (("read", None, "read in full", "brightgreen")
 FAKE_P1 = ("import sys\nif sys.argv[1] == '--read-state':\n    print('%s')\n    sys.exit(0)\n"
            "print('## What it adds\\n\\n<details><summary>\\U0001F7E2 <b>Injects</b></summary>\\n\\n- x\\n\\n</details>\\n')\n")
 for word_, colour_ in (("something unread", "red"), ("partly read", "yellow"), ("read in full", "brightgreen")):
-    r = vet_with_part1(FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
+    r = vet_with_tool("part1", FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
     chk("badge: vet takes the word from `tools/part1 --read-state` (" + word_ + "), whatever the cards say",
         (r["rc"], "neckbeard: 1.0.0 \u00b7 " + word_ + "](" in badge_of(r), "-" + colour_ + "?logo=" in badge_of(r)), (0, True, True))
 vet_src = open(VET, encoding="utf-8").read()

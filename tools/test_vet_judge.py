@@ -116,7 +116,9 @@ for name, kw, want in (("judge-line-reader", dict(login="env"), "Judge: the samp
                        ("judge-line-own", dict(login="default", uname="Darwin"), "Judge: your own config, told to ignore it")):
     r = run(name, **kw)
     chk(name + ": the report carries the Judge line", want in r["text"], True)
-    chk(name + ": the Judge line sits after the Baseline line, not in header lines 1-2", (want in r["text"].split("\n")[:3], r["text"].find("Baseline:") < r["text"].find(want)), (False, True))
+    why_ = r["text"].split("<b>Why this verdict</b>", 1)[1].split("<b>Conflicts</b>", 1)[0] if "<b>Why this verdict</b>" in r["text"] else ""
+    chk(name + ": the Judge line appears once, inside Why this verdict, after the Baseline line and before the Rule files block, not in header lines 1-3",
+        (want in r["text"].split("\n")[:3], r["text"].count(want), 0 < why_.find("Baseline:") < why_.find(want) < why_.find("Rule files")), (False, 1, True))
     d = tempfile.mkdtemp()
     try:
         os.makedirs(os.path.join(d, ".claude-plugin")); json.dump({"name": "demo", "version": "1.0.0"}, open(os.path.join(d, ".claude-plugin", "plugin.json"), "w"))
