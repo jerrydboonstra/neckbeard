@@ -41,6 +41,7 @@ PERSIST_READ_CEILING = 2_000_000
 # quadratically; upgrade path: scan per line in bounded pieces.
 _SPAN = 400
 _SHELL_WORD = re.compile(r"\b(cp|mv|rm|mkdir|touch|tee|install)\b")
+_HOME_NEXT_LINE = re.compile(r"\s[\"']?(\$HOME|~)/")
 _HOME_ARG = re.compile(r"\s[\"']?(\$HOME|~)/")
 
 
@@ -50,11 +51,13 @@ def _shell_home_write(text):
     if "$HOME" not in text and "~/" not in text:
         return False
     for m in _SHELL_WORD.finditer(text):
-        win = text[m.end():m.end() + _SPAN].split("\n", 1)[0]
+        full = text[m.end():m.end() + _SPAN]
+        win, _, rest = full.partition("\n")
         if "$HOME" in win.split("|", 1)[0]:
             return True
-        if m.group(1) in ("cp", "mv", "tee") and _HOME_ARG.search(win):
-            return True
+        if m.group(1) in ("cp", "mv", "tee") and (
+                _HOME_ARG.search(win) or (rest and _HOME_NEXT_LINE.match("\n" + rest))):
+            return True   # the second test is a backslash continuation: the argument starts the next line
     return False
 
 

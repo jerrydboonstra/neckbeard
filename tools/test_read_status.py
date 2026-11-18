@@ -208,6 +208,12 @@ def gen_hostile_scan():
     return worst < 5, f"slowest hostile scan {worst:.1f}s"
 
 
+def gen_continued_write():
+    """A cp split by a backslash continuation, its ~/ destination on the next line, is still found."""
+    d = tmp_tree({"scripts/c.sh": "#!/bin/sh\ncp a b \\\n  ~/dest\n"})
+    return "scripts/c.sh" in (dossier(d)["target"].get("persistence_candidates") or []), "continued cp"
+
+
 def gen_mcp_list():
     files = {".claude-plugin/plugin.json": '{"name": "g", "version": "1.0.0", "mcpServers": ["a"]}\n'}
     return got(tmp_tree(files), "mcp_servers", "failed", "plugin.json", "mcpServers is a list")
@@ -386,6 +392,7 @@ SITES = {
     "PS4": gen_big_script,
     "PS5": gen_late_write,
     "PS6": gen_hostile_scan,
+    "PS7": gen_continued_write,
     "PJ1": lambda: got(fixture("plugin-json-malformed"), "plugin_json", "failed", ".claude-plugin/plugin.json"),
     "PJ2": lambda: got(fixture("plugin-json-list"), "plugin_json", "failed", ".claude-plugin/plugin.json"),
     "PJ3": lambda: got(fixture("plugin-json-dangling"), "plugin_json", "failed", ".claude-plugin/plugin.json"),
