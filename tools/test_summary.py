@@ -128,7 +128,7 @@ try:
     after = mod.render(d)
     mod.RULES["cost_bands"] = old
     chk("3 raising a Cost threshold changes the computed colour", rows(before)["Cost"][0] == Y and rows(after)["Cost"][0] == G, f"{rows(before)['Cost']} {rows(after)['Cost']}")
-    chk("3 and the printed footer", "2,000" in before and "3,000" not in before and "3,000" in after and "2,000" not in after)
+    chk("3 and the printed footer", "under 2,000" in before and "under 3,000" not in before and "under 3,000" in after and "under 2,000" not in after)
 except Exception as e:
     chk("3 tools/summary loads and renders from its rules table", False, f"{type(e).__name__}: {e}")
 
