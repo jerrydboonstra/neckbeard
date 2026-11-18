@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 1.17.8 (unreleased)
+
+### Docs
+
+- **The README badge row now reads CI, license, release, CodeQL, then the neckbeard report.** The "self-check" badge is renamed "CI" (the workflow's name is now `CI`; its file name is unchanged). New badges: MIT license, latest release, and CodeQL, which analyses the Python in `skills/neckbeard` and `tools` on each push to main, each pull request and weekly.
+
 ## 1.17.7 (2026-11-15)
 
 ### Reports

@@ -1,7 +1,7 @@
 # Runs neckbeard's self-check: every case in it has been seen to fail with the
 # code it guards broken, so a green run means something. Standard library only;
 # nothing to install.
-name: self-check
+name: CI
 
 on:
   push:
