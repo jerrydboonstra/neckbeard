@@ -17,21 +17,21 @@ frontmatter, holding a directive word from DIRECTIVES. It goes under the first t
 else under "other". The same quote in several files is listed once, under the first file in path order (then line order),
 with the other places in "also_in".
 
-OUT is {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]}: topics in TOPICS order, "other" last,
+OUT is {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]}: topics in TOPIC_ORDER (the spec's), "other" last,
 empty ones left out; "line" is null for hook template text. Part of 2.0's positions layer (report-positions).
 """
-import json, os, re, sys
+import json, os, re, sys, tomllib
 
 # The spec's starting list, extended with the imperative verbs a hand reading of ponytail 5.3.3 turned up (take, list, check,
-# name, end, ...) and "no" ("No abstraction ... nobody asked for").
+# name, ...) and "no" ("No abstraction ... nobody asked for").
 DIRECTIVES = ["always", "never", "must", "should", "shall", "don't", "do not", "only", "prefer", "avoid", "use", "ask",
               "stop", "keep", "run", "write", "make sure",
-              "no", "take", "list", "check", "name", "end", "skip", "propose", "read", "explain", "report", "print", "send",
+              "no", "take", "list", "check", "name", "skip", "propose", "read", "explain", "report", "print", "send",
               "pick", "finish", "add", "put", "offer", "split", "match", "answer", "review", "treat", "load", "set", "say",
               "build", "leave", "limit", "count", "grep", "find", "look", "give", "show", "start", "need", "needs"]
 
 # The builder's first draft, one table. The list is the order a position is matched in (the first topic holding one of its
-# keywords wins) and the order the topics are shown in: narrow topics first, the broad ones (style, scope, safety) last.
+# keywords wins): narrow topics first, the broad ones (style, scope, safety) last. TOPIC_ORDER below is the display order.
 # Keywords are whole words or phrases, any case. Checked against mock-up v2's hand grouping of ponytail 5.3.3 (the done note
 # says how many of its positions land in the same topic).
 TOPICS = [
@@ -59,15 +59,18 @@ TOPICS = [
     ("Safety and permissions", ["security", "secret", "secrets", "credential", "credentials", "permission", "permissions", "destroy", "delete",
                                 "deletes", "force", "irreversible", "validation", "sandbox", "unsafe", "dangerous"]),
 ]
-TOPIC_ORDER = [name for name, _ in TOPICS]
+# Shown in the spec's order (mock-up v2's), whatever order they are matched in.
+TOPIC_ORDER = ["Persona and activation", "Asking vs proceeding", "Scope and size of changes", "Tests", "Code style and comments",
+               "Dependencies", "Commits and git", "Pushes and releases", "Reviews and audits", "Models and subagents",
+               "Replies and reporting", "State and files", "Network", "Safety and permissions"]
 
 
-def _words(items):
+def _words(items, edge="A-Za-z0-9"):
     alt = "|".join(re.escape(w).replace(r"\ ", r"\s+") for w in sorted(items, key=len, reverse=True))
-    return re.compile(r"(?<![A-Za-z0-9])(?:" + alt + r")(?![A-Za-z0-9])", re.I)
+    return re.compile(rf"(?<![{edge}])(?:" + alt + rf")(?![{edge}])", re.I)
 
 
-DIRECTIVE_RE = _words(DIRECTIVES)
+DIRECTIVE_RE = _words(DIRECTIVES, "A-Za-z0-9-")   # "no-skill" is a name, not "no"
 TOPIC_RES = [(name, _words(kws)) for name, kws in TOPICS]
 FENCE = re.compile(r"^\s*(```|~~~)")
 HEADING = re.compile(r"^\s{0,3}#{1,6}(\s|$)")
@@ -92,27 +95,55 @@ def label(item, root):
     return os.path.relpath(path, root) if path and root else path or source
 
 
+def toml_prompt(text):
+    """A TOML command's prompt as (text, fixed line): the prompt value's own words, no key or delimiters, with the description
+    left out (it is the twin of a Markdown command's frontmatter). A prompt written over several lines (triple quotes) keeps true
+    line numbers (fixed is None, the text is padded so each line sits where it is in the file); one written on one line, with
+    \\n escapes, puts every position on that line. None when the file does not parse or has no string prompt."""
+    try:
+        prompt = tomllib.loads(text).get("prompt")
+    except tomllib.TOMLDecodeError:
+        return None
+    if not isinstance(prompt, str):
+        return None
+    lines = text.split("\n")
+    start = next((i for i, l in enumerate(lines) if re.match(r"\s*prompt\s*=", l)), None)
+    if start is None:
+        return None
+    rest = re.sub(r"^\s*prompt\s*=\s*", "", lines[start])
+    if rest.startswith(('"""', "'''")):
+        first = start + 1 + (1 if rest[3:].strip() == "" else 0)   # a newline right after the opening quotes is dropped
+        return "\n" * (first - 1) + prompt, None
+    return prompt, start + 1
+
+
 def files(target):
-    """The same files tools/rule-units reads, as (file, text, has_line) in dossier order, then hook text with has_line False."""
+    """The same files tools/rule-units reads, as (file, text, has_line, fixed line) in dossier order, then hook text with has_line False."""
     root = next((os.path.dirname(i["path"]) for i in target.get("rule_files") or []
                  if i.get("source") == "target-CLAUDE.md" and os.path.isabs(i.get("path") or "")), None)
     for kind in ("skills", "commands", "agents", "rule_files"):
         for item in target.get(kind) or []:
             if item.get("text"):
-                yield label(item, root), item["text"], True
+                name, text, fixed = label(item, root), item["text"], None
+                if name.endswith(".toml"):
+                    parsed = toml_prompt(text)
+                    if parsed is None:
+                        continue
+                    text, fixed = parsed
+                yield name, text, True, fixed
             companions = item.get("companion_files") or []
             if isinstance(companions, str):
                 companions = []
             for c in companions:
                 if c.get("text"):
-                    yield c.get("path"), c["text"], True
+                    yield c.get("path"), c["text"], True, None
     # Hook-injected text: the dossier holds a hook's injected file by name and size only, and a file that is itself an
     # instruction file is read above. What it does hold as text is the template of a hook script that builds its output at
     # run time (injected_content entries with "template"): those lines are a position source, under the script's name, no line.
     for entry in (target.get("hooks") or {}).get("injected_content") or []:
         template = entry.get("template")
         if isinstance(template, list) and template:
-            yield entry.get("file"), "\n".join(t for t in template if isinstance(t, str)), False
+            yield entry.get("file"), "\n".join(t for t in template if isinstance(t, str)), False, None
 
 
 def cells(line):
@@ -206,8 +237,9 @@ def topic_of(quote):
 
 def build(target):
     found = []  # (file, line or 0, has_line, quote)
-    for path, text, has_line in files(target):
+    for path, text, has_line, fixed in files(target):
         for quote, line in quotes(text):
+            line = fixed or line
             if quote and DIRECTIVE_RE.search(quote):
                 found.append((path, line if has_line else 0, has_line, quote))
     found = sorted(set(found), key=lambda f: (f[0], f[1]))
