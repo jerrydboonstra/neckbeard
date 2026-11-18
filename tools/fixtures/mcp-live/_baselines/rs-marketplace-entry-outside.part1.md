@@ -1,24 +1,42 @@
 ## What it adds
 
-### Injects
+🟢 read in full · 🟡 partly read · 🔴 something unread
+
+<details><summary>🟢 <b>Injects</b> · 0 skills · ~0 tokens on demand · ~0 chars of skill descriptions every session · hook text read in full</summary>
+
 - Skills: none
 - Rule files: none
 - Hook-injected text: none
 
-### Hooks
+</details>
+
+<details><summary>🟢 <b>Hooks</b> · 0 hooks · read in full</summary>
+
 - Hooks: none
 
-### Subagents and commands
+</details>
+
+<details><summary>🟢 <b>Subagents and commands</b> · no agents · 0 commands</summary>
+
 - Agents: none
 - Commands: none
 
-### State it may leave
+</details>
+
+<details><summary>🟢 <b>State it may leave</b> · 0 files that may write state</summary>
+
 - Persistence candidates: none
 
-### Reaches outside the session
+</details>
+
+<details><summary>🟢 <b>Reaches outside the session</b> · no MCP servers</summary>
+
 - MCP servers: none
 
-### Source
+</details>
+
+<details><summary>🟡 <b>Source</b> · plugin · <ROOT>/plugins/a 1.0.0 from plugin.json</summary>
+
 - Kind: plugin
 - Name: <ROOT>/plugins/a (from plugin.json)
 - Version: 1.0.0 (from plugin.json)
@@ -28,5 +46,7 @@
   - m
   - not read: .claude-plugin/marketplace.json: plugin 'o' (../elsewhere): refused: resolves outside the target tree
 - Commit: commit not given
+
+</details>
 
 Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; where the inventory fell back to a character count, "bytes" counts characters.

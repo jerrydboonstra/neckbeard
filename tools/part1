@@ -5,7 +5,12 @@ DOSSIER is the JSON inventory.py writes. This reads only its `target`: never `cu
 folder, so nothing here mentions a reader's rules. Output is sorted and has no clock in it, so two runs on one
 dossier are byte-identical. tools/vet puts it in the report just before "## ⚡ At a glance".
 
-Each card is a `### ` heading and each section under it one `- <label>:` line, in the state target.read_status gives:
+Each card is one collapsible block made by tools/cards.py's card(): a summary line (read marker, name, then a gist computed
+from the dossier) and under it one `- <label>:` line per section, in the state target.read_status gives. The legend line
+`🟢 read in full · 🟡 partly read · 🔴 something unread` comes before the first card. A card's marker is the read state of
+its own line states: something unread if any is failed (a section missing from read_status or not a dict is failed), else read in
+full if each is read or not-applicable, else partly read (partial and any other word). `part1 --read-state DOSSIER` prints the
+overall read state on one line: the read state of every card's line states and every read_status section no card uses.
   read, entries     the label's line, then each entry on its own `  - ` line (no state word)
   read, none        `none`
   partial           `partly read`, then the entries found, then one `  - ` line per cause that has notes, tool-limit first:
@@ -42,6 +47,9 @@ print: a hook command in one becomes its script (script_of), any other absolute 
 taken from the dossier is put on one line, cut at 200 characters (400 for a note), and has absolute and ~ paths cut to their
 basenames, so a target cannot forge a heading, a verdict line or a table row, or put a path in the report."""
 import json, os, re, shlex, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cards import card
 from urllib.parse import urlsplit
 
 INTERPRETERS = {"bash", "sh", "zsh", "python", "python3", "node", "uv", "uvx", "npx", "deno"}
@@ -313,13 +321,66 @@ def first_word(command):
     return safe(os.path.basename(w[0])) if w else "command"
 
 
+LEGEND = "\U0001F7E2 read in full \u00b7 \U0001F7E1 partly read \u00b7 \U0001F534 something unread"
+MARKER = {"read in full": "\U0001F7E2", "partly read": "\U0001F7E1", "something unread": "\U0001F534"}
+CARD_SECTIONS = {"skills", "rule_files", "hooks", "agents", "commands", "persistence_candidates", "mcp_servers", "plugin_json", "marketplace"}
+
+
+def read_state(states):
+    """The read state of a set of line states: something unread if any is failed, else read in full if every one is read or
+    not-applicable, else partly read (partial, and any word this tool does not know)."""
+    states = list(states)
+    if "failed" in states:
+        return "something unread"
+    return "read in full" if all(x in ("read", "not-applicable") for x in states) else "partly read"
+
+
+def sec_of(rs):
+    """sec(name) -> (state, notes, causes) for one read_status section; a section missing or not a dict is failed."""
+    return lambda name: (rs[name].get("state") if isinstance(rs.get(name), dict) else "failed",
+                         as_list(rs[name].get("notes")) if isinstance(rs.get(name), dict) else ["no read_status for this section"],
+                         rs[name].get("causes") if isinstance(rs.get(name), dict) else None)
+
+
+def hooks_sec(sec, hooks):
+    """The Hook-injected text line's state: a hooks section read with injected_content null and a note counts as failed."""
+    hsec = sec("hooks")
+    if hsec[0] == "read" and hooks.get("injected_content") is None and hooks.get("injected_content_note"):
+        hsec = ("failed", [hooks["injected_content_note"]], ["tool-limit"])
+    return hsec
+
+
+def card_states(t):
+    """{card name: [the state of each of its lines]}, in the report's card order: the one place a card's states are chosen."""
+    sec = sec_of(t["read_status"])
+    hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
+    st = lambda *names: [sec(n)[0] for n in names]
+    return {"Injects": st("skills", "rule_files") + [hooks_sec(sec, hooks)[0]], "Hooks": st("hooks"), "Subagents and commands": st("agents", "commands"),
+            "State it may leave": st("persistence_candidates"), "Reaches outside the session": st("mcp_servers"), "Source": st("plugin_json", "marketplace")}
+
+
+def overall_read_state(t):
+    """The read state of every card's line states and of every read_status section no card uses."""
+    rs = t["read_status"]
+    unused = [(v.get("state") if isinstance(v, dict) else "failed") for k, v in rs.items() if k not in CARD_SECTIONS]
+    return read_state([x for v in card_states(t).values() for x in v] + unused)
+
+
+def gist(*parts):
+    return " \u00b7 ".join(p for p in parts if p)
+
+
+def counted(state, n=1):
+    """Whether a section's count is known: a read section's, or a partly read one's when it found something (a lower bound;
+    a partly read section with nothing found has no known count, so no "no agents" or "0 hooks")."""
+    return state == "read" or (state == "partial" and n > 0)
+
+
 def render(d, commit):
     t = d["target"]
     root = t.get("path") if isinstance(t.get("path"), str) else ""
     rs = t["read_status"]
-    sec = lambda name: (rs[name].get("state") if isinstance(rs.get(name), dict) else "failed",
-                        as_list(rs[name].get("notes")) if isinstance(rs.get(name), dict) else ["no read_status for this section"],
-                        rs[name].get("causes") if isinstance(rs.get(name), dict) else None)
+    sec = sec_of(rs)
     capped = lambda e: " (read capped)" if e.get("truncated") else ""
     hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
 
@@ -341,9 +402,7 @@ def render(d, commit):
     injected = [injected_line(i, root) for i in as_list(hooks.get("injected_content"))
                 if isinstance(i, dict) and isinstance(i.get("bytes"), int)]
     built_note = [BUILT_NOTE] if any(isinstance(i, dict) and i.get("built_at_run_time") for i in as_list(hooks.get("injected_content"))) else []
-    hsec = sec("hooks")
-    if hsec[0] == "read" and hooks.get("injected_content") is None and hooks.get("injected_content_note"):
-        hsec = ("failed", [hooks["injected_content_note"]], ["tool-limit"])
+    hsec = hooks_sec(sec, hooks)
     events = []
     ev = hooks.get("events")
     for event, cmds in (ev.items() if isinstance(ev, dict) else []):
@@ -385,41 +444,69 @@ def render(d, commit):
     else:
         name = safe(os.path.basename(root.rstrip("/"))) or "unknown"
     version = f"{safe(pj['version'], root)} (from plugin.json)" if pj.get("version") else "no version"
+    plain_name = safe(pj["name"], root) if pj.get("name") else name
+    plain_version = safe(pj["version"], root) if pj.get("version") else ""
     mk = t.get("marketplace")
     mk_entries = [safe(mk.get("name") or "(unnamed)", root)] if isinstance(mk, dict) and mk else []
 
-    out = ["## What it adds", "", "### Injects"]
-    out += block("Skills", sec("skills"), skills, root)
-    out += block("Rule files", sec("rule_files"), rules, root)
-    out += block("Hook-injected text", hsec, injected, root, tail=built_note)
-    out += ["", "### Hooks"] + block("Hooks", sec("hooks"), events, root, tail=[reach_line])
-    out += ["", "### Subagents and commands"] + block("Agents", sec("agents"), agents, root) + block("Commands", sec("commands"), commands, root)
+    states = card_states(t)
+    marker = lambda name: MARKER[read_state(states[name])]
+    nots = lambda name: all(x == "failed" for x in states[name])   # every section the card reads failed: its gist is "not read"
     shown, ptail = cap_entries(persist)
-    out += ["", "### State it may leave"] + block("Persistence candidates", sec("persistence_candidates"), shown, root, tail=ptail, cap=NOTES_SHOWN)
-    out += ["", "### Reaches outside the session"] + block("MCP servers", sec("mcp_servers"), servers, root)
-    out += ["", "### Source", f"- Kind: {kind}", f"- Name: {name}", f"- Version: {version}"]
-    out += block("plugin.json", sec("plugin_json"), ["name and version, shown above"] if pj else [], root)
-    out += block("Marketplace", sec("marketplace"), mk_entries, root)
-    out += [f"- Commit: {safe(commit) if commit else 'commit not given'}"]
+    skills_ok = counted(sec("skills")[0], len(skills))
+    readable = [s_ for s_ in as_list(t.get("skills")) if not unread(s_)]
+    hn = sum(1 for _ in events)
+    reach_phrase = "reach subagents" if reach is True else "stay in the main session" if reach is False else ""
+    marketplace_word = "no marketplace" if sec("marketplace")[0] in ("read", "not-applicable") and not mk_entries else ""
+    gists = {
+        "Injects": gist(*([f"{len(skills)} skills", f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
+                           f"~{sum(len(str(s_.get('description') or '')) for s_ in readable)} chars of skill descriptions every session"] if skills_ok else []),
+                        f"hook text {read_state([hsec[0]])}"),
+        "Hooks": gist(f"{hn} hooks" if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
+        "Subagents and commands": gist((f"{len(agents)} agents" if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
+                                       f"{len(commands)} commands" if counted(sec("commands")[0], len(commands)) else ""),
+        "State it may leave": gist(f"{len(persist)} files that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
+                                   f"{len(shown)} named" if ptail and counted(sec("persistence_candidates")[0], len(persist)) else ""),
+        "Reaches outside the session": gist((f"{len(servers)} MCP servers" if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
+        "Source": gist(kind, f"{plain_name}{' ' + plain_version if plain_version else ''}{' from plugin.json' if pj.get('name') or pj.get('version') else ''}",
+                       f"commit {safe(commit)[:7]}" if commit else "", marketplace_word),
+    }
+    lines = {"Injects": [], "Hooks": [], "Subagents and commands": [], "State it may leave": [], "Reaches outside the session": [], "Source": []}
+    lines["Injects"] += block("Skills", sec("skills"), skills, root)
+    lines["Injects"] += block("Rule files", sec("rule_files"), rules, root)
+    lines["Injects"] += block("Hook-injected text", hsec, injected, root, tail=built_note)
+    lines["Hooks"] += block("Hooks", sec("hooks"), events, root, tail=[reach_line])
+    lines["Subagents and commands"] += block("Agents", sec("agents"), agents, root) + block("Commands", sec("commands"), commands, root)
+    lines["State it may leave"] += block("Persistence candidates", sec("persistence_candidates"), shown, root, tail=ptail, cap=NOTES_SHOWN)
+    lines["Reaches outside the session"] += block("MCP servers", sec("mcp_servers"), servers, root)
+    lines["Source"] += [f"- Kind: {kind}", f"- Name: {name}", f"- Version: {version}"]
+    lines["Source"] += block("plugin.json", sec("plugin_json"), ["name and version, shown above"] if pj else [], root)
+    lines["Source"] += block("Marketplace", sec("marketplace"), mk_entries, root)
+    lines["Source"] += [f"- Commit: {safe(commit) if commit else 'commit not given'}"]
     decl = [safe(f, root) for f in as_list(t.get("declared_fixtures")) if isinstance(f, str)]
     if decl:
-        out += [f"- Declared fixtures: {', '.join(decl)} (files there that the hooks and persistence scans can't read don't count against the badge)"]
-    out += ["", FOOTER]
+        lines["Source"] += [f"- Declared fixtures: {', '.join(decl)} (files there that the hooks and persistence scans can't read don't count against the badge)"]
+    out = ["## What it adds", "", LEGEND, ""]
+    for cname in states:
+        out += card(marker(cname), cname, "not read" if nots(cname) else gists[cname], lines[cname]) + [""]
+    out += [FOOTER]
     return "\n".join(out) + "\n"
 
 
 def main(argv):
-    commit, args = None, []
+    commit, args, only_state = None, [], False
     it = iter(argv)
     for a in it:
         if a == "--commit":
             commit = next(it, None)
             if not commit:
                 break
+        elif a == "--read-state":
+            only_state = True
         else:
             args.append(a)
-    if len(args) != 1 or (commit is None and "--commit" in argv):
-        print("usage: part1 DOSSIER [--commit SHA]", file=sys.stderr)
+    if len(args) != 1 or (commit is None and "--commit" in argv) or (only_state and "--commit" in argv):
+        print("usage: part1 DOSSIER [--commit SHA]  |  part1 --read-state DOSSIER", file=sys.stderr)
         return 2
     try:
         d = json.load(open(args[0], encoding="utf-8"))
@@ -430,6 +517,16 @@ def main(argv):
     if not isinstance(t, dict) or not isinstance(t.get("read_status"), dict):
         print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
         return 2
+    if only_state:
+        if not t["read_status"]:
+            print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
+            return 2
+        try:
+            print(overall_read_state(t))
+        except Exception as e:
+            print(f"part1: could not read this dossier's read_status ({type(e).__name__}: {safe(e, cap=200)})", file=sys.stderr)
+            return 2
+        return 0
     try:
         text = render(d, commit)
     except Exception as e:   # a dossier shape this tool does not know: fail, and vet stops, rather than print a card that may be wrong
