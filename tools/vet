@@ -30,7 +30,7 @@
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
 # --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The header
-# then carries, inside the Why this verdict card, a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
+# fit report then carries, inside its Why this verdict card, a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
 # fingerprint of their relative paths and contents) and a Rule files card of the relative paths (made with tools/cards.py); tools/vet writes it after the
 # judge has, never the judge. The label is "the sample reader" for the default, else the folder's name, and the title and the
 # "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
@@ -48,7 +48,7 @@
 # what it adds, where it takes a position`, the same header line the judged report carries, the Contents list, the three layers (the
 # summary rows with no verdict strip, the facts, the positions) and one closing line. A fit report's title ends ` · against <reader>`.
 # It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error.
-# Exit 0 only when the report passed every check (--facts has one: it names no local path, checked before OUT is written). Kept out of bin/, which a plugin puts on every session's PATH.
+# Exit 0 only when the report passed every check, all made before OUT is written: it holds the three layer headings once and in order, and names no local path; a published (--facts) report also holds no verdict strip and no fit card. Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
 # Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
