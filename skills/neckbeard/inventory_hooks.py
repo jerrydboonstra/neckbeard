@@ -204,6 +204,34 @@ def _expand_plugin_root(s, plugin_root):
     return re.sub(r"\$CLAUDE_PLUGIN_ROOT(?![A-Za-z0-9_])", lambda _: plugin_root, s)
 
 
+INLINE_REQUIRE_RE = re.compile(
+    r"""^require\(require\((['"])path\1\)\.(?:join|resolve)\(process\.env\.CLAUDE_PLUGIN_ROOT"""
+    r"""(?:\.split\(String\.fromCharCode\(92\)\)\.join\((['"])/\2\))?,(['"])([^'"]*)\3\)\)\Z""")
+INLINE_REQUIRE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")
+
+
+def inline_require_script(command):
+    """The plugin-relative script of the one allowed inline form, else None. The form is `node -e <body>` where the body, with
+    whitespace outside its string literals removed, is `require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT<N>,'<rel>'))`:
+    path.join or path.resolve, either quote, <N> empty or the backslash fix `.split(String.fromCharCode(92)).join('/')`. <rel> is
+    a relative plain path with no . or .. segment. Any other command, or a body that does more, is None. The same function, with the
+    same body, is in tools/part1 and skills/neckbeard/inventory_hooks.py; tools/test_hook_inline_require.py keeps the two equal."""
+    if not isinstance(command, str) or len(command) > 4000:   # the length guard script_of has
+        return None
+    try:
+        toks = shlex.split(command)
+    except ValueError:
+        return None
+    if len(toks) != 3 or toks[0] != "node" or toks[1] != "-e":
+        return None
+    body = re.sub(r"""('[^']*'|"[^"]*")|\s+""", lambda m: m.group(1) or "", toks[2])
+    m = INLINE_REQUIRE_RE.match(body)
+    rel = m.group(4) if m else None
+    if rel is None or not INLINE_REQUIRE_WORD.match(rel) or {".", ".."} & set(rel.split("/")):
+        return None
+    return rel
+
+
 def _identify_hook_script(cmd, plugin_root):
     """The file a hook command actually runs, or None if it cannot be worked out.
 
@@ -212,6 +240,11 @@ def _identify_hook_script(cmd, plugin_root):
     whitespace-separated token, strips quotes, and returns the first that
     exists as a file inside the tree. Anything else is unidentifiable, which
     is a reportable state, not silence."""
+    rel = inline_require_script(cmd)
+    if rel:   # node -e require(<plugin root>/<rel>): the script is <rel>, read as any hook script is
+        c = os.path.normpath(os.path.join(plugin_root, rel))
+        if os.path.isfile(c) and _within(c, plugin_root):
+            return c
     # Expand to a token with no whitespace first, so a default word with spaces
     # still splits as the shell would, and a plugin root with spaces in its path
     # is never split; the real root goes in per token.
