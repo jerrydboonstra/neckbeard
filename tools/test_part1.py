@@ -489,6 +489,67 @@ chk("HE5. the caveat line appears once per report, however many entries", out.co
 rc, out, _ = render(fx("plugin-found"))
 chk("HE5. a report with no built entry has no caveat line", CAVEAT not in out)
 
+# ---------------------------------------------------------------- hook-inline-require: `node -e require(...)` names its script
+UNP = "<unparsed command>"
+hl = {}
+for l in lines(parse(render(fx("hooks-inline-require"))[1]), "Hooks", "Hooks"):
+    m = re.match(r"^(\w+)(?: \([^)]*\))?: (.*)$", l)
+    if m and not l.startswith("reaches"):
+        hl[m.group(1)] = m.group(2)
+chk("HIR2. when a hook runs node -e with one require of a script joined to process.env.CLAUDE_PLUGIN_ROOT (join or resolve, either quote, the backslash fix, spaces), tools/part1 names that script",
+    all(hl.get(e) == "hooks/greet-session.js" for e in ("SessionStart", "SubagentStart", "UserPromptSubmit")), hl)
+chk("HIR4. when the body holds that require plus other code, the path holds a .. segment, or the interpreter is not node, tools/part1 prints <unparsed command>",
+    all(hl.get(e) == UNP for e in ("Stop", "PreToolUse", "PostToolUse")), hl)
+
+HIR_CMD = "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/greet-session.js'))\""
+
+
+def hir_tree(command=None):
+    """A plugin tree from the hooks-inline-require fixture (its .fx names renamed), the hook command optionally replaced."""
+    d = os.path.join(tmp(), "plugin")
+    shutil.copytree(os.path.join(HERE, "fixtures", "read-status", "hooks-inline-require"), d)
+    for f in [os.path.join(r, n) for r, _, ns in os.walk(d) for n in ns if n.endswith(".fx")]:
+        os.rename(f, f[:-3])
+    if command is not None:
+        json.dump({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": command}]}]}}, open(os.path.join(d, "hooks", "hooks.json"), "w"))
+    return d
+
+
+def hir_hooks(command=None):
+    e = tmp()
+    r = subprocess.run([sys.executable, INVENTORY, hir_tree(command), "--project-dir", e],
+                       env={"PATH": os.environ["PATH"], "HOME": e, "CLAUDE_CONFIG_DIR": e}, capture_output=True, text=True)
+    return json.loads(r.stdout)["target"]["hooks"] if r.returncode == 0 else {"error": r.stderr[-300:]}
+
+
+h = hir_hooks()
+chk("HIR3. when the inventory reads that plugin, it identifies hooks/greet-session.js as the hook's script and reads it (no unidentifiable hook, one script, the script named in the unresolved note)",
+    not h.get("unidentifiable_hooks") and h.get("hook_scripts") == 1 and h.get("unresolved_hooks") == ["SessionStart: hooks/greet-session.js"], h)
+for what, cmd in (("extra code", HIR_CMD.replace("require(require", "console.log(1);require(require", 1)),
+                  ("a .. segment", HIR_CMD.replace("hooks/greet-session.js", "hooks/../hooks/greet-session.js"))):
+    h = hir_hooks(cmd)
+    chk(f"HIR4. when the require form has {what}, the inventory does not identify the script",
+        len(h.get("unidentifiable_hooks") or []) == 1 and not h.get("unresolved_hooks"), h)
+
+HIR_FORMS = [HIR_CMD, HIR_CMD.replace("'", '"').replace('node -e "', "node -e '", 1)[:-1] + "'",
+             HIR_CMD.replace(".join(", ".resolve(", 1),
+             HIR_CMD.replace("CLAUDE_PLUGIN_ROOT,", "CLAUDE_PLUGIN_ROOT.split(String.fromCharCode(92)).join('/'),", 1),
+             HIR_CMD.replace(",'hooks", " , 'hooks", 1), "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'x.js'))\"",
+             HIR_CMD.replace("require(require", "console.log(1);require(require", 1), HIR_CMD.replace("hooks/greet", "../greet"),
+             HIR_CMD.replace("hooks/greet", "/abs/greet"), HIR_CMD.replace("hooks/greet-session.js", "a b.js"), HIR_CMD.replace("node", "bash", 1),
+             HIR_CMD.replace("-e", "-p", 1), HIR_CMD.replace("CLAUDE_PLUGIN_ROOT", "OTHER_ROOT"), HIR_CMD + " extra", "node -e", "node", "", "node -e '", "node hooks/x.js"]
+try:
+    sys.path.insert(0, os.path.dirname(INVENTORY_HOOKS))
+    inv = load_expander(INVENTORY_HOOKS, "inline_require_script")
+    mine = load_expander(PART1, "inline_require_script")
+    ans = [mine(c) for c in HIR_FORMS]
+    bad = [c for c in HIR_FORMS if inv(c) != mine(c)]
+    chk(f"HIR5. tools/part1's copy of the node -e require recogniser agrees with inventory_hooks.py's on {len(HIR_FORMS)} commands, and each form it allows gives its script",
+        not bad and ans[:6] == ["hooks/greet-session.js"] * 5 + ["x.js"] and all(a is None for a in ans[6:]), (bad, ans))
+except Exception as e:
+    chk("HIR5. tools/part1's copy of the node -e require recogniser agrees with inventory_hooks.py's", False, f"{type(e).__name__}: {e}")
+
+
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
 print(f"test_part1: {fail} failed" if fail else "test_part1: all passed")
