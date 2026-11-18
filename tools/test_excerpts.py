@@ -196,6 +196,12 @@ LAYERS = """# 🔍 demo 1.2.3 · how it affects you, what it adds, where it take
 
 </details>
 
+<details><summary>🟢 <b>R&amp;D &lt;tools&gt;</b> · a &amp; b</summary>
+
+- x
+
+</details>
+
 ---
 
 **3 · Positions · the plugin's own words · no judgement**
@@ -231,7 +237,8 @@ check("2.0 facts: one line per facts card: read marker, name and gist, unescaped
       "\n> - 🟢 **Injects** · 1 skills · ~3 tokens on demand & more\n" in text and "\n> - 🟡 **Hooks** · partly read\n" in text, text)
 check("2.0 facts: the card bodies, the At a glance card, the footer, the positions layer and the closing line are left out",
       not any(s in text for s in ("demo: description every session", "At a glance in full", "colours follow written rules", "Commits and git", "No reader's rules", "Contents")), text)
-check("2.0 facts: no line is quoted twice", len([l for l in text.splitlines() if l.startswith("> - ")]) == 2, text)
+check("2.0 facts: a card's name and gist are unescaped too", "\n> - 🟢 **R&D <tools>** · a & b\n" in text, text)
+check("2.0 facts: no line is quoted twice", len([l for l in text.splitlines() if l.startswith("> - ")]) == 3, text)
 
 r, text = run(NEW_FIT)
 check("2.0 fit: excerpted, not refused", r.returncode == 0, r.stderr)
