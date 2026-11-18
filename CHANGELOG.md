@@ -8,7 +8,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Reports
 
-- **A `node -e` hook that only requires one plugin script now names and reads that script (2.0.0).** A hook command of the form `node -e "require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/x.js'))"` (ponytail's form, `path.resolve` and the backslash fix included) printed `<unparsed command>` in the report, and the inventory could not identify its script. Both now take `hooks/x.js` as the hook's script. Any other inline code, a `..` in the path or a body that does more than that one require stays unparsed.
+- **A `node -e` hook that only requires one plugin script now names and reads that script.** A hook command of the form `node -e "require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/x.js'))"` (ponytail's form, `path.resolve` and the backslash fix included) printed `<unparsed command>` in the report, and the inventory could not identify its script. The report and the inventory now take `hooks/x.js` as the hook's script. Any other inline code, a `.` or `..` in the path or a body that does more than that one require stays unparsed.
 
 ### Checks
 

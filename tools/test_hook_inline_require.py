@@ -87,7 +87,7 @@ HIR_FORMS = [HIR_CMD, HIR_CMD.replace("'", '"').replace('node -e "', "node -e '"
              HIR_CMD.replace("CLAUDE_PLUGIN_ROOT,", "CLAUDE_PLUGIN_ROOT.split(String.fromCharCode(92)).join('/'),", 1),
              HIR_CMD.replace(",'hooks", " , 'hooks", 1), "node -e \"require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'x.js'))\"",
              HIR_CMD.replace("require(require", "console.log(1);require(require", 1), HIR_CMD.replace("hooks/greet", "../greet"),
-             HIR_CMD.replace("hooks/greet", "/abs/greet"), HIR_CMD.replace("hooks/greet-session.js", "a b.js"), HIR_CMD.replace("node", "bash", 1),
+             HIR_CMD.replace("hooks/greet", "/abs/greet"), HIR_CMD.replace("hooks/greet-session.js", "."), HIR_CMD.replace("hooks/greet-session.js", "hooks/./x.js"), None, "node -e " + "x" * 5000, HIR_CMD.replace("hooks/greet-session.js", "a b.js"), HIR_CMD.replace("node", "bash", 1),
              HIR_CMD.replace("-e", "-p", 1), HIR_CMD.replace("CLAUDE_PLUGIN_ROOT", "OTHER_ROOT"), HIR_CMD + " extra", "node -e", "node", "", "node -e '", "node hooks/x.js"]
 try:
     sys.path.insert(0, os.path.dirname(INVENTORY_HOOKS))
