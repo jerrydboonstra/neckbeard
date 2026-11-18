@@ -81,7 +81,14 @@ check("MI3. ... and the card's marker says partly read (the mod's source is not 
 h, rs, d = hooks_of(FX / "mods-outside")
 check("MI4. when a mod path points outside the tree, it is listed as refused and not opened, and hooks is partial with a tool-limit note",
       h.get("mods") == [{"path": "../_outside.txt", "exists": False, "refused": True}] and rs.get("state") == "partial"
-      and "resolves outside the target tree" in notes_of(rs) and rs.get("causes") == ["tool-limit"] and "_outside" not in json.dumps({k: v for k, v in h.items() if k != "mods"}), repr((h.get("mods"), rs)))
+      and "resolves outside the target tree" in notes_of(rs) and rs.get("causes") == ["tool-limit"], repr((h.get("mods"), rs)))
+# _outside.txt holds the words "outside the tree"; the refusal note says "outside the target tree", so the two do not collide
+check("MI4. ... and the outside file's content is nowhere in the whole dossier (it was not opened)", "outside the tree" not in json.dumps(d), "")
+ABS = tmp_tree({"abs.txt": "ABSOLUTE-MOD-MARKER outside the plugin\n"}) / "abs.txt"
+h, rs, d = hooks_of(tmp_tree({"hooks/hooks.json": json.dumps({"hooks": {}, "modules": [str(ABS)]})}))
+check("MI4. when a mod path is absolute (os.path.join would drop the base), it is refused, not opened, with the tool-limit note",
+      [(m["exists"], m["refused"]) for m in h.get("mods") or []] == [(False, True)] and "resolves outside the target tree" in notes_of(rs) and rs.get("causes") == ["tool-limit"]
+      and "ABSOLUTE-MOD-MARKER" not in json.dumps(d), repr((h.get("mods"), rs)))
 h, rs, d = hooks_of(FX / "mods-missing")
 check("MI4. when a mod file is missing, the entry says exists false and hooks is partial with a target-fault note naming it",
       h.get("mods") == [{"path": "hooks/gone.js", "exists": False, "refused": False}] and rs.get("state") == "partial" and "hooks/gone.js" in notes_of(rs)
