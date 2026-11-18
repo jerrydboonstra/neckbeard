@@ -24,6 +24,7 @@ tools/badge-logo test_vet test_vet_judge
 tools/part1 test_part1
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
+tools/positions test_positions
 tools/rule-units test_units
 tools/units-verdict test_units
 tools/units-confirm test_units test_vet test_vet_judge
@@ -43,6 +44,7 @@ tools/test_skill_budget.py test_skill_budget
 tools/fixtures/mcp-live/** test_mcp_live test_read_status
 tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_part1.py test_part1
+tools/test_positions.py test_positions
 tools/excerpts test_excerpts
 tools/test_excerpts.py test_excerpts
 tools/fixtures/part1/** test_part1
