@@ -62,7 +62,7 @@ usage() {
 # the judge's stdout and the files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
 login_files() {   # the files to check, one per NUL-terminated entry, so a path with spaces stays whole
   local stem=${out%.md} f
-  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".verdict.json "$stem".prose.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json "${work:-/nonexistent}"/*.err "${work:-/nonexistent}"/find-*.out "${work:-/nonexistent}"/answer.out "${work:-/nonexistent}"/prose.out; do
+  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".verdict.json "$stem".prose.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json "${work:-/nonexistent}"/*.err "${work:-/nonexistent}"/find-*.out "${work:-/nonexistent}"/answer.out "${work:-/nonexistent}"/prose.out "${work:-/nonexistent}"/confirm-*.out "${work:-/nonexistent}"/probe.out "${work:-/nonexistent}"/*.md.json; do
     [ -e "$f" ] && printf '%s\0' "$f"
   done
 }
@@ -434,7 +434,7 @@ for f in "$work"/confirm-*.md; do
   grep -q '"conflict"' "$work/confirm-$cid.out" || call "" "$f" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err"
 done
 show_call_errors   # a retry that failed again
-python3 - "$cands" "$work" "$confs" "$confirmed" <<'PYEOF2' || die "a confirm call gave no usable answer"
+python3 - "$cands" "$work" "$confs" "$confirmed" 2>"$work/confirm-parse.err" <<'PYEOF2' || { safe_tail "$work/confirm-parse.err" 5; die "a confirm call gave no usable answer"; }
 import json, re, sys
 cands = json.load(open(sys.argv[1]))["candidates"]
 confs, kept = [], []
@@ -455,6 +455,7 @@ json.dump({"confirmations": confs}, open(sys.argv[3], "w"), indent=1)
 json.dump({"confirmed": kept}, open(sys.argv[4], "w"), indent=1)
 print(f"vet: units: {len(kept)} of {len(cands)} candidates confirmed", file=sys.stderr)
 PYEOF2
+cat "$work/confirm-parse.err" >&2   # the python step's one summary line
 # 3c. the answering judge: one call that answers every unit
 python3 -c 'import sys
 print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossier=sys.argv[3], answers=sys.argv[4]))' "$nb/tools/vet-units.md" "$unitsf" "$dossier" "$answers" >"$work/answer.md" || die "couldn't write the answering prompt"
@@ -494,6 +495,7 @@ PYEOF2
 python3 "$nb/tools/fit" "$verdictf" "$prose" --label "$label" --target "${name##*/}" --verdict-text "${note:+$note }$verdict_text" --baseline "$baseline_file" >"$work/fit.md" || die "the fit report could not be drawn from $verdictf and $prose"
 part1_section "$dossier" "$commit" "$work/part1.md"
 { printf '%s\n\n%s\n\n' "$title" "$header"; cat "$work/fit.md"; printf '\n'; cat "$work/part1.md"; } >"$out"
+login_scan || die "the report held your login's secrets, so no report was written"
 for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do
   [ "$p" = / ] && continue
   grep -qF -- "$p" "$out" && { rm -f "$out"; die "$out names a local path ($p); fix it by hand or rerun"; }

@@ -49,4 +49,25 @@ chk("fit: a report with nothing kept, covered or in conflict still prints all se
     (0, ["Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch"], 3))
 
 
+# hostile cell text: a backslash before a pipe, an unclosed fence in the prose, a backtick and newline in a file name
+alt = tempfile.mkdtemp()
+try:
+    v2 = json.load(open(os.path.join(FX, "verdict.json")))
+    v2["units"][3]["conflicts"][0]["quote"] = "run grep a \\| wc -l"
+    v2["units"][3]["file"] = "x`\n## Fake"
+    json.dump(v2, open(os.path.join(alt, "v.json"), "w"))
+    json.dump({"why": "Why.", "do_this": [], "patch": "```diff\n+rule"}, open(os.path.join(alt, "p.json"), "w"))
+    p = subprocess.run([sys.executable, FIT, os.path.join(alt, "v.json"), os.path.join(alt, "p.json"), *FITARGS], capture_output=True, text=True)
+    row = next((l for l in p.stdout.split("\n") if l.startswith("| 1 |") and "grep" in l), "")
+    chk("fit: a backslash before a pipe in a quote leaves one escaped pipe and a row of five cells", (p.returncode, len(re.split(r"(?<!\\)\|", row.strip().strip("|")))), (0, 5))
+    chk("fit: an unclosed fence in the prose is closed, so the cards after it survive", p.stdout.count("```") % 2 == 0 and "<b>Proposed rules patch</b>" in p.stdout, True)
+    chk("fit: a backtick and a newline in a file name break neither the Dropped line nor the page", ("## Fake" in p.stdout.split("<b>Dropped</b>")[1].split("</details>")[0].split("\n")), False)
+    v3 = json.load(open(os.path.join(FX, "verdict.json")))
+    v3["units"][5]["conflicts"][0]["hard_stop"] = True   # u6 shares conflict 2 with u5, which says it is not a hard stop
+    json.dump(v3, open(os.path.join(alt, "v3.json"), "w"))
+    p = subprocess.run([sys.executable, FIT, os.path.join(alt, "v3.json"), os.path.join(FX, "prose.json"), *FITARGS], capture_output=True, text=True)
+    chk("fit: a conflict shared by two units is red when either confirmation says hard stop", "| rules/engineering.md | \U0001F7E5 |" in p.stdout, True)
+finally:
+    shutil.rmtree(alt)
+
 sys.exit(vet_harness.summary("test_fit"))

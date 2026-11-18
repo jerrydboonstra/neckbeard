@@ -26,7 +26,7 @@ chk("order: the strip and counts are units-verdict's (a kept skill with a confir
     (STRIP.search(r["text"]) and STRIP.search(r["text"]).group(1), "\u26d4 **1** conflicts" in r["text"], "\U0001F7E9 **1** keep" in r["text"]), ("\U0001F7E8 INSTALL WITH CHANGES", True, True))
 chk("order: the report has the strip and the seven fit cards", [n for n in re.findall(r"^<details><summary>\S+ <b>(.*?)</b>", r["text"], re.M) if n in ("Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch")],
     ["Why this verdict", "Conflicts", "Already covered", "Keep", "Dropped", "Do this", "Proposed rules patch"])
-chk("order: the units, answers and prose are kept beside the report", [f for f in ("report.units.json", "report.answers.json", "report.prose.json") if f in r["side_left"]], ["report.units.json", "report.answers.json", "report.prose.json"])
+chk("order: the units, answers and prose are kept beside the report", [f for f in ("report.units.json", "report.answers.json", "report.verdict.json", "report.prose.json") if f in r["side_left"]], ["report.units.json", "report.answers.json", "report.verdict.json", "report.prose.json"])
 r = run("units-noop", extra=("--units",), units="units-install")
 chk("--units stays accepted and changes nothing: same calls, exit 0", (r["rc"], kinds(r)), (0, ["FIND PASS"] * 3 + ["ANSWERING JUDGE", "PROSE JUDGE"]))
 u = run("usage", extra=("--bogus",), fake_body=NO_CLAUDE)

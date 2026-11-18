@@ -27,12 +27,12 @@ tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
 tools/positions test_positions
 tools/rule-units test_units
-tools/units-verdict test_units test_vet test_vet_judge test_vet_stability
+tools/units-verdict test_units test_vet test_vet_judge test_vet_stability test_vet_report test_fit
 tools/fit test_fit test_vet test_vet_judge test_vet_stability test_vet_report
 tools/fixtures/fit/** test_fit test_units
 tools/test_fit.py test_fit
 tools/test_vet_report.py test_vet_report
-tools/units-confirm test_units test_vet test_vet_judge
+tools/units-confirm test_units test_vet test_vet_judge test_vet_report
 tools/vet-*.md test_units test_vet test_vet_judge test_vet_report
 tools/neckbeard test_layout
 tools/check-no-bin test_layout

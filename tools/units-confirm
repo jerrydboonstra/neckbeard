@@ -16,7 +16,7 @@ units-confirm merge CANDIDATES CONFIRMATIONS ANSWERS
     the judge wrote there, as {quote, reader_rule, held_in, hard_stop}: held_in is the reader file label, the part of
     reader_rule before ": ". tools/units-verdict counts only confirmed conflicts. Exit 2 if a candidate has no confirmation,
     or a confirmed one has no hard_stop.
-Part of the units prototype (verdict-units-confirm); SKILL.md does not know about it yet.
+Used by tools/vet's units path (verdict-stability-rules).
 """
 import difflib, json, os, re, sys
 
@@ -74,7 +74,7 @@ def pool(units_path, dossier_path, out, find_paths):
             print(f"{path}: can't read finds: {e}", file=sys.stderr)
             continue
         for c in found:
-            if not (isinstance(c, dict) and c.get("id") and c.get("quote") and c.get("reader_rule")):
+            if not (isinstance(c, dict) and isinstance(c.get("id"), str) and c.get("id") and c.get("quote") and c.get("reader_rule")):
                 dropped.append({"pass": n + 1, "why": "not {id, quote, reader_rule}", "candidate": c})
             elif c["id"] not in texts or norm(c["quote"]) not in texts[c["id"]]:
                 dropped.append({"pass": n + 1, "why": "quote is not in the unit's text", "candidate": c})

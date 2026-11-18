@@ -38,8 +38,9 @@ def marks(n, mark):
 
 
 def cell(text, cut=160):
-    t = " ".join(str(text).split()).replace("|", "\\|")
-    return t if len(t) <= cut else t[:cut - 1] + "…"
+    t = " ".join(str(text).split())
+    t = t if len(t) <= cut else t[:cut - 1] + "…"
+    return t.replace("\\", "&#92;").replace("|", "\\|")   # a backslash becomes an entity, so no "|" is ever left unescaped
 
 
 def gist(count, pieces):
@@ -103,12 +104,14 @@ def main():
     conflicts = {}
     for u in units:
         for x in u["conflicts"]:
-            conflicts.setdefault(x["n"], x)
+            first = conflicts.setdefault(x["n"], dict(x))
+            first["hard_stop"] = first["hard_stop"] or x["hard_stop"]   # one number, one colour: red if any confirmation says hard stop
     nums = {u["id"]: sorted({x["n"] for x in u["conflicts"]}) for u in units}
     of = lambda bucket: [u for u in units if u["bucket"] == bucket]
 
     # Why this verdict: the prose paragraph, the relative line, the baseline block (raw: it holds a card of its own), the sorted table
-    why_lines = why.split("\n")
+    closed = lambda t: t + ("\n```" if sum(1 for l in t.split("\n") if l.lstrip().startswith("```")) % 2 else "")   # an unclosed fence must not hide the cards after it
+    why_lines = closed(why).split("\n")
     body = why_lines + [""]
     if opts["--verdict-text"]:
         body += [opts["--verdict-text"], ""]
@@ -146,11 +149,12 @@ def main():
     cards.append(card(GREEN, "Keep", gist(keep_count, [text(u) for u in keep]), rows if keep else ["None."]))
 
     drop = of("dropped")
-    name = lambda u: f"`{u['file']}" + ("" if u["heading"] == "(top)" else f" > {u['heading']}") + "`" + (f" ⛔{','.join(map(str, nums[u['id']]))}" if nums[u["id"]] else "")
+    tick = lambda t: " ".join(str(t).split()).replace("`", "'")
+    name = lambda u: f"`{tick(u['file'])}" + ("" if u["heading"] == "(top)" else f" > {tick(u['heading'])}") + "`" + (f" ⛔{','.join(map(str, nums[u['id']]))}" if nums[u["id"]] else "")
     cards.append(card("\U0001F5D1️", "Dropped", gist(len(drop) or "none", [u["file"] for u in drop]), [" · ".join(name(u) for u in drop)] if drop else ["None."]))
 
     cards.append(card("✅", "Do this", gist(plural(len(steps), "step"), steps), [f"- {WHITE} {i}. {s}" for i, s in enumerate(steps, 1)] if steps else ["None."]))
-    cards.append(card("\U0001F4CB", "Proposed rules patch", gist(keep_count, [text(u) for u in keep]), patch.split("\n")))
+    cards.append(card("\U0001F4CB", "Proposed rules patch", gist(keep_count, [text(u) for u in keep]), closed(patch).split("\n")))
 
     out = strip
     for cd in cards:

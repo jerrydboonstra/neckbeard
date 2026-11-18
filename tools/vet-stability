@@ -56,16 +56,15 @@ def conflicts_section(text):
 
 
 def cards(text):
-    """{card name: (count, marks in row order)} for each data card of a 2.0 report; the count is the first number of its gist, 0 for "none" """
+    """{card name: (count, marks in row order)} for each data card of a 2.0 report; the count is the gist up to its first " · " """
     out = {}
     for name, gist, body in CARD_RE.findall(text):
         if name not in DATA_CARDS:
             continue
-        first = (gist or "").split(" ")[0]
-        count = int(first) if first.isdigit() else 0 if first == "none" else None
+        count = (gist or "").split(" · ")[0].strip() or None   # the count part of the gist: "2", "none", "2 rules + 1 skill"
         marks = []
         for row in body.splitlines():
-            cells = [c.strip() for c in row.strip().strip("|").split("|")]
+            cells = [c.strip() for c in re.split(r"(?<!\\)\|", row.strip().strip("|"))]
             if row.startswith("|") and cells and cells[0].isdigit() and cells[-1] and all(ch in MARKS for ch in cells[-1]):
                 marks.append(cells[-1])
         out[name] = (count, tuple(marks))
@@ -73,7 +72,11 @@ def cards(text):
 
 
 def parse(path):
-    text = open(path, encoding="utf-8").read()
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError as e:
+        print(f"vet-stability: can't read {path}: {e}", file=sys.stderr)
+        sys.exit(2)
     v = STRIP_RE.search(text) or VERDICT_RE.search(text)
     if not v:
         print(f"vet-stability: {path} has no verdict strip and no verdict banner", file=sys.stderr)
@@ -81,7 +84,7 @@ def parse(path):
     counts = {LABEL[k]: int(n) for k, n in COUNT_RE.findall(text)}
     keys = []
     for row in conflicts_section(text).splitlines():
-        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        cells = [c.strip() for c in re.split(r"(?<!\\)\|", row.strip().strip("|"))]
         if len(cells) >= 4 and cells[0].isdigit():
             keys.append(rule_key(cells[2], cells[3]))
     return v.group(1).strip(), counts, keys, len(keys), cards(text)

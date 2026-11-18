@@ -19,8 +19,8 @@ The verdict, from the counts:
 - any skill kept: INSTALL with no conflict, INSTALL WITH CHANGES with one;
 - else any new-standing or new-skill-text: COPY RULES, SKIP PLUGIN;
 - else: DON'T INSTALL.
-Rules to copy are listed whatever the verdict. Part of the units prototype (verdict-prototype-units); SKILL.md does
-not know about it yet.
+Rules to copy are listed whatever the verdict. The verdict and counts of tools/vet's fit report
+come from here (verdict-stability-rules).
 """
 import collections, json, sys
 
@@ -64,8 +64,8 @@ def load(path, ids):
             continue
         uid, skill, rules, conflicts = a.get("id"), a.get("skill"), a.get("rules"), a.get("conflicts")
         star, covered_by, held_in = a.get("star", False), a.get("covered_by", ""), a.get("held_in", "")
-        if uid not in ids:
-            problems.append(f"{uid}: no such unit")
+        if not isinstance(uid, str) or uid not in ids:
+            problems.append(f"{uid}: no such unit" if isinstance(uid, str) else f"{uid!r}: no such unit")
         elif uid in got:
             problems.append(f"{uid}: answered twice")
         elif skill not in SKILL:
