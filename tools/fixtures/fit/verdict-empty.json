@@ -1,0 +1,48 @@
+{
+ "verdict": "DON'T INSTALL",
+ "counts": {
+  "units": 2,
+  "conflicts": 0,
+  "covered": 0,
+  "keep": 0,
+  "dropped": 2,
+  "new_standing": 0,
+  "new_skill": 0,
+  "kept_rules": 0,
+  "kept_skills": 0,
+  "skills_kept": 0,
+  "units_with_conflict": 0
+ },
+ "units": [
+  {
+   "id": "u1",
+   "file": "skills/a/SKILL.md",
+   "heading": "H",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": [],
+   "bucket": "dropped"
+  },
+  {
+   "id": "u2",
+   "file": "skills/a/SKILL.md",
+   "heading": "H",
+   "kind": "rule",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "covered_by": "",
+   "held_in": "",
+   "star": false,
+   "conflicts": [],
+   "bucket": "dropped"
+  }
+ ]
+}

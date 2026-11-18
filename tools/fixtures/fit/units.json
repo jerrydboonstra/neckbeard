@@ -1,0 +1,58 @@
+{
+ "units": [
+  {
+   "id": "u1",
+   "file": "skills/a/SKILL.md",
+   "heading": "(top)",
+   "text": "Text of u1."
+  },
+  {
+   "id": "u2",
+   "file": "skills/a/SKILL.md",
+   "heading": "Tests",
+   "text": "Text of u2."
+  },
+  {
+   "id": "u3",
+   "file": "skills/b/SKILL.md",
+   "heading": "Review",
+   "text": "Text of u3."
+  },
+  {
+   "id": "u4",
+   "file": "skills/a/SKILL.md",
+   "heading": "Levels",
+   "text": "Text of u4."
+  },
+  {
+   "id": "u5",
+   "file": "commands/a.toml",
+   "heading": "(top)",
+   "text": "Text of u5."
+  },
+  {
+   "id": "u6",
+   "file": "commands/b.toml",
+   "heading": "(top)",
+   "text": "Text of u6."
+  },
+  {
+   "id": "u7",
+   "file": "skills/a/SKILL.md",
+   "heading": "Reuse",
+   "text": "Text of u7."
+  },
+  {
+   "id": "u8",
+   "file": "skills/c/SKILL.md",
+   "heading": "Help",
+   "text": "Text of u8."
+  },
+  {
+   "id": "u9",
+   "file": "skills/d/SKILL.md",
+   "heading": "Persona",
+   "text": "Text of u9."
+  }
+ ]
+}

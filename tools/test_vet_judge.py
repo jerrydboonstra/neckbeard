@@ -19,22 +19,26 @@ def login_file(hours=24):
 LOGIN = {".credentials.json": login_file()}
 SECRET = dict(FAKE_SECRET=ACCESS)
 r = run("login-copy", login="file", uname="Linux", caller=LOGIN, fake_env=SECRET)
-j = judge(r)[0] if judge(r) else {}
+j = judges(r)[0] if judges(r) else {}
 chk("login-copy: the default judge on Linux with a login file runs as the reader", (r["rc"], "judge: reader" in r["out"], "can't log in" in r["out"]), (0, True, False))
 chk("login-copy: the judge saw the login file, mode 600", (j.get("cred_seen"), j.get("cred_mode")), (True, "0o600"))
 chk("login-copy: the folder the judge ran in is gone once vet exits", (bool(r["cfg_left"]), any(r["cfg_left"])), (True, False))
 chk("login-copy: no secret and no file name in the report, the dossier or vet's output", (ACCESS in r["text"] or REFRESH in r["text"], any(c["dossier_has_secret"] for c in r["calls"]), ACCESS in r["out"] or REFRESH in r["out"], ".credentials.json" in r["out"]), (False, False, False, False))
 chk("login-copy: nothing is left in vet's temp folder", r["temp_left"], [])
 chk("login-copy: the caller's own login file is left as it was, byte for byte", r["caller_after"].get(".credentials.json"), LOGIN[".credentials.json"])
-r = run("login-leak", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=SECRET)
-chk("login-leak: a report that holds the login's token is not written, and vet fails without printing it", (r["rc"] != 0, r["report"], ACCESS in r["out"]), (True, False, False))
+r = run("login-leak", login="file", uname="Linux", caller=LOGIN, fake_env=dict(SECRET, FAKE_PROSE="secret"))
+chk("login-leak: a prose text that holds the login's token is not written into a report, and vet fails without printing it", (r["rc"] != 0, r["report"], ACCESS in r["out"]), (True, False, False))
+def token_in_skill(target):   # a skill name that part 1 prints, so only the scan of the finished report can see the token
+    open(os.path.join(target, "skills", "demo", "SKILL.md"), "w").write("---\nname: " + ACCESS + "\ndescription: A demo skill.\n---\n\nAlways run the tests before you commit.\n")
+r = run("login-report-part1", login="file", uname="Linux", caller=LOGIN, fake_env=SECRET, setup=token_in_skill)
+chk("login-report: a token that reaches the finished report through part 1 (read from the dossier, never from a judge file) leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
 r = run("login-say-clean", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SAY=" judge-said-this"))
-chk("login-say: a clean judge's stdout still reaches vet's stdout", (r["rc"], "judge-said-this" in r["stdout"]), (0, True))
-r = run("login-leak-refresh", login="file", uname="Linux", caller=LOGIN, report="secret", fake_env=dict(FAKE_SECRET=REFRESH))
+chk("login-say: a clean judge reply leaves the run passing", r["rc"], 0)
+r = run("login-leak-refresh", login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SECRET=REFRESH, FAKE_PROSE="secret"))
 chk("login-leak: a report holding only the refresh token is refused too", (r["rc"] != 0, r["report"], REFRESH in r["out"]), (True, False, False))
 for tok, name in ((ACCESS, "access"), (REFRESH, "refresh")):
     r = run("login-say-" + name, login="file", uname="Linux", caller=LOGIN, fake_env=dict(FAKE_SAY=" " + tok))
-    chk("login-say: a judge that prints the %s token to stdout is refused, with one line and no value" % name, (r["rc"] != 0, tok in r["out"], "held your login's secrets" in r["out"]), (True, False, True))
+    chk("login-say: a judge reply that holds the %s token is refused, with one line and no value" % name, (r["rc"] != 0, tok in r["out"], "held your login's secrets" in r["out"]), (True, False, True))
 r = run("login-side", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", fake_env=dict(FAKE_SIDE=ACCESS))
 chk("login-side: a token in a --units side file leaves no report and no side file, exit non-zero, no value printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], r["side_left"]), (True, False, False, []))
 r = run("login-find-die", login="file", uname="Linux", caller=LOGIN, extra=("--units",), units="units-install", finds="tokenanswer", fake_env=SECRET)
@@ -71,7 +75,7 @@ chk("own: an explicit --judge own copies nothing", (r["rc"], any(c["reader_cred_
 FORCED = ("--judge", "reader")
 if True:   # uname is faked, so these run on any host
     r = run("forced-copy", login="file", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=SECRET)
-    j = judge(r)[0] if judge(r) else {}
+    j = judges(r)[0] if judges(r) else {}
     chk("forced-copy: --judge reader on Linux with a fresh login file judges as the reader with the copy in place", (r["rc"], j.get("cred_seen"), j.get("cred_mode"), "judge: reader" in r["out"]), (0, True, "0o600", True))
     chk("forced-copy: no secret in the report or vet's output, and the folder is gone", (ACCESS in r["text"] or REFRESH in r["text"], ACCESS in r["out"] or REFRESH in r["out"], any(r["cfg_left"])), (False, False, False))
     for why, kw in (("no login file in your config folder", dict(caller={})),
@@ -88,7 +92,7 @@ if True:   # uname is faked, so these run on any host
     chk("forced-reader-dir: a --reader folder gets no copy of your login, and the judge runs as that reader", (r["rc"], any(c["cred_seen"] for c in r["calls"])), (0, False))
     shutil.rmtree(os.path.dirname(mine))
     r = run("forced-web", login="env", uname="Linux", caller={}, extra=FORCED)
-    j = judge(r)[0] if judge(r) else {}
+    j = judges(r)[0] if judges(r) else {}
     chk("forced-web: no login file but the probe passes (a web session): judges as the reader", (r["rc"], j.get("cfg") != "", "can't log in" in r["out"]), (0, True, False))
 # a failing call() says why: the last lines of its own error, and never a token
 r = run("call-fail", extra=("--units",), units="units-install", finds="one", confirm="fail")
@@ -104,7 +108,7 @@ r = run("forced-probe-token", login="never", uname="Linux", caller=LOGIN, extra=
 chk("forced-probe: a probe error holding the login's token is dropped, not printed", (r["rc"] != 0, r["report"], ACCESS in r["out"], "--judge reader can't log in" in r["out"]), (True, False, False, True))
 # the main judge failing: the last lines of its stdout reach stderr; a token never does
 r = run("judge-fail", fake_env=dict(FAKE_JUDGE_FAIL="1"))
-chk("judge-fail: a main judge that exits non-zero: its last lines reach stderr", (r["rc"] != 0, "fake-judge-error: out of credit" in r["out"], "the judge exited non-zero" in r["out"]), (True, True, True))
+chk("judge-fail: a prose judge that exits non-zero: its last lines reach stderr", (r["rc"] != 0, "fake-judge-error: out of credit" in r["out"], "the prose judge exited non-zero" in r["out"]), (True, True, True))
 r = run("judge-fail-token", login="file", uname="Linux", caller=LOGIN, extra=FORCED, fake_env=dict(FAKE_SECRET=ACCESS, FAKE_JUDGE_FAIL="1", FAKE_FAIL_MSG="denied for " + ACCESS))
 chk("judge-fail: a judge message holding the login's token is not printed", (r["rc"] != 0, ACCESS in r["out"], r["report"]), (True, False, False))
 # the judged report names the judge that ran, and vet --check still passes on it

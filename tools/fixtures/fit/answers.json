@@ -1,0 +1,100 @@
+{
+ "answers": [
+  {
+   "id": "u1",
+   "skill": "drop",
+   "rules": "new-standing",
+   "quote": "Never cut protection to make a change smaller.",
+   "why": "",
+   "conflicts": [],
+   "star": true
+  },
+  {
+   "id": "u2",
+   "skill": "drop",
+   "rules": "new-standing",
+   "quote": "New non-trivial logic ships with one small test.",
+   "why": "",
+   "conflicts": []
+  },
+  {
+   "id": "u3",
+   "skill": "drop",
+   "rules": "new-skill-text",
+   "quote": "Review a change by reading the callers.",
+   "why": "",
+   "conflicts": []
+  },
+  {
+   "id": "u4",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "conflicts": [
+    {
+     "quote": "A vague request gets the smallest version.",
+     "reader_rule": "rules/safety.md: If a request is ambiguous and the wrong reading is costly, ask.",
+     "held_in": "rules/safety.md",
+     "hard_stop": true
+    }
+   ]
+  },
+  {
+   "id": "u5",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "conflicts": [
+    {
+     "quote": "A deferred shortcut gets a comment shortcut:",
+     "reader_rule": "rules/engineering.md: Leave deliberate shortcuts marked: TODO(debt):",
+     "held_in": "rules/engineering.md",
+     "hard_stop": false
+    }
+   ]
+  },
+  {
+   "id": "u6",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "conflicts": [
+    {
+     "quote": "A deferred shortcut gets a comment shortcut:",
+     "reader_rule": "rules/engineering.md: Leave deliberate shortcuts marked: TODO(debt):",
+     "held_in": "rules/engineering.md",
+     "hard_stop": false
+    }
+   ]
+  },
+  {
+   "id": "u7",
+   "skill": "drop",
+   "rules": "duplicate",
+   "quote": "Reuse the codebase first.",
+   "why": "",
+   "conflicts": [],
+   "covered_by": "Rule 1, Reuse before writing",
+   "held_in": "rules/engineering.md"
+  },
+  {
+   "id": "u8",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "conflicts": []
+  },
+  {
+   "id": "u9",
+   "skill": "drop",
+   "rules": "none",
+   "quote": "",
+   "why": "",
+   "conflicts": []
+  }
+ ]
+}

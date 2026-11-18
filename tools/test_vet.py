@@ -11,51 +11,51 @@ import vet_harness
 from vet_harness import *
 
 
-# 0. --units (prototype): the verdict comes from the per-unit answers, and the banner must carry it
-r = run("units", extra=("--units",), units="units-install")
-chk("units: answers that compute INSTALL, banner INSTALL: exit 0", r["rc"], 0)
-chk("units: the judge got the unit list and the written tests", "UNITS PROTOTYPE" in judge(r)[0]["prompt"] and "new-standing" in judge(r)[0]["prompt"], True)
-r = run("units-mismatch", extra=("--units",), units="units-mismatch")
-chk("units: banner INSTALL but answers compute COPY RULES: refused", (r["rc"], "computed verdict is COPY RULES" in r["out"]), (1, True))
-r = run("units-missing", extra=("--units",), units="units-none")
+judges = lambda r: isolated(r, "ANSWERING JUDGE") + isolated(r, "PROSE JUDGE")   # the two calls that judge
+hline = lambda r: r["text"].split("\n")[2]   # the header line, which vet --check reads
+vline = lambda r: next((l for l in r["text"].split("\n") if "Verdict is relative to" in l), "")   # the paragraph in Why this verdict
+def first(r, word):
+    return next(iter(isolated(r, word)), {"prompt": ""})["prompt"]
+
+# 0. the answers: the answering judge gets the unit list and the written tests; the verdict is units-verdict's, whatever the answers compute
+r = run("units", units="units-install")
+chk("units: answers that compute INSTALL: exit 0, strip INSTALL", (r["rc"], "> **\U0001F7E9 INSTALL**" in r["text"]), (0, True))
+chk("units: the answering judge got the unit list and the tests", ("ANSWERING JUDGE" in first(r, "ANSWERING JUDGE") and "new-standing" in first(r, "ANSWERING JUDGE"), "UNITS:" in first(r, "ANSWERING JUDGE")), (True, True))
+r = run("units-mismatch", units="units-mismatch")
+chk("units: answers that compute COPY RULES give that strip, no refusal", (r["rc"], "> **\U0001F7E8 COPY RULES, SKIP PLUGIN**" in r["text"]), (0, True))
+r = run("units-missing", units="units-none")
 chk("units: an answer missing for a unit: refused", (r["rc"], "answers were refused" in r["out"]), (1, True))
 # 0b. --units pools three find passes and confirms each candidate alone; only confirmed conflicts count
-r = run("units-find-none", extra=("--units",), units="units-install")
+r = run("units-find-none", units="units-install")
 chk("pool: three find passes, no candidates, no confirm call, exit 0", (r["rc"], len(isolated(r, "FIND PASS")), len(isolated(r, "CONFIRM CALL"))), (0, 3, 0))
-r = run("units-confirmed", extra=("--units",), units="units-install", finds="one", confirm="yes")
+r = run("units-confirmed", units="units-install", finds="one", confirm="yes")
 chk("pool: the same candidate in three passes is confirmed once", len(isolated(r, "CONFIRM CALL")), 1)
-chk("confirm: a confirmed conflict counts, so INSTALL becomes INSTALL WITH CHANGES and the banner is refused",
-    (r["rc"], "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
-c = isolated(r, "CONFIRM CALL")[0]
+chk("confirm: a confirmed conflict counts, so INSTALL becomes INSTALL WITH CHANGES in the strip",
+    (r["rc"], "> **\U0001F7E8 INSTALL WITH CHANGES**" in r["text"]), (0, True))
+c = next(iter(isolated(r, "CONFIRM CALL")), {"prompt": "", "args": ["--allowedTools", "?"]})
 chk("confirm: the call sees the sentence and the written test, not the units or the dossier",
     ("Always run the tests before you commit." in c["prompt"], "Never run anything destructive without my explicit go-ahead" in c["prompt"], "permits, with no limit" in c["prompt"], "UNITS:" in c["prompt"], "dossier" in c["prompt"].lower()),
     (True, True, True, False, False))
 chk("confirm: the reader rule is the reader's own text; the finder's argument never reaches the call",
     ("FINDER ARGUMENT" in c["prompt"], "rules/safety.md: 1. **Never run anything destructive" in c["prompt"]), (False, True))
 chk("confirm: the call is allowed no tools", c["args"][c["args"].index("--allowedTools") + 1], "")
-r = run("units-rejected", extra=("--units",), units="units-install", finds="one", confirm="no")
+r = run("units-rejected", units="units-install", finds="one", confirm="no")
 chk("confirm: a rejected candidate does not count, exit 0", (r["rc"], "0 of 1 candidates confirmed" in r["out"]), (0, True))
-r = run("units-flaky", extra=("--units",), units="units-install", finds="one", confirm="flaky")
-chk("confirm: a call with no JSON is retried once, and the second answer counts", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (2, True))
-r = run("units-garbage", extra=("--units",), units="units-install", finds="one", confirm="garbage")
+r = run("units-flaky", units="units-install", finds="one", confirm="flaky")
+chk("confirm: a call with no JSON is retried once, and the second answer counts", (len(isolated(r, "CONFIRM CALL")), "> **\U0001F7E8 INSTALL WITH CHANGES**" in r["text"]), (2, True))
+r = run("units-garbage", units="units-install", finds="one", confirm="garbage")
 chk("confirm: two calls with no JSON fail the vet and show what was said", (r["rc"], "gave no usable answer: 'no json here" in r["out"]), (1, True))
-r = run("units-late", extra=("--units",), units="units-install", finds="late", confirm="yes")
-chk("pool: a candidate found in one pass of three is still confirmed", (len(isolated(r, "CONFIRM CALL")), "computed verdict is INSTALL WITH CHANGES" in r["out"]), (1, True))
-r = run("units-invented", extra=("--units",), units="units-install", finds="invented", confirm="yes")
+r = run("units-late", units="units-install", finds="late", confirm="yes")
+chk("pool: a candidate found in one pass of three is still confirmed", (len(isolated(r, "CONFIRM CALL")), "> **\U0001F7E8 INSTALL WITH CHANGES**" in r["text"]), (1, True))
+r = run("units-invented", units="units-install", finds="invented", confirm="yes")
 chk("pool: a quote that is not in the unit is dropped before any confirm call", (r["rc"], len(isolated(r, "CONFIRM CALL"))), (0, 0))
-chk("cost: the vet prints calls and dollars", "units cost: 3 find and confirm calls, $0.03" in r["out"], True)
-r = run("no-units")
-chk("without --units the prompt has no unit list", "UNITS PROTOTYPE" in judge(r)[0]["prompt"], False)
+chk("cost: the vet prints calls and dollars", "units cost: 5 calls, $0.05" in r["out"], True)
 
-# 0c. part 1 ("What it adds", tools/part1) goes in the report immediately before At a glance, and nothing else moves
-r = run("part1", commit=True)
-t = re.sub(r"\n`\d{4}-\d\d-\d\d` \u00b7 neckbeard [^\n]*\n\nBaseline: .*?</details>\n", "", r["text"], count=1, flags=re.S)   # the baseline block is tools/vet's own, tested below
-head = "# 🔍 demo 1.0.0 · vetted against the sample reader\n\n> ## 🟩 INSTALL · add the one skill\n> Fine.\n\n"
-glance = "## ⚡ At a glance\n\nOne line.\n"
-sec, _, rest = t[len(head):].partition(glance)
-chk("part1: exit 0, the report is the judge's text with one section in front of At a glance",
-    (r["rc"], t.startswith(head), sec.startswith("## What it adds\n"), sec.count("## What it adds\n"), rest), (0, True, True, 1, ""))
-chk("part1: the section ends with a blank line, and holds the six cards", (sec.endswith("\n\n"), all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source"))), (True, True))
+# 0c. part 1 ("What it adds", tools/part1) goes in the report after the fit cards (report-assembly-2-0 reorders the layers), and nothing else moves
+r = run("part1", commit=True, units="units-install")
+sec = r["text"].partition("</details>\n\n## What it adds\n")[2]
+chk("part1: exit 0, one section after the last fit card, ending the report", (r["rc"], r["text"].count("\n## What it adds\n"), r["text"].index("\n## What it adds\n") > r["text"].index("<b>Proposed rules patch</b>")), (0, 1, True))
+chk("part1: the section holds the six cards", all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), True)
 chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
 chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
 r = run("part1-no-commit")
@@ -66,7 +66,9 @@ def vet_with_part1(script, **kw):
     try:
         os.makedirs(os.path.join(fake, "tools"))
         shutil.copy(VET, os.path.join(fake, "tools", "vet"))
-        shutil.copy(os.path.join(HERE, "badge-logo"), os.path.join(fake, "tools", "badge-logo"))
+        for f_ in os.listdir(HERE):   # every other tool, as it is: only part1 is faked
+            if f_ not in ("vet", "part1", "__pycache__") and not os.path.exists(os.path.join(fake, "tools", f_)):
+                os.symlink(os.path.join(HERE, f_), os.path.join(fake, "tools", f_))
         for link in ("skills", "examples", ".claude-plugin"):
             os.symlink(os.path.join(NB, link), os.path.join(fake, link))
         open(os.path.join(fake, "tools", "part1"), "w").write(script)
@@ -79,27 +81,23 @@ def vet_with_part1(script, **kw):
 r = vet_with_part1("import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
 chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
     (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
-r = vet_with_part1("print('## What it adds\\n\\n## \\u26a1 At a glance')\n")
-chk("part1: a section that holds the At a glance heading itself fails vet", (r["rc"], "At a glance" in r["out"]), (1, True))
-r = run("part1-missing-heading", report="noglance")
-chk("part1: a report with no At a glance heading fails vet, and the message names it", (r["rc"], "At a glance" in r["out"]), (1, True))
 
 # 1. a web session: the judge logs in with the reader copy as its config folder
 r = run("web")
 chk("web: exit 0", r["rc"], 0)
 chk("web: report written", r["report"], True)
 chk("web: judge uses the reader", "judge: reader" in r["out"], True)
-j = judge(r)
-chk("web: one judge call", len(j), 1)
-chk("web: judge may Edit", bool(j) and "Edit" in j[0]["args"][j[0]["args"].index("--allowedTools") + 1].split(","), True)
-chk("web: judge config is a copy, not the checkout",
-    bool(j) and j[0]["cfg"] != "" and not os.path.realpath(j[0]["cfg"]).startswith(os.path.realpath(NB)), True)
-chk("web: judge starts outside the target", bool(j) and not os.path.realpath(j[0]["cwd"]).startswith(os.path.realpath(r["target"])), True)
+j = judges(r)
+chk("web: two judge calls, the answering judge and the prose judge", len(j), 2)
+chk("web: no judge call may run Bash or Edit", all(not {"Bash", "Edit"} & set(c["args"][c["args"].index("--allowedTools") + 1].split(",")) for c in j), True)
+chk("web: every call's config is a copy, not the checkout",
+    bool(r["calls"]) and all(c["cfg"] != "" and not os.path.realpath(c["cfg"]).startswith(os.path.realpath(NB)) for c in r["calls"] if "single word ok" not in c["prompt"]), True)
+chk("web: every call starts outside the target", bool(j) and all(not os.path.realpath(c["cwd"]).startswith(os.path.realpath(r["target"])) for c in j), True)
 chk("web: examples/reader untouched", r["reader_untouched"], True)
 chk("web: temp folder removed", r["temp_left"], [])
 chk("web: title names the sample reader", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
 
-header = lambda r: next(l for l in judge(r)[0]["prompt"].splitlines() if l.startswith("Header line"))
+header = hline
 chk("web: header names the target plainly", header(r).endswith("· demo 1.0.0"), True)
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
@@ -112,21 +110,21 @@ chk("remote: header links the repo once", "· [someone/demo](https://github.com/
 r = run("repo", remote="https://github.com/someone/demo-dev.git",
         extra=("--repo", "https://github.com/someone/demo", "--note", "Same author, so a self-vetting."))
 chk("repo: header names the public repo", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r), True)
-chk("repo: note leads the paragraph", '"Same author, so a self-vetting. Verdict is relative' in judge(r)[0]["prompt"], True)
+chk("repo: note leads the paragraph", "Same author, so a self-vetting. Verdict is relative" in vline(r), True)
 
 # 2. a Mac: the reader copy can't log in, so the judge falls back to the caller's config and says so
 r = run("mac", login="default")
 chk("mac: exit 0", r["rc"], 0)
 chk("mac: falls back to own config", "judge: own" in r["out"] and "can't log in" in r["out"], True)
-j = judge(r)
-chk("mac: judge has no config folder", bool(j) and j[0]["cfg"], "")
+j = judges(r)
+chk("mac: judges have no config folder", bool(j) and all(c["cfg"] == "" for c in j), True)
 
 # 2b. bash 3.2 (the Mac's /bin/bash, what `env bash` finds without Homebrew): the judge's empty config array is expanded under set -u
 # (vet-bash32-empty-cfg). Where /bin/bash is 3.2 this is the failing case on an unfixed vet; elsewhere it still has to pass.
 if os.path.exists("/bin/bash"):
     r = run("bash32-own", login="default", extra=("--judge", "own"), shell="/bin/bash")
     chk("bash 3.2: --judge own runs the judge past the empty config array, exit 0, report written",
-        (r["rc"], r["report"], len(judge(r)), "unbound variable" in r["out"]), (0, True, 1, False))
+        (r["rc"], r["report"], len(judges(r)), "unbound variable" in r["out"]), (0, True, 2, False))
     r = run("bash32-units", login="default", units="units-install", extra=("--units", "--judge", "own"), shell="/bin/bash")
     chk("bash 3.2: --units --judge own gets its isolated calls past the empty config array too",
         (r["rc"], len(isolated(r, "FIND PASS")), "unbound variable" in r["out"]), (0, 3, False))
@@ -147,17 +145,13 @@ chk("no unguarded empty-array expansion under set -u in tools/", sorted(bare), [
 r = run("forced", login="default", uname="Darwin", extra=("--judge", "reader"))
 chk("forced reader: exit 1, no report, one line naming the reason and --judge own", (r["rc"], r["report"], "--judge reader can't log in" in r["out"], "reader mode logs in only on Linux" in r["out"], "--judge own" in r["out"]), (1, False, True, True, True))
 
-# 4. the judge writes no report
-r = run("none", report="none")
-chk("no report: exit 1", r["rc"], 1)
-chk("no report: says so", "wrote no report" in r["out"], True)
+# 4. the prose judge writes no prose file
+r = run("none", units="units-install", fake_env=dict(FAKE_PROSE="none"))
+chk("no prose: exit 1, no report", (r["rc"], r["report"]), (1, False))
+chk("no prose: says so", "wrote no prose" in r["out"], True)
 
-# 5. a report with no verdict banner
-r = run("noverdict", report="noverdict")
-chk("no verdict: exit 1", r["rc"], 1)
-
-# 6. a report that names the target's local path
-r = run("leak", report="leak")
+# 6. a prose text that names a local path
+r = run("leak", units="units-install", fake_env=dict(FAKE_PROSE="leak"))
 chk("leak: exit 1", r["rc"], 1)
 chk("leak: says so", "names a local path" in r["out"], True)
 
@@ -245,7 +239,7 @@ chk("facts: a rule file in force is refused, naming it", (u["rc"], u["report"], 
 # the group's guard: one header writer, byte for byte
 j = run("judged-header", commit=True)
 f = run("facts-header", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
-want = [l.split("Header line to use: ", 1)[1] for c in judge(j) for l in c["prompt"].split("\n") if l.startswith("Header line to use: ")]
+want = [hline(j)]
 got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 neckbeard " in l]
 chk("facts and judged header lines are equal", (len(want), got), (1, want))
 chk("judged title still says vetted", j["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
@@ -274,18 +268,18 @@ try:
     chk("reader: title names the label", ra["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against readerdir")
     leaks = [x for d in (a, os.path.dirname(a)) for x in (d, os.path.realpath(d))]   # macOS prints /private/var for /var
     chk("reader: no absolute path of the folder in the report", ([x for x in leaks if x in ra["text"] + ra["out"]], ra["rc"]), ([], 0))
-    # a judge that wrote its header line: the Baseline goes right under it, and --check reads the report
-    h = run("judge-header", extra=("--reader", a), report="header")
+    # the header line is vet's own, and the Baseline block sits inside Why this verdict, under its paragraph; --check reads the report
+    h = run("header-reader", extra=("--reader", a))
     hl = h["text"].split("\n")
-    chk("reader: the Baseline block sits under the judge's header line", (h["rc"], hl[2].startswith("`") and " \u00b7 neckbeard " in hl[2], hl[3], hl[4].startswith("Baseline: readerdir \u00b7 4 rule files")), (0, True, "", True))
+    chk("reader: the header line is line 3, and the Baseline block is in the Why card", (h["rc"], hl[2].startswith("`") and " \u00b7 neckbeard " in hl[2], h["text"].find("Baseline: readerdir \u00b7 4 rule files") > h["text"].find("<b>Why this verdict</b>") > 0), (0, True, True))
     chk("reader: that report carries one header line and one Baseline", (sum(1 for l in hl if " \u00b7 neckbeard " in l), sum(1 for l in hl if l.startswith("Baseline: "))), (1, 1))
     chk("reader: --check passes on it", facts_check_text(h["text"], "1.0.0"), 0)
     # a non-default folder that happens to be named "the sample reader" is still not the default
     os.makedirs(os.path.join(tmp, "named"))
     named = reader_copy(os.path.join(tmp, "named"), "the sample reader")
     rn = run("named-like-default", extra=("--reader", named))
-    pn = [l for c in judge(rn) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
-    chk("reader: a folder named like the default gets the non-default paragraph and citation", (len(pn), "](" not in pn[0], "examples/reader/..." in "\n".join(c["prompt"] for c in judge(rn)), "rule files (fingerprint %s)" % fp(rn) in pn[0]), (1, True, False, True))
+    pn = [vline(rn)]
+    chk("reader: a folder named like the default gets the non-default paragraph and citation", (len(pn), "](" not in pn[0], "examples/reader/..." in "\n".join(c["prompt"] for c in judges(rn)), "rule files (fingerprint %s)" % fp(rn) in pn[0]), (1, True, False, True))
     # a path-only change (one rule file renamed) changes the fingerprint too
     moved = reader_copy(tmp, "moved")
     os.rename(os.path.join(moved, "rules", "safety.md"), os.path.join(moved, "rules", "safe.md"))
@@ -295,10 +289,10 @@ try:
     chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", "the sample reader", True))
     # vet --check reads a judged report that carries the Baseline block
     chk("reader: --check passes on a judged report with a Baseline block", facts_check_text(ra["text"], "1.0.0"), 0)
-    prompt = [l for c in judge(ra) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
+    prompt = [vline(ra)]
     want = "Verdict is relative to readerdir's 4 rule files (fingerprint %s), not a judgment of the plugin's quality." % fp(ra)
     chk("reader: the verdict paragraph names the label, count and fingerprint, and links nothing", (len(prompt), want in prompt[0] and "](" not in prompt[0]), (1, True))
-    default_prompt = [l for c in judge(r) for l in c["prompt"].split("\n") if l.startswith("Put this paragraph")]
+    default_prompt = [vline(r)]
     chk("reader: the default verdict paragraph is unchanged", "Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment" in default_prompt[0], True)
     # a reader with no rule files: the facts report, no claude call, exit 0
     empty = os.path.join(tmp, "emptyreader"); os.mkdir(empty)

@@ -286,8 +286,8 @@ check("every module a map row names exists", bool(rows) and all(m in modules or 
 check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",
       all(rows.get(f"tools/{m}.py") and m in rows[f"tools/{m}.py"] for m in own),
       repr([m for m in own if m not in (rows.get(f"tools/{m}.py") or [])]))
-check("tools/vet selects test_vet, test_vet_judge and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_judge", "test_vet_stability"], repr(rows.get("tools/vet")))
-check("tools/vet_harness.py (the shared helper of the two vet test modules) selects both", sorted(rows.get("tools/vet_harness.py", [])) == ["test_vet", "test_vet_judge"], repr(rows.get("tools/vet_harness.py")))
+check("tools/vet selects test_vet, test_vet_judge, test_vet_report and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_judge", "test_vet_report", "test_vet_stability"], repr(rows.get("tools/vet")))
+check("tools/vet_harness.py (the shared helper of the vet test modules) selects all three", sorted(rows.get("tools/vet_harness.py", [])) == ["test_vet", "test_vet_judge", "test_vet_report"], repr(rows.get("tools/vet_harness.py")))
 check("skills/neckbeard/inventory.py selects test_selfcheck", "test_selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
 check("skills/neckbeard/inventory_dossier.py selects the modules inventory.py's row selects, and test_read_status",
       bool(rows.get("skills/neckbeard/inventory.py")) and (set(rows.get("skills/neckbeard/inventory.py", [])) | {"test_read_status"}) <= set(rows.get("skills/neckbeard/inventory_dossier.py", [])),
@@ -313,8 +313,8 @@ b4 = sh(["git", "rev-parse", "HEAD"], d4).stdout.strip()
 sh(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-am", "vet"], d4)
 r = sh([sys.executable, str(d4 / "tools" / "test-changed"), "--list", b4], d4)
 sel = [l for l in r.stdout.splitlines() if l.startswith("test-changed: test_")]
-check("this repo's map: a diff touching only tools/vet selects test_vet, test_vet_judge and test_vet_stability and nothing else",
-      len(sel) == 1 and sorted(sel[0].split()[1:]) == ["test_vet", "test_vet_judge", "test_vet_stability"], r.stdout + r.stderr)
+check("this repo's map: a diff touching only tools/vet selects test_vet, test_vet_judge, test_vet_report and test_vet_stability and nothing else",
+      len(sel) == 1 and sorted(sel[0].split()[1:]) == ["test_vet", "test_vet_judge", "test_vet_report", "test_vet_stability"], r.stdout + r.stderr)
 
 print(f"test_test_parallel: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)
