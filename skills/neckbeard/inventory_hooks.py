@@ -36,18 +36,38 @@ SUBAGENT_TOOL_EVENTS_LIKELY = {"PostToolUseFailure", "Stop", "PermissionRequest"
 # spans, so reading in windows could split a match.
 PERSIST_READ_CEILING = 2_000_000
 
+# debt: spans are bounded to _SPAN characters (a shell write whose command word and $HOME sit
+# more than _SPAN apart on one line is missed) so a hostile 2 MB one-line file cannot backtrack
+# quadratically; upgrade path: scan per line in bounded pieces.
+_SPAN = 400
+_SHELL_WORD = re.compile(r"\b(cp|mv|rm|mkdir|touch|tee|install)\b")
+_HOME_ARG = re.compile(r"\s[\"']?(\$HOME|~)/")
+
+
+def _shell_home_write(text):
+    """cp/mv/rm/mkdir/touch/tee/install with $HOME after it on the line (up to a pipe), or
+    cp/mv/tee followed by an argument starting $HOME/ or ~/. Linear: each word looks at _SPAN characters."""
+    if "$HOME" not in text and "~/" not in text:
+        return False
+    for m in _SHELL_WORD.finditer(text):
+        win = text[m.end():m.end() + _SPAN].split("\n", 1)[0]
+        if "$HOME" in win.split("|", 1)[0]:
+            return True
+        if m.group(1) in ("cp", "mv", "tee") and _HOME_ARG.search(win):
+            return True
+    return False
+
+
 PERSIST_PATTERNS = [
     # node/js
     re.compile(r"\b(writeFileSync|appendFileSync|createWriteStream|copyFileSync|mkdirSync|rmSync)\b"),
     re.compile(r"fs\.(write|append|copy|rename|unlink|rm|mkdir)\w*\("),
     # python
-    re.compile(r"\bopen\([^)]*['\"][wax]"),
+    re.compile(r"\bopen\([^)]{0,%d}['\"][wax]" % _SPAN),
     re.compile(r"\.(write_text|write_bytes|mkdir|touch|unlink|rename|replace)\("),
     re.compile(r"\b(shutil\.(copy|move|rmtree)|os\.(remove|rename|makedirs|mkdir))\b"),
     # shell
     re.compile(r">>?\s*[\"']?(\$HOME|~|/)"),
-    re.compile(r"\b(cp|mv|rm|mkdir|touch|tee|install)\b[^\n|]*\$HOME"),
-    re.compile(r"\b(cp|mv|tee)\b\s+-?\w*\s*[\"']?[^\n]*[\"']?\s+[\"']?(\$HOME|~)/"),
     # anywhere: names a home-ish destination
     re.compile(r"os\.homedir\(\)|homedir\(\)|expanduser\(|Path\.home\(\)|process\.env\.HOME"),
     re.compile(r"[\"'/]\.(config|cache|local|claude)[\"'/]"),
@@ -640,4 +660,7 @@ def _persistence_walk(plugin_root, notes):
                 if pat.search(text):
                     hits.append(os.path.relpath(fp, plugin_root))
                     break
+            else:
+                if _shell_home_write(text):
+                    hits.append(os.path.relpath(fp, plugin_root))
     return sorted(set(hits))

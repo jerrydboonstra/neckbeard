@@ -190,10 +190,22 @@ def gen_big_script():
 
 def gen_late_write():
     """A 120 KB script whose only persistence write sits past byte 100,000 is read in full and listed."""
-    d = tmp_tree({"scripts/late.sh": "#!/bin/sh\n" + "# pad\n" * 18_000 + 'echo x > "$HOME/.state"\n'})
+    d = tmp_tree({"scripts/late.sh": "#!/bin/sh\n" + "# pad\n" * 20_000 + 'echo x > "$HOME/.state"\n'})
     listed = "scripts/late.sh" in (dossier(d)["target"].get("persistence_candidates") or [])
     ok, info = got(d, "persistence_candidates", "read")
     return ok and listed, info
+
+
+def gen_hostile_scan():
+    """A 2,000,000-character one-line file built to backtrack (many cp/mv/tee or open( words, no $HOME) scans in under 5 s."""
+    import time
+    worst = 0.0
+    for body in ("var a=cp b;" * 181_819, "rm a;" * 400_000, "tee " * 500_000, "open(" * 400_000, "$HOME rm a;" * 181_819):
+        d = tmp_tree({"scripts/h.sh": "#!/bin/sh\n" + body + "\n"})
+        t0 = time.time()
+        dossier(d)
+        worst = max(worst, time.time() - t0)
+    return worst < 5, f"slowest hostile scan {worst:.1f}s"
 
 
 def gen_mcp_list():
@@ -373,6 +385,7 @@ SITES = {
     "PS3": lambda: got(fixture("persist-dangling"), "persistence_candidates", "partial", "scripts/x.sh"),
     "PS4": gen_big_script,
     "PS5": gen_late_write,
+    "PS6": gen_hostile_scan,
     "PJ1": lambda: got(fixture("plugin-json-malformed"), "plugin_json", "failed", ".claude-plugin/plugin.json"),
     "PJ2": lambda: got(fixture("plugin-json-list"), "plugin_json", "failed", ".claude-plugin/plugin.json"),
     "PJ3": lambda: got(fixture("plugin-json-dangling"), "plugin_json", "failed", ".claude-plugin/plugin.json"),
