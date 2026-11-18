@@ -15,7 +15,7 @@ Five runs of `tools/vet` (the fit report, now on the units path by default) on t
 
 - **Verdict:** INSTALL WITH CHANGES in 5 of 5 (October's 0.40.3 runs: 5 of 5 too).
 - **Conflicts:** the conflict is against `rules/safety.md` in all five runs, but the Conflicts card has 2 rows in four runs and 1 in run 3. The difference is one unit, `skills/herd/roles/worker.md > The worker, in a pair` (u19): confirmed a conflict in 4 runs, not in run 3. In October the two sentences on 0.40.3 were confirmed in 5 of 5 runs.
-- **Keep:** 25 skills in runs 1 to 3, 26 in runs 4 and 5. The difference is `skills/queue/SKILL.md > Questions for you` (u31, skill answer keep 2, drop 3). The starred row differs by run, so the Keep colours differ in every card comparison.
+- **Keep:** 25 skills in runs 1 to 3, 26 in runs 4 and 5. The difference is `skills/queue/SKILL.md > Questions for you` (u31, skill answer keep 2, drop 3). The starred row (the ⭐) sits at a different place in the runs that kept 25 and the runs that kept 26, so the Keep colours differ between those two groups.
 - **Dropped:** 8 in runs 1 to 3, 7 in runs 4 and 5, the same unit.
 - **Already covered:** 0 in all five.
 - **Rules answers** (`units-verdict.txt`): 28 of 33 units answered alike in all five runs. The five that differ are u2, u15, u16, u18 and u19 (duplicate against none or new-standing). This moves the "new standing rule" row (2, 1, 2, 2, 3) and the "new, on-demand skill" row (23, 24, 23, 24, 23).
