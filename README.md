@@ -52,9 +52,9 @@ The `.` is the plugin's folder, so this reads neckbeard itself. Give another plu
 
 The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list. Then come three layers:
 
-- **How it affects you:** five rows: cost, reach, leaves state, live surface and read completeness.
-- **What it adds:** one card each for the text it injects, hooks, subagents and commands, the state it may leave, what it reaches outside the session, and its source. Each card says if it was read in full, in part, or not at all.
-- **Where it takes a position:** the topics its instruction files take a position on, from a fixed list, with no judgement.
+- **How it affects you:** five rows (cost, reach, leaves state, live surface and read completeness).
+- **What it adds:** one card each for the text it injects, hooks, subagents and commands, the state it may leave, what it reaches outside the session, and its source. Each card says whether neckbeard read it in full, read it in part, or left something unread.
+- **Where it takes a position:** the topics its instruction files and hook templates take a position on, from a fixed list, with no judgement.
 
 Here is neckbeard's own report, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
