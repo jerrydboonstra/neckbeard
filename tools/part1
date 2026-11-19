@@ -226,6 +226,16 @@ def clean_note(note, root=""):
     return safe(note, root, 400)
 
 
+def many(count, noun):
+    """'1 file', '2 files': the one plural helper for counts in the cards."""
+    return f"{count} {noun}" + ("" if count == 1 else "s")
+
+
+def loads_every_session(s):
+    """Claude Code leaves the description of a skill with disable-model-invocation out of every session; a dossier with no field counts as loaded."""
+    return s.get("model_invocable") is not False
+
+
 def toks(n):
     return f"{n} bytes, ~{n // 4} tokens"
 
@@ -327,7 +337,7 @@ def cap_entries(entries):
     where = ", ".join(f"{f} {n}" for f, n in ranked[:FOLDERS_SHOWN])
     if len(ranked) > FOLDERS_SHOWN:
         left = ranked[FOLDERS_SHOWN:]
-        where += f", and {len(left)} other folders ({sum(n for _, n in left)} files)"
+        where += f", and {many(len(left), 'other folder')} ({many(sum(n for _, n in left), 'file')})"
     return entries[:PERSIST_SHOWN], [f"and {len(rest)} more, in: {where}"]
 
 
@@ -424,7 +434,9 @@ def render(d, commit):
         if unread(s):
             skills.append(not_read(s, root))
         else:
-            skills.append(f"{name_of(s, root)}: description every session ({len(str(s.get('description') or ''))} chars); "
+            when = (f"description every session ({len(str(s.get('description') or ''))} chars)" if loads_every_session(s)
+                    else "description loads only when called by name (disable-model-invocation)")
+            skills.append(f"{name_of(s, root)}: {when}; "
                           f"the file on demand ({toks(s['bytes'])}){capped(s)}")
     rules = []
     for r in as_list(t.get("rule_files")):
@@ -493,20 +505,22 @@ def render(d, commit):
     shown, ptail = cap_entries(persist)
     skills_ok = counted(sec("skills")[0], len(skills))
     readable = [s_ for s_ in as_list(t.get("skills")) if not unread(s_)]
+    on_call = sum(1 for s_ in readable if not loads_every_session(s_))
     hn = sum(1 for _ in events)
     reach_phrase = "reach subagents" if reach is True else "stay in the main session" if reach is False else ""
     marketplace_word = "no marketplace" if sec("marketplace")[0] in ("read", "not-applicable") and not mk_entries else ""
     gists = {
-        "Injects": gist(*([f"{len(skills)} skills", f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
-                           f"~{sum(len(str(s_.get('description') or '')) for s_ in readable)} chars of skill descriptions every session"] if skills_ok else []),
+        "Injects": gist(*([many(len(skills), "skill"), f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
+                           f"~{sum(len(str(s_.get('description') or '')) for s_ in readable if loads_every_session(s_))} chars of skill descriptions every session"
+                           + (f"; {many(on_call, 'skill')} load{'s' if on_call == 1 else ''} only when called" if on_call else "")] if skills_ok else []),
                         f"hook text {read_state([hsec[0]])}"),
-        "Hooks": gist(f"{hn} hooks" if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
+        "Hooks": gist(many(hn, "hook") if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
         "Claude Code mods": gist(f"{len(mod_entries)} mod{'' if len(mod_entries) == 1 else 's'}"),
-        "Subagents and commands": gist((f"{len(agents)} agents" if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
-                                       f"{len(commands)} commands" if counted(sec("commands")[0], len(commands)) else ""),
-        "State it may leave": gist(f"{len(persist)} files that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
+        "Subagents and commands": gist((many(len(agents), "agent") if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
+                                       many(len(commands), "command") if counted(sec("commands")[0], len(commands)) else ""),
+        "State it may leave": gist(f"{many(len(persist), 'file')} that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
                                    f"{len(shown)} named" if ptail and counted(sec("persistence_candidates")[0], len(persist)) else ""),
-        "Reaches outside the session": gist((f"{len(servers)} MCP servers" if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
+        "Reaches outside the session": gist((many(len(servers), "MCP server") if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
         "Source": gist(kind, f"{plain_name}{' ' + plain_version if plain_version else ''}{' from plugin.json' if pj.get('name') or pj.get('version') else ''}",
                        f"commit {safe(commit)[:7]}" if commit else "", marketplace_word),
     }

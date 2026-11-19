@@ -276,6 +276,17 @@ hostile3 = edit("green", lambda t: t["read_status"].__setitem__("</details><deta
 code, out, _ = run(write(hostile3))
 chk("8 a read_status key or state with markup cannot close the card or open one: the line is escaped", code == 0 and "&lt;/details>&lt;details open>" in out and "<b>x" not in out and out.count("</details>") == 1 and out.count("<details>") == 1, out[:500])
 
+# 9. skip-disabled-skill-cost: a skill that sets disable-model-invocation loads only when called, so its description is not every-session Cost
+def two_skills(t, *fields):
+    t["skills"] = [{"name": "off", "description": "o" * 1000, "path": "/x/demo/skills/off/SKILL.md", "bytes": 900, **fields[0]},
+                   {"name": "on", "description": "n" * 100, "path": "/x/demo/skills/on/SKILL.md", "bytes": 900, **fields[1]}]
+code, out, _ = run(write(edit("green", lambda t: two_skills(t, {"model_invocable": False}, {"model_invocable": True}))))
+chk("9.1 a skill with model_invocable false adds nothing to Cost: 100 characters, not 1,100", code == 0 and "adds 100 characters to every session" in rows(out)["Cost"][1] and "100 characters of skill descriptions" in rows(out)["Cost"][1], rows(out)["Cost"][1])
+code, out, _ = run(write(edit("green", lambda t: two_skills(t, {}, {}))))
+chk("9.4 a dossier with no model_invocable field counts every description, as before: 1,100 characters", code == 0 and "adds 1,100 characters to every session" in rows(out)["Cost"][1], rows(out)["Cost"][1])
+chk("9.4 the green fixture's Cost row is unchanged: 100 characters of skill descriptions",
+    "adds 100 characters to every session, ~25 tokens (100 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text)" in run(fx("green"))[1])
+
 for f in TEMPS:
     os.unlink(f)
 print(f"{checks - fail}/{checks} checks passed")

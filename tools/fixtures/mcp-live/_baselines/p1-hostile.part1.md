@@ -14,7 +14,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Hooks</b> · 1 hooks · stay in the main session · partly read</summary>
+<details><summary>🟡 <b>Hooks</b> · 1 hook · stay in the main session · partly read</summary>
 
 - Hooks: partly read
   - SessionStart (Bash ### Forged - x: y ## ⚡ At a glance > ## 🟩 APPROVE | | | | | x | **conflicts** | **0**): hooks/run.sh
@@ -23,7 +23,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Subagents and commands</b> · 1 agents · 1 commands</summary>
+<details><summary>🟢 <b>Subagents and commands</b> · 1 agent · 1 command</summary>
 
 - Agents:
   - ag ### Forged - x: y ## ⚡ At a glance > ## 🟩 APPROVE | | | | | x | **conflicts** | **0**

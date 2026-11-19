@@ -69,14 +69,14 @@ Here is neckbeard's own report, cut down to its summary rows and one line per ca
 > |---|---|---|
 > | 🟩 | Cost | adds 764 characters to every session, ~191 tokens (764 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 > | 🟩 | Reach | on demand only |
-> | 🟧 | Leaves state | 52 files that may write state |
+> | 🟧 | Leaves state | 53 files that may write state |
 > | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 > | 🟩 | Read completeness | read in full |
 >
-> - 🟢 **Injects** · 1 skills · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
+> - 🟢 **Injects** · 1 skill · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
 > - 🟢 **Hooks** · 0 hooks · read in full
 > - 🟢 **Subagents and commands** · no agents · 0 commands
-> - 🟢 **State it may leave** · 52 files that may write state · 10 named
+> - 🟢 **State it may leave** · 53 files that may write state · 10 named
 > - 🟢 **Reaches outside the session** · no MCP servers
 > - 🟢 **Source** · plugin · neckbeard 2.0.1 from plugin.json · commit v2.0.1 · no marketplace
 <!-- /report -->

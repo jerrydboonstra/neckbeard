@@ -2,7 +2,7 @@
 
 🟢 read in full · 🟡 partly read · 🔴 something unread
 
-<details><summary>🟢 <b>Injects</b> · 1 skills · ~13 tokens on demand · ~16 chars of skill descriptions every session · hook text read in full</summary>
+<details><summary>🟢 <b>Injects</b> · 1 skill · ~13 tokens on demand · ~16 chars of skill descriptions every session · hook text read in full</summary>
 
 - Skills:
   - a: description every session (16 chars); the file on demand (52 bytes, ~13 tokens)
@@ -13,7 +13,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Hooks</b> · 1 hooks · stay in the main session · read in full</summary>
+<details><summary>🟢 <b>Hooks</b> · 1 hook · stay in the main session · read in full</summary>
 
 - Hooks:
   - SessionStart: hooks/run.sh
@@ -21,7 +21,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Subagents and commands</b> · 1 agents · 1 commands</summary>
+<details><summary>🟢 <b>Subagents and commands</b> · 1 agent · 1 command</summary>
 
 - Agents:
   - x
@@ -30,14 +30,14 @@
 
 </details>
 
-<details><summary>🟢 <b>State it may leave</b> · 1 files that may write state</summary>
+<details><summary>🟢 <b>State it may leave</b> · 1 file that may write state</summary>
 
 - Persistence candidates:
   - hooks/install.sh
 
 </details>
 
-<details><summary>🟢 <b>Reaches outside the session</b> · 1 MCP servers</summary>
+<details><summary>🟢 <b>Reaches outside the session</b> · 1 MCP server</summary>
 
 - MCP servers:
   - s (local-process, node)

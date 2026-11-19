@@ -13,7 +13,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Hooks</b> · 1 hooks · stay in the main session · read in full</summary>
+<details><summary>🟢 <b>Hooks</b> · 1 hook · stay in the main session · read in full</summary>
 
 - Hooks:
   - SessionStart: hooks/session-start.sh
@@ -28,7 +28,7 @@
 
 </details>
 
-<details><summary>🟢 <b>State it may leave</b> · 1 files that may write state</summary>
+<details><summary>🟢 <b>State it may leave</b> · 1 file that may write state</summary>
 
 - Persistence candidates:
   - hooks/session-start.sh

@@ -2,7 +2,7 @@
 
 🟢 read in full · 🟡 partly read · 🔴 something unread
 
-<details><summary>🟢 <b>Injects</b> · 1 skills · ~300 tokens on demand · ~21 chars of skill descriptions every session · hook text read in full</summary>
+<details><summary>🟢 <b>Injects</b> · 1 skill · ~300 tokens on demand · ~21 chars of skill descriptions every session · hook text read in full</summary>
 
 - Skills:
   - alpha: description every session (21 chars); the file on demand (1200 bytes, ~300 tokens)

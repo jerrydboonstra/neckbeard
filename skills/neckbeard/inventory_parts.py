@@ -10,7 +10,7 @@ import re
 
 from inventory_core import (
     _note, _walk_error, _walk_gaps, _within, find_files, measure, note_frontmatter, read_json, read_text,
-    rule_item, split_frontmatter,
+    model_invocable, rule_item, split_frontmatter,
 )
 
 
@@ -158,6 +158,8 @@ def contained_skill(sm, root, notes=None):
         fm, _ = split_frontmatter(item["text"])
         # Claude Code treats a skill as user-invocable unless its frontmatter says false.
         item["user_invocable"] = str((fm or {}).get("user-invocable", "true")).strip().lower() != "false"
+        # Claude Code leaves the description of a skill that sets disable-model-invocation: true out of every session.
+        item["model_invocable"] = model_invocable(fm)
         item["companion_files"] = skill_companions(sm, root, notes)
         item = note_frontmatter(item)
     return item

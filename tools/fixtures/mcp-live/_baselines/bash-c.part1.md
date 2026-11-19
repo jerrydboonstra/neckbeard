@@ -29,7 +29,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Reaches outside the session</b> · 1 MCP servers</summary>
+<details><summary>🟢 <b>Reaches outside the session</b> · 1 MCP server</summary>
 
 - MCP servers:
   - s (local-process, bash)

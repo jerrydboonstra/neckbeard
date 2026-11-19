@@ -11,7 +11,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Hooks</b> · 1 hooks · stay in the main session · partly read</summary>
+<details><summary>🟡 <b>Hooks</b> · 1 hook · stay in the main session · partly read</summary>
 
 - Hooks: partly read
   - SessionStart: hooks/greet-session.js

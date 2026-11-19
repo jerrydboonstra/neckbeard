@@ -16,7 +16,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Subagents and commands</b> · 1 agents · 0 commands</summary>
+<details><summary>🟡 <b>Subagents and commands</b> · 1 agent · 0 commands</summary>
 
 - Agents: partly read
   - x
