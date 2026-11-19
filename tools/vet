@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]: vet one plugin against the sample reader, headless,
+# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]
+#   [--dossier DOSSIER --answers ANSWERS --prose PROSE]: vet one plugin against the sample reader, headless,
 # and write the report to OUT. This is the gallery method in one command, for a plugin that publishes its report
 # and wants to rebuild it, say in a Claude Code web session on its own repo:
 #   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
@@ -50,6 +51,24 @@
 # It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error.
 # Exit 0 only when the report passed every check: it holds the three layer headings once and in order and names no local path, and a published (--facts) report also holds no verdict strip and no fit card. A published report's checks all run before OUT is written; a fit report's local-path and login checks run after, and remove OUT on a hit. Kept out of bin/, which a plugin puts on every session's PATH.
 #
+# Session mode (--dossier DOSSIER --answers ANSWERS --prose PROSE, all three or none): assembles the same fit report from a judgement the
+# calling session already made, with no model call: no find pass, confirm call, answering judge or prose judge runs, and claude need not be on
+# PATH. DOSSIER is the one the session wrote with skills/neckbeard/inventory.py (its target path must be TARGET's, compared by realpath, and
+# TARGET must be a local folder, else usage, exit 2); its current_rules are the rules the verdict is against, labelled "your rules". tools/vet does not copy a
+# reader or run the inventory. ANSWERS is the per-unit answers in tools/vet-units.md's format, with each confirmed conflict in the form
+# tools/units-confirm merge writes ({quote, reader_rule, held_in, hard_stop}); PROSE is {why, do_this, patch}, the form tools/fit reads. Then
+# the verdict and counts are computed with tools/units-verdict and the report is rendered and assembled as for any fit report, with these
+# differences: the title ends " · against your rules"; the Baseline line keeps its form, its bytes and fingerprint computed from the rule
+# files' raw bytes on disk, each hashed under the name the report shows; the Rule files block names a file under the
+# project as its project-relative path, else under the home folder as ~/<path below home>, else by its basename (the project is tried first, so
+# the narrower root wins when it sits inside the home folder; a project that is the home folder itself counts as the home), so no local
+# path appears; the Judge line reads "Judge: this session". A listed
+# rule file that can no longer be read, answers that units-verdict refuses, or a dossier made for another target exit 1, naming the problem,
+# with no OUT written. A dossier that lists no rule files gets the facts report instead (one stderr line, exit 0), and --note does not carry
+# over to it, as in any fit report. --repo and --note work as in any fit report; with --reader, --judge, --model, --units or --facts it is a
+# usage error. Beside OUT it keeps only <stem>.units.json and <stem>.verdict.json: the caller's DOSSIER, ANSWERS and PROSE are never written,
+# moved or deleted, and one named like a file vet writes (OUT, <stem>.units.json, <stem>.verdict.json) is refused.
+#
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
 # Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
 # has no header to read.
@@ -58,6 +77,7 @@
 set -u
 usage() {
   echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]" >&2
+  echo "       tools/vet TARGET OUT --dossier DOSSIER --answers ANSWERS --prose PROSE [--repo URL] [--note TEXT]   (a local folder TARGET; no model call)" >&2
   echo "       --units is a no-op: the units path is the default" >&2
   echo "       --facts takes only --repo and --release-tag" >&2
   echo "       tools/vet --check REPORT TARGET" >&2
@@ -162,19 +182,29 @@ for line in open(sys.argv[1], encoding="utf-8"):
 fi
 [ $# -ge 2 ] || usage
 target=$1 out=$2 out_given=$2; shift 2
-judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" facts=no judgeflags=no readerdir="" releasetag=""
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" notegiven=no facts=no judgeflags=no readerdir="" releasetag="" sdossier="" sanswers="" sprose=""
 while [ $# -gt 0 ]; do case $1 in
   --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
   --model) [ $# -ge 2 ] || usage; model=$2; judgeflags=yes; shift 2 ;;
   --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
-  --note) [ $# -ge 2 ] || usage; note=$2; judgeflags=yes; shift 2 ;;
+  --note) [ $# -ge 2 ] || usage; note=$2; notegiven=yes; shift 2 ;;
+  --dossier) [ $# -ge 2 ] && [ -n "$2" ] || usage; sdossier=$2; shift 2 ;;
+  --answers) [ $# -ge 2 ] && [ -n "$2" ] || usage; sanswers=$2; shift 2 ;;
+  --prose) [ $# -ge 2 ] && [ -n "$2" ] || usage; sprose=$2; shift 2 ;;
   --units) judgeflags=yes; shift ;;   # a no-op: the units path is the default
   --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
   --release-tag) [ $# -ge 2 ] && [ -n "$2" ] || usage; case $2 in *[!A-Za-z0-9._-]*) usage ;; esac; releasetag=$2; shift 2 ;;   # a plain tag name: it goes into a public header line
   --facts) facts=yes; shift ;;
   *) usage ;;
 esac; done
-[ "$facts" = no ] || [ "$judgeflags" = no ] || usage
+[ "$facts" = no ] || { [ "$judgeflags" = no ] && [ "$notegiven" = no ]; } || usage
+# session mode: all three of --dossier, --answers and --prose, a local folder as TARGET, and none of the judge's flags
+session=no
+if [ -n "$sdossier$sanswers$sprose" ]; then
+  [ -n "$sdossier" ] && [ -n "$sanswers" ] && [ -n "$sprose" ] || usage
+  [ "$facts" = no ] && [ "$judgeflags" = no ] && [ -d "$target" ] || usage
+  session=yes
+fi
 [ -z "$releasetag" ] || [ "$facts" = yes ] || usage
 
 nb=$(cd "$(dirname "$0")/.." && pwd -P)
@@ -194,7 +224,7 @@ label="the sample reader" is_default=yes
 work=$(mktemp -d "${TMPDIR:-/tmp}/neckbeard-vet.XXXXXX") || die "mktemp failed"
 trap 'rm -rf "$work"' EXIT
 reader=$work/reader project=$work/project
-if [ "$facts" = yes ]; then
+if [ "$facts" = yes ] || [ "$session" = yes ]; then   # session mode copies no reader: the dossier is the caller's
   mkdir "$reader" "$project" || die "couldn't make the empty config folder"
 else
   cp -R "$readerdir" "$reader" && mkdir "$project" || die "couldn't copy the reader ($label)"
@@ -203,9 +233,31 @@ reader=$(cd "$reader" && pwd -P) project=$(cd "$project" && pwd -P)
 
 # 2. the dossier
 dossier=$project/dossier.json
+if [ "$session" = yes ]; then
+  # the caller's own file, never copied, moved or deleted: it must be for TARGET, and the three files must not be ones vet writes
+  dossier=$sdossier
+  stem=${out%.md}
+  python3 - "$target" "$dossier" "$out" "$stem.units.json" "$stem.verdict.json" "$sanswers" "$sprose" <<'PYEOF3' || exit 1
+import json, os, sys
+target, dossier, out, units, verdict, answers, prose = sys.argv[1:8]
+real = os.path.realpath
+for name, path in (("--dossier", dossier), ("--answers", answers), ("--prose", prose)):
+    if real(path) in (real(out), real(units), real(verdict)):
+        sys.exit(f"vet: {name} {path} is a file vet writes (OUT or its .units.json or .verdict.json), so it is refused and left as it is")
+try:
+    named = json.load(open(dossier, encoding="utf-8"))["target"]["path"]
+except (OSError, ValueError, KeyError, TypeError) as e:
+    sys.exit(f"vet: can't read the dossier {dossier}: {e}")
+if real(named) != real(target):
+    sys.exit(f"vet: the dossier is for {named}, not {target}")
+PYEOF3
+  for f in "$sdossier" "$sanswers" "$sprose"; do [ -f "$f" ] || die "no file at $f"; done
+  rm -f "$out" "$stem.units.json" "$stem.verdict.json"
+else
 # its note about the dossier holding your rules is moot here: the dossier is deleted on exit
 CLAUDE_CONFIG_DIR=$reader python3 "$nb/skills/neckbeard/inventory.py" "$target" --project-dir "$project" --out "$dossier" >"$work/inventory.log" 2>&1 ||
   { cat "$work/inventory.log" >&2; die "the inventory failed"; }
+fi
 if [ "$facts" = yes ]; then
   # --facts reads no reader: the rule list must be empty
   python3 - "$dossier" <<'EOF' || die "the dossier read rules, and a facts report must read none"
@@ -215,6 +267,51 @@ if rules:
     print("vet: the dossier read: " + ", ".join(r.get("path") or "?" for r in rules), file=sys.stderr)
     sys.exit(1)
 EOF
+elif [ "$session" = yes ]; then
+  # the rules the verdict is against are the dossier's current_rules, named for the report as the header comment says
+  baseline_file=$work/baseline.md label="your rules" is_default=no
+  cat >"$work/baseline.py" <<'PYEOF3'
+import hashlib, json, os, sys
+sys.path.insert(0, sys.argv[5])
+from cards import card
+current = json.load(open(sys.argv[1], encoding="utf-8")).get("current_rules", {})
+rules = current.get("items", [])
+if not rules:
+    sys.exit(3)   # no rule files: the facts report, below
+home = os.path.realpath(sys.argv[2])
+proj = os.path.realpath(current["project_root"]) if current.get("project_root") else ""
+def shown(path):   # the project's own files first (the narrower root), then the home folder, else the basename: never a local path
+    rp = os.path.realpath(path)
+    for root, prefix in ((proj, ""), (home, "~/")):
+        if root and root != "/" and rp.startswith(root + os.sep) and not (root == proj and proj == home):
+            return prefix + os.path.relpath(rp, root)
+    return os.path.basename(rp)
+rows = []
+for r in rules:
+    name = shown(r["path"])
+    try:
+        rows.append((name, open(r["path"], "rb").read()))
+    except OSError as e:
+        sys.exit(f"vet: the dossier lists the rule file {name}, which can no longer be read ({e.strerror})")
+rows.sort()
+h, total = hashlib.sha256(), 0
+for name, data in rows:
+    total += len(data)
+    h.update(name.encode("utf-8") + b"\0" + data + b"\0")
+fp = h.hexdigest()[:12]
+with open(sys.argv[4], "w", encoding="utf-8") as f:
+    f.write(f"\nBaseline: {sys.argv[3]} \u00b7 {len(rows)} rule files \u00b7 {total} bytes \u00b7 sha256 {fp}\n\n")
+    f.write("\n".join(card("", "Rule files", "", [f"- `{name}`" for name, _ in rows])) + "\n")
+print(len(rows), total, fp)
+PYEOF3
+  baseline_out=$(python3 "$work/baseline.py" "$dossier" "${HOME:-/nonexistent}" "$label" "$baseline_file" "$nb/tools"); rc=$?
+  case $rc in
+    0) read -r nfiles nbytes fingerprint <<<"$baseline_out" ;;
+    3) echo "vet: the dossier lists no rule files, so there is no verdict to give; writing the facts report instead" >&2
+       rm -rf "$work"; trap - EXIT
+       exec "$0" "$target" "$out_given" --facts ${repo:+--repo "$repo"} ;;
+    *) exit 1 ;;
+  esac
 else
 python3 - "$dossier" "$reader" <<'EOF'
 import json, os, sys
@@ -257,7 +354,7 @@ EOF
 ) || die "couldn't compute the baseline"
 fi
 
-# 3. the judge (--facts has none)
+# 3. the judge (--facts and session mode have none)
 # On Linux the login lives in the config folder's login file, so the default reader gets a copy of the caller's for this
 # run (mode 600, removed with the work folder). A --reader folder never does: its settings.json hooks run.
 credcopy=no credsum="" credtokens=$work/login.tokens login_why=""
@@ -285,7 +382,7 @@ PYEOF
   (umask 077; cp "$f" "$reader/.credentials.json") && chmod 600 "$reader/.credentials.json" || { login_why="your login file couldn't be read"; return 1; }
   credcopy=yes credsum=$(cksum <"$reader/.credentials.json")
 }
-if [ "$facts" = no ] && { [ "$judge" = auto ] || [ "$judge" = reader ]; }; then
+if [ "$facts" = no ] && [ "$session" = no ] && { [ "$judge" = auto ] || [ "$judge" = reader ]; }; then
   forced=no; [ "$judge" = reader ] && forced=yes
   copy_login || true
   probe_out=$work/probe.out
@@ -308,7 +405,8 @@ if [ "$facts" = no ] && { [ "$judge" = auto ] || [ "$judge" = reader ]; }; then
   fi
 fi
 if [ "$facts" = no ]; then   # the report names the judge that ran, beside the Baseline line
-  if [ "$judge" = own ]; then judge_says="your own config, told to ignore it"
+  if [ "$session" = yes ]; then judge_says="this session"
+  elif [ "$judge" = own ]; then judge_says="your own config, told to ignore it"
   elif [ "$is_default" = yes ]; then judge_says="the sample reader's config"
   else judge_says="$label's config"; fi
   python3 - "$baseline_file" "Judge: $judge_says" <<'PYEOF' || die "couldn't name the judge in the baseline"
@@ -355,7 +453,8 @@ assemble() {
 import sys
 out, title, header, label, fit, closing, work = sys.argv[1:8]
 read = lambda name: open(f"{work}/{name}", encoding="utf-8").read().strip("\n")
-first = "cost, reach, state and live surface at a glance" + (f", then the fit against {label}'s rules. Carries a judgement: the colours, and the verdict against {label}." if label else ". Carries a judgement: the colours.")
+rules = label if label == "your rules" else f"{label}'s rules"   # session mode's label already ends in "rules"
+first = "cost, reach, state and live surface at a glance" + (f", then the fit against {rules}. Carries a judgement: the colours, and the verdict against {label}." if label else ". Carries a judgement: the colours.")
 parts = [title, header, "**Contents**",
          "1. [How it affects you](#how-it-affects-you): " + first + "\n"
          "2. [What it adds](#what-it-adds): what the plugin loads, injects and may leave on disk, written by code. No judgement.\n"
@@ -427,7 +526,10 @@ fi
 title_tail="$layers_title · against $label"
 title=$(header_lines | sed -n 1p) header=$(header_lines | sed -n 2p)
 render_layers
-if [ "$is_default" = yes ]; then
+if [ "$session" = yes ]; then
+  reader_noun="your rules" reader_cite="their shown names, never a local path"   # not read: no prose judge runs in this mode
+  verdict_text="Verdict is relative to your $nfiles rule files (fingerprint $fingerprint), not a judgment of the plugin's quality."
+elif [ "$is_default" = yes ]; then
   reader_noun="the sample reader" reader_cite="examples/reader/... paths, never by the folder above"
   verdict_text="Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
 else
@@ -436,8 +538,18 @@ else
 fi
 stem=${out%.md}
 unitsf=$stem.units.json answers=$stem.answers.json cands=$stem.candidates.json confs=$stem.confirmations.json confirmed=$stem.confirmed.json verdictf=$stem.verdict.json prose=$stem.prose.json
-rm -f "$out" "$answers" "$cands" "$confs" "$confirmed" "$verdictf" "$prose" "$stem".finds-*.json
+if [ "$session" = yes ]; then
+  answers=$sanswers prose=$sprose   # the caller's, read and never written
+else
+  rm -f "$out" "$answers" "$cands" "$confs" "$confirmed" "$verdictf" "$prose" "$stem".finds-*.json
+fi
 python3 "$nb/tools/rule-units" "$dossier" "$unitsf" >&2 || die "rule-units failed"
+if [ "$session" = yes ]; then
+  # the answers are the session's: only the verdict and counts are computed here, by code
+  computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers" 2>&1) || { echo "$computed" >&2; die "the answers were refused"; }
+  echo "vet: units: $computed" >&2
+  python3 "$nb/tools/units-verdict" "$unitsf" "$answers" --json >"$verdictf" || die "couldn't write the verdict records"
+else
 test_text=$(cat "$nb/tools/vet-conflict-test.md")
 ucfg=()
 [ "$judge" = reader ] && ucfg=(env CLAUDE_CONFIG_DIR="$reader")
@@ -544,6 +656,7 @@ try: rows = [l.split() for l in open(sys.argv[1]) if l.strip()]
 except OSError: rows = []
 print(f"vet: units cost: {len(rows)} calls, ${sum(float(r[0]) for r in rows):.2f}, {sum(int(float(r[1])) for r in rows) // 1000} s of call time; whole vet {sys.argv[2]} s")
 PYEOF2
+fi   # session mode skips the judge steps above
 
 # 4. the report: title, header, Contents, then the three layers (the summary rows, then the fit strip and cards, the facts, the positions)
 python3 "$nb/tools/fit" "$verdictf" "$prose" --label "$label" --target "${name##*/}" --verdict-text "${note:+$note }$verdict_text" --baseline "$baseline_file" >"$work/fit.md" || die "the fit report could not be drawn from $verdictf and $prose"
@@ -552,8 +665,9 @@ check_report "$work/report.md" no
 cp "$work/report.md" "$out" || die "couldn't write $out"
 login_scan || die "the report held your login's secrets, so no report was written"
 rm -f "$credtokens"   # kept until here: the finished report, with part 1 from the dossier, is the last thing scanned; the work folder goes at exit
-for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do
-  [ "$p" = / ] && continue
+for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}" "$(cd "${HOME:-/nonexistent}" 2>/dev/null && pwd -P)" "$(python3 -c 'import json,sys
+print(json.load(open(sys.argv[1])).get("current_rules", {}).get("project_root") or "")' "$dossier" 2>/dev/null)"; do
+  [ "$p" = / ] || [ -z "$p" ] && continue
   grep -qF -- "$p" "$out" && { rm -f "$out"; die "$out names a local path ($p); fix it by hand or rerun"; }
 done
 echo "vet: report $out (judge: $judge)"

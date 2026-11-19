@@ -447,6 +447,8 @@ def session_vet(fx, answers=None, prose=None, args=None, target=None, out=None, 
     log = os.path.join(fx["tmp"], "claude.log")
     out = out or os.path.join(fx["tmp"], "out", "report.md")
     os.makedirs(os.path.dirname(out), exist_ok=True)
+    if os.path.exists(out) and not out.endswith(".verdict.json"):
+        os.remove(out)   # each run starts with no report, so a refusal is seen to write none
     env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR"}
     os.makedirs(os.path.join(fx["tmp"], "t"), exist_ok=True)
     env.update(HOME=fx["home"], PATH=bindir + os.pathsep + env["PATH"], FAKE_LOG=log, TMPDIR=os.path.join(fx["tmp"], "t"))
@@ -543,10 +545,21 @@ def case_refusals(tmp):
     r = session_vet(fx, target="demo@some-market")
     chk("session: a target that is not a local folder: usage, exit 2", (r["rc"], "usage:" in r["out"], r["text"]), (2, True, None))
     # the caller's answers file is never taken for a file vet writes
-    clash = os.path.join(tmp, "out", "report.verdict.json")
-    shutil.copy(write_answers(fx), clash)
-    r = session_vet(fx, answers=clash)
-    chk("session: an answers file named like a file vet writes beside OUT is refused, and not deleted", (r["rc"], os.path.exists(clash), r["text"]), (1, True, None))
+    for clash_name in ("report.verdict.json", "report.units.json"):
+        clash = os.path.join(tmp, "out", clash_name)
+        shutil.copy(write_answers(fx), clash)
+        before = open(clash, "rb").read()
+        r = session_vet(fx, answers=clash)
+        chk("session: an answers file named " + clash_name + " beside OUT is refused and survives", (r["rc"], open(clash, "rb").read() == before if os.path.exists(clash) else None, r["text"]), (1, True, None))
+        os.remove(clash)
+    dos = shutil.copy(fx["dossier"], os.path.join(tmp, "out", "report.units.json"))
+    r = session_vet(fx, dossier=dos)
+    chk("session: a dossier named like a file vet writes is refused and survives", (r["rc"], os.path.exists(dos), r["text"]), (1, True, None))
+    os.remove(dos)
+    chk("session: the caller's dossier is never deleted", os.path.exists(fx["dossier"]), True)
+    os.rename(os.path.join(tmp, "proj", "CLAUDE.md"), os.path.join(tmp, "proj", "gone.md"))
+    r = session_vet(fx)
+    chk("session: a listed rule file that can no longer be read: exit 1, named, no report", (r["rc"], "CLAUDE.md" in r["out"] and "can no longer be read" in r["out"], r["text"]), (1, True, None))
 
 
 def case_no_rules(tmp):

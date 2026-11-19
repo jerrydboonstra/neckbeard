@@ -33,6 +33,7 @@ tools/rule-units test_units
 tools/units-verdict test_units test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers test_fit
 tools/fit test_fit test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers
 tools/fixtures/fit/** test_fit test_units
+tools/fixtures/vet-session/** test_vet
 tools/test_fit.py test_fit
 tools/test_vet_report.py test_vet_report
 tools/test_vet_layers.py test_vet_layers
