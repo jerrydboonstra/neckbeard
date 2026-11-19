@@ -22,6 +22,7 @@ n=0
 found=0
 while IFS= read -r word <&3 || [ -n "$word" ]; do
   n=$((n + 1))
+  word=${word%$'\r'}
   case $word in '' | '#'*) continue ;; esac
   [ -z "${word//[[:space:]]/}" ] && continue
   out=$(git grep -I -n -w -F -e "$word" 2>/dev/null)

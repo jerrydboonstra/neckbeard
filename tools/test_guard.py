@@ -69,6 +69,15 @@ for label, text in [("inside a longer word (letters)", f"un{WORD}s\n"), ("touche
     chk(f"a listed word {label} exits 0", guard(repo, lst)[0], 0)
     shutil.rmtree(d)
 
+d, repo, lst = scratch({"a.txt": f"{WORD}\n".encode()}, f"{WORD}\r\n")
+chk("a list with Windows line ends still finds the word", guard(repo, lst)[0], 1)
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": f"a -{WORD} b\n{WORD}.y\n".encode()}, f"-{WORD}\n{WORD}.y\n")
+code, out, err = guard(repo, lst)
+chk("a word starting with a dash, and one with a dot (a fixed string, not a pattern), both match as written", (code, out.count("(list line")), (1, 2))
+shutil.rmtree(d)
+
 d, repo, lst = scratch({"a.txt": f"({WORD}).\n".encode()}, LIST)
 chk("a word between punctuation is a whole word", guard(repo, lst)[0], 1)
 shutil.rmtree(d)
