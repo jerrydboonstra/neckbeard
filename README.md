@@ -43,39 +43,27 @@ tools/vet . report.md --facts
 cat report.md
 ```
 
-The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list, then three layers: how it affects you (five rows: cost, reach, leaves state, live surface and read completeness), what it adds, and where it takes a position. This is neckbeard's own, cut down to its headings and top-level bullets ([the full report](docs/neckbeard-report.md) lists every skill and file):
+The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list, then three layers: how it affects you (five rows: cost, reach, leaves state, live surface and read completeness), what it adds, and where it takes a position. This is neckbeard's own, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
-> # 🔍 neckbeard 1.17.8 · what it adds
+> # 🔍 neckbeard 1.17.8 · how it affects you, what it adds, where it takes a position
 >
-> `2026-11-18` · neckbeard 1.17.8 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.8 @ `v1.17.8`
+> `2026-11-18` · neckbeard 1.17.8 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 1.17.8 @ `485d2552`
 >
-> ### Injects
-> - Skills: 1 (neckbeard)
-> - Rule files: none
-> - Hook-injected text: none
+> | | Row | In short |
+> |---|---|---|
+> | 🟩 | Cost | adds 764 to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+> | 🟩 | Reach | on demand only |
+> | 🟧 | Leaves state | 44 files that may write state |
+> | 🟩 | Live surface | no hook commands, MCP servers or mods found |
+> | 🟩 | Read completeness | read in full |
 >
-> ### Hooks
-> - Hooks: none
->
-> ### Subagents and commands
-> - Agents: none
-> - Commands: none
->
-> ### State it may leave
-> - Persistence candidates: 32 (see the full report)
->
-> ### Reaches outside the session
-> - MCP servers: none
->
-> ### Source
-> - Kind: plugin
-> - Name: neckbeard (from plugin.json)
-> - Version: 1.17.8 (from plugin.json)
-> - plugin.json: 1 (name and version, shown above)
-> - Marketplace: none
-> - Commit: v1.17.8
-> - Declared fixtures: tools/fixtures (files there that the hooks and persistence scans can't read don't count against the badge)
+> - 🟢 **Injects** · 1 skills · ~3633 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
+> - 🟢 **Hooks** · 0 hooks · read in full
+> - 🟢 **Subagents and commands** · no agents · 0 commands
+> - 🟢 **State it may leave** · 44 files that may write state · 10 named
+> - 🟢 **Reaches outside the session** · no MCP servers
+> - 🟢 **Source** · plugin · neckbeard 1.17.8 from plugin.json · commit 485d255 · no marketplace
 <!-- /report -->
 
 How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](docs/publish-your-report.md#badge-colours-and-declared-fixtures).
