@@ -31,7 +31,7 @@ tools/positions test_positions test_positions_layer test_vet_session
 tools/positions-layer test_positions_layer test_vet_layers test_vet_session
 tools/rule-units test_units test_vet_session test_carrying_cost
 tools/units-verdict test_units test_vet test_vet_judge test_vet_session test_vet_stability test_vet_report test_vet_layers test_fit test_carrying_cost
-tools/fit test_fit test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers test_vet_session test_skill_md
+tools/fit test_carrying_cost test_fit test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers test_vet_session test_skill_md
 tools/fixtures/fit/** test_fit test_units
 tools/fixtures/vet-session/** test_vet test_vet_session
 tools/test_fit.py test_fit

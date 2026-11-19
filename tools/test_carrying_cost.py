@@ -59,6 +59,11 @@ for label, hooks, want in (("no hooks", NOHOOKS, {"session_start": False, "subag
     code, out, path = units_of("ao", hooks)
     got = json.load(open(path)).get("always_on")
     chk(f"rule-units: {label} gives always_on {want}", code == 0 and got == want, (code, got, out))
+PARTIAL_SS = {"has_hooks": "partial", "events": {"SessionStart": [{"matcher": "", "command": "run.sh"}]}, "hooks_reach_subagents": False}
+PARTIAL_Q = {"has_hooks": "partial", "events": {"Stop": [{"matcher": "", "command": "run.sh"}]}, "hooks_reach_subagents": False}
+for label, hooks, want in (("with a SessionStart event", PARTIAL_SS, {"session_start": True, "subagents": False}), ("with only a Stop event", PARTIAL_Q, {"session_start": False, "subagents": False})):
+    code, out, path = units_of("ao", hooks)
+    chk(f"rule-units: has_hooks partial {label} is read from its events, no unknown note: {want}", json.load(open(path)).get("always_on") == want and "unknown" not in out, (json.load(open(path)).get("always_on"), out))
 code, out, path = units_of("ao", UNKNOWN)
 chk("rule-units: an unread hook counts as always-on and says so on stderr", "unknown" in out.lower() and "always" in out.lower(), out)
 UNKNOWN_HAS = {"has_hooks": "unknown", "events": {}, "hooks_reach_subagents": None}
@@ -188,9 +193,14 @@ code, out, text = vet(*hooked, "copy")
 chk("end to end: a session-start hook and a subagent hook, one kept skill, answered copy: COPY RULES, SKIP PLUGIN in the strip", code == 0 and COPY in text and "🟩 INSTALL" not in text, (code, out[-400:]))
 code, out, text = vet(*hooked, None)
 chk("end to end: the same with no carrying_cost: vet exits 1 naming it, no report", code == 1 and "carrying_cost" in out and not text, (code, out[-400:]))
+code, out, text = vet(*hooked, "reader-decides")
+chk("end to end: the hooked plugin answered reader-decides gives COPY RULES and the report carries the trade line under the strip",
+    code == 0 and COPY in text and text.count("Reader decides: exactly one rule survives") == 1, (code, out[-300:]))
+code, out, text = vet(*hooked, "copy")
+chk("end to end: answered copy, the report has no trade line", code == 0 and "Reader decides" not in text, (code, out[-300:]))
 plain = build("plain", False)
-code, out, text = vet(*plain, None)
-chk("end to end: the same answers on a copy with no hooks give INSTALL", code == 0 and "🟩 INSTALL" in text and COPY not in text, (code, out[-400:]))
+code, out, text = vet(*plain, "copy")
+chk("end to end: the same answers (copy) on a copy with no hooks give INSTALL", code == 0 and "🟩 INSTALL" in text and COPY not in text, (code, out[-400:]))
 
 shutil.rmtree(d)
 print(f"test_carrying_cost: {'FAILED ' + str(fails) if fails else 'ok'}")
