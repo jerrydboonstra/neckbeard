@@ -86,14 +86,14 @@ A fit verdict on the rerun would need your own rules, so there is none here. The
 
 No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and two on 1.17 found no conflict (see the rerun below).
 
-**The report today** · neckbeard 1.17.8 @ `ab332f8b` against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
+**The report today** · neckbeard 2.0.0 @ `4bf7131d` against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
 | | Row | In short |
 |---|---|---|
-| 🟩 | Cost | adds 764 to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟩 | Cost | adds 764 characters to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟩 | Reach | on demand only |
-| 🟧 | Leaves state | 44 files that may write state |
+| 🟧 | Leaves state | 48 files that may write state |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 | 🟩 | Read completeness | read in full |
 
@@ -120,7 +120,7 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 - the judge's figures come from its reading: it gives 14,535 bytes for the skill body (the inventory's count) and about 764 bytes for the description, where the 1.17.1 run on the Mac said 14,357 bytes and "about 270 tokens per the manifest"\
   ↳ about the tool: figures in a fit report come from a model's reading and can differ between runs; the facts report is the one to quote
 
-**Since this rerun** · 2026-11-18, neckbeard 1.17.8 @ `ab332f8b`, a new judge run in the 2.0 layout (the report above is that one): it reads in full, since a later version reads scripts up to 2,000,000 characters, so the 50,000-byte gap is gone; its first layer holds the summary rows and the verdict strip, where the 1.17.2 report had an At a glance table; its Reach row reads "on demand only".
+**Since this rerun** · 2026-11-18, neckbeard 1.17.8 @ `ab332f8b`, a judge run in the 2.0 layout (a later run, 2.0.0 @ `4bf7131d`, is the report above, with the same verdict): it reads in full, since a later version reads scripts up to 2,000,000 characters, so the 50,000-byte gap is gone; its first layer holds the summary rows and the verdict strip, where the 1.17.2 report had an At a glance table; its Reach row reads "on demand only".
 
 ## 3. `obra/superpowers`: the large one
 
