@@ -2,10 +2,9 @@
 """Keep the report excerpts in README.md and CASE-STUDIES.md in step with the reports.
 
 Each case study that ran against a gallery plugin opens with that report's
-excerpt between two markers. In the 2.0 layout (a "## How it affects you" heading): a fit report's summary table and its verdict
-strip; a facts report's title, header line and summary table, then one line per facts card under "What it adds" (its read marker,
-name and gist, from the card's summary line). In the old layout: a fit report's verdict and "At a glance" table, a facts report's
-title, header line and "What it adds" headings with their top-level bullets (a bullet that ends in ":" says how many items it held):
+excerpt between two markers. A fit report's excerpt is its summary table and its verdict strip; a facts report's is its title, header line and
+summary table, then one line per facts card under "What it adds" (its read marker, name and gist, from the card's summary line). A report in
+the old layout (no "## How it affects you" summary table) is refused:
 
     <!-- report:superpowers -->
     ...
@@ -26,59 +25,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = [ROOT / "README.md", ROOT / "CASE-STUDIES.md"]
 BLOCK = re.compile(r"(<!-- report:([\w./-]+) -->\n)(.*?)(\n<!-- /report -->)", re.S)
-
-
-def counted(bullet, after):
-    """A top-level bullet ending in ":" has children the excerpt drops, so it says how many instead of
-    ending bare: "- Skills: 1 (name)" for one, "- Files: 29 (see the full report)" for more, "none" for
-    no children. A last child "and N more, in: ..." counts as N."""
-    kids, indent = [], None
-    for l in after:
-        if l.strip() and l[0] not in " \t":
-            break
-        item = l.strip()
-        if not item.startswith("- "):
-            continue
-        depth = len(l) - len(l.lstrip())
-        if indent is None:
-            indent = depth
-        if depth == indent:  # a deeper line is a detail of the item above it
-            kids.append(item[2:].strip())
-    if not kids:
-        return bullet + " none"
-    more = re.fullmatch(r"and (\d+) more, in:.*", kids[-1])
-    n = len(kids) - 1 + int(more.group(1)) if more else len(kids)
-    if n == 1 and not more:
-        return f"{bullet} 1 ({kids[0].split(': ')[0]})"
-    return f"{bullet} {n} (see the full report)"
-
-
-def facts_excerpt(report):
-    """The excerpt of a facts report (no verdict box): its title line, the one header line under it, and
-    under "What it adds" each ### heading with its top-level bullet lines, no sub-bullets (a bullet ending in ":" gains the count of its dropped items). Quoted, so its
-    headings stay out of the page's own outline."""
-    lines = report.splitlines()
-    title = next((l for l in lines if l.startswith("# ")), None)
-    header = next((l for l in lines[lines.index(title) + 1:] if l.strip()), None) if title else None
-    start = next((i for i, l in enumerate(lines) if l.strip() == "## What it adds"), None)
-    if not title or not header or start is None:
-        return None
-    out = [title, "", header, ""]
-    body = []
-    for l in lines[start + 1:]:
-        if l.startswith("## "):
-            break
-        body.append(l)
-    for i, l in enumerate(body):
-        if l.startswith("### "):
-            if out[-1] != "":
-                out.append("")
-            out.append(l)
-        elif l.startswith("- "):
-            out.append(counted(l.rstrip(), body[i + 1:]) if l.rstrip().endswith(":") else l)
-    while out and out[-1] == "":
-        out.pop()
-    return "\n".join(("> " + l).rstrip() for l in out)
 
 
 CARD = re.compile(r"^<details>\s*<summary>(?:([^\s<]+) )?<b>(.+?)</b>(?: \u00b7 (.*))?</summary>$")
@@ -126,24 +72,13 @@ def layered_excerpt(report):
 
 
 def excerpt(name):
-    """From examples/<name>.md: a fit report's summary table and verdict strip (2.0 layout) or its verdict and At-a-glance table (old), or a facts report's facts."""
+    """From examples/<name>.md: a fit report's summary table and verdict strip, or a facts report's title, header, table and one line per card."""
     # A bare name is a gallery report; a name with a folder in it (docs/neckbeard-report) is that file in the repo.
     path = ROOT / f"{name}.md" if "/" in name else ROOT / "examples" / f"{name}.md"
-    report = path.read_text()
-    new = layered_excerpt(report)   # the 2.0 layout first: its summary table would also match the old At-a-glance pattern below
+    new = layered_excerpt(path.read_text())
     if new:
         return new
-    # The verdict box: its headline and summary, without the closing
-    # "Verdict is relative..." note, which the case study does not need.
-    verdict = re.search(r"^> ## (.+\n(?:>.*\n)*?)>\n> Verdict is relative", report, re.M)
-    glance = re.search(r"^\| \| \| \|\n(?:\|.*\n?)+", report, re.M)
-    if verdict and glance:
-        return f"> {verdict.group(1).rstrip()}\n\n{glance.group(0).rstrip()}"
-    if not verdict and not glance:
-        facts = facts_excerpt(report)
-        if facts:
-            return facts
-    sys.exit(f"excerpts: {path.relative_to(ROOT)} is neither a fit report (verdict box and At-a-glance table) nor a facts report (title, header line, \"What it adds\")")
+    sys.exit(f"excerpts: {path.relative_to(ROOT)} is neither a fit report (summary table and verdict strip) nor a facts report (title, header line, summary table, \"What it adds\" cards)")
 
 
 def main():
