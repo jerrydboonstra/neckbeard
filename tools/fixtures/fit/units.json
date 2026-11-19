@@ -54,5 +54,9 @@
    "heading": "Persona",
    "text": "Text of u9."
   }
- ]
+ ],
+ "always_on": {
+  "session_start": false,
+  "subagents": false
+ }
 }

@@ -85,11 +85,22 @@ chk("units-verdict: nothing kept and nothing to copy stays DON'T INSTALL whateve
 code, out = run("units-verdict", U_ON, answers("dropnew.json", "install", skill="drop", rules="new-standing", n=2))
 chk("units-verdict: carrying_cost install with only rules kept keeps today's COPY RULES", f": {COPY};" in out, out)
 code, out = run("units-verdict", U_ON, answers("rd.json", "reader-decides"))
-chk("units-verdict: reader-decides names the trade on one extra line", code == 0 and sum("reader-decides" in l or "reader decides" in l.lower() for l in out.splitlines()) >= 1 and "carrying" in out.lower(), out)
+_, copy_out = run("units-verdict", U_ON, answers("rd-copy.json", "copy"))
+chk("units-verdict: reader-decides adds exactly one line to the same answers marked copy, and it names the trade",
+    code == 0 and len(out.splitlines()) - len(copy_out.splitlines()) == 1 and "reader-decides" in out and "cheaper to copy" in out, (out, copy_out))
 code, out = run("units-verdict", U_ON, answers("rd2.json", "copy"))
 chk("units-verdict: copy needs no trade line", "reader-decides" not in out, out)
 code, out = run("units-verdict", U_ON, answers("rd3.json", "reader-decides"), "--json")
 chk("units-verdict --json carries the carrying_cost and the verdict", json.loads(out)["verdict"] == COPY and json.loads(out).get("carrying_cost") == "reader-decides", out)
+
+# the multi-run path: each ANSWERS file's own carrying_cost applies
+code, out = run("units-verdict", U_ON, answers("m1.json", "copy"), answers("m2.json", "install"))
+chk("units-verdict: two answers files, one copy and one install on an always-on units file, give both verdicts and are not stable",
+    code == 1 and f"{COPY} in 1 of 2" in out and "INSTALL in 1 of 2" in out and "NOT stable" in out, (code, out))
+code, out = run("units-verdict", U_ON, answers("m3.json", "copy"), answers("m4.json", "copy"))
+chk("units-verdict: two answers files marked copy agree and are stable", code == 0 and out.rstrip().endswith("stable") and "NOT" not in out, (code, out))
+code, out = run("units-verdict", U_ON, answers("m5.json", "copy"), answers("m6.json"))
+chk("units-verdict: with several files, one missing its carrying_cost is refused, exit 2", code == 2 and "carrying_cost" in out, (code, out))
 
 # 3. refusals
 for label, units in (("a SessionStart hook", U_ON), ("a hook reaching subagents", units_of("sub", SUB)[2]), ("an unread hook", units_of("unk", UNKNOWN)[2])):
@@ -105,6 +116,19 @@ chk("units-verdict: a bad carrying_cost is refused even with no always-on cost",
 old = J("old.units.json", {"units": json.load(open(U_ON))["units"]})
 code, out = run("units-verdict", old, answers("old.json"))
 chk("units-verdict: a units file with no always_on key gets today's rule and one stderr note", code == 0 and ": INSTALL;" in out and out.lower().count("carrying-cost rule was not applied") == 1, (code, out))
+
+# a units file with no always_on key ignores carrying_cost, "copy" included
+code, out = run("units-verdict", old, answers("oldcopy.json", "copy"))
+chk("units-verdict: a units file with no always_on key and carrying_cost copy still gives INSTALL, with the one stderr note",
+    code == 0 and ": INSTALL;" in out and out.lower().count("carrying-cost rule was not applied") == 1, (code, out))
+
+# the field is asked for where the answers are written (Done when 4)
+vu = open(os.path.join(HERE, "vet-units.md"), encoding="utf-8").read()
+skill = open(os.path.join(HERE, "..", "skills", "neckbeard", "SKILL.md"), encoding="utf-8").read()
+path_a = skill.split("**Path A:")[1].split("**Path B:")[0]
+answers_bullet = [l for l in path_a.split("\n") if l.startswith("- **Answers.**")]
+chk("tools/vet-units.md asks for carrying_cost and its three values", all(w in vu for w in ("carrying_cost", "install", "copy", "reader-decides")), vu[-400:])
+chk("SKILL.md's path A Answers bullet names carrying_cost and points at Step 2", len(answers_bullet) == 1 and "carrying_cost" in answers_bullet[0] and "Step 2" in answers_bullet[0], answers_bullet)
 
 # 4. end to end through tools/vet's session mode, on a plugin with a session-start hook and a subagent hook
 def build(name, hooked):

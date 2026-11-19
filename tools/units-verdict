@@ -2,7 +2,7 @@
 """units-verdict UNITS ANSWERS [ANSWERS ...] [--json]: the verdict and counts, computed by code from a judge's per-unit answers.
 
 UNITS is what tools/rule-units wrote. Each ANSWERS file is the judge's JSON: {"answers": [{"id": "u1", "skill": ...,
-"conflicts": [...], "rules": ..., "why": ...}, ...]}, one answer for every unit, no more. Each unit gets three
+"conflicts": [...], "rules": ..., "why": ...}, ...], "carrying_cost": ...}, one answer for every unit, no more. Each unit gets three
 answers, because they are three questions:
 - skill: keep or drop. Is this section part of a skill, command or agent worth keeping as shipped?
 - conflicts: every sentence in it that breaks a reader rule, each {"quote", "reader_rule", "held_in", "hard_stop"}; [] when none.
@@ -11,24 +11,37 @@ answers, because they are three questions:
   skill? A rule in an on-demand skill applies only while that skill is loaded, so a general rule is worth copying
   as a standing rule even when the plugin is installed. With several, the first in that order.
 
+carrying_cost is one more answer for the whole target, Step 2's carrying-cost cases: install (always-on cost, and at least one rule you would
+have written yourself), copy (always-on cost, nothing worth carrying) or reader-decides (exactly one rule survives). It is read only when UNITS
+says the target has an always-on cost: tools/rule-units writes "always_on": {"session_start": bool, "subagents": bool} from the dossier's hooks
+(an unread hook counts as true), and either flag true makes carrying_cost required (a file without it is refused). With no always-on cost it is ignored
+when valid. A UNITS file with no "always_on" key (written before this field) gets the verdict rule without the carrying cost and one stderr note.
+
 With one ANSWERS file it prints the counts and the verdict; with several it also prints, per unit, how often the runs
 agreed on each answer. Exit 0 when every file is valid (and, with several, when they agree on the verdict and on
 every unit), 1 when several valid files disagree, 2 on a bad file.
 
 The verdict, from the counts:
-- any skill kept: INSTALL with no conflict, INSTALL WITH CHANGES with one;
+- any skill kept, and carrying_cost copy or reader-decides (applied only with an always-on cost): COPY RULES, SKIP PLUGIN, whatever the conflicts;
+- any skill kept otherwise: INSTALL with no conflict, INSTALL WITH CHANGES with one;
 - else any new-standing or new-skill-text: COPY RULES, SKIP PLUGIN;
 - else: DON'T INSTALL.
-Rules to copy are listed whatever the verdict. The verdict and counts of tools/vet's fit report
+Rules to copy are listed whatever the verdict, and so are conflicts. With a skill kept, reader-decides adds one line naming the trade. The verdict and counts of tools/vet's fit report
 come from here (verdict-stability-rules).
 """
 import collections, json, sys
 
 SKILL = ["keep", "drop"]
+COST = ["install", "copy", "reader-decides"]
+TRADE = ("  carrying cost: reader-decides. Exactly one rule survives, and one good rule is cheaper to copy as text than to carry as a permanent "
+         "injection; the verdict leans to copy, and the reader decides.")
 RULES = ["new-standing", "new-skill-text", "duplicate", "none"]
 
 
-def verdict(skill, rules):
+def verdict(skill, rules, cost=None):
+    """cost: the answers' carrying_cost when the target has an always-on cost, else None (the rule ignores it)"""
+    if skill["keep"] and cost in ("copy", "reader-decides"):
+        return "COPY RULES, SKIP PLUGIN"
     if skill["keep"]:
         return "INSTALL WITH CHANGES" if rules["conflict"] else "INSTALL"  # rules["conflict"]: units with a conflict
     if rules["new-standing"] or rules["new-skill-text"]:
@@ -51,13 +64,21 @@ def kept(skill, rules):
     return skill == "keep" or rules in ("new-standing", "new-skill-text")
 
 
-def load(path, ids):
-    """{unit id: record}, or a list of problems. A record has skill, rules, conflict ("conflict"/"no conflict") and the fields the fit cards read."""
+def load(path, ids, on=None):
+    """({unit id: record}, carrying_cost), or a list of problems. A record has skill, rules, conflict ("conflict"/"no conflict") and the fields the fit cards read.
+    on: whether the target has an always-on cost (None when UNITS does not say). carrying_cost is the answered value when on is true, else None."""
     try:
-        answers = json.load(open(path, encoding="utf-8"))["answers"]
+        doc = json.load(open(path, encoding="utf-8"))
+        answers = doc["answers"]
     except (OSError, ValueError, KeyError, TypeError) as e:
         return [f"can't read answers: {e}"]
     got, problems = {}, []
+    cost = doc.get("carrying_cost")
+    if cost is not None and cost not in COST:
+        problems.append(f"carrying_cost {cost!r} is not one of {', '.join(COST)}")
+    elif on and cost is None:
+        problems.append("carrying_cost is missing: the target has an always-on cost (a hook at session start or reaching subagents), so the answers must say "
+                        f"{', '.join(COST)} (Step 2's carrying-cost cases)")
     for a in answers:
         if not isinstance(a, dict):
             problems.append(f"an answer is not an object: {a!r}")
@@ -90,10 +111,10 @@ def load(path, ids):
     if len(stars) > 1:
         problems.append("star: at most one kept unit may be starred, got " + ", ".join(stars))
     problems += [f"{u}: no answer" for u in ids if u not in got and not any(p.startswith(u + ":") for p in problems)]
-    return problems or got
+    return problems or (got, cost if on else None)
 
 
-def records(units, got):
+def records(units, got, cost=None):
     """the --json document: the verdict, the counts and one record per unit, with each distinct conflict numbered from 1"""
     numbers, recs = {}, []
     c = collections.Counter()
@@ -122,7 +143,7 @@ def records(units, got):
     skill = collections.Counter(r["skill"] for r in got.values())
     rules = collections.Counter(r["rules"] for r in got.values())
     rules["conflict"] = c["units_with_conflict"]
-    return {"verdict": verdict(skill, rules), "counts": {k: c[k] for k in keys}, "units": recs}
+    return {"verdict": verdict(skill, rules, cost), "carrying_cost": cost, "counts": {k: c[k] for k in keys}, "units": recs}
 
 
 def main():
@@ -131,27 +152,35 @@ def main():
     if len(argv) < 2 or (as_json and len(argv) != 2):
         print("usage: units-verdict UNITS ANSWERS [ANSWERS ...] [--json]   (--json takes one ANSWERS file)", file=sys.stderr)
         return 2
-    units = json.load(open(argv[0], encoding="utf-8"))["units"]
+    doc = json.load(open(argv[0], encoding="utf-8"))
+    units = doc["units"]
     ids = [u["id"] for u in units]
+    flags = doc.get("always_on")
+    on = (bool(flags.get("session_start") or flags.get("subagents")) if isinstance(flags, dict) else None)
+    if on is None:
+        print("units-verdict: the units file has no always_on, so the carrying-cost rule was not applied", file=sys.stderr)
     runs, bad = [], False
     for path in argv[1:]:
-        got = load(path, set(ids))
+        got = load(path, set(ids), on)
         if isinstance(got, list):
             bad = True
             print(f"{path}: refused, {len(got)} problems")
             for p in got[:10]:
                 print(f"  {p}")
             continue
+        got, cost = got
         skill = collections.Counter(r["skill"] for r in got.values())
         rules = collections.Counter(r["rules"] for r in got.values())
         rules["conflict"] = sum(1 for r in got.values() if r["conflict"] == "conflict")
-        v = verdict(skill, rules)
+        v = verdict(skill, rules, cost)
         if as_json:
-            print(json.dumps(records(units, got), indent=1, ensure_ascii=False))
+            print(json.dumps(records(units, got, cost), indent=1, ensure_ascii=False))
             return 0
         runs.append((path, got, v))
         print(f"{path}: {v}; skills kept {skill['keep']} of {len(ids)}; units with a conflict {rules['conflict']}; rules "
               + " / ".join(str(rules[r]) for r in RULES) + "  (" + " / ".join(RULES) + ")")
+        if cost == "reader-decides" and skill["keep"]:
+            print(TRADE)
     if bad:
         return 2
     if len(runs) < 2:

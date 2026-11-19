@@ -31,7 +31,7 @@ J = lambda name, obj: (json.dump(obj, open(os.path.join(d, name), "w")), os.path
 skill = "---\nname: s\ndescription: d\n---\n\nIntro text.\n\n## One\n\nRule one.\n\n```\n# not a heading\n```\n\n## Empty\n\n### Two\n\nRule two.\n"
 dossier = J("dossier.json", {"target": {"skills": [{"source": "skills/s/SKILL.md", "text": skill,
                                                   "companion_files": [{"path": "skills/s/roles/w.md", "text": "# W\n\nRole text.\n"}]}],
-                                       "commands": [{"source": "commands/c.md", "text": "Run it.\n"}], "agents": [], "rule_files": []}})
+                                       "commands": [{"source": "commands/c.md", "text": "Run it.\n"}], "agents": [], "rule_files": [], "hooks": {"has_hooks": False}}})
 code, out = run("rule-units", dossier, os.path.join(d, "units.json"))
 units = json.load(open(os.path.join(d, "units.json")))["units"]
 chk("rule-units: exit 0", code == 0, out)
