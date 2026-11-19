@@ -22,8 +22,8 @@ skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_judge test_vet_stabil
 # Tools
 tools/vet test_vet test_vet_judge test_vet_session test_vet_stability test_vet_report test_vet_layers
 tools/badge-logo test_vet test_vet_judge
-tools/part1 test_part1 test_part1_cards test_summary test_vet test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory test_vet_layers
-tools/cards.py test_part1_cards test_summary test_part1 test_vet test_mcp_live test_positions_layer test_vet_layers
+tools/part1 test_part1 test_part1_cards test_summary test_vet test_vet_session test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory test_vet_layers
+tools/cards.py test_part1_cards test_summary test_part1 test_vet test_vet_session test_mcp_live test_positions_layer test_vet_layers
 tools/summary test_summary test_vet_layers
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
@@ -77,7 +77,7 @@ tools/test_vet_stability.py test_vet_stability
 tools/test_vet_session.py test_vet_session test_layout
 tests/map test_test_parallel
 # Manifests, docs and the rest
-.claude-plugin/** test_selfcheck test_vet test_vet_judge test_deploy
+.claude-plugin/** test_selfcheck test_vet test_vet_session test_vet_judge test_deploy
 Makefile test_deploy test_vet test_vet_judge
 docs/** test_vet test_vet_judge
 docs/publish-your-report.md test_layout
