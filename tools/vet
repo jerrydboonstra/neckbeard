@@ -19,15 +19,19 @@
 #      and why: the judge is told to ignore those instructions but still starts with them. The fallback is for the default judge
 #      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and
 #      --judge own. The report carries a "Judge:" line beside the Baseline line saying which judge ran.
-#   4. the report: the title and header lines (written here), the fit strip and cards, then tools/part1's "What it adds" (what the
-#      target injects, reaches and leaves behind, read from the dossier, with no reference to the reader); check it names no local path
+#   4. the report: the title and header lines (written here), a Contents list, then three layers, each opened by a `---` rule and its
+#      label line: "How it affects you" (a heading written here, then tools/summary's rows, table, footer and "At a glance in full" card,
+#      then tools/fit's verdict strip and seven fit cards), "What it adds" (tools/part1: what the target injects, reaches and leaves
+#      behind, read from the dossier, with no reference to the reader) and "Where it takes a position" (tools/positions on the dossier,
+#      then tools/positions-layer). The renderers run before the judge, and one that exits non-zero stops the run with its stderr.
+#      The report must hold the three headings in order and name no local path. vet writes no card markup of its own: cards.py does.
 # OUT's stem .units.json, .answers.json, .verdict.json, .prose.json, .candidates.json, .confirmations.json, .confirmed.json and
 # .finds-N.json are kept beside the report: the evidence for its verdict. --units is a no-op, kept for 2.0 (the units path is the default).
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
-# --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The header
-# then gains a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
-# fingerprint of their relative paths and contents) with the relative paths in a <details> block; tools/vet writes it after the
+# --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The
+# fit report then carries, inside its Why this verdict card, a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
+# fingerprint of their relative paths and contents) and a Rule files card of the relative paths (made with tools/cards.py); tools/vet writes it after the
 # judge has, never the judge. The label is "the sample reader" for the default, else the folder's name, and the title and the
 # "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
 # (one stderr line says why, exit 0), with no claude needed. The reader is the config folder of the judge's session, so its
@@ -39,11 +43,12 @@
 # HEAD, with " + uncommitted changes" after it when `git status --porcelain --untracked-files=no` prints anything (the files read are
 # not HEAD's). --facts --release-tag TAG makes the label TAG instead and wins over the dirty rule: a report committed into a tagged
 # tree cannot name the commit that contains it, so `make report` names the tag.
-# --facts writes the facts report instead: no reader, no verdict and no model call (claude need not be on PATH). The config
-# folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> ·
-# what it adds`, the same header line the judged report carries, tools/part1's "What it adds", and one closing line.
-# It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error. Blank lines separate the four parts.
-# Exit 0 only when the report passed every check (--facts has one: it names no local path, checked before OUT is written). Kept out of bin/, which a plugin puts on every session's PATH.
+# --facts writes the published report instead: no reader, no verdict, no fit and no model call (claude need not be on PATH). The config
+# folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> · how it affects you,
+# what it adds, where it takes a position`, the same header line the judged report carries, the Contents list, the three layers (the
+# summary rows with no verdict strip, the facts, the positions) and one closing line. A fit report's title ends ` · against <reader>`.
+# It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error.
+# Exit 0 only when the report passed every check: it holds the three layer headings once and in order and names no local path, and a published (--facts) report also holds no verdict strip and no fit card. A published report's checks all run before OUT is written; a fit report's local-path and login checks run after, and remove OUT on a hit. Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
 # Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
@@ -231,8 +236,10 @@ EOF
   command -v claude >/dev/null || die "no claude on PATH"
   # the baseline: what the verdict is relative to, from the rule files the inventory listed
   baseline_file=$work/baseline.md
-  read -r nfiles nbytes fingerprint < <(python3 - "$dossier" "$reader" "$label" "$baseline_file" <<'EOF'
+  read -r nfiles nbytes fingerprint < <(python3 - "$dossier" "$reader" "$label" "$baseline_file" "$nb/tools" <<'EOF'
 import hashlib, json, os, sys
+sys.path.insert(0, sys.argv[5])
+from cards import card
 rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
 root = os.path.realpath(sys.argv[2])
 rows = sorted((os.path.relpath(os.path.realpath(r["path"]), root), r["path"]) for r in rules)
@@ -243,8 +250,8 @@ for rel, path in rows:
     h.update(rel.encode("utf-8") + b"\0" + data + b"\0")
 fp = h.hexdigest()[:12]
 with open(sys.argv[4], "w", encoding="utf-8") as f:
-    f.write(f"\nBaseline: {sys.argv[3]} \u00b7 {len(rows)} rule files \u00b7 {total} bytes \u00b7 sha256 {fp}\n\n<details><summary>Rule files</summary>\n\n")
-    f.write("".join(f"- `{rel}`\n" for rel, _ in rows) + "\n</details>\n")
+    f.write(f"\nBaseline: {sys.argv[3]} \u00b7 {len(rows)} rule files \u00b7 {total} bytes \u00b7 sha256 {fp}\n\n")
+    f.write("\n".join(card("", "Rule files", "", [f"- `{rel}`" for rel, _ in rows])) + "\n")
 print(len(rows), total, fp)
 EOF
 ) || die "couldn't compute the baseline"
@@ -330,18 +337,65 @@ header_lines() {
   echo "# 🔍 ${name##*/}${version:+ $version} · $title_tail"
   echo "\`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}"
 }
+layers_title="how it affects you, what it adds, where it takes a position"
+# render_layers: each layer from the renderer that owns it (code only, no model call), into $work. A renderer that exits non-zero stops the
+# run with its stderr, and this runs before the judge, so a broken one costs no judge call.
+render_layers() {
+  part1_section "$dossier" "$commit" "$work/part1.md"
+  python3 "$nb/tools/summary" "$dossier" >"$work/summary.md" 2>"$work/layer.err" || { cat "$work/layer.err" >&2; die "the summary rows could not be rendered"; }
+  python3 "$nb/tools/positions" "$dossier" "$work/positions.json" >/dev/null 2>"$work/layer.err" || { cat "$work/layer.err" >&2; die "the positions could not be found"; }
+  python3 "$nb/tools/positions-layer" "$work/positions.json" ${remote:+--repo "$remote"} ${commit:+--commit "$commit"} >"$work/positions.md" 2>"$work/layer.err" ||
+    { cat "$work/layer.err" >&2; die "the positions layer could not be rendered"; }
+}
+# assemble OUTFILE TITLE HEADER LABEL FITFILE CLOSING: the title, the header line, the Contents list and the three layers, each opened by a
+# rule and its label line (the first layer's heading is written here: tools/summary prints none). LABEL is the reader the fit is against,
+# empty for a published report, whose first Contents line leaves out the fit and the verdict; FITFILE is tools/fit's strip and cards, or empty.
+assemble() {
+  python3 - "$@" "$work" <<'PYEOF' || die "couldn't assemble the report"
+import sys
+out, title, header, label, fit, closing, work = sys.argv[1:8]
+read = lambda name: open(f"{work}/{name}", encoding="utf-8").read().strip("\n")
+first = "cost, reach, state and live surface at a glance" + (f", then the fit against {label}'s rules. Carries a judgement: the colours, and the verdict against {label}." if label else ". Carries a judgement: the colours.")
+parts = [title, header, "**Contents**",
+         "1. [How it affects you](#how-it-affects-you): " + first + "\n"
+         "2. [What it adds](#what-it-adds): what the plugin loads, injects and may leave on disk, written by code. No judgement.\n"
+         "3. [Where it takes a position](#where-it-takes-a-position): every place it tells the model what to do, by topic, in its own words. No judgement.",
+         "---", "**1 \u00b7 Summary \u00b7 carries a judgement**", "## How it affects you", read("summary.md")]
+if fit:
+    parts.append(open(fit, encoding="utf-8").read().strip("\n"))
+parts += ["---", "**2 \u00b7 Facts \u00b7 written by code \u00b7 no judgement**", read("part1.md"),
+          "---", "**3 \u00b7 Positions \u00b7 the plugin's own words \u00b7 no judgement**", read("positions.md")]
+if closing:
+    parts.append(closing)
+open(out, "w", encoding="utf-8").write("\n\n".join(parts) + "\n")
+PYEOF
+}
+# check_report FILE yes|no: the report holds the three layer headings, once each and in order; a published report (yes) holds no verdict strip and no fit card
+check_report() {
+  python3 - "$1" "$2" <<'PYEOF' || die "the report failed its own checks, so no report was written"
+import re, sys
+text, facts = "\n" + open(sys.argv[1], encoding="utf-8").read(), sys.argv[2] == "yes"
+spots, bad = [], False
+for h in ("How it affects you", "What it adds", "Where it takes a position"):
+    n = text.count("\n## " + h + "\n")
+    if n != 1:
+        print(f"vet: the report must hold the heading '## {h}' once, and holds it {n} times", file=sys.stderr); bad = True
+    spots.append(text.find("\n## " + h + "\n"))
+if not bad and spots != sorted(spots):
+    print("vet: the layer headings are out of order: they must read How it affects you, What it adds, Where it takes a position", file=sys.stderr); bad = True
+if facts:
+    if re.search(r"^> \*\*[\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5] ", text, re.M):
+        print("vet: a published report must hold no verdict strip", file=sys.stderr); bad = True
+    if re.search(r"<b>(Why this verdict|Conflicts|Already covered|Keep|Dropped|Do this|Proposed rules patch)</b>", text):
+        print("vet: a published report must hold no fit card", file=sys.stderr); bad = True
+sys.exit(1 if bad else 0)
+PYEOF
+}
 if [ "$facts" = yes ]; then
-  title_tail="what it adds"
-  {
-    header_lines | sed -n 1p
-    echo
-    header_lines | sed -n 2p
-    echo
-    if [ -n "$commit" ]; then python3 "$nb/tools/part1" "$dossier" --commit "$commit"; else python3 "$nb/tools/part1" "$dossier"; fi 2>"$work/part1.err" ||
-      { cat "$work/part1.err" >&2; die "part 1 could not be rendered"; }
-    echo
-    echo "No reader's rules were read: this report lists facts only and carries no verdict."
-  } >"$work/facts.md" || die "part 1 could not be rendered"
+  title_tail=$layers_title
+  render_layers
+  assemble "$work/facts.md" "$(header_lines | sed -n 1p)" "$(header_lines | sed -n 2p)" "" "" "No reader's rules were read: this report lists facts only and carries no verdict."
+  check_report "$work/facts.md" yes
   # the badge for it, as stdout's last line: the label, the target's version and how much of it was read, the word from
   # tools/part1 --read-state on the dossier (whoever's limit a gap is, it counts). Worked out before OUT is written, so a failure leaves no report.
   read_word=$(python3 "$nb/tools/part1" --read-state "$dossier" 2>"$work/part1.err") || { cat "$work/part1.err" >&2; die "couldn't write the badge line"; }
@@ -370,8 +424,9 @@ EOF
   printf '%s\n' "$badge"
   exit 0
 fi
-title_tail="vetted against $label"
+title_tail="$layers_title · against $label"
 title=$(header_lines | sed -n 1p) header=$(header_lines | sed -n 2p)
+render_layers
 if [ "$is_default" = yes ]; then
   reader_noun="the sample reader" reader_cite="examples/reader/... paths, never by the folder above"
   verdict_text="Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
@@ -490,10 +545,11 @@ except OSError: rows = []
 print(f"vet: units cost: {len(rows)} calls, ${sum(float(r[0]) for r in rows):.2f}, {sum(int(float(r[1])) for r in rows) // 1000} s of call time; whole vet {sys.argv[2]} s")
 PYEOF2
 
-# 4. the report: title, header, the fit strip and cards, then part 1
+# 4. the report: title, header, Contents, then the three layers (the summary rows, then the fit strip and cards, the facts, the positions)
 python3 "$nb/tools/fit" "$verdictf" "$prose" --label "$label" --target "${name##*/}" --verdict-text "${note:+$note }$verdict_text" --baseline "$baseline_file" >"$work/fit.md" || die "the fit report could not be drawn from $verdictf and $prose"
-part1_section "$dossier" "$commit" "$work/part1.md"
-{ printf '%s\n\n%s\n\n' "$title" "$header"; cat "$work/fit.md"; printf '\n'; cat "$work/part1.md"; } >"$out"
+assemble "$work/report.md" "$title" "$header" "$label" "$work/fit.md" ""
+check_report "$work/report.md" no
+cp "$work/report.md" "$out" || die "couldn't write $out"
 login_scan || die "the report held your login's secrets, so no report was written"
 rm -f "$credtokens"   # kept until here: the finished report, with part 1 from the dossier, is the last thing scanned; the work folder goes at exit
 for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}"; do

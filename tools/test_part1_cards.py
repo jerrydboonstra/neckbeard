@@ -246,10 +246,8 @@ for top in ("tools", "skills"):
                 continue
             if "<details><summary>" in txt:
                 found.append(rel)
-chk("CR7. `<details><summary>` is written nowhere in tools/ or skills/ outside tools/cards.py, tests, fixtures, tools/vet-stability (a reader) and tools/vet's Rule files block",
-    os.path.exists(os.path.join(HERE, "cards.py")) and found == ["tools/vet"], found)
-vet_txt = open(os.path.join(HERE, "vet"), encoding="utf-8").read()
-chk("CR7. in tools/vet the only `<details><summary>` is the Rule files block", re.findall(r"<details><summary>([^<]*)</summary>", vet_txt) == ["Rule files"], "")
+chk("CR7. `<details><summary>` is written nowhere in tools/ or skills/ outside tools/cards.py, tests and fixtures (tools/vet's Rule files block is made with card() too)",
+    os.path.exists(os.path.join(HERE, "cards.py")) and found == [], found)
 
 # card() with an empty marker (summary-cards): the summary line drops the marker and its space
 sys.path.insert(0, HERE)

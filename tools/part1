@@ -3,7 +3,7 @@
 
 DOSSIER is the JSON inventory.py writes. This reads only its `target`: never `current_rules`, never the target
 folder, so nothing here mentions a reader's rules. Output is sorted and has no clock in it, so two runs on one
-dossier are byte-identical. tools/vet puts it in the report just before "## ⚡ At a glance".
+dossier are byte-identical. tools/vet puts it in the report as the second layer, under "## What it adds".
 
 Each card is one collapsible block made by tools/cards.py's card(): a summary line (read marker, name, then a gist computed
 from the dossier) and under it one `- <label>:` line per section, in the state target.read_status gives. The legend line

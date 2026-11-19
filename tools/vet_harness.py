@@ -120,6 +120,8 @@ if m:
 reply("🟩 INSTALL · 0/0/0/1/0")
 '''
 
+TITLE = "# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position"
+
 fail = checks = 0
 
 
@@ -188,6 +190,26 @@ def run(case, login="env", report="good", extra=(), remote=None, units="units-in
         return res
     finally:
         shutil.rmtree(tmp)
+
+
+# tools/summary imports tools/part1 as a module, so a fake part1 that is imported (its __name__ is "part1") takes the real one's functions
+REAL_PART1 = "import importlib.machinery as m_, importlib.util as u_\nif __name__ != '__main__':\n    s_ = u_.spec_from_loader('real_part1', m_.SourceFileLoader('real_part1', %r)); r_ = u_.module_from_spec(s_); s_.loader.exec_module(r_)\n    globals().update({k: v for k, v in vars(r_).items() if not k.startswith('__')})\n" % os.path.join(HERE, "part1")
+# a copy of vet with one tool replaced by SCRIPT (a part1 that fails, say): vet dies and says so
+def vet_with_tool(tool, script, **kw):
+    fake = tempfile.mkdtemp()
+    try:
+        os.makedirs(os.path.join(fake, "tools"))
+        shutil.copy(VET, os.path.join(fake, "tools", "vet"))
+        for f_ in os.listdir(HERE):   # every other tool, as it is: only part1 is faked
+            if f_ not in ("vet", tool, "__pycache__") and not os.path.exists(os.path.join(fake, "tools", f_)):
+                os.symlink(os.path.join(HERE, f_), os.path.join(fake, "tools", f_))
+        for link in ("skills", "examples", ".claude-plugin"):
+            os.symlink(os.path.join(NB, link), os.path.join(fake, link))
+        open(os.path.join(fake, "tools", tool), "w").write(script)
+        os.chmod(os.path.join(fake, "tools", tool), 0o755)
+        return run(tool + "-fake", vet=os.path.join(fake, "tools", "vet"), **kw)
+    finally:
+        shutil.rmtree(fake)
 
 
 judge = lambda r: [c for c in r["calls"] if "--allowedTools" in c["args"] and "--output-format" in c["args"] and c["args"][c["args"].index("--output-format") + 1] == "text"]

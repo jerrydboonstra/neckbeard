@@ -51,34 +51,7 @@ r = run("units-invented", units="units-install", finds="invented", confirm="yes"
 chk("pool: a quote that is not in the unit is dropped before any confirm call", (r["rc"], len(isolated(r, "CONFIRM CALL"))), (0, 0))
 chk("cost: the vet prints calls and dollars", "units cost: 5 calls, $0.05" in r["out"], True)
 
-# 0c. part 1 ("What it adds", tools/part1) goes in the report after the fit cards (report-assembly-2-0 reorders the layers), and nothing else moves
-r = run("part1", commit=True, units="units-install")
-sec = r["text"].partition("</details>\n\n## What it adds\n")[2]
-chk("part1: exit 0, one section after the last fit card, ending the report", (r["rc"], r["text"].count("\n## What it adds\n"), r["text"].index("\n## What it adds\n") > r["text"].index("<b>Proposed rules patch</b>")), (0, 1, True))
-chk("part1: the section holds the six cards", all(re.search(r"^<details><summary>[\U0001F7E2\U0001F7E1\U0001F534] <b>" + h + r"</b>", sec, re.M) for h in ("Injects", "Hooks", "Subagents and commands", "State it may leave", "Reaches outside the session", "Source")), True)
-chk("part1: the commit vet holds goes into the Source card", f"Commit: {r['sha']}" in sec and r["sha"] != "", True)
-chk("part1: no reader rule or local path in the section", ("READER" in sec, os.path.realpath(r["target"]) in sec, "/tmp" in sec), (False, False, False))
-r = run("part1-no-commit")
-chk("part1: with no git commit the section says commit not given", "Commit: commit not given" in r["text"], True)
-# a copy of vet with a tools/part1 that fails, or that prints a heading of its own: vet dies and says so
-def vet_with_part1(script, **kw):
-    fake = tempfile.mkdtemp()
-    try:
-        os.makedirs(os.path.join(fake, "tools"))
-        shutil.copy(VET, os.path.join(fake, "tools", "vet"))
-        for f_ in os.listdir(HERE):   # every other tool, as it is: only part1 is faked
-            if f_ not in ("vet", "part1", "__pycache__") and not os.path.exists(os.path.join(fake, "tools", f_)):
-                os.symlink(os.path.join(HERE, f_), os.path.join(fake, "tools", f_))
-        for link in ("skills", "examples", ".claude-plugin"):
-            os.symlink(os.path.join(NB, link), os.path.join(fake, link))
-        open(os.path.join(fake, "tools", "part1"), "w").write(script)
-        os.chmod(os.path.join(fake, "tools", "part1"), 0o755)
-        return run("part1-fake", vet=os.path.join(fake, "tools", "vet"), **kw)
-    finally:
-        shutil.rmtree(fake)
-
-
-r = vet_with_part1("import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
+r = vet_with_tool("part1", "import sys\nsys.stderr.write('part1: cannot read a dossier\\n')\nsys.exit(2)\n")
 chk("part1: when tools/part1 exits non-zero vet dies with 'part 1 could not be rendered' and part1's own message",
     (r["rc"], "part 1 could not be rendered" in r["out"], "part1: cannot read a dossier" in r["out"]), (1, True, True))
 
@@ -95,14 +68,14 @@ chk("web: every call's config is a copy, not the checkout",
 chk("web: every call starts outside the target", bool(j) and all(not os.path.realpath(c["cwd"]).startswith(os.path.realpath(r["target"])) for c in j), True)
 chk("web: examples/reader untouched", r["reader_untouched"], True)
 chk("web: temp folder removed", r["temp_left"], [])
-chk("web: title names the sample reader", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
+chk("web: title names the sample reader", r["title"], TITLE + " · against the sample reader")
 
 header = hline
 chk("web: header names the target plainly", header(r).endswith("· demo 1.0.0"), True)
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
 r = run("remote", remote="git@github.com:someone/demo.git")
-chk("remote: title uses the repo's short name", r["title"], "# 🔍 demo 1.0.0 · vetted against the sample reader")
+chk("remote: title uses the repo's short name", r["title"], TITLE + " · against the sample reader")
 chk("remote: header links the repo once", "· [someone/demo](https://github.com/someone/demo) 1.0.0" in header(r)
     and header(r).count("https://github.com/someone/demo") == 1, True)
 
@@ -186,8 +159,8 @@ chk("check: no header fails", (rc, "no header line" in out), (1, True))
 # 8. --facts: the report with no reader, no verdict and no model call
 r = run("facts", extra=("--facts",), fake_body=NO_CLAUDE)
 chk("facts: written, exit 0, claude never called", (r["rc"], r["report"], r["calls"]), (0, True, []))
-chk("facts: title line", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 what it adds")
-chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "At a glance", "sample reader", "\U0001F7E5", "\U0001F7E7", "\U0001F7E8", "\U0001F7E9")], [False] * 7)
+chk("facts: title line", r["title"], TITLE)
+chk("facts: no verdict, no reader", [w in r["text"] for w in ("vetted against", "sample reader")], [False] * 2)
 chk("facts: closing line", r["text"].rstrip("\n").endswith("No reader's rules were read: this report lists facts only and carries no verdict."), True)
 chk("facts: carries part 1", "\n## What it adds\n" in r["text"], True)
 chk("facts: temp folder removed", r["temp_left"], [])
@@ -242,7 +215,7 @@ f = run("facts-header", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
 want = [hline(j)]
 got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 neckbeard " in l]
 chk("facts and judged header lines are equal", (len(want), got), (1, want))
-chk("judged title still says vetted", j["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
+chk("judged title names the reader it is against", j["title"], TITLE + " \u00b7 against the sample reader")
 
 # 9. --reader and the baseline line
 BASELINE = re.compile(r"^Baseline: (.+) \u00b7 (\d+) rule files \u00b7 (\d+) bytes \u00b7 sha256 ([0-9a-f]{12})$", re.M)
@@ -251,8 +224,8 @@ r = run("baseline-default")
 m = BASELINE.search(r["text"])
 chk("baseline: default reader names the sample reader, 4 rule files, a 12-hex fingerprint", (m.group(1), m.group(2)) if m else None, ("the sample reader", str(len(reader_files()))))
 chk("baseline: byte total is the files' own", int(m.group(3)) if m else None, sum(os.path.getsize(os.path.join(DEFAULT_READER, f)) for f in reader_files()))
-chk("baseline: the file list is a details block of relative paths", [w in r["text"] for w in ("<details><summary>Rule files</summary>", "- `rules/safety.md`", "</details>")], [True] * 3)
-chk("baseline: the title still says the sample reader", r["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader")
+chk("baseline: the file list is a details block of relative paths", [w in r["text"] for w in ("<details><summary><b>Rule files</b></summary>", "- `rules/safety.md`", "</details>")], [True] * 3)
+chk("baseline: the title still names the sample reader", r["title"], TITLE + " \u00b7 against the sample reader")
 
 tmp = tempfile.mkdtemp()
 try:
@@ -265,7 +238,7 @@ try:
     chk("reader: two paths, one fingerprint", (fp(ra) is not None, fp(ra) == fp(rb)), (True, True))
     chk("reader: one byte changed, a different fingerprint", fp(rc_) not in (None, fp(ra)), True)
     chk("reader: label is the folder's basename", BASELINE.search(ra["text"]).group(1) if BASELINE.search(ra["text"]) else None, "readerdir")
-    chk("reader: title names the label", ra["title"], "# \U0001F50D demo 1.0.0 \u00b7 vetted against readerdir")
+    chk("reader: title names the label", ra["title"], TITLE + " \u00b7 against readerdir")
     leaks = [x for d in (a, os.path.dirname(a)) for x in (d, os.path.realpath(d))]   # macOS prints /private/var for /var
     chk("reader: no absolute path of the folder in the report", ([x for x in leaks if x in ra["text"] + ra["out"]], ra["rc"]), ([], 0))
     # the header line is vet's own, and the Baseline block sits inside Why this verdict, under its paragraph; --check reads the report
@@ -286,7 +259,7 @@ try:
     chk("reader: a renamed rule file, a different fingerprint", fp(run("fp-moved", extra=("--reader", moved))) not in (None, fp(ra)), True)
     # the default named on the command line is still the sample reader
     d = run("explicit-default", extra=("--reader", DEFAULT_READER))
-    chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), ("# \U0001F50D demo 1.0.0 \u00b7 vetted against the sample reader", "the sample reader", True))
+    chk("reader: --reader examples/reader keeps the sample reader label", (d["title"], (BASELINE.search(d["text"]) or [0, 0])[1], fp(d) == (BASELINE.search(r["text"]) or [0] * 5)[4]), (TITLE + " \u00b7 against the sample reader", "the sample reader", True))
     # vet --check reads a judged report that carries the Baseline block
     chk("reader: --check passes on a judged report with a Baseline block", facts_check_text(ra["text"], "1.0.0"), 0)
     prompt = [vline(ra)]
@@ -298,7 +271,7 @@ try:
     empty = os.path.join(tmp, "emptyreader"); os.mkdir(empty)
     open(os.path.join(empty, "notes.txt"), "w").write("not a rule file\n")
     e = run("empty-reader", extra=("--reader", empty), fake_body=NO_CLAUDE)
-    chk("reader: no rule files gives the facts report, no claude call, exit 0", (e["rc"], e["calls"], e["title"], "no rule files" in e["out"]), (0, [], "# \U0001F50D demo 1.0.0 \u00b7 what it adds", True))
+    chk("reader: no rule files gives the facts report, no claude call, exit 0", (e["rc"], e["calls"], e["title"], "no rule files" in e["out"]), (0, [], TITLE, True))
     chk("reader: that report has no baseline and no verdict", ("Baseline:" in e["text"], "vetted against" in e["text"]), (False, False))
     chk("reader: a missing folder is an error", run("no-reader", extra=("--reader", os.path.join(tmp, "nope")))["rc"], 1)
     chk("reader: an empty --reader is a usage error", run("empty-arg", extra=("--reader", ""), fake_body=NO_CLAUDE)["rc"], 2)
@@ -327,10 +300,10 @@ for case, setup, state, colour in (("read", None, "read in full", "brightgreen")
     chk("badge: " + case + ": the cards hold no judgement square (\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5)", [q in sec_ for q in "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"], [False] * 4)
 # inventory cannot yield a read hooks section with an untraced injected text (it marks that section partial), so the hsec
 # rule that changes the badge word is shown here instead: vet's word is whatever `tools/part1 --read-state` prints, never its own
-FAKE_P1 = ("import sys\nif sys.argv[1] == '--read-state':\n    print('%s')\n    sys.exit(0)\n"
-           "print('## What it adds\\n\\n<details><summary>\\U0001F7E2 <b>Injects</b></summary>\\n\\n- x\\n\\n</details>\\n')\n")
+FAKE_P1 = ("if __name__ == '__main__':\n    import sys\n    if sys.argv[1] == '--read-state':\n        print('%s')\n        sys.exit(0)\n"
+           "    print('## What it adds\\n\\n<details><summary>\\U0001F7E2 <b>Injects</b></summary>\\n\\n- x\\n\\n</details>\\n')\n")
 for word_, colour_ in (("something unread", "red"), ("partly read", "yellow"), ("read in full", "brightgreen")):
-    r = vet_with_part1(FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
+    r = vet_with_tool("part1", REAL_PART1 + FAKE_P1 % word_, extra=("--facts",), fake_body=NO_CLAUDE)
     chk("badge: vet takes the word from `tools/part1 --read-state` (" + word_ + "), whatever the cards say",
         (r["rc"], "neckbeard: 1.0.0 \u00b7 " + word_ + "](" in badge_of(r), "-" + colour_ + "?logo=" in badge_of(r)), (0, True, True))
 vet_src = open(VET, encoding="utf-8").read()

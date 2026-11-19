@@ -20,21 +20,22 @@ skills/neckbeard/mcp_live.py test_mcp_live test_selfcheck test_read_status
 skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck
 skills/neckbeard/SKILL.md test_selfcheck test_vet test_vet_judge test_vet_stability test_mcp_live test_skill_budget
 # Tools
-tools/vet test_vet test_vet_judge test_vet_stability test_vet_report
+tools/vet test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers
 tools/badge-logo test_vet test_vet_judge
-tools/part1 test_part1 test_part1_cards test_summary test_vet test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory
-tools/cards.py test_part1_cards test_summary test_part1 test_vet test_mcp_live test_positions_layer
-tools/summary test_summary
+tools/part1 test_part1 test_part1_cards test_summary test_vet test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory test_vet_layers
+tools/cards.py test_part1_cards test_summary test_part1 test_vet test_mcp_live test_positions_layer test_vet_layers
+tools/summary test_summary test_vet_layers
 tools/vet-repeat test_vet_stability
 tools/vet-stability test_vet_stability
 tools/positions test_positions test_positions_layer
-tools/positions-layer test_positions_layer
+tools/positions-layer test_positions_layer test_vet_layers
 tools/rule-units test_units
-tools/units-verdict test_units test_vet test_vet_judge test_vet_stability test_vet_report test_fit
-tools/fit test_fit test_vet test_vet_judge test_vet_stability test_vet_report
+tools/units-verdict test_units test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers test_fit
+tools/fit test_fit test_vet test_vet_judge test_vet_stability test_vet_report test_vet_layers
 tools/fixtures/fit/** test_fit test_units
 tools/test_fit.py test_fit
 tools/test_vet_report.py test_vet_report
+tools/test_vet_layers.py test_vet_layers
 tools/units-confirm test_units test_vet test_vet_judge test_vet_report
 tools/vet-*.md test_units test_vet test_vet_judge test_vet_report
 tools/neckbeard test_layout
@@ -57,7 +58,7 @@ tools/test_summary.py test_summary
 tools/fixtures/summary/** test_summary
 tools/test_positions.py test_positions
 tools/test_positions_layer.py test_positions_layer
-tools/excerpts test_excerpts
+tools/excerpts test_excerpts test_vet_layers
 tools/test_excerpts.py test_excerpts
 tools/fixtures/part1/** test_part1 test_part1_cards test_hook_inline_require
 tools/fixtures/positions-layer/** test_positions_layer
@@ -70,7 +71,7 @@ tools/test_test_parallel.py test_test_parallel
 tools/test_units.py test_units
 tools/test_vet.py test_vet
 tools/test_vet_judge.py test_vet_judge
-tools/vet_harness.py test_vet test_vet_judge test_vet_report
+tools/vet_harness.py test_vet test_vet_judge test_vet_report test_vet_layers
 tools/test_vet_stability.py test_vet_stability
 tests/map test_test_parallel
 # Manifests, docs and the rest

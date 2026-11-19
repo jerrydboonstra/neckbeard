@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tools/excerpts quotes a report in CASE-STUDIES.md: a fit report as its verdict box and At-a-glance table, a facts report
+"""tools/excerpts quotes a report in CASE-STUDIES.md: a fit report as its verdict box and At-a-glance table (in the 2.0 layout: the How it affects you table and the verdict strip), a facts report
 (no verdict box) as its title line, its source line, and under "What it adds" each ### heading with its top-level bullets (a bullet ending in ":" says how many items it held).
 Every case runs a copy of the script inside a throwaway tree, since the script finds its root from its own location."""
 import re, shutil, subprocess, sys, tempfile
@@ -138,6 +138,133 @@ check("facts: a bullet ending in a colon with no children says none",
       "\n> - Agents: none\n" in text, text)
 check("facts: a bullet with text after its colon is unchanged", "\n> - Hooks: partly read\n" in text, text)
 check("facts: no quoted line ends in a colon", not any(l.rstrip().endswith(":") for l in text.splitlines() if l.startswith("> ")), text)
+
+# The 2.0 layout (report-assembly-2-0): the report opens with the "How it affects you" summary table, the facts are cards under
+# "What it adds", and a fit report's verdict is a strip inside the first layer. An old-layout report still gives today's excerpt.
+SUMMARY = """| | Row | In short |
+|---|---|---|
+| 🟩 | Cost | adds 13 to every session, ~3 tokens (13 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟨 | Reach | a hook in every main session |
+| 🟩 | Leaves state | nothing found |
+| 🟩 | Live surface | no hook commands, MCP servers or mods found |
+| 🟩 | Read completeness | read in full |
+
+<details><summary><b>At a glance in full</b></summary>
+
+- **Cost** 🟩: adds 13 to every session
+  - skill skills/demo/SKILL.md: 13 of description
+
+</details>
+
+The colours follow written rules.
+"""
+LAYERS = """# 🔍 demo 1.2.3 · how it affects you, what it adds, where it takes a position{tail}
+
+`2026-11-15` · neckbeard 2.0.0 · [a/demo](https://github.com/a/demo) 1.2.3 @ `abc1234`
+
+**Contents**
+
+1. [How it affects you](#how-it-affects-you): cost, reach, state and live surface at a glance.
+2. [What it adds](#what-it-adds): what the plugin loads. No judgement.
+3. [Where it takes a position](#where-it-takes-a-position): by topic. No judgement.
+
+---
+
+**1 · Summary · carries a judgement**
+
+## How it affects you
+
+""" + SUMMARY + """{strip}
+---
+
+**2 · Facts · written by code · no judgement**
+
+## What it adds
+
+🟢 read in full · 🟡 partly read · 🔴 something unread
+
+<details><summary>🟢 <b>Injects</b> · 1 skills · ~3 tokens on demand &amp; more</summary>
+
+- Skills:
+  - demo: description every session (13 chars)
+
+</details>
+
+<details><summary>🟡 <b>Hooks</b> · partly read</summary>
+
+- Hooks: partly read
+
+</details>
+
+<details><summary>🟢 <b>R&amp;D &lt;tools&gt;</b> · a &amp; b</summary>
+
+- x
+
+</details>
+
+---
+
+**3 · Positions · the plugin's own words · no judgement**
+
+## Where it takes a position
+
+<details><summary><b>Commits and git</b> · 1 · "Always run the tests."</summary>
+
+- "Always run the tests."
+
+</details>
+
+No reader's rules were read: this report lists facts only and carries no verdict.
+"""
+NEW_FACTS = LAYERS.format(tail="", strip="")
+STRIP = """> **🟨 COPY RULES, SKIP PLUGIN** · keep one rule as text  
+> ⛔ **0** conflicts · 🔁 **1** covered · 🟩 **1** keep (1 rule) · 🗑️ **2** dropped  
+> *against the sample reader (demo)*
+
+<details><summary>📝 <b>Why this verdict</b> · keep one rule as text</summary>
+
+It injects little. Verdict is relative to the sample reader.
+
+</details>
+"""
+NEW_FIT = LAYERS.format(tail=" · against the sample reader", strip=STRIP)
+
+r, text = run(NEW_FACTS)
+check("2.0 facts: excerpted, not refused", r.returncode == 0, r.stderr)
+check("2.0 facts: the title and the header line are quoted", "> # 🔍 demo 1.2.3 · how it affects you, what it adds, where it takes a position" in text and "`2026-11-15` · neckbeard 2.0.0 · [a/demo]" in text, text)
+check("2.0 facts: the summary table is quoted whole, rows and header", all(s in text for s in ("| | Row | In short |", "| 🟩 | Cost | adds 13 to every session", "| 🟨 | Reach | a hook in every main session", "| 🟩 | Read completeness | read in full |")), text)
+check("2.0 facts: one line per facts card: read marker, name and gist, unescaped",
+      "\n> - 🟢 **Injects** · 1 skills · ~3 tokens on demand & more\n" in text and "\n> - 🟡 **Hooks** · partly read\n" in text, text)
+check("2.0 facts: the card bodies, the At a glance card, the footer, the positions layer and the closing line are left out",
+      not any(s in text for s in ("demo: description every session", "At a glance in full", "colours follow written rules", "Commits and git", "No reader's rules", "Contents")), text)
+check("2.0 facts: a card's name and gist are unescaped too", "\n> - 🟢 **R&D <tools>** · a & b\n" in text, text)
+check("2.0 facts: no line is quoted twice", len([l for l in text.splitlines() if l.startswith("> - ")]) == 3, text)
+
+r, text = run(NEW_FIT)
+check("2.0 fit: excerpted, not refused", r.returncode == 0, r.stderr)
+check("2.0 fit: the summary table and the verdict strip are both there, the table first",
+      "| 🟩 | Cost |" in text and "> **🟨 COPY RULES, SKIP PLUGIN** · keep one rule as text" in text and text.index("| 🟩 | Cost |") < text.index("COPY RULES"), text)
+check("2.0 fit: the strip keeps its counts and its reader line", "⛔ **0** conflicts" in text and "*against the sample reader (demo)*" in text, text)
+check("2.0 fit: the cards and the facts layer are left out", not any(s in text for s in ("Why this verdict", "Verdict is relative", "Injects", "Commits and git")), text)
+
+# odd 2.0 reports: a card body with a rule line, and a "> **" line outside the summary layer
+ODD = NEW_FACTS.replace("- Skills:\n  - demo: description every session (13 chars)", "- Skills:\n\n---\n\n  - demo: description every session (13 chars)")
+r, text = run(ODD)
+check("2.0 facts: a '---' line inside a card body does not end the card list", "\n> - 🟡 **Hooks** · partly read\n" in text and "R&D" in text, text)
+ODD2 = NEW_FACTS.replace("- Hooks: partly read\n", "- Hooks: partly read\n> **x**\n")
+r, text = run(ODD2)
+ODD3 = NEW_FACTS.replace("**Contents**\n", "**Contents**\n\n> **quoted note**\n")
+r, text = run(ODD3)
+check("2.0 facts: a '> **' line before the summary layer does not make it a fit report", "\n> - 🟢 **Injects**" in text and "quoted note" not in text, text)
+check("2.0 facts: a '> **' line in a card body does not make it a fit report", "\n> - 🟢 **Injects**" in text and "COPY RULES" not in text, text)
+
+# an old-layout report still gives today's excerpt (the gallery regenerates in gallery-2-0)
+r, text = run(FACTS)
+check("old layout: a facts report still gives its ### headings and bullets", r.returncode == 0 and "> ### Injects" in text and "> - Rule files: none" in text, r.stderr + text)
+r, text = run(FIT)
+check("old layout: a fit report still gives its verdict box and table", r.returncode == 0 and "> 🟩 install" in text and "| ⛔ conflicts | 0 | none |" in text, r.stderr + text)
+r, text = run("# demo\n\nnothing recognisable here\n")
+check("a report it can read neither way still exits with today's message", r.returncode != 0 and "is neither a fit report" in r.stderr, r.stderr)
 
 ROOT = SCRIPT.parent.parent
 for doc in ("README.md", "CASE-STUDIES.md"):
