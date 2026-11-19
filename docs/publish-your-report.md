@@ -34,7 +34,7 @@ neckbeard-report:
     - run: /tmp/nb/tools/vet --check docs/neckbeard-report.md .
 ```
 
-neckbeard guards its own release the same way: `make report` regenerates `docs/neckbeard-report.md`, and `make release` runs `make report-check` first, which checks the report as it is in the tagged tree. Commit the regenerated report before you tag, since a tag set before it is refused.
+neckbeard guards its own release the same way: `make report` regenerates `docs/neckbeard-report.md`, and `make release` runs `make report-check` first, which checks the report as it is in the tagged tree, or in the release commit when the tag does not exist yet. Commit the regenerated report before you release, since a tag set by hand before it is refused.
 
 The rest of this page covers the fit report, which is for your own use.
 

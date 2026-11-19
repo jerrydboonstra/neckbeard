@@ -329,7 +329,7 @@ chk("badge: a version 1.2.3-rc_1 is escaped 1.2.3--rc__1", "badge/neckbeard-1.2.
 chk("badge: the judged path prints no badge", "img.shields.io" in run("badge-judged")["stdout"], False)
 
 # 11. make report-check: the tagged report must name the tagged version
-def report_check(report_version, tag_after=False, at="`v1.2.0`", old=False):
+def report_check(report_version, tag_after=False, at="`v1.2.0`", old=False, tagged=True):
     tmp = tempfile.mkdtemp()
     try:
         for d in (".claude-plugin", "docs", "tools"):
@@ -340,11 +340,12 @@ def report_check(report_version, tag_after=False, at="`v1.2.0`", old=False):
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
             ("# \U0001F50D demo\n\n`2026-11-12` \u00b7 demo %s @ %s \u00b7 made by neckbeard 2.0.0\n" if not old else "# \U0001F50D demo %s \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo %s @ %s\n") % ((report_version, at) if not old else (report_version, report_version, at)))
         git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=tmp, check=True, capture_output=True)
-        git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "x"); git("tag", "-a", "v1.2.0", "-m", "x")
+        git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "x")
+        if tagged: git("tag", "-a", "v1.2.0", "-m", "x")
         # the working tree is made right after the tag: the check must read the tagged tree, not this one
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
             "# \U0001F50D demo\n\n`2026-11-12` \u00b7 demo 1.2.0 @ `v1.2.0` \u00b7 made by neckbeard 2.0.0\n")
-        p = subprocess.run(["make", "--no-print-directory", "report-check"], cwd=tmp, capture_output=True, text=True)
+        p = subprocess.run(["make", "--no-print-directory", "report-check"] + ([] if tagged else ["REF=HEAD"]), cwd=tmp, capture_output=True, text=True)
         return p.returncode, p.stdout + p.stderr
     finally:
         shutil.rmtree(tmp)
@@ -352,9 +353,14 @@ rc, out = report_check("1.1.0")
 chk("report-check: a tagged report naming an older version fails, though the working tree is right", (rc != 0, "vets 1.1.0" in out), (True, True))
 rc, out = report_check("1.2.0")
 chk("report-check: a tagged report naming the tagged version passes", rc, 0)
+rc, out = report_check("1.1.0", tagged=False)
+chk("report-check REF=HEAD: with no tag yet, a report naming an older version fails", (rc != 0, "vets 1.1.0" in out), (True, True))
+rc, out = report_check("1.2.0", tagged=False)
+chk("report-check REF=HEAD: with no tag yet, a report naming the version passes", rc, 0)
 makefile = open(os.path.join(NB, "Makefile"), encoding="utf-8").read()
 release = makefile.split("\nrelease:", 1)[1].split("\ndeploy:", 1)[0]
-chk("release runs report-check before any push, and stops when it fails", (bool(re.search(r"^\t@\$\(MAKE\) --no-print-directory report-check \|\| \{ [^}]*exit 1; \}$", release, re.M)), release.find("report-check") < release.find("git push")), (True, True))
+chk("release runs report-check, on the tag or on HEAD when there is no tag yet, before tools/release-push, and stops when it fails",
+    (len(re.findall(r"report-check( REF=HEAD)? \|\| \{ [^}]*exit 1; \}", release)), release.find("report-check") < release.find("tools/release-push") != -1), (2, True))
 readme = open(os.path.join(NB, "README.md"), encoding="utf-8").read()
 chk("README: the neckbeard badge links the published report, with the logo the code uses", ("[![neckbeard: " in readme, "](docs/neckbeard-report.md)" in readme, "logo=" + LOGO in readme), (True, True, True))
 badge_line = readme.split("\n")[4]
