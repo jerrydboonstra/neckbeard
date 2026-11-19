@@ -48,6 +48,7 @@ tools/test-changed test_test_parallel
 tools/skill-budget.txt test_skill_budget
 # Tests
 tools/test_deploy.py test_deploy
+tools/test_make_hooks.py test_make_hooks
 tools/release-push test_release test_vet
 tools/ci-wait.sh test_release
 tools/test_release.py test_release test_layout
@@ -84,7 +85,7 @@ tools/test_vet_session.py test_vet_session test_layout
 tests/map test_test_parallel
 # Manifests, docs and the rest
 .claude-plugin/** test_selfcheck test_vet test_vet_session test_vet_judge test_deploy
-Makefile test_deploy test_release test_vet test_vet_judge
+Makefile test_deploy test_release test_vet test_vet_judge test_make_hooks
 docs/** test_vet test_vet_judge test_readme
 docs/publish-your-report.md test_layout test_readme
 .claude-plugin/plugin.json test_layout
