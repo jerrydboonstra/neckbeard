@@ -6,10 +6,17 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## 2.0.1 (2026-11-19)
 
-### The herd
-- make release pushes main to GitHub first, waits for CI on that commit, and only then tags and pushes the other remotes.
-- Where it takes a position: quotes on one line, or from one hook, now keep one order on every run, so a report no longer changes between runs with the same input.
+### Reports
 
+- **"Where it takes a position" keeps one order from run to run.** Two quotes on the same line, or from the same hook, were listed in whatever order Python's hashing gave that run, so two runs on the same plugin could differ. They now sort by their text too.
+
+### Releasing
+
+- **`make release` waits for CI before it tags.** It pushes `main` to GitHub alone, waits for CI to pass on that exact commit, and only then creates the tag and pushes `main` and the tag to the other remotes. A failed CI leaves no tag and the mirrors untouched.
+
+### Docs
+
+- **`docs/slsa-provenance-research.md`: what SLSA provenance could add to an inspection, and why neckbeard does not use it yet.** The OpenSSF generator is no longer maintained, and no Claude Code installer checks an attestation today.
 ## 2.0.0 (2026-11-19)
 
 **A new report layout, and a fit verdict computed by code.** A report now opens with a contents list and three layers: how the plugin affects you, what it adds, and where it takes a position. In a fit report, code computes the verdict and the counts from a fixed list of the plugin's rule units; a model answers each unit, but no model writes the colours, counts or verdict. The major version marks the new layout: anything that parses a 1.x report needs updating.
