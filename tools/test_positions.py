@@ -114,6 +114,44 @@ code, out = run(D, O3, "--reader", reader)
 chk("4. given a reader folder, the tool reads none of it: no reader line in OUT, and OUT is the same as without it",
     code == 0 and b"semicolons" not in open(O3, "rb").read() and b"linter" not in open(O3, "rb").read() and open(O3, "rb").read() == open(O1, "rb").read(), out)
 
+# Quotes that tie on (file, line): four on one line of a command, and four from one hook template (no line, so line 0). The sort
+# key once stopped at file and line, so a tie kept the iteration order of a string set, which PYTHONHASHSEED changes.
+def seeded(dossier, name):
+    """Run tools/positions under PYTHONHASHSEED 0 to 15: (every seed exited 0, the set of OUT bytes, each seed's parsed OUT)."""
+    path = os.path.join(d, name + ".json")
+    json.dump(dossier, open(path, "w"))
+    ok, outs, parsed = True, set(), []
+    for seed in range(16):
+        out_path = os.path.join(d, f"{name}{seed}.out.json")
+        r = subprocess.run([sys.executable, os.path.join(HERE, "positions"), path, out_path], capture_output=True, text=True,
+                           env={**os.environ, "PYTHONHASHSEED": str(seed)})
+        if r.returncode != 0:
+            ok = False
+            continue
+        outs.add(open(out_path, "rb").read())
+        parsed.append(json.load(open(out_path)))
+    return ok, outs, parsed
+
+
+def quotes_of(got):
+    return [p["quote"] for t in got["topics"] for p in t["positions"]]
+
+
+four = ["Always run the tests.", "Never skip the tests.", "Run the tests twice.", "Do not skip the tests."]
+tie_dossier = {"target": {"skills": [], "agents": [], "hooks": {}, "rule_files": [], "commands": [
+    {"source": "command", "path": "commands/tie.md", "text": " ".join(four) + "\n"}]}}
+ok, outs, parsed = seeded(tie_dossier, "tie")
+chk("5. quotes on one line keep one order under PYTHONHASHSEED 0 to 15, every run exiting 0", ok and len(outs) == 1, f"ok={ok}, {len(outs)} different outputs")
+chk("5b. the tie fixture holds four quotes, all on line 1", bool(parsed) and all(len(quotes_of(g)) == 4 and all(p["line"] == 1 for t in g["topics"] for p in t["positions"]) for g in parsed), parsed[:1])
+chk("5c. in every seed, quotes on one line are in quote order", bool(parsed) and all(quotes_of(g) == sorted(four) for g in parsed), [quotes_of(g) for g in parsed][:2])
+
+hook_dossier = {"target": {"skills": [], "agents": [], "commands": [], "rule_files": [], "hooks": {"injected_content": [
+    {"file": "hooks/h.sh", "bytes": 60, "events": ["SessionStart"], "built_at_run_time": True, "writes": [], "at_least": False,
+     "template": four}]}}}
+ok, outs, parsed = seeded(hook_dossier, "hook")
+chk("6. hook-template quotes (no line) keep one order under PYTHONHASHSEED 0 to 15, every run exiting 0", ok and len(outs) == 1, f"ok={ok}, {len(outs)} different outputs")
+chk("6b. in every seed the hook fixture holds four quotes with no line, in quote order", bool(parsed) and all(quotes_of(g) == sorted(four) and all(p["line"] is None for t in g["topics"] for p in t["positions"]) for g in parsed), [quotes_of(g) for g in parsed][:2])
+
 code, out = run(D)
 chk("usage error with one argument", code != 0 and "usage" in out, out)
 sys.exit(1 if fails else 0)

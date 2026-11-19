@@ -14,7 +14,7 @@ byte-identical output.
 A position is one Markdown list item, one table row (cells joined by " | "; header and separator rows skipped) or one
 sentence of a paragraph (ends at . ! or ? then a space and a capital, or at the paragraph's end), outside code fences and
 frontmatter, holding a directive word from DIRECTIVES. It goes under the first topic in TOPICS holding one of its keywords,
-else under "other". The same quote in several files is listed once, under the first file in path order (then line order),
+else under "other". The same quote in several files is listed once, under the first file in path order (then line order, then quote),
 with the other places in "also_in".
 
 OUT is {"topics": [{"name", "positions": [{"quote", "file", "line", "also_in"}]}]}: topics in TOPIC_ORDER (the spec's), "other" last,
@@ -242,7 +242,7 @@ def build(target):
             line = fixed or line
             if quote and DIRECTIVE_RE.search(quote):
                 found.append((path, line if has_line else 0, has_line, quote))
-    found = sorted(set(found), key=lambda f: (f[0], f[1]))
+    found = sorted(set(found), key=lambda f: (f[0], f[1], f[3]))  # the quote breaks a tie on one line or in one hook template (line 0); a set's order changes with the hash seed
     firsts, order = {}, []
     for path, line, has_line, quote in found:
         key = SPACE.sub(" ", quote)
