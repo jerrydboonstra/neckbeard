@@ -11,7 +11,7 @@ Facts reports on seven public plugins and skill packs, and one fit report that n
 | [github/spec-kit](spec-kit.md) | tag v1.4.0 @ `0019fa14` (latest release; its report shows no version, since the repo has no manifest version) | partly read: hooks (catalog over 200000 bytes) | 2026-11-18 |
 | [Koz-TV/viral-launch-pipeline](viral-launch-pipeline.md) | 1.0.0 @ `475705f` (head: no release tags) | read in full | 2026-11-18 |
 | [calm-trader/skills](calm-trader-skills.md) | @ `d222506` (head: no release tags). A pack the author of neckbeard contributes to, so this row is a conflict of interest. It is here with the other maintainer's agreement. | read in full | 2026-11-18 |
-| [jerrydboonstra/neckbeard](neckbeard.md), vetting itself | 1.17.2 @ `b2f586c`: the one fit report, kept as a labelled demo (see below) | not applicable: a fit report, judged by a model | 2026-11-15 |
+| [jerrydboonstra/neckbeard](neckbeard.md), vetting itself | 1.17.8 @ `ab332f8b`: the one fit report, kept as a labelled demo (see below) | not applicable: a fit report, judged by a model | 2026-11-18 |
 
 "Partly read" means neckbeard could not read some part of the plugin, and the report names each gap: a hook whose script it could not trace, a file over its read cap, a file that is not valid JSON. It is a statement about what was read, not about the plugin's quality. "Read in full" means every section was read or does not apply.
 

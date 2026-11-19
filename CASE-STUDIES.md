@@ -86,20 +86,20 @@ A fit verdict on the rerun would need your own rules, so there is none here. The
 
 No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report marked it down at 1.12.0 for a report format that needs a symbol key; three runs on 1.12.7 and two on 1.17 found no conflict (see the rerun below).
 
-**The report today** · neckbeard 1.17.2 against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
+**The report today** · neckbeard 1.17.8 @ `ab332f8b` against the [sample reader](examples/reader/) · [full fit report, kept as the labelled demo of a fit report](examples/neckbeard.md)
 
 <!-- report:neckbeard -->
-> 🟩 INSTALL · as an on-demand skill, nothing to weigh
-> It registers no hooks, no agents and no commands, so it costs only a short skill description in each session and its full text when you ask for a vet. It fights none of the reader's rules, and its one real capability, vetting a plugin against your rules, is new to this setup. Two of its habits are worth writing down as standing rules.
+| | Row | In short |
+|---|---|---|
+| 🟩 | Cost | adds 764 to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟩 | Reach | on demand only |
+| 🟧 | Leaves state | 44 files that may write state |
+| 🟩 | Live surface | no hook commands, MCP servers or mods found |
+| 🟩 | Read completeness | read in full |
 
-| | | |
-|:--:|---|---|
-| 🟩 | **Cost** | About 764 bytes of skill description per session; the 14,535 byte body loads only when invoked |
-| 🟩 | **Reach** | Main session only; no hooks, so no SubagentStart (certain) |
-| 🟩 | **Leaves state** | None found; its script writes only to a chosen output file or a temp clone, per its own header |
-| 🟨 | **Live surface** | Runs a local Python script; clones a git URL if given one; a local MCP server is started only on an explicit opt-in flag |
-| 🟩 | **Refused reads** | none |
-| 🟩 | **Worth keeping** | 3 (2 rules, 1 skill) |
+> **🟩 INSTALL** · keep four skills
+> ⛔ **0** conflicts · 🔁 **0** covered · 🟩 **4** keep (4 skills) · 🗑️ **1** dropped
+> *against the sample reader (neckbeard)*
 <!-- /report -->
 
 **The first run** · before 1.1.0, against the author's own rules
