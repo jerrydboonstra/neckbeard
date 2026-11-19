@@ -5,7 +5,7 @@ tools/vet_harness.py.
 
     python3 tools/test_vet_session.py
 """
-import json, os, re, shutil, subprocess, sys, tempfile
+import json, os, shutil, subprocess, sys, tempfile
 
 import vet_harness
 from vet_harness import *
