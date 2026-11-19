@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The POST_DEPLOY hook in the Makefile: `make post-deploy`, and where `make deploy` calls it.
 
-Runs `make` in this checkout for the target alone and for `make -n deploy` (the recipe as text; the
-recipe calls post-deploy through a variable so that -n runs nothing). The deploy cases run in a scratch
-repo: a copy of the Makefile and plugin.json, a bare origin on main, and a stub tools/deploy-host.sh.
+Runs `make post-deploy` in this checkout. The deploy cases, `make -n deploy` (the recipe as text; it
+calls post-deploy through a variable so that -n runs nothing) included, run in a scratch repo:
+a copy of the Makefile and plugin.json, a bare origin on main, and a stub tools/deploy-host.sh.
 The hook is `echo` or `false`, so nothing is deleted, no model is called and there is no network.
 
     python3 tools/test_make_hooks.py
@@ -59,13 +59,15 @@ chk("an empty hook prints nothing and exits 0", (code, out), (0, ""))
 code, out = make(ROOT, "post-deploy", "POST_DEPLOY=false")
 chk("a failing hook fails the target", code != 0, True)
 
-print("make -n deploy")
-code, out = make(ROOT, "-n", "deploy")
+print("make -n deploy, in a scratch repo (a deploy line that ran under -n would print the stub's host-deployed)")
+d, work = scratch(0)
+code, out = make(work, "-n", "deploy", "POST_DEPLOY=echo shipped $(VERSION)")
+shutil.rmtree(d)
 i_loop, i_if, i_call = out.find("deploy-host.sh"), out.find("if [ $fail -eq 0 ]"), out.find("post-deploy VERSION=" + VERSION)
 chk("the post-deploy call sits after the host loop and behind the fail check",
     (i_loop != -1, i_loop < i_if < i_call, out.rfind("done;") < i_if), (True, True, True))
 chk("the recipe ends with the exit on fail", out.rstrip().endswith("exit $fail"), True)
-chk("-n runs no hook", "shipped" not in out and "host-deployed" not in out, True)
+chk("-n runs no host deploy and no hook", (code, out.count("shipped " + VERSION), "host-deployed" in out), (0, 0, False))
 
 print("make deploy in a scratch repo")
 d, work = scratch(0)
