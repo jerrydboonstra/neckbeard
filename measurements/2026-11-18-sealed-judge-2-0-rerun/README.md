@@ -1,6 +1,6 @@
 # Sealed judge rerun on 2.0
 
-One rerun of the sealed 12-item fixture under its full protocol: two full-arm runs (neckbeard 2.0) and two cut-down-arm runs. 2.0 passes the pre-registered bar. The fixture does not discriminate between the arms, and the all-12 full arm makes it suspect. The fixture is now spent.
+One rerun of the sealed fixture (12 points per run) under its full protocol: two full-arm runs (neckbeard 2.0) and two cut-down-arm runs. 2.0 passes the pre-registered bar. The fixture does not discriminate between the arms, and the planner and grader read the all-12 full arm as making it suspect (the pre-registered reading 4 wording is not met). The fixture is now spent.
 
 | | |
 |---|---|
@@ -30,11 +30,11 @@ One rerun of the sealed 12-item fixture under its full protocol: two full-arm ru
 1. 2.0 passes: both full runs scored at least 10 with both traps right.
 2. 2.0 is not failed.
 3. The fixture does not discriminate: C1's 12 is not below the full runs, and the mean gap is 0.5, under 1.5. The result reads "passes the bar, judgment half unverified".
-4. The fixture is suspect: both full runs scored 12 of 12 with no disagreement, as the grader also read it.
+4. The pre-registered test is not met. Its fixed wording is all four runs at 12 of 12 with no disagreement, and C2 scored 11 and the cut-down arm disagreed. Separately, the grader and the planner read the full arm alone as suspect: both full runs scored 12 of 12 with no disagreement.
 
 ## How it ran
 
-The owner ran it at the Mac, with auto mode off. The grader's report came back with scores and ids only; no fixture text is recorded here.
+The owner ran it at the Mac. The grader's report came back with scores and ids only; no fixture text is recorded here. The report did not say whether each executor had its own scratch copy or whether the copies were deleted afterwards.
 
 ## Spent
 
