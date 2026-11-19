@@ -20,7 +20,14 @@ def ls(*a):
 with open(os.path.join(home, "gh.log"), "a") as f:
     f.write("main=" + ls("rev-parse", "refs/heads/main") + " tags=" + ls("tag") + " args=" + " ".join(sys.argv[1:]) + "\n")
 mode = os.environ.get("FAKE_CI", "success")
-if mode == "success":
+if mode == "later":   # a run that is going on the first look and has passed on the second
+    seen = os.path.join(home, "looks")
+    n = len(open(seen).read()) if os.path.exists(seen) else 0
+    open(seen, "a").write("x")
+    mode = "success" if n >= 1 else "running"
+if mode == "running":
+    print("in_progress\t\thttps://example.com/run/3")
+elif mode == "success":
     print("completed\tsuccess\thttps://example.com/run/1")
 elif mode == "failure":
     print("completed\tfailure\thttps://example.com/run/2")
@@ -70,7 +77,10 @@ def world():
 def run(home, work, **env):
     e = dict(os.environ, FAKE_HOME=home, PATH=os.path.join(home, "bin") + os.pathsep + os.environ["PATH"],
              CI_POLL="0", CI_GRACE="0", CI_REPO="o/r", VERSION="1.1.0", REMOTES="origin mirror", **env)
-    r = subprocess.run(["bash", os.path.join(work, "tools", "release-push")], cwd=work, env=e, capture_output=True, text=True)
+    try:
+        r = subprocess.run(["bash", os.path.join(work, "tools", "release-push")], cwd=work, env=e, capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:   # a wait with no bound never ends
+        return 124, "timed out", ""
     log = open(os.path.join(home, "gh.log")).read() if os.path.exists(os.path.join(home, "gh.log")) else ""
     return r.returncode, r.stdout + r.stderr, log
 
@@ -113,6 +123,19 @@ before = head(home, "mirror")
 code, out, log = run(home, work, FAKE_CI="none")
 chk("no CI run for the commit fails the release too, with no tag and the mirror untouched",
     (code, tags(home, "mirror"), head(home, "mirror")), (1, [], before))
+shutil.rmtree(home)
+
+home, work = world()
+code, out, log = run(home, work, FAKE_CI="later")
+chk("a run still going on the first look is waited for, and the release goes through once it passes",
+    (code, log.count("args=api"), tags(home, "mirror")), (0, 2, ["v1.1.0"]))
+shutil.rmtree(home)
+
+home, work = world()
+before = head(home, "mirror")
+code, out, log = run(home, work, FAKE_CI="running", CI_WAIT="0")
+chk("a run that never finishes ends the wait at CI_WAIT: exit 1, saying it has not finished, no tag, mirror untouched",
+    (code, "hasn't finished" in out, tags(home, "mirror"), head(home, "mirror"), git("tag", cwd=work)), (1, True, [], before, ""))
 shutil.rmtree(home)
 
 home, work = world()

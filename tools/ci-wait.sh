@@ -23,7 +23,7 @@ while :; do
   fi
   waited=$SECONDS
   if [ -z "$runs" ]; then
-    [ "$waited" -ge "$grace" ] && { echo "ci: no CI run for ${sha:0:7} on $repo; CI runs when main moves there, or by hand: gh workflow run CI --ref main"; exit 1; }
+    [ "$waited" -ge "$grace" ] && { echo "ci: no CI run for ${sha:0:7} on $repo; CI starts when main is pushed to GitHub, so look in its Actions tab"; exit 1; }
   elif ! grep -qv $'^completed\t' <<<"$runs"; then
     echo "ci: CI didn't pass on ${sha:0:7}:"
     cut -f2,3 <<<"$runs" | sed 's/^/     /'
