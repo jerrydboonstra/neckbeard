@@ -9,7 +9,7 @@ by hand and kept in step with the code by hand.
 A row's rules are checked top to bottom: the first that matches wins. A row whose input sections (target.read_status) are not all
 read in full is never 🟩: a 🟩 outcome becomes 🟨. A section that is not-applicable counts as read in full, as in tools/part1.
 
-  Cost                the size a plugin adds to every session: skill and agent descriptions, rule files that load every
+  Cost                the size a plugin adds to every session: skill and agent descriptions (not the description of a skill whose model_invocable is false: it loads only when called by name), rule files that load every
                       session, and hook-injected text (a built-at-run-time hook's "at least N bytes" lower bound). When
                       hooks_reach_subagents is true the hook text alone counts twice (it enters every subagent too); anything
                       else counts once. Size is the dossier's figure: characters for descriptions, bytes for rule files and hook text; the row names each part's unit, and the headline says "characters", "bytes" or "characters and bytes" by what its non-zero parts share.
@@ -121,7 +121,8 @@ def finish(colour, line, states):
 def cost(t, sec, hooks, hsec):
     states = [sec("skills")[0], sec("agents")[0], sec("rule_files")[0], hsec[0]]
     desc = lambda e: len(str(e.get("description") or "")) if isinstance(e, dict) and not e.get("refused") else 0
-    skills = sum(desc(s) for s in as_list(t.get("skills")))
+    # a skill that sets disable-model-invocation loads only when called by name; a dossier with no model_invocable field counts as invocable
+    skills = sum(desc(s) for s in as_list(t.get("skills")) if not (isinstance(s, dict) and s.get("model_invocable") is False))
     agents = sum(desc(a) for a in as_list(t.get("agents")))
     rules = hook = 0
     for r in as_list(t.get("rule_files")):
@@ -232,7 +233,7 @@ def footer():
         "The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.",
         "",
         f"- Cost: 🟩 under {n(b[0])}; 🟨 {n(b[0])} to {n(b[1] - 1)}; 🟧 {n(b[1])} to {n(b[2] - 1)}; 🟥 {n(b[2])} and over. "
-        "Size counts skill and agent descriptions in characters, and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says \"characters and bytes\"; "
+        "Size counts skill and agent descriptions in characters (a skill that sets disable-model-invocation loads only when called by name, so its description is left out), and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says \"characters and bytes\"; "
         "text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.",
         "- Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).",
         "- Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.",

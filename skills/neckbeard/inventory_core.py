@@ -339,6 +339,12 @@ def _within(path, root):
         return False
 
 
+def model_invocable(fm):
+    """False when a skill's frontmatter sets `disable-model-invocation: true` (YAML true, or the string "true" in any case):
+    Claude Code leaves such a skill's description out of every session, and loads it only when the user calls it by name."""
+    return str((fm or {}).get("disable-model-invocation", "false")).strip().lower() != "true"
+
+
 def rule_item(source, path):
     text = read_text(path)
     if text is None:

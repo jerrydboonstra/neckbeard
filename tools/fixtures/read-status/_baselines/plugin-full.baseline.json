@@ -93,6 +93,7 @@
    "chars": 52,
    "companion_files": [],
    "description": "A fixture skill.",
+   "model_invocable": true,
    "name": "a",
    "path": "<ROOT>/skills/a/SKILL.md",
    "source": "skills/a/SKILL.md",

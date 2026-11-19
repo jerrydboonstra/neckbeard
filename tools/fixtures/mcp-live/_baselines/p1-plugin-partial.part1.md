@@ -38,7 +38,7 @@
 
 </details>
 
-<details><summary>🟡 <b>State it may leave</b> · 1 files that may write state</summary>
+<details><summary>🟡 <b>State it may leave</b> · 1 file that may write state</summary>
 
 - Persistence candidates: partly read
   - scripts/install.sh
