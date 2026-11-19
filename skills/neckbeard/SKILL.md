@@ -169,9 +169,9 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 
 - **Target.** `tools/vet` takes a local directory: one goes as given; an installed `name@marketplace`, as the install directory the inventory resolved (the dossier's `target.path`); a git URL, as a shallow clone (`git clone --depth 1 -- <url> <temp dir>/<repo name>`) that you run Step 1 on as a local directory and delete when `tools/vet` ends, however it ends (for an `https://github.com/` URL also pass `--repo <url>`, so the header names it). A single rule file: path B.
 - **Units.** `python3 <base>/../../tools/rule-units <stem>.dossier.json <stem>.units.json` writes the units to that file: read it. Read `<base>/../../tools/vet-units.md`: each unit gets two answers, skill (keep or drop) and rules (new-standing, new-skill-text, duplicate or none), and its definitions are the mapping from Step 2. Step 2's buckets do not translate one to one, except conflict, below. Ignore its placeholders, its commands and its "write no conflicts field" line.
-- **Answers.** Write `<stem>.answers.json` as `{"answers": [...]}`: one answer per unit, in that file's form (id, skill, rules, quote, why; covered_by and held_in for a duplicate; star on at most one kept unit), each with a `conflicts` list, `[]` when none.
+- **Answers.** Write `<stem>.answers.json` as `{"answers": [...]}`: one answer per unit, in that file's form (id, skill, rules, quote, why; covered_by and held_in for a duplicate; star on at most one kept unit), each with a `conflicts` list, `[]` when none. When `<stem>.units.json`'s `always_on` has a true flag, also a top-level `"carrying_cost"`: Step 2's three cases, `install` (at least one rule you'd have written yourself), `copy` (nothing worth carrying) or `reader-decides` (exactly one rule survives). Code gives COPY RULES, SKIP PLUGIN for the last two, and refuses answers without it.
 - **Conflicts.** No separate pass finds them here, so you do, as Step 2's conflict bucket. Each goes in its unit's `conflicts` list as `{"quote": "<its sentence>", "reader_rule": "<held_in>: <the rule it hits>", "held_in": "<its file>", "hard_stop": true}`, `hard_stop` true when that rule is a hard stop or safety rule. A conflict's and a duplicate's `held_in` is the name the report shows (`~/<path below home>`, or the path below the project), never an absolute path.
-- **Prose.** Write `<stem>.prose.json` as `{"why": "...", "do_this": ["..."], "patch": "..."}`: the Why this verdict paragraph, the Do this steps (Step 2's carrying cost informs them) and Step 4's patch.
+- **Prose.** Write `<stem>.prose.json` as `{"why": "...", "do_this": ["..."], "patch": "..."}`: the Why this verdict paragraph, the Do this steps (they match your `carrying_cost`) and Step 4's patch.
 - **Run.** `<base>/../../tools/vet <target> <report> --dossier <stem>.dossier.json --answers <stem>.answers.json --prose <stem>.prose.json`, and hand over its report unchanged; the plain-Markdown rules below are path B's. When it refuses, it names the problem: fix it and run again, never write the report by hand.
 
 **Path B: a plain skill folder, no tools/.** Write the template below by hand, in the 2.0 order; it says its colours and counts are the model's. Rules:
@@ -231,7 +231,7 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 
 ### ✅ Do this
 - ⬜ 1. <first action>
-<One line: which of Step 2's three carrying-cost cases applies.>
+<One line: which of Step 2's three carrying-cost cases applies; with an always-on cost, the second and third mean COPY RULES, SKIP PLUGIN.>
 
 ### 📋 Proposed rules patch
 <Step 4's patch, or "nothing to add".>

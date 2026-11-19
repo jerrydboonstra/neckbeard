@@ -4,8 +4,10 @@
 A unit is one section of one instruction file the dossier carries for the target: each skill, its companion files
 (roles, sections), each command, agent and rule file, split at its #, ## and ### headings. Frontmatter is left out,
 so the skill's description is in no unit (the judge reads it in the dossier), and a section with no text under its heading is skipped.
-Writes OUT as {"units": [{"id": "u1", "file": ..., "heading": ..., "chars": N, "text": ...}, ...]} and prints the
-count. It lists the units tools/vet's fit report is computed from (verdict-stability-rules).
+Writes OUT as {"units": [{"id": "u1", "file": ..., "heading": ..., "chars": N, "text": ...}, ...], "always_on": {"session_start": bool,
+"subagents": bool}} and prints the count. always_on is the target's always-on cost from the dossier's hooks: session_start when its hook events
+include SessionStart, subagents when hooks_reach_subagents is true, and both false when has_hooks is false. An unread value counts as true, with a line on stderr: a null hooks_reach_subagents, events that are not a dict, an "unknown" has_hooks or no hooks section. A "partial" has_hooks (some entries malformed) keeps its events and hooks_reach_subagents, which are read as they are, with no note unless one of them is unreadable. tools/units-verdict reads
+always_on (carrying-cost-verdict). It lists the units tools/vet's fit report is computed from (verdict-stability-rules).
 """
 import json, re, sys
 
@@ -40,16 +42,42 @@ def files(target):
                     yield c.get("path"), c["text"]
 
 
+def always_on_cost(target):
+    """{"session_start": bool, "subagents": bool} from target.hooks; an unreadable value counts as true, with a stderr note"""
+    hooks, unknown = target.get("hooks"), []
+    if not isinstance(hooks, dict):
+        unknown += ["hooks"]
+        start = subagents = True
+    elif hooks.get("has_hooks") not in (True, False, "partial"):   # the inventory's "unknown": its events were not read
+        unknown += ["hooks.has_hooks"]
+        start = subagents = True
+    elif hooks.get("has_hooks") is False:   # the inventory writes just {"has_hooks": false} for a target with no hooks
+        start = subagents = False
+    else:
+        events = hooks.get("events")
+        start = "SessionStart" in events if isinstance(events, dict) else True
+        reach = hooks.get("hooks_reach_subagents")
+        subagents = reach is True or not isinstance(reach, bool)
+        if not isinstance(events, dict):
+            unknown += ["hooks.events"]
+        if not isinstance(reach, bool):
+            unknown += ["hooks.hooks_reach_subagents"]
+    if unknown:
+        print("rule-units: " + " and ".join(unknown) + " unknown in the dossier, so it counts as an always-on cost", file=sys.stderr)
+    return {"session_start": start, "subagents": subagents}
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit("usage: rule-units DOSSIER OUT")
     target = json.load(open(sys.argv[1], encoding="utf-8"))["target"]
+    always_on = always_on_cost(target)
     units = []
     for source, text in files(target):
         for heading, body in sections(text):
             if body:
                 units.append({"id": f"u{len(units) + 1}", "file": source, "heading": heading, "chars": len(body), "text": body})
-    json.dump({"units": units}, open(sys.argv[2], "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    json.dump({"units": units, "always_on": always_on}, open(sys.argv[2], "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     print(f"{len(units)} units, {sum(u['chars'] for u in units)} chars")
 
 

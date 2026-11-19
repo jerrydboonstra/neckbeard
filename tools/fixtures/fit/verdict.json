@@ -1,5 +1,6 @@
 {
  "verdict": "COPY RULES, SKIP PLUGIN",
+ "carrying_cost": null,
  "counts": {
   "units": 9,
   "conflicts": 2,
@@ -19,6 +20,7 @@
    "file": "skills/a/SKILL.md",
    "heading": "(top)",
    "kind": "rule",
+   "bucket": "keep",
    "skill": "drop",
    "rules": "new-standing",
    "quote": "Never cut protection to make a change smaller.",
@@ -26,14 +28,14 @@
    "covered_by": "",
    "held_in": "",
    "star": true,
-   "conflicts": [],
-   "bucket": "keep"
+   "conflicts": []
   },
   {
    "id": "u2",
    "file": "skills/a/SKILL.md",
    "heading": "Tests",
    "kind": "rule",
+   "bucket": "keep",
    "skill": "drop",
    "rules": "new-standing",
    "quote": "New non-trivial logic ships with one small test.",
@@ -41,14 +43,14 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": [],
-   "bucket": "keep"
+   "conflicts": []
   },
   {
    "id": "u3",
    "file": "skills/b/SKILL.md",
    "heading": "Review",
    "kind": "skill",
+   "bucket": "keep",
    "skill": "drop",
    "rules": "new-skill-text",
    "quote": "Review a change by reading the callers.",
@@ -56,14 +58,14 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": [],
-   "bucket": "keep"
+   "conflicts": []
   },
   {
    "id": "u4",
    "file": "skills/a/SKILL.md",
    "heading": "Levels",
    "kind": "rule",
+   "bucket": "dropped",
    "skill": "drop",
    "rules": "none",
    "quote": "",
@@ -79,14 +81,14 @@
      "held_in": "rules/safety.md",
      "hard_stop": true
     }
-   ],
-   "bucket": "dropped"
+   ]
   },
   {
    "id": "u5",
    "file": "commands/a.toml",
    "heading": "(top)",
    "kind": "rule",
+   "bucket": "dropped",
    "skill": "drop",
    "rules": "none",
    "quote": "",
@@ -102,14 +104,14 @@
      "held_in": "rules/engineering.md",
      "hard_stop": false
     }
-   ],
-   "bucket": "dropped"
+   ]
   },
   {
    "id": "u6",
    "file": "commands/b.toml",
    "heading": "(top)",
    "kind": "rule",
+   "bucket": "dropped",
    "skill": "drop",
    "rules": "none",
    "quote": "",
@@ -125,14 +127,14 @@
      "held_in": "rules/engineering.md",
      "hard_stop": false
     }
-   ],
-   "bucket": "dropped"
+   ]
   },
   {
    "id": "u7",
    "file": "skills/a/SKILL.md",
    "heading": "Reuse",
    "kind": "rule",
+   "bucket": "covered",
    "skill": "drop",
    "rules": "duplicate",
    "quote": "Reuse the codebase first.",
@@ -140,14 +142,14 @@
    "covered_by": "Rule 1, Reuse before writing",
    "held_in": "rules/engineering.md",
    "star": false,
-   "conflicts": [],
-   "bucket": "covered"
+   "conflicts": []
   },
   {
    "id": "u8",
    "file": "skills/c/SKILL.md",
    "heading": "Help",
    "kind": "rule",
+   "bucket": "dropped",
    "skill": "drop",
    "rules": "none",
    "quote": "",
@@ -155,14 +157,14 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": [],
-   "bucket": "dropped"
+   "conflicts": []
   },
   {
    "id": "u9",
    "file": "skills/d/SKILL.md",
    "heading": "Persona",
    "kind": "rule",
+   "bucket": "dropped",
    "skill": "drop",
    "rules": "none",
    "quote": "",
@@ -170,8 +172,7 @@
    "covered_by": "",
    "held_in": "",
    "star": false,
-   "conflicts": [],
-   "bucket": "dropped"
+   "conflicts": []
   }
  ]
 }

@@ -10,7 +10,7 @@
 #      the reader's; refuse if the dossier read anything outside the copy
 #   3. the fit report, from a fixed list of the plugin's rule units (verdict-stability-rules): tools/rule-units lists the units;
 #      three find passes pool their conflict candidates and tools/units-confirm confirms each in a call of its own; the answering
-#      judge (tools/vet-units.md) answers every unit; tools/units-verdict computes the verdict and counts by code; the prose judge
+#      judge (tools/vet-units.md) answers every unit, and the target's carrying cost when a hook is always on; tools/units-verdict computes the verdict and counts by code, carrying cost included; the prose judge
 #      (tools/vet-prose.md) writes only the Why paragraph, the Do this steps and the rules patch; tools/fit draws the verdict strip
 #      and the seven fit cards. Every call is a separate `claude -p` session started in the empty project.
 #      --judge reader (what the default tries first) gives it the copy as its config folder too, so it starts with the reader's
@@ -55,7 +55,7 @@
 # calling session already made, with no model call: no find pass, confirm call, answering judge or prose judge runs, and claude need not be on
 # PATH. DOSSIER is the one the session wrote with skills/neckbeard/inventory.py (its target path must be TARGET's, compared by realpath, and
 # TARGET must be a local folder, else usage, exit 2); its current_rules are the rules the verdict is against, labelled "your rules". tools/vet does not copy a
-# reader or run the inventory. ANSWERS is the per-unit answers in tools/vet-units.md's format, with each confirmed conflict in the form
+# reader or run the inventory. ANSWERS is the per-unit answers in tools/vet-units.md's format (with a top-level carrying_cost when the dossier shows an always-on hook, else units-verdict refuses it), with each confirmed conflict in the form
 # tools/units-confirm merge writes ({quote, reader_rule, held_in, hard_stop}); PROSE is {why, do_this, patch}, the form tools/fit reads. Then
 # the verdict and counts are computed with tools/units-verdict and the report is rendered and assembled as for any fit report, with these
 # differences: the title ends " · against your rules"; the Baseline line keeps its form, its bytes and fingerprint computed from the rule
