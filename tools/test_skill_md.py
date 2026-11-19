@@ -55,6 +55,7 @@ check("Step 3 names the three 2.0 layer headings, in order", all(i >= 0 for i in
 call = [l for l in step3.split("\n") if "tools/vet" in l and "--dossier" in l and "--answers" in l and "--prose" in l]
 check("Step 3 gives the `tools/vet ... --dossier ... --answers ... --prose ...` call", bool(call))
 check('no line of SKILL.md is exactly "## ⚡ At a glance"', "## ⚡ At a glance" not in SKILL.split("\n"))
+check("path A runs tools/vet itself, as the bash script it is, not through python3", "python3 <base>/../../tools/vet" not in step3 and "`<base>/../../tools/vet <target>" in step3)
 check("Step 1 writes the dossier to a file beside the report (inventory's --out, <stem>.dossier.json)",
       "--out" in section(SKILL, "## Step 1", "## Step 2") and ".dossier.json" in section(SKILL, "## Step 1", "## Step 2"))
 check("Step 3 points at tools/rule-units and tools/vet-units.md for the units and the answer fields",
