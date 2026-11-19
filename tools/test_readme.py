@@ -116,7 +116,7 @@ import tempfile
 with tempfile.TemporaryDirectory() as tmp:
     t = Path(tmp)
     (t / "here.md").write_text("x")
-    (t / "a.md").write_text("[ok](here.md#h) [web](https://x.org/y) [gone](nowhere.md)")
+    (t / "a.md").write_text("[ok](here.md) [web](https://x.org/y) [gone](nowhere.md)")
     check("a relative link that does not resolve is reported", broken_links(t / "a.md") == ["nowhere.md"])
     (t / "h.md").write_text("# Top\n\n## Try it: three lines, then the `report`\n\n## Again\n\n## Again\n\n```\n# not a heading\n```\n\n[self](#again-1) [bad](#nope) [other](a.md#x)\n")
     (t / "b.md").write_text("[ok](h.md#try-it-three-lines-then-the-report) [rep](h.md#again-1) [gone](h.md#renamed) [nofile](zz.md#top) [code](h.md#not-a-heading)\n```\n[skip](nowhere.md)\n```\n")
