@@ -4,7 +4,7 @@
 # Set at v1.17.7's sizes plus about 5 percent: SKILL.md 14535 bytes, the description 764 characters. tools/test_skill_budget.py, run by make check (and so by make release), fails when a size passes its line.
 # Raise a line only in a reviewed commit that says what the extra text buys.
 # 2.0 raise (skill-md-2-0): SKILL.md 15262 to 17483 bytes (+2221). It buys the two Step 3 paths of the owner's 8a: path A (tools/ beside the skill) has the session list the units, answer them in vet-units.md's form, find conflicts and write the prose, then run tools/vet in session mode so the colours, counts and verdict come from code; path B keeps the hand-written template for a plain skill folder, in the 2.0 order. Step 2's text is unchanged, byte for byte.
-# carrying-cost-verdict raise: SKILL.md 17483 to 17865 (+382). It buys path A's `carrying_cost` answer (Step 2's three cases and what code does with them: COPY RULES, SKIP PLUGIN for copy and reader-decides, a refusal without it), so the headline verdict and Do this agree; path B's Do this line also says which cases mean COPY RULES. Step 2's text is unchanged.
+# carrying-cost-verdict raise: SKILL.md 17483 to 17889 (+406). It buys path A's `carrying_cost` answer (Step 2's three cases and what code does with them: COPY RULES, SKIP PLUGIN for copy and reader-decides, a refusal without it), so the headline verdict and Do this agree; path B's Do this line also says which cases mean COPY RULES. Step 2's text is unchanged.
 # The .py files under skills/neckbeard/ are scripts and have no cap. The SKILL.md files under examples/ and tools/fixtures/ are test material and are left out. neckbeard has no on-demand sections today, so nothing is exempted for them.
 descriptions: 802
-skills/neckbeard/SKILL.md: 17865
+skills/neckbeard/SKILL.md: 17889

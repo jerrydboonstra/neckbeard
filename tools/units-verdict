@@ -158,7 +158,7 @@ def main():
     flags = doc.get("always_on")
     on = (bool(flags.get("session_start") or flags.get("subagents")) if isinstance(flags, dict) else None)
     if on is None:
-        print("units-verdict: the units file has no always_on, so the carrying-cost rule was not applied", file=sys.stderr)
+        print("units-verdict: the units file has no usable always_on, so the carrying-cost rule was not applied", file=sys.stderr)
     runs, bad = [], False
     for path in argv[1:]:
         got = load(path, set(ids), on)

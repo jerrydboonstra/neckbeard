@@ -61,6 +61,14 @@ for label, hooks, want in (("no hooks", NOHOOKS, {"session_start": False, "subag
     chk(f"rule-units: {label} gives always_on {want}", code == 0 and got == want, (code, got, out))
 code, out, path = units_of("ao", UNKNOWN)
 chk("rule-units: an unread hook counts as always-on and says so on stderr", "unknown" in out.lower() and "always" in out.lower(), out)
+UNKNOWN_HAS = {"has_hooks": "unknown", "events": {}, "hooks_reach_subagents": None}
+code, out, path = units_of("ao", UNKNOWN_HAS)
+chk("rule-units: the inventory's has_hooks \"unknown\" (events unread) gives both flags true and a stderr note naming it",
+    json.load(open(path)).get("always_on") == {"session_start": True, "subagents": True} and "has_hooks" in out, out)
+doc = json.load(open(dossier("nohooks.dossier.json", {})))
+del doc["target"]["hooks"]
+code, out = run("rule-units", J("nohooks.dossier.json", doc), os.path.join(d, "nohooks.units.json"))
+chk("rule-units: a dossier with no hooks key at all gives both flags true", json.load(open(os.path.join(d, "nohooks.units.json"))).get("always_on") == {"session_start": True, "subagents": True}, out)
 code, out, path = units_of("ao", {})
 chk("rule-units: a dossier with no hooks section counts as always-on (unread), and says so", json.load(open(path)).get("always_on") == {"session_start": True, "subagents": True} and "unknown" in out.lower(), out)
 
@@ -127,7 +135,7 @@ vu = open(os.path.join(HERE, "vet-units.md"), encoding="utf-8").read()
 skill = open(os.path.join(HERE, "..", "skills", "neckbeard", "SKILL.md"), encoding="utf-8").read()
 path_a = skill.split("**Path A:")[1].split("**Path B:")[0]
 answers_bullet = [l for l in path_a.split("\n") if l.startswith("- **Answers.**")]
-chk("tools/vet-units.md asks for carrying_cost and its three values", all(w in vu for w in ("carrying_cost", "install", "copy", "reader-decides")), vu[-400:])
+chk("tools/vet-units.md asks for carrying_cost and its three values", '"carrying_cost": "install", "copy" or "reader-decides"' in vu, vu[-400:])
 chk("SKILL.md's path A Answers bullet names carrying_cost and points at Step 2", len(answers_bullet) == 1 and "carrying_cost" in answers_bullet[0] and "Step 2" in answers_bullet[0], answers_bullet)
 
 # 4. end to end through tools/vet's session mode, on a plugin with a session-start hook and a subagent hook
@@ -173,6 +181,9 @@ def vet(tmp, home, target, dos, cost):
 
 
 hooked = build("hooked", True)
+hu = os.path.join(hooked[0], "u.json")
+subprocess.run([sys.executable, os.path.join(HERE, "rule-units"), hooked[3], hu], check=True, capture_output=True)
+chk("end to end: the real inventory's dossier of that plugin gives always_on session_start and subagents both true", json.load(open(hu)).get("always_on") == {"session_start": True, "subagents": True}, json.load(open(hu)).get("always_on"))
 code, out, text = vet(*hooked, "copy")
 chk("end to end: a session-start hook and a subagent hook, one kept skill, answered copy: COPY RULES, SKIP PLUGIN in the strip", code == 0 and COPY in text and "🟩 INSTALL" not in text, (code, out[-400:]))
 code, out, text = vet(*hooked, None)

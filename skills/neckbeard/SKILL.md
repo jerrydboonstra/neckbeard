@@ -231,7 +231,7 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 
 ### ✅ Do this
 - ⬜ 1. <first action>
-<One line: which of Step 2's three carrying-cost cases applies; the second and third mean COPY RULES, SKIP PLUGIN.>
+<One line: which of Step 2's three carrying-cost cases applies; with an always-on cost, the second and third mean COPY RULES, SKIP PLUGIN.>
 
 ### 📋 Proposed rules patch
 <Step 4's patch, or "nothing to add".>

@@ -6,8 +6,8 @@ A unit is one section of one instruction file the dossier carries for the target
 so the skill's description is in no unit (the judge reads it in the dossier), and a section with no text under its heading is skipped.
 Writes OUT as {"units": [{"id": "u1", "file": ..., "heading": ..., "chars": N, "text": ...}, ...], "always_on": {"session_start": bool,
 "subagents": bool}} and prints the count. always_on is the target's always-on cost from the dossier's hooks: session_start when its hook events
-include SessionStart, subagents when hooks_reach_subagents is true, and both false when has_hooks is false. An unread value (null, or
-no hooks section) counts as true, and a line on stderr says so, since an unread hook can't be called free. tools/units-verdict reads
+include SessionStart, subagents when hooks_reach_subagents is true, and both false when has_hooks is false. An unread value (null, an
+"unknown" has_hooks, or no hooks section) counts as true, and a line on stderr says so, since an unread hook can't be called free. tools/units-verdict reads
 always_on (carrying-cost-verdict). It lists the units tools/vet's fit report is computed from (verdict-stability-rules).
 """
 import json, re, sys
@@ -48,6 +48,9 @@ def always_on_cost(target):
     hooks, unknown = target.get("hooks"), []
     if not isinstance(hooks, dict):
         unknown += ["hooks"]
+        start = subagents = True
+    elif hooks.get("has_hooks") not in (True, False):   # the inventory's "unknown": its events were not read
+        unknown += ["hooks.has_hooks"]
         start = subagents = True
     elif hooks.get("has_hooks") is False:   # the inventory writes just {"has_hooks": false} for a target with no hooks
         start = subagents = False
