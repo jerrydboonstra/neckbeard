@@ -46,12 +46,12 @@ def scratch(files, words=None, track=True):
     return d, repo, lst
 
 
-def guard(repo, lst, **env):
+def guard(repo, lst, shell="bash", **env):
     e = {k: v for k, v in os.environ.items() if not k.startswith("GUARD_")}
     if lst is not None:
         e["GUARD_WORDS"] = lst
     e.update(env)
-    p = subprocess.run(["bash", GUARD], cwd=repo, env=e, capture_output=True, text=True)
+    p = subprocess.run([shell, GUARD], cwd=repo, env=e, capture_output=True, text=True)
     return p.returncode, p.stdout, p.stderr
 
 
@@ -76,6 +76,37 @@ shutil.rmtree(d)
 d, repo, lst = scratch({"a.txt": f"a -{WORD} b\n{WORD}.y\n".encode()}, f"-{WORD}\n{WORD}.y\n")
 code, out, err = guard(repo, lst)
 chk("a word starting with a dash, and one with a dot (a fixed string, not a pattern), both match as written", (code, out.count("(list line")), (1, 2))
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": f"{WORD}\n".encode()}, f"  {WORD}  \n")
+chk("spaces around a list word are trimmed", guard(repo, lst)[0], 1)
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": b"clean\n"}, "# only a comment\n\n")
+code, out, err = guard(repo, lst, GUARD_REQUIRE_WORDS="1")
+chk("a list with no words fails under GUARD_REQUIRE_WORDS=1 and passes without it", (code, guard(repo, lst)[0]), (1, 0))
+if os.getuid() != 0:
+    os.chmod(lst, 0)
+    code, out, err = guard(repo, lst)
+    chk("an unreadable list exits 2 and the shell's own message names no path", (code, os.path.basename(d) in out + err), (2, False))
+    os.chmod(lst, 0o644)
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": f"{WORD}Xy\n".encode()}, f"{WORD}.y\n")
+chk("a list word is a fixed string: a dot matches only a dot", guard(repo, lst)[0], 0)
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": f"{WORD}\n".encode()}, f"other\n{WORD}")
+chk("a last list line with no newline is read", guard(repo, lst)[0], 1)
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": f"{WORD}\n".encode()}, LIST)
+if os.path.exists("/bin/bash"):
+    chk("it runs under /bin/bash (3.2 on a Mac)", guard(repo, lst, shell="/bin/bash")[0], 1)
+with open(os.path.join(repo, ".git", "index"), "w") as f:
+    f.write("not an index")
+code, out, err = guard(repo, lst)
+chk("a search that fails exits 2, not 0", code, 2)
 shutil.rmtree(d)
 
 d, repo, lst = scratch({"a.txt": f"({WORD}).\n".encode()}, LIST)
@@ -145,6 +176,24 @@ recipe = m.group(1) if m else ""
 g, push = recipe.find("GUARD_REQUIRE_WORDS=1"), recipe.find("tools/release-push")
 chk("the release recipe runs the guard with GUARD_REQUIRE_WORDS=1 before tools/release-push", (g != -1, push != -1, -1 < g < push), (True, True, True))
 chk("the guard target sits outside the release recipe and has a help line", ("\nguard:" in text, "\nguard: ## " in text, "guard:" in recipe), (True, True, False))
+
+# Run the release recipe's own guard line (a copy of it, as a `gate` target) in a scratch repo: it must refuse without a list.
+gate = [l for l in recipe.splitlines() if "GUARD_REQUIRE_WORDS=1" in l]
+d, repo, lst = scratch({"a.txt": b"clean\n"}, LIST)
+shutil.copy(os.path.join(ROOT, "Makefile"), repo)
+os.makedirs(os.path.join(repo, "tools"))
+os.makedirs(os.path.join(repo, ".claude-plugin"))
+shutil.copy(GUARD, os.path.join(repo, "tools", "guard.sh")) if os.path.exists(GUARD) else None
+shutil.copy(os.path.join(ROOT, ".claude-plugin", "plugin.json"), os.path.join(repo, ".claude-plugin"))
+with open(os.path.join(repo, "Makefile"), "a") as f:
+    f.write("\ngate:\n" + "\n".join(gate) + "\n")
+run = lambda *a: subprocess.run(["make", "gate", *a], cwd=repo, capture_output=True, text=True).returncode
+chk("the release recipe's guard line fails with no PRIVATE_WORDS, and passes with a clean list", (len(gate), run() != 0, run(f"PRIVATE_WORDS={lst}")), (1, True, 0))
+with open(os.path.join(repo, "a.txt"), "w") as f:
+    f.write(f"{WORD}\n")
+sh(repo, "git", "add", "-A")
+chk("and it fails on a hit", run(f"PRIVATE_WORDS={lst}") != 0, True)
+shutil.rmtree(d)
 
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
