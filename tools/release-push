@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# release-push: the push half of `make release`, after its checks. Env: VERSION, REMOTES (GitHub's remote first, then any
+# mirrors; `make` sets both). In order:
+#   1. refuse an unbumped version (v$VERSION exists on an older commit) before main moves anywhere
+#   2. push main to GitHub alone, fast-forward only
+#   3. wait for CI on that exact commit (tools/ci-wait.sh)
+#   4. only then create the tag (if absent) and push main and the tag to every remote
+# A failed CI leaves no tag and the mirrors untouched; GitHub's main already holds the commit, so the fix goes on top of it.
+set -u
+version=${VERSION:?release-push: VERSION is not set}
+remotes=${REMOTES:?release-push: REMOTES is not set}
+tag=v$version
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+first=${remotes%% *}
+[ "$(git branch --show-current)" = main ] || { echo "release: not on main"; exit 1; }
+sha=$(git rev-parse HEAD)
+if git rev-parse -q --verify "refs/tags/$tag" >/dev/null && [ "$(git rev-parse "$tag^{commit}")" != "$sha" ]; then
+  echo "release: $tag already exists on an older commit; bump the version (plugin.json and marketplace.json), then release again"
+  exit 1
+fi
+echo "== $first: main, ahead of CI"
+git push "$first" main || { echo "release: $first refused a fast-forward. Never force from here."; exit 1; }
+bash "$here/ci-wait.sh" "$sha" || { echo "release: CI did not pass on ${sha:0:7}; no tag made, no other remote pushed. $first's main holds it, so fix on top of it and release again."; exit 1; }
+git rev-parse -q --verify "refs/tags/$tag" >/dev/null || git tag -a "$tag" -m "neckbeard $version" || exit 1
+for r in $remotes; do
+  echo "== $r"
+  git push "$r" main "$tag" || { echo "release: $r refused a fast-forward. Never force from here."; exit 1; }
+done

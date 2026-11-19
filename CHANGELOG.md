@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **`make release` pushes main to GitHub alone first, waits for CI on that commit, and only then tags and pushes the other remotes.** A failed or missing CI run leaves no tag and the mirrors untouched, and GitHub's main already holds the commit, so the fix goes on top of it. A version whose tag is already on an older commit is refused before main moves. You no longer tag by hand first: the release makes the tag (a tag you made on the release commit is reused). The push and wait are `tools/release-push` and `tools/ci-wait.sh`, tested in `tools/test_release.py`.
+
 ## 2.0.0 (2026-11-18)
 
 **A new report layout, and a fit verdict computed by code.** A report now opens with a contents list and three layers: how the plugin affects you, what it adds, and where it takes a position. In a fit report, code computes the verdict and the counts from a fixed list of the plugin's rule units; a model answers each unit, but no model writes the colours, counts or verdict. The major version marks the new layout: anything that parses a 1.x report needs updating.

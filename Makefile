@@ -43,9 +43,9 @@ report: ## regenerate docs/neckbeard-report.md, neckbeard's own published report
 	tools/vet . docs/neckbeard-report.md --facts --release-tag v$(VERSION) --repo https://github.com/jerrydboonstra/neckbeard
 	@$(PYTHON) tools/excerpts >/dev/null   # the README's excerpt of this report, so the badge line stays the last output
 
-report-check: ## fail unless the report in the tagged tree names the tagged version (a tag set before the report commit is refused)
-	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "report-check: no tag v$(VERSION)"; exit 1; }
-	@d=$$(mktemp -d) && trap '[ -n "$$d" ] && rm -rf "$$d"' EXIT && git archive "v$(VERSION)" | tar -x -C "$$d" && \
+report-check: ## fail unless the report in the tagged tree names the tagged version (a tag set before the report commit is refused); REF=HEAD checks the tree before the tag exists
+	@if [ -z "$(REF)" ]; then git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "report-check: no tag v$(VERSION)"; exit 1; }; fi
+	@d=$$(mktemp -d) && trap '[ -n "$$d" ] && rm -rf "$$d"' EXIT && git archive "$(or $(REF),v$(VERSION))" | tar -x -C "$$d" && \
 	  tools/vet --check "$$d/docs/neckbeard-report.md" "$$d" && \
 	  { grep -E '^`[0-9]{4}-[0-9]{2}-[0-9]{2}` · neckbeard ' "$$d/docs/neckbeard-report.md" | head -1 | grep -qF ' @ `v$(VERSION)`' || { echo "report-check: the header of the tagged report must name the tag, @ \`v$(VERSION)\`, not a commit or another tag"; exit 1; }; }
 
@@ -53,18 +53,18 @@ release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Rel
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d' | grep . >/dev/null || { echo "release: CHANGELOG.md has no entry for $(VERSION)" >&2; exit 1; }
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d'
 
-release: check ## push main and the version tag to every remote, fast-forward only, then publish the GitHub Release
+release: check ## push main to GitHub, wait for CI on that commit, then tag and push main and the tag to every remote, fast-forward only, then publish the GitHub Release
 	@$(MAKE) --no-print-directory release-notes >/dev/null
 	@test -z "$$(git status --porcelain --untracked-files=no)" || { echo "release: tracked files are modified; commit first"; exit 1; }
 	@test "$$(git branch --show-current)" = main || { echo "release: not on main"; exit 1; }
 	@grep -q '"version": "$(VERSION)"' .claude-plugin/marketplace.json || { echo "release: marketplace.json does not say $(VERSION)"; exit 1; }
-	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "release: no tag v$(VERSION); run: git tag -a v$(VERSION) -m 'neckbeard $(VERSION)'"; exit 1; }
-	@git merge-base --is-ancestor "v$(VERSION)" HEAD || { echo "release: v$(VERSION) is not on main"; exit 1; }
-	@$(MAKE) --no-print-directory report-check || { echo "release: the report in v$(VERSION) is stale; make report, commit, and tag again"; exit 1; }
-	@for r in $(REMOTES); do \
-	  echo "== $$r"; \
-	  git push "$$r" main "v$(VERSION)" || { echo "release: $$r refused a fast-forward. Never force from here."; exit 1; }; \
-	done
+	@if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
+	  git merge-base --is-ancestor "v$(VERSION)" HEAD || { echo "release: v$(VERSION) is not on main"; exit 1; }; \
+	  $(MAKE) --no-print-directory report-check || { echo "release: the report in v$(VERSION) is stale; make report, commit, and release again"; exit 1; }; \
+	else \
+	  $(MAKE) --no-print-directory report-check REF=HEAD || { echo "release: the report is stale; make report, commit, and release again"; exit 1; }; \
+	fi
+	@VERSION=$(VERSION) REMOTES="$(REMOTES)" bash tools/release-push
 	@# A pushed tag is not a GitHub Release; the repo page shows the newest Release as Latest.
 	@if gh release view "v$(VERSION)" >/dev/null 2>&1; then echo "== GitHub Release v$(VERSION) already exists"; \
 	else $(MAKE) --no-print-directory release-notes | gh release create "v$(VERSION)" --verify-tag --latest \
