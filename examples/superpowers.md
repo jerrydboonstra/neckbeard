@@ -1,6 +1,6 @@
-# 🔍 superpowers 7.0.2 · how it affects you, what it adds, where it takes a position
+# 🔍 superpowers
 
-`2026-11-18` · neckbeard 1.17.8 · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46`
+`2026-11-18` · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -16,63 +16,26 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟨 | Cost | adds 2,317 to every session, ~579 tokens (2,317 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
+| 🟨 | Cost | adds 2,317 characters to every session, ~579 tokens (2,317 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
 | 🟨 | Reach | a hook in every main session (not read in full) |
 | 🟧 | Leaves state | 18 files that may write state |
 | 🟨 | Live surface | 1 hook command, local scripts only (not read in full) |
 | 🟨 | Read completeness | partly read |
 
-<details><summary><b>At a glance in full</b></summary>
+- **Leaves state**: the files are listed in the "State it may leave" card under [What it adds](#what-it-adds).
+- **Read completeness**: not read in full: hooks (partial).
 
-- **Cost** 🟨: adds 2,317 to every session, ~579 tokens (2,317 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full)
-  - skill skills/brainstorming/SKILL.md: 213 of description
-  - skill skills/diagnosing-superpowers/SKILL.md: 375 of description
-  - skill skills/dispatching-parallel-agents/SKILL.md: 106 of description
-  - skill skills/executing-plans/SKILL.md: 170 of description
-  - skill skills/finishing-a-development-branch/SKILL.md: 101 of description
-  - skill skills/receiving-code-review/SKILL.md: 234 of description
-  - skill skills/requesting-code-review/SKILL.md: 107 of description
-  - skill skills/subagent-driven-development/SKILL.md: 85 of description
-  - skill skills/systematic-debugging/SKILL.md: 91 of description
-  - skill skills/test-driven-development/SKILL.md: 79 of description
-  - and 5 more
-- **Reach** 🟨: a hook in every main session (not read in full)
-  - hook: "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" session-start
-  - subagent reach: no event known to fire in a subagent
-- **Leaves state** 🟧: 18 files that may write state
-  - may write state: .opencode/plugins/superpowers.js
-  - may write state: hooks/session-start
-  - may write state: scripts/bump-version.sh
-  - may write state: scripts/lint-shell.sh
-  - may write state: scripts/package-codex-plugin.sh
-  - may write state: scripts/render-antigravity-logo.sh
-  - may write state: scripts/sync-to-codex-plugin.sh
-  - may write state: skills/brainstorming/scripts/helper.js
-  - may write state: skills/brainstorming/scripts/server.cjs
-  - may write state: skills/brainstorming/scripts/start-server.sh
-  - and 8 more
-- **Live surface** 🟨: 1 hook command, local scripts only (not read in full)
-  - hook SessionStart: "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" session-start
-- **Read completeness** 🟨: partly read
-  - agents: read
-  - commands: read
-  - hooks: partial
-  - marketplace: read
-  - mcp_servers: read
-  - persistence_candidates: read
-  - plugin_json: read
-  - rule_files: read
-  - skills: read
-
-</details>
+<details><summary><b>How the colours are set</b></summary>
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
-- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
+- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions in characters, and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says "characters and bytes"; text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
 - Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
 - Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.
+
+</details>
 
 ---
 
@@ -246,8 +209,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Rule on each conflict a row surfaces with the spec as the binding authority, record the ruling beside its row, and start Task 1." [`skills/executing-plans/SKILL.md:160`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L160)
 - "Each task's own text is checked when you read its brief, not here." [`skills/executing-plans/SKILL.md:162`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L162)
 - "If any item is missing, the task is not complete: finish it." [`skills/executing-plans/SKILL.md:222`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L222)
-- "A failing run records nothing; the task is not complete." [`skills/executing-plans/SKILL.md:233`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L233)
 - "When it records, mark the todo complete and take the next task." [`skills/executing-plans/SKILL.md:233`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L233)
+- "A failing run records nothing; the task is not complete." [`skills/executing-plans/SKILL.md:233`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L233)
 - "Do not skip it, and do not replace it with your own read of the diff." [`skills/executing-plans/SKILL.md:252`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L252)
 - ""I'll run the full suite at the end instead of per step" | Per-step runs are how you learn which step broke it. The end-of-task run is the contract, not a substitute." [`skills/executing-plans/SKILL.md:314`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L314)
 - ""Let me check in before the next task" | They chose inline to spend less. Progress prompts spend their time instead. Only the four stops stop you." [`skills/executing-plans/SKILL.md:317`](https://github.com/obra/superpowers/blob/22f0b46/skills/executing-plans/SKILL.md#L317)
@@ -641,8 +604,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**The breaker.** When round 5's re-review still leaves findings open, stop dispatching." [`skills/subagent-driven-development/references/fix-loop.md:59`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/fix-loop.md#L59)
 - "**The reviewer is wrong, or the point is contestable:** park it — \`Task &lt;N>: parked — &lt;finding> — Ruling: &lt;why the code stands>\`. The final review sees both sides." [`skills/subagent-driven-development/references/fix-loop.md:63`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/fix-loop.md#L63)
 - "**Real and load-bearing** — a later task builds on it, or it reveals a plan defect: rule on the smallest change that unblocks the dependent work, ledger it as \`Task &lt;N>: Ruling: &lt;finding> — &lt;what you…" [`skills/subagent-driven-development/references/fix-loop.md:68`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/fix-loop.md#L68)
-- "If the concerns are about correctness or scope, address them before review." [`skills/subagent-driven-development/references/handling-reports.md:5`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/handling-reports.md#L5)
 - "If they're observations (e.g., "this file is getting large"), note them and proceed to review." [`skills/subagent-driven-development/references/handling-reports.md:5`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/handling-reports.md#L5)
+- "If the concerns are about correctness or scope, address them before review." [`skills/subagent-driven-development/references/handling-reports.md:5`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/handling-reports.md#L5)
 - "anything the plan explicitly mandates that the review rubric treats as a defect (a test that asserts nothing, verbatim duplication of a logic block)" [`skills/subagent-driven-development/references/preflight.md:10`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/preflight.md#L10)
 - "Rule on everything you find before execution begins — each finding against the plan text that mandates it — and record each ruling in the ledger." [`skills/subagent-driven-development/references/preflight.md:20`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/preflight.md#L20)
 - "The review loop remains the net for conflicts that only emerge from implementation." [`skills/subagent-driven-development/references/preflight.md:25`](https://github.com/obra/superpowers/blob/22f0b46/skills/subagent-driven-development/references/preflight.md#L25)
@@ -742,19 +705,19 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "When the sandbox blocks branch/push operations (detached HEAD in an externally managed worktree), the agent commits all work and informs the user to use the App's native controls:" [`skills/using-superpowers/references/codex-tools.md:100`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/codex-tools.md#L100)
 - "The agent can still run tests, stage files, and output suggested branch names, commit messages, and PR descriptions for the user to copy." [`skills/using-superpowers/references/codex-tools.md:107`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/codex-tools.md#L107)
 - "Dispatch a subagent (\`Subagent (general-purpose):\` template) | \`invoke_agent\` with \`agent_name: "generalist"\` (invocable via \`@generalist\` chat syntax — see \[Subagent support\](#subagent-support))" [`skills/using-superpowers/references/gemini-tools.md:18`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L18)
-- "The same dispatch is also surfaced as a chat-syntax shortcut: typing \`@generalist &lt;prompt>\` is equivalent to calling \`invoke_agent\` with \`agent_name: "generalist"\`." [`skills/using-superpowers/references/gemini-tools.md:32`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L32)
 - "Gemini CLI dispatches subagents through the \`invoke_agent\` tool, which takes \`agent_name\` and \`prompt\` parameters." [`skills/using-superpowers/references/gemini-tools.md:32`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L32)
+- "The same dispatch is also surfaced as a chat-syntax shortcut: typing \`@generalist &lt;prompt>\` is equivalent to calling \`invoke_agent\` with \`agent_name: "generalist"\`." [`skills/using-superpowers/references/gemini-tools.md:32`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L32)
 - "References a \`*-prompt.md\` template (implementer, task-reviewer, code-reviewer, etc.) | Fill the template, then \`invoke_agent\` with \`agent_name: "generalist"\` and the filled prompt" [`skills/using-superpowers/references/gemini-tools.md:38`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L38)
 - "References \`superpowers:requesting-code-review\`'s \`./code-reviewer.md\` | \`invoke_agent\` with \`agent_name: "generalist"\` and the filled review template" [`skills/using-superpowers/references/gemini-tools.md:39`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L39)
 - "Inline prompt (no template referenced) | \`invoke_agent\` with \`agent_name: "generalist"\` and your inline prompt" [`skills/using-superpowers/references/gemini-tools.md:40`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L40)
 - "The prompt template itself contains the agent's role, review criteria, and expected output format — the subagent will follow it." [`skills/using-superpowers/references/gemini-tools.md:44`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L44)
-- "Keep dependent tasks sequential, but do not serialize independent subagent tasks just to preserve a simpler history." [`skills/using-superpowers/references/gemini-tools.md:48`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L48)
 - "Issue multiple \`invoke_agent\` calls in the same response (or multiple \`@generalist\` invocations in one prompt) to run independent subagent work in parallel." [`skills/using-superpowers/references/gemini-tools.md:48`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L48)
+- "Keep dependent tasks sequential, but do not serialize independent subagent tasks just to preserve a simpler history." [`skills/using-superpowers/references/gemini-tools.md:48`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/gemini-tools.md#L48)
 - "Hermes Agent has a \`skills\` toolset with \`skill_view\` and \`skills_list\` tools." [`skills/using-superpowers/references/hermes-tools.md:27`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/hermes-tools.md#L27)
 - "Use \`delegate_task\` to spawn isolated subagents for parallel or sequential workstreams:" [`skills/using-superpowers/references/hermes-tools.md:46`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/hermes-tools.md#L46)
 - "For multi-agent task boards, use \`hermes kanban\` CLI if available." [`skills/using-superpowers/references/hermes-tools.md:56`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/hermes-tools.md#L56)
-- "Use \`subagent_spawn\` to delegate work to isolated subagents." [`skills/using-superpowers/references/muse-tools.md:31`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/muse-tools.md#L31)
 - "If no subagent tool is available, do the work inline rather than inventing tool calls." [`skills/using-superpowers/references/muse-tools.md:31`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/muse-tools.md#L31)
+- "Use \`subagent_spawn\` to delegate work to isolated subagents." [`skills/using-superpowers/references/muse-tools.md:31`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/muse-tools.md#L31)
 - "Dispatch a subagent (\`Subagent (general-purpose):\` template) | Use an installed subagent tool such as \`subagent\` from \`pi-subagents\` if available" [`skills/using-superpowers/references/pi-tools.md:7`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/pi-tools.md#L7)
 - "If no subagent tool is available, do not fabricate \`Task\` calls; execute sequentially in the current session or explain that the optional subagent capability is not installed." [`skills/using-superpowers/references/pi-tools.md:12`](https://github.com/obra/superpowers/blob/22f0b46/skills/using-superpowers/references/pi-tools.md#L12)
 - "This is a checklist you run yourself — not a subagent dispatch." [`skills/writing-plans/SKILL.md:165`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-plans/SKILL.md#L165)
@@ -792,14 +755,14 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Claude Opus** (powerful reasoning): Does the Skill avoid over-explaining?" [`skills/writing-skills/references/anthropic-best-practices.md:140`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L140)
 - "What works perfectly for Opus might need more detail for Haiku." [`skills/writing-skills/references/anthropic-best-practices.md:142`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L142)
 - "If you plan to use your Skill across multiple models, aim for instructions that work well with all of them." [`skills/writing-skills/references/anthropic-best-practices.md:142`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L142)
-- "Your description must provide enough detail for an agent to know when to select this Skill, while the rest of SKILL.md provides the implementation details." [`skills/writing-skills/references/anthropic-best-practices.md:199`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L199)
 - "The description is critical for skill selection: agents use it to choose the right Skill from potentially 100+ available Skills." [`skills/writing-skills/references/anthropic-best-practices.md:199`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L199)
+- "Your description must provide enough detail for an agent to know when to select this Skill, while the rest of SKILL.md provides the implementation details." [`skills/writing-skills/references/anthropic-best-practices.md:199`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L199)
 - "As your Skill grows, you can bundle additional content that agents load only when needed:" [`skills/writing-skills/references/anthropic-best-practices.md:251`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L251)
 - "Agents load FORMS.md, REFERENCE.md, or EXAMPLES.md only when needed." [`skills/writing-skills/references/anthropic-best-practices.md:295`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L295)
 - "When a user asks about sales metrics, the agent only needs to read sales-related schemas, not finance or marketing data." [`skills/writing-skills/references/anthropic-best-practices.md:299`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L299)
 - "Agents read REDLINING.md or OOXML.md only when the user needs those features." [`skills/writing-skills/references/anthropic-best-practices.md:351`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L351)
-- "When encountering nested references, an agent might use commands like \`head -100\` to preview content rather than reading entire files, resulting in incomplete information." [`skills/writing-skills/references/anthropic-best-practices.md:355`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L355)
 - "Agents may partially read files when they're referenced from other referenced files." [`skills/writing-skills/references/anthropic-best-practices.md:355`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L355)
+- "When encountering nested references, an agent might use commands like \`head -100\` to preview content rather than reading entire files, resulting in incomplete information." [`skills/writing-skills/references/anthropic-best-practices.md:355`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L355)
 - "All reference files should link directly from SKILL.md to ensure agents read complete files when needed." [`skills/writing-skills/references/anthropic-best-practices.md:357`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L357)
 - "Agents can then read the complete file or jump to specific sections as needed." [`skills/writing-skills/references/anthropic-best-practices.md:406`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L406)
 - "For particularly complex workflows, provide a checklist that the agent can copy into its response and check off as it progresses." [`skills/writing-skills/references/anthropic-best-practices.md:414`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L414)
@@ -842,8 +805,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Purpose:** Your agent reads the description to decide which skills to load for a given task." [`skills/writing-skills/references/discovery.md:59`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L59)
 - "A description saying "code review between tasks" caused an agent to do ONE review, even though the skill's flowchart clearly showed TWO reviews (spec compliance then code quality)." [`skills/writing-skills/references/discovery.md:67`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L67)
 - "When the description was changed to just "Use when executing implementation plans with independent tasks" (no workflow summary), the agent correctly read the flowchart and followed the two-stage revi…" [`skills/writing-skills/references/discovery.md:69`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L69)
-- "**The trap:** Descriptions that summarize workflow create a shortcut agents will take." [`skills/writing-skills/references/discovery.md:71`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L71)
 - "The skill body becomes documentation agents skip." [`skills/writing-skills/references/discovery.md:71`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L71)
+- "**The trap:** Descriptions that summarize workflow create a shortcut agents will take." [`skills/writing-skills/references/discovery.md:71`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L71)
 - "Use words an agent would search for:" [`skills/writing-skills/references/discovery.md:114`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/discovery.md#L114)
 - "You run scenarios without the skill (RED - watch agent fail), write skill addressing those failures (GREEN - watch agent comply), then close loopholes (REFACTOR - stay compliant)." [`skills/writing-skills/references/testing-skills-with-subagents.md:9`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/testing-skills-with-subagents.md#L9)
 - "**Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill prevents the right failures." [`skills/writing-skills/references/testing-skills-with-subagents.md:11`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/testing-skills-with-subagents.md#L11)
@@ -1296,8 +1259,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Run and capture:**" [`skills/systematic-debugging/root-cause-tracing.md:87`](https://github.com/obra/superpowers/blob/22f0b46/skills/systematic-debugging/root-cause-tracing.md#L87)
 - "**NEVER fix just where the error appears.** Trace back to find the original trigger." [`skills/systematic-debugging/root-cause-tracing.md:154`](https://github.com/obra/superpowers/blob/22f0b46/skills/systematic-debugging/root-cause-tracing.md#L154)
 - "**Always:**" [`skills/test-driven-development/SKILL.md:18`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L18)
-- "Thinking "skip TDD just this once"?" [`skills/test-driven-development/SKILL.md:29`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L29)
 - "Stop." [`skills/test-driven-development/SKILL.md:29`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L29)
+- "Thinking "skip TDD just this once"?" [`skills/test-driven-development/SKILL.md:29`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L29)
 - "Start over." [`skills/test-driven-development/SKILL.md:37`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L37) (also in `skills/test-driven-development/SKILL.md:306`, `skills/writing-skills/SKILL.md:171`)
 - "**No exceptions:**" [`skills/test-driven-development/SKILL.md:39`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L39) (also in `skills/writing-skills/SKILL.md:174`)
 - "Don't keep it as "reference"" [`skills/test-driven-development/SKILL.md:40`](https://github.com/obra/superpowers/blob/22f0b46/skills/test-driven-development/SKILL.md#L40)
@@ -1394,8 +1357,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "No exceptions.**" [`skills/writing-skills/SKILL.md:246`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L246)
 - "Behavior should depend on a condition | Conditional keyed to an observable predicate ("if the brief exists, reference it") | Unconditional rule + exemption clauses" [`skills/writing-skills/SKILL.md:257`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L257)
 - "What rationalizations did they use (verbatim)?" [`skills/writing-skills/SKILL.md:280`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L280)
-- "Write skill that addresses those specific rationalizations." [`skills/writing-skills/SKILL.md:287`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L287)
 - "Don't add extra content for hypothetical cases." [`skills/writing-skills/SKILL.md:287`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L287)
+- "Write skill that addresses those specific rationalizations." [`skills/writing-skills/SKILL.md:287`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L287)
 - "Run same scenarios WITH skill." [`skills/writing-skills/SKILL.md:289`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L289) (also in `skills/writing-skills/references/testing-skills-with-subagents.md:86`)
 - "Add explicit counter." [`skills/writing-skills/SKILL.md:293`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L293)
 - "**Always include a no-guidance control.** If the control doesn't exhibit the failure, there is nothing to fix — stop, don't author the guidance." [`skills/writing-skills/SKILL.md:300`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/SKILL.md#L300)
@@ -1447,8 +1410,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "This approach ensures you're solving actual problems rather than anticipating requirements that may never materialize." [`skills/writing-skills/references/anthropic-best-practices.md:735`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L735)
 - "We do not currently provide a built-in way to run these evaluations." [`skills/writing-skills/references/anthropic-best-practices.md:753`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L753)
 - "You don't need special system prompts or a "writing skills" skill to get help creating Skills." [`skills/writing-skills/references/anthropic-best-practices.md:771`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L771)
-- "Make sure they clearly describe what the Skill does and when it should be used." [`skills/writing-skills/references/anthropic-best-practices.md:821`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L821)
 - "The 'name' and 'description' in your Skill's metadata are particularly critical." [`skills/writing-skills/references/anthropic-best-practices.md:821`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L821)
+- "Make sure they clearly describe what the Skill does and when it should be used." [`skills/writing-skills/references/anthropic-best-practices.md:821`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L821)
 - "✗ **Avoid**: \`scripts\\helper.py\`, \`reference\\guide.md\`" [`skills/writing-skills/references/anthropic-best-practices.md:830`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L830)
 - "Don't present multiple approaches unless necessary:" [`skills/writing-skills/references/anthropic-best-practices.md:836`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L836)
 - "If your Skill uses only markdown instructions, skip to \[Checklist for effective Skills\](#checklist-for-effective-skills)." [`skills/writing-skills/references/anthropic-best-practices.md:853`](https://github.com/obra/superpowers/blob/22f0b46/skills/writing-skills/references/anthropic-best-practices.md#L853)

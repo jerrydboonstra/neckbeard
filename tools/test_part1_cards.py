@@ -253,7 +253,7 @@ chk("CR7. `<details><summary>` is written nowhere in tools/ or skills/ outside t
 sys.path.insert(0, HERE)
 import cards as cards_mod
 chk("CR8. card() with an empty marker writes `<details><summary><b>name</b>` with no marker and no space",
-    cards_mod.card("", "At a glance in full", "", ["x"])[0] == "<details><summary><b>At a glance in full</b></summary>", cards_mod.card("", "At a glance in full", "", ["x"])[0])
+    cards_mod.card("", "How the colours are set", "", ["x"])[0] == "<details><summary><b>How the colours are set</b></summary>", cards_mod.card("", "How the colours are set", "", ["x"])[0])
 chk("CR8. an empty marker with a gist keeps the gist", cards_mod.card("", "N", "g", [])[0] == "<details><summary><b>N</b> \u00b7 g</summary>", cards_mod.card("", "N", "g", [])[0])
 chk("CR8. a marker still prints marker, space, name as before", cards_mod.card("\U0001F7E2", "N", "", [])[0] == "<details><summary>\U0001F7E2 <b>N</b></summary>", cards_mod.card("\U0001F7E2", "N", "", [])[0])
 

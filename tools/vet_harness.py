@@ -13,6 +13,7 @@ import json, os, re, shutil, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.dirname(HERE)
 VET = os.environ.get("VET_SCRIPT", os.path.join(HERE, "vet"))
+NBV = json.load(open(os.path.join(NB, ".claude-plugin", "plugin.json")))["version"]   # the neckbeard version the header must name
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
 import json, os, re, sys
@@ -120,7 +121,7 @@ if m:
 reply("🟩 INSTALL · 0/0/0/1/0")
 '''
 
-TITLE = "# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position"
+TITLE = "# \U0001F50D demo"   # 2.0: the plugin once, no version and no layer list (the Contents list names the layers)
 
 fail = checks = 0
 

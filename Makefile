@@ -47,7 +47,7 @@ report-check: ## fail unless the report in the tagged tree names the tagged vers
 	@git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "report-check: no tag v$(VERSION)"; exit 1; }
 	@d=$$(mktemp -d) && trap '[ -n "$$d" ] && rm -rf "$$d"' EXIT && git archive "v$(VERSION)" | tar -x -C "$$d" && \
 	  tools/vet --check "$$d/docs/neckbeard-report.md" "$$d" && \
-	  { grep -E '^`[0-9]{4}-[0-9]{2}-[0-9]{2}` · neckbeard ' "$$d/docs/neckbeard-report.md" | head -1 | grep -qF ' @ `v$(VERSION)`' || { echo "report-check: the header of the tagged report must name the tag, @ \`v$(VERSION)\`, not a commit or another tag"; exit 1; }; }
+	  { grep -E '^`[0-9]{4}-[0-9]{2}-[0-9]{2}` · .* · made by neckbeard ' "$$d/docs/neckbeard-report.md" | head -1 | grep -qF ' @ `v$(VERSION)`' || { echo "report-check: the header of the tagged report must name the tag, @ \`v$(VERSION)\`, not a commit or another tag"; exit 1; }; }
 
 release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Release will carry
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d' | grep . >/dev/null || { echo "release: CHANGELOG.md has no entry for $(VERSION)" >&2; exit 1; }
