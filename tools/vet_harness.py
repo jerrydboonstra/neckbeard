@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The shared part of tools/test_vet.py and tools/test_vet_judge.py: tools/vet is run end to end against a fake `claude`.
+"""The shared part of the tools/test_vet*.py modules (test_vet, test_vet_judge, test_vet_layers, test_vet_report, test_vet_session): tools/vet is run end to end against a fake `claude`.
 Not a test module (no test_ prefix, so tools/test-parallel does not run it).
 
 The inventory is real; the judge is a fake `claude` on PATH that logs how it was
