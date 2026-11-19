@@ -16,7 +16,7 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟩 | Cost | adds 571 characters to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟩 | Cost | adds 571 characters to every session, ~143 tokens (571 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟩 | Reach | on demand only |
 | 🟩 | Leaves state | nothing found |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
@@ -26,7 +26,7 @@
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
-- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
+- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions in characters, and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says "characters and bytes"; text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
 - Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
@@ -157,8 +157,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Copy intensity** — is this line sharp? Concrete? Specific? Does it use named entities, numbers, verbs? Or is it limp marketing fluff?" [`skills/viral-launch/prompts/13_weapons_specialist.md:11`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/13_weapons_specialist.md#L11)
 - "A constraint: "trained on 4M lines of MIT-licensed code, no scraping"" [`skills/viral-launch/prompts/15_technical_specialist.md:17`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/15_technical_specialist.md#L17)
 - "\`references/channel-specs.md\` (THE format spec for each channel — read this carefully)" [`skills/viral-launch/prompts/21_deliver.md:5`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/21_deliver.md#L5)
-- "The novelty angle must be the SAME across all three — only the format changes." [`skills/viral-launch/prompts/21_deliver.md:14`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/21_deliver.md#L14)
 - "Each must hit the channel's exact format constraints from \`references/channel-specs.md\`." [`skills/viral-launch/prompts/21_deliver.md:14`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/21_deliver.md#L14)
+- "The novelty angle must be the SAME across all three — only the format changes." [`skills/viral-launch/prompts/21_deliver.md:14`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/21_deliver.md#L14)
 - "**Adapt for each channel separately.** Do NOT generate all three at once and then "tweak" — each format has different muscle." [`skills/viral-launch/prompts/21_deliver.md:24`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/21_deliver.md#L24)
 - "All three must ship the same novelty angle, but with each channel's own format constraints." [`skills/viral-launch/references/channel-specs.md:3`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/references/channel-specs.md#L3)
 - "**Each tweet ≤280 chars.** Use \`len()\` on each line before writing." [`skills/viral-launch/references/channel-specs.md:11`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/references/channel-specs.md#L11)
@@ -373,8 +373,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "5 candidates, no more, no fewer." [`skills/viral-launch/prompts/08_hook_writer.md:55`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/08_hook_writer.md#L55)
 - "Each candidate ≤280 chars (count yourself before submitting)." [`skills/viral-launch/prompts/08_hook_writer.md:56`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/08_hook_writer.md#L56)
 - "Mix these — don't use the same pattern across all 5." [`skills/viral-launch/prompts/08_hook_writer.md:71`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/08_hook_writer.md#L71)
-- "You do not rewrite." [`skills/viral-launch/prompts/09_hook_manager.md:13`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/09_hook_manager.md#L13)
 - "You write a critique + rewrite guidance the writer can act on." [`skills/viral-launch/prompts/09_hook_manager.md:13`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/09_hook_manager.md#L13)
+- "You do not rewrite." [`skills/viral-launch/prompts/09_hook_manager.md:13`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/09_hook_manager.md#L13)
 - "Contains ONLY the winning hook, no commentary:" [`skills/viral-launch/prompts/09_hook_manager.md:29`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/09_hook_manager.md#L29)
 - "Makes a "first/only X" claim that stage_06 industry research contradicts" [`skills/viral-launch/prompts/09_hook_manager.md:61`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/09_hook_manager.md#L61)
 - "You don't write hooks. You write critiques." [`skills/viral-launch/prompts/09_hook_manager.md:74`](https://github.com/Koz-TV/viral-launch-pipeline/blob/475705f/skills/viral-launch/prompts/09_hook_manager.md#L74)

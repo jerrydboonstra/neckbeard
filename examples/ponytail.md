@@ -16,7 +16,7 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟥 | Cost | adds 47,610 characters to every session, ~11,903 tokens (1,584 skill descriptions, 0 agent descriptions, 0 rule files, 23,013 hook text, counted twice because hooks reach subagents) (not read in full) |
+| 🟥 | Cost | adds 47,610 characters and bytes to every session, ~11,903 tokens (1,584 characters of skill descriptions, 0 agent descriptions, 0 rule files, 23,013 bytes of hook text, counted twice because hooks reach subagents) (not read in full) |
 | 🟥 | Reach | a hook runs in every session and in every subagent too (not read in full) |
 | 🟧 | Leaves state | 18 files that may write state |
 | 🟧 | Live surface | 1 Claude Code mod (not read in full) |
@@ -29,7 +29,7 @@
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
-- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
+- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions in characters, and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says "characters and bytes"; text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
 - Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
@@ -141,10 +141,10 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 
 > Read from the plugin's instruction files (skills, commands, agents, rule files) and from the template text of hooks that build their output at run time. Text a hook injects from elsewhere, or builds in code, is not quoted. Topics come from a fixed list, grouped by code, with no judgement.
 
-<details><summary><b>Persona and activation</b> · 7 · "Levels: /ponytail lite (build what's asked, name the lazier…"</summary>
+<details><summary><b>Persona and activation</b> · 7 · "Deactivate with 'stop ponytail', 'normal mode', or /ponytai…"</summary>
 
-- "Levels: /ponytail lite (build what's asked, name the lazier alternative in one line), /ponytail (full, the default ladder: YAGNI then stdlib then native then one line then minimum), /ponytail ultra (…" [`commands/ponytail-help.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-help.toml#L2)
 - "Deactivate with 'stop ponytail', 'normal mode', or /ponytail off; resume anytime with /ponytail." [`commands/ponytail-help.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-help.toml#L2)
+- "Levels: /ponytail lite (build what's asked, name the lazier alternative in one line), /ponytail (full, the default ladder: YAGNI then stdlib then native then one line then minimum), /ponytail ultra (…" [`commands/ponytail-help.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-help.toml#L2)
 - "With no level, keep the current level, or switch on at the default level if ponytail was off." [`commands/ponytail.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail.toml#L2)
 - "Lazy senior dev mode, before any code: does it need to exist at all (YAGNI)?" [`commands/ponytail.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail.toml#L2)
 - "Edits nothing, changes no mode." [`skills/ponytail-gain/SKILL.md:52`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-gain/SKILL.md#L52)
@@ -170,8 +170,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "merge: near-copies that must change together" [`skills/ponytail-audit/SKILL.md:52`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-audit/SKILL.md#L52) (also in `skills/ponytail-review/SKILL.md:52`)
 - "A change can break code it does not touch. When a signature, return value or behavior changes, grep every caller." [`skills/ponytail-review/SKILL.md:24`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-review/SKILL.md#L24)
 - "Start with \`What this change does:\` in two or three sentences." [`skills/ponytail-review/SKILL.md:74`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-review/SKILL.md#L74)
-- "Check what your change could break for users: data it would destroy or expose, callers that stop working." [`skills/ponytail/SKILL.md:21`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail/SKILL.md#L21)
 - "Read the task and the code it touches." [`skills/ponytail/SKILL.md:21`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail/SKILL.md#L21)
+- "Check what your change could break for users: data it would destroy or expose, callers that stop working." [`skills/ponytail/SKILL.md:21`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail/SKILL.md#L21)
 - "Take the first option that fully works:" [`skills/ponytail/SKILL.md:25`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail/SKILL.md#L25)
 - "Already in this codebase (a helper, component, service, pattern)? Use it the way the surrounding code does." [`skills/ponytail/SKILL.md:28`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail/SKILL.md#L28)
 - "Standard library or a platform feature? Use it, unless the project has its own. A house component beats a native widget." [`skills/ponytail/SKILL.md:29`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail/SKILL.md#L29)
@@ -236,19 +236,19 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 
 </details>
 
-<details><summary><b>Reviews and audits</b> · 25 · "Then at most 20 numbered findings grouped Must fix / Should…"</summary>
+<details><summary><b>Reviews and audits</b> · 25 · "Propose the smallest fix, prefer deleting code, never add l…"</summary>
 
-- "Then at most 20 numbered findings grouped Must fix / Should fix / Nice to have, most important first; each: a bold title with file:lines, then four bullets: What this is, Problem, Fix, If we skip it." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2)
+- "Propose the smallest fix, prefer deleting code, never add layers." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2) (also in `commands/ponytail-review.toml:2`)
 - "A shortcut marked with a shortcut: (or older ponytail:) comment that names its limit is a decision, not a finding." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2) (also in `commands/ponytail-review.toml:2`)
 - "Every finding needs a concrete case." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2)
-- "Propose the smallest fix, prefer deleting code, never add layers." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2) (also in `commands/ponytail-review.toml:2`)
+- "Then at most 20 numbered findings grouped Must fix / Should fix / Nice to have, most important first; each: a bold title with file:lines, then four bullets: What this is, Problem, Fix, If we skip it." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2)
 - "End with 'Verdict:', 'Lean: -N lines, -M dependencies possible.' and 'Not checked:' for the parts you did not read." [`commands/ponytail-audit.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-audit.toml#L2)
 - "Commands: /ponytail-review (over-engineering review of the current changes), /ponytail-audit (whole-repo over-engineering audit), /ponytail-debt (harvest shortcut: comments into a tracked ledger), /p…" [`commands/ponytail-help.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-help.toml#L2)
-- "End with 'Verdict:', 'Lean: -N lines possible.' when lean findings exist, and 'Not checked:' if something mattered and you could not check it." [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
-- "Review the current code changes like the senior developer who will be paged when they break." [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
 - "Look for, in this order: bugs (wrong result, crash, missed edge case, a caller broken by the change, a fix in one caller while the shared function stays broken), risk (security holes, data loss), sca…" [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
-- "Every finding needs a concrete case; re-read the lines to confirm it." [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
 - "Then numbered findings grouped Must fix / Should fix / Nice to have; each finding: a bold title with file:lines, then four bullets: What this is, Problem, Fix, If we skip it (one or two short sentenc…" [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
+- "End with 'Verdict:', 'Lean: -N lines possible.' when lean findings exist, and 'Not checked:' if something mattered and you could not check it." [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
+- "Every finding needs a concrete case; re-read the lines to confirm it." [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
+- "Review the current code changes like the senior developer who will be paged when they break." [`commands/ponytail-review.toml:2`](https://github.com/DietrichGebert/ponytail/blob/7801d06/commands/ponytail-review.toml#L2)
 - "Every finding needs a concrete case: "this input or situation leads to this wrong result". No case, no finding." [`skills/ponytail-audit/SKILL.md:59`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-audit/SKILL.md#L59) (also in `skills/ponytail-review/SKILL.md:59`)
 - "A shortcut marked with a \`shortcut:\` (or older \`ponytail:\`) comment that names its limit is a decision, not a finding, unless the expected load already crosses it." [`skills/ponytail-audit/SKILL.md:63`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-audit/SKILL.md#L63) (also in `skills/ponytail-review/SKILL.md:63`)
 - "Propose the smallest fix that works. Prefer fixes that delete code. Never add layers, frameworks or config the problem does not need." [`skills/ponytail-audit/SKILL.md:65`](https://github.com/DietrichGebert/ponytail/blob/7801d06/skills/ponytail-audit/SKILL.md#L65) (also in `skills/ponytail-review/SKILL.md:65`)

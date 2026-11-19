@@ -43,7 +43,7 @@ The plugin that prompted this one. Run against the installed `ponytail@ponytail`
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟥 | Cost | adds 47,610 characters to every session, ~11,903 tokens (1,584 skill descriptions, 0 agent descriptions, 0 rule files, 23,013 hook text, counted twice because hooks reach subagents) (not read in full) |
+> | 🟥 | Cost | adds 47,610 characters and bytes to every session, ~11,903 tokens (1,584 characters of skill descriptions, 0 agent descriptions, 0 rule files, 23,013 bytes of hook text, counted twice because hooks reach subagents) (not read in full) |
 > | 🟥 | Reach | a hook runs in every session and in every subagent too (not read in full) |
 > | 🟧 | Leaves state | 18 files that may write state |
 > | 🟧 | Live surface | 1 Claude Code mod (not read in full) |
@@ -135,7 +135,7 @@ Picked by measurement: real file, hook and skill counts across four candidates f
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟨 | Cost | adds 2,317 characters to every session, ~579 tokens (2,317 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
+> | 🟨 | Cost | adds 2,317 characters to every session, ~579 tokens (2,317 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
 > | 🟨 | Reach | a hook in every main session (not read in full) |
 > | 🟧 | Leaves state | 18 files that may write state |
 > | 🟨 | Live surface | 1 hook command, local scripts only (not read in full) |
@@ -186,7 +186,7 @@ Picked with an unseeded `random.choice()` from 183 candidates, filtered by keywo
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟩 | Cost | adds 571 characters to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+> | 🟩 | Cost | adds 571 characters to every session, ~143 tokens (571 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 > | 🟩 | Reach | on demand only |
 > | 🟩 | Leaves state | nothing found |
 > | 🟩 | Live surface | no hook commands, MCP servers or mods found |
@@ -231,7 +231,7 @@ Version 0.11.0. Picked deliberately, because two of its hook events had never ap
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟨 | Cost | adds 2,274 characters to every session, ~569 tokens (446 skill descriptions, 1,828 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
+> | 🟨 | Cost | adds 2,274 characters to every session, ~569 tokens (446 characters of skill descriptions, 1,828 characters of agent descriptions, 0 rule files, 0 hook text) (not read in full) |
 > | 🟥 | Reach | a hook runs in every session and in every subagent too (not read in full) |
 > | 🟧 | Leaves state | 9 files that may write state |
 > | 🟨 | Live surface | 6 hook commands, local scripts only (not read in full) |

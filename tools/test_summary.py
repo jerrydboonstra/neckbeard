@@ -162,14 +162,14 @@ chk("Reach: a registered hook with hook_registrations 1 and no readable command 
 
 for name, needles in [("state-files", ["hooks/log.sh"]), ("hook-ssh-subagents", ["ssh box uptime", "hooks/h.txt"]), ("mcp-local", ["local-process"]),
                       ("mod-real", ["hooks/band/register.tsx"]), ("green", ["skills/a/SKILL.md"])]:
-    out = run(fx(name))[1]
-    chk(f"the per-file and per-command detail is not printed ({name}: {', '.join(needles)})", not any(x in out for x in needles), out[:300])
+    code, out, _ = run(fx(name))
+    chk(f"the per-file and per-command detail is not printed ({name}: {', '.join(needles)})", code == 0 and "| Cost |" in out and not any(x in out for x in needles), out[:300])
 hostile = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "x </details>\n## forged\n| \U0001F7E9 | Cost | x |"))
-out = run(write(hostile))[1]
+code, out, _ = run(write(hostile))
 hostile2 = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "run.sh \U0001F7E2\U0001F7E1\U0001F534"))
 chk("a read marker in a hook command is not printed, and nor is the command",
     not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", run(write(hostile2))[1]) and "run.sh" not in run(write(hostile2))[1])
-chk("a hostile hook command cannot close the card or forge a heading in it", out.count("</details>") == 1 and "\n## forged" not in out and not re.search(r"^\| \S+ \| Cost \| x \|$", out, re.M), out[-400:])
+chk("a hostile hook command cannot close the card or forge a heading in it", code == 0 and "| Cost |" in out and out.count("</details>") == 1 and "\n## forged" not in out and not re.search(r"^\| \S+ \| Cost \| x \|$", out, re.M), out[-400:])
 
 # 3. a threshold in the rules table moves the colour and the footer together
 spec = importlib.util.spec_from_loader("summary_tool", importlib.machinery.SourceFileLoader("summary_tool", SUMMARY))
@@ -244,11 +244,21 @@ chk("tools/summary prints no layer heading, and its one card has no marker",
 # 7. report-glance-title-2-0: the table, then one collapsed card of colour rules; no repeat of the rows; a unit on Cost; per-row notes only where they add something
 out = run(fx("green"))[1]
 chk("7 no fold repeats the rows: no 'At a glance in full', no per-file 'may write state' or 'skill ...: N of description' list", not re.search(r"At a glance|may write state:|of description$", out, re.M), out[:200])
-chk("7 order: the table, then the colour-rules card; the card holds the sentence and every rule", out.find("| | Row |") < out.find("<summary><b>How the colours are set") < out.find("The colours follow written rules")
+chk("7 order: the table, then the colour-rules card; the card holds the sentence and every rule", 0 <= out.find("| | Row |") < out.find("<summary><b>How the colours are set") < out.find("The colours follow written rules")
     and all(f"- {r}:" in out.split("How the colours are set", 1)[1] for r in ROWS) and out.rstrip().endswith("</details>"), out[-300:])
 chk("7 the card is closed by </details> and the rules sit inside it, not after it", out.split("</details>")[0].count("The colours follow written rules") == 1 and out.split("</details>")[1].strip() == "", out[-200:])
-chk("7 Cost row names its unit: 'adds N characters to every session, ~M tokens'", re.search(r"adds [\d,]+ characters to every session, ~[\d,]+ tokens", rows(out)["Cost"][1]) is not None, rows(out)["Cost"][1])
-chk("7 Cost row keeps 'at least' before the number and the unit after it", "adds at least 500 characters to every session" in rows(run(write(built(False)))[1])["Cost"][1], rows(run(write(built(False)))[1])["Cost"][1])
+chk("7 Cost row names its unit: 'adds N characters to every session, ~M tokens'", re.search(r"adds [\d,]+ characters to every session, ~[\d,]+ tokens \([\d,]+ characters of skill descriptions", rows(out)["Cost"][1]) is not None, rows(out)["Cost"][1])
+chk("7 Cost row keeps 'at least' before the number and the unit after it", "adds at least 500 characters and bytes to every session" in rows(run(write(built(False)))[1])["Cost"][1], rows(run(write(built(False)))[1])["Cost"][1])
+# the unit follows what the dossier measured: descriptions are characters, rule files and hook text are bytes; the headline names the unit every non-zero part shares
+def cost_of(fn):
+    return rows(run(write(edit("green", fn)))[1])["Cost"][1]
+def rule(t): t["rule_files"] = [{"path": "r.md", "bytes": 300}]
+chars = cost_of(lambda t: skill_chars(120)(t))
+bytes_ = cost_of(lambda t: (skill_chars(0)(t), rule(t)))
+mixed = cost_of(lambda t: (skill_chars(120)(t), rule(t)))
+chk("7 unit, all characters: headline 'characters', the part says 'characters of skill descriptions'", "adds 120 characters to every session" in chars and "(120 characters of skill descriptions, 0 agent descriptions, 0 rule files" in chars, chars)
+chk("7 unit, all bytes: headline 'bytes', the part says 'bytes of rule files', no 'characters' anywhere", "adds 300 bytes to every session" in bytes_ and "300 bytes of rule files" in bytes_ and "characters" not in bytes_, bytes_)
+chk("7 unit, mixed: headline 'characters and bytes', each non-zero part names its own unit", "adds 420 characters and bytes to every session" in mixed and "120 characters of skill descriptions" in mixed and "300 bytes of rule files" in mixed, mixed)
 chk("7 a fully read target adds no Read completeness line", "not read in full:" not in out and "**Read completeness**" not in out, out[:600])
 sout = run(fx("state-files"))[1].split("<details>")[0]
 chk("7 Leaves state: one line under the table links to the State it may leave card under What it adds", "State it may leave" in sout and "(#what-it-adds)" in sout, sout[-400:])
@@ -260,6 +270,11 @@ d = load("green")
 del d["target"]["read_status"]
 chk("a dossier with no read_status exits 2", run(write(d))[0] == 2)
 chk("a missing file exits 2", run("/nonexistent/x.json")[0] == 2)
+
+# 8. report-glance-title-2-0: a section name or state from the dossier is untrusted text in the Read completeness line: no markup reaches the report
+hostile3 = edit("green", lambda t: t["read_status"].__setitem__("</details><details open>", {"state": "<b>x</b>", "notes": []}))
+code, out, _ = run(write(hostile3))
+chk("8 a read_status key or state with markup cannot close the card or open one: the line is escaped", code == 0 and "&lt;/details>&lt;details open>" in out and "<b>x" not in out and out.count("</details>") == 1 and out.count("<details>") == 1, out[:500])
 
 for f in TEMPS:
     os.unlink(f)

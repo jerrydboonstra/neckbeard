@@ -13,6 +13,7 @@ import json, os, re, shutil, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.dirname(HERE)
 VET = os.environ.get("VET_SCRIPT", os.path.join(HERE, "vet"))
+NBV = json.load(open(os.path.join(NB, ".claude-plugin", "plugin.json")))["version"]   # the neckbeard version the header must name
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
 import json, os, re, sys

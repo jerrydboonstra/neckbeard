@@ -71,7 +71,7 @@ chk("web: temp folder removed", r["temp_left"], [])
 chk("web: title names the sample reader", r["title"], TITLE + " · against the sample reader")
 
 header = hline
-chk("web: header names the target plainly, then who made it", re.fullmatch(r"`\d{4}-\d\d-\d\d` · demo 1\.0\.0 · made by neckbeard \d+\.\d+\.\d+", header(r)) is not None, True)
+chk("web: header names the target plainly, then who made it", re.fullmatch(r"`\d{4}-\d\d-\d\d` · demo 1\.0\.0 · made by neckbeard " + re.escape(NBV), header(r)) is not None, True)
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
 r = run("remote", remote="git@github.com:someone/demo.git")
@@ -372,7 +372,6 @@ def untracked_only(target):   # a commit, then a new untracked file only
     dirty(target)
     subprocess.run(["git", "checkout", "-q", "--", "."], cwd=target, check=True)
     open(os.path.join(target, "new.txt"), "w").write("x\n")
-NBV = json.load(open(os.path.join(NB, ".claude-plugin", "plugin.json")))["version"]
 def header_of(r): return next((l for l in r["text"].splitlines() if " · made by neckbeard " in l), "")
 def source_commit(r): return next((l for l in r["text"].splitlines() if l.startswith("- Commit: ")), "")
 d = run("dirty", extra=("--facts",), fake_body=NO_CLAUDE, setup=dirty)

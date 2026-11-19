@@ -12,7 +12,7 @@ read in full is never 🟩: a 🟩 outcome becomes 🟨. A section that is not-a
   Cost                the size a plugin adds to every session: skill and agent descriptions, rule files that load every
                       session, and hook-injected text (a built-at-run-time hook's "at least N bytes" lower bound). When
                       hooks_reach_subagents is true the hook text alone counts twice (it enters every subagent too); anything
-                      else counts once. Size is the dossier's figure (bytes, or characters where the inventory fell back).
+                      else counts once. Size is the dossier's figure: characters for descriptions, bytes for rule files and hook text; the row names each part's unit, and the headline says "characters", "bytes" or "characters and bytes" by what its non-zero parts share.
   Reach               🟥 a hook and hooks_reach_subagents true; 🟨 a hook, a Claude Code mod or a rule file; 🟩 neither.
   Leaves state        🟧 files that may write state; 🟨 nothing found but the scan was not whole; 🟩 nothing found, full scan.
   Live surface        🟥 ssh, mosh, telnet, rsh or rlogin as a command word of a hook or MCP command; 🟧 any MCP server, any Claude
@@ -142,8 +142,12 @@ def cost(t, sec, hooks, hsec):
     b = RULES["cost_bands"]
     colour = G if total < b[0] else Y if total < b[1] else O if total < b[2] else R
     lower = any(isinstance(i, dict) and i.get("built_at_run_time") for i in inj)
-    line = (f"adds {'at least ' if lower else ''}{n(total)} characters to every session, ~{n((total + 2) // 4)} tokens"
-            f" ({n(skills)} skill descriptions, {n(agents)} agent descriptions, {n(rules)} rule files, {n(hook)} hook text"
+    # each part is counted in its own unit: descriptions in characters, rule files and hook text in the dossier's bytes; a part that is 0 has no unit to name
+    part = lambda amount, unit, what: f"{n(amount)} {unit} of {what}" if amount else f"0 {what}"
+    units = {u for amount, u in ((skills, "characters"), (agents, "characters"), (rules, "bytes"), (hook, "bytes")) if amount} or {"characters"}
+    unit = " and ".join(u for u in ("characters", "bytes") if u in units)
+    line = (f"adds {'at least ' if lower else ''}{n(total)} {unit} to every session, ~{n((total + 2) // 4)} tokens"
+            f" ({part(skills, 'characters', 'skill descriptions')}, {part(agents, 'characters', 'agent descriptions')}, {part(rules, 'bytes', 'rule files')}, {part(hook, 'bytes', 'hook text')}"
             f"{', counted twice because hooks reach subagents' if twice and hook else ''})")
     return finish(colour, line, states)
 
@@ -228,7 +232,7 @@ def footer():
         "The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.",
         "",
         f"- Cost: 🟩 under {n(b[0])}; 🟨 {n(b[0])} to {n(b[1] - 1)}; 🟧 {n(b[1])} to {n(b[2] - 1)}; 🟥 {n(b[2])} and over. "
-        "Size counts skill and agent descriptions, rule files and hook-injected text, in the dossier's unit (bytes, or characters where the inventory fell back); "
+        "Size counts skill and agent descriptions in characters, and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says \"characters and bytes\"; "
         "text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.",
         "- Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).",
         "- Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.",
@@ -256,7 +260,7 @@ def render(d):
     state_of = lambda v: v.get("state") if isinstance(v, dict) else "failed"
     unread = sorted(k for k, v in t["read_status"].items() if state_of(v) not in ("read", "not-applicable"))
     if unread:
-        notes.append("- **Read completeness**: not read in full: " + ", ".join(f"{safe(k)} ({safe(state_of(t['read_status'][k]))})" for k in unread) + ".")
+        notes.append(("- **Read completeness**: not read in full: " + ", ".join(f"{safe(k)} ({safe(state_of(t['read_status'][k]))})" for k in unread) + ".").replace("<", "&lt;"))   # a body line of a card is escaped the same way (tools/cards.py)
     out += ([""] + notes if notes else []) + [""] + card("", "How the colours are set", "", footer()) + [""]
     return "\n".join(out)
 
