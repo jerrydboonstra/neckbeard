@@ -24,12 +24,12 @@
 #      then tools/fit's verdict strip and seven fit cards), "What it adds" (tools/part1: what the target injects, reaches and leaves
 #      behind, read from the dossier, with no reference to the reader) and "Where it takes a position" (tools/positions on the dossier,
 #      then tools/positions-layer). The renderers run before the judge, and one that exits non-zero stops the run with its stderr.
-#      The report must hold the three headings in order and name no local path. vet writes no card markup of its own: cards.py does
+#      The report must hold the three headings in order and name no local path. vet writes no card markup of its own: cards.py does.
 # OUT's stem .units.json, .answers.json, .verdict.json, .prose.json, .candidates.json, .confirmations.json, .confirmed.json and
 # .finds-N.json are kept beside the report: the evidence for its verdict. --units is a no-op, kept for 2.0 (the units path is the default).
 # --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
 # -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
-# --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The header
+# --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The
 # fit report then carries, inside its Why this verdict card, a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
 # fingerprint of their relative paths and contents) and a Rule files card of the relative paths (made with tools/cards.py); tools/vet writes it after the
 # judge has, never the judge. The label is "the sample reader" for the default, else the folder's name, and the title and the
