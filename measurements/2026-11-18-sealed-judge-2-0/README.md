@@ -6,7 +6,7 @@ One graded run of the sealed 12-item fixture on neckbeard 2.0. It was a single-e
 |---|---|
 | Tip | `079955e28a94` (integrate/2.0.0, after skill-md-2-0 merged; manifests still say 1.17.8 until the release bumps them) |
 | Model | Opus 5.5 |
-| Date | 2026-11-19 |
+| Date | 2026-11-18 (Pacific; 2026-11-19 UTC) |
 | Runs | One, no retries |
 | Score | 11 of 12 |
 | Bar | The fixture's own pre-registered bar: 10 of 12 with both trap items right. Both were right, so it passes |
