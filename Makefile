@@ -4,9 +4,14 @@ PYTHON  ?= python3
 # Every remote a release goes to: origin (GitHub, whose Actions run the self-check) and any MIRRORS. A fixed
 # list, never `git remote`, which would also push main into whatever else the checkout has (a work queue, say).
 # This machine's own setup lives in local.mk, which git ignores: MIRRORS (more remotes a release pushes to) and
-# HOSTS (machines `make deploy` reaches over plain ssh, besides this one).
+# HOSTS (machines `make deploy` reaches over plain ssh, besides this one) and POST_DEPLOY (a command `make deploy` runs
+# once every host has deployed; empty by default, and with $(VERSION) available to it).
 MIRRORS :=
 HOSTS :=
+POST_DEPLOY :=
+# deploy runs post-deploy through this variable, not a literal $(MAKE): make runs a recipe line holding $(MAKE) even under -n,
+# and that line would then deploy for real.
+RUN_POST_DEPLOY = $(MAKE) --no-print-directory post-deploy VERSION=$(VERSION)
 -include local.mk
 REMOTES := origin $(MIRRORS)
 VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
@@ -18,6 +23,7 @@ VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugi
 	excerpts \
 	help \
 	mutate \
+	post-deploy \
 	release \
 	release-notes \
 	report \
@@ -81,4 +87,10 @@ deploy: ## bring this machine and every host in HOSTS to main as released, then 
 	for h in $(HOSTS); do \
 	  ssh "$$h" bash -s -- "$(VERSION)" "$$sha" < tools/deploy-host.sh || fail=1; \
 	done; \
+	if [ $$fail -eq 0 ]; then \
+	  $(RUN_POST_DEPLOY) || { echo "deploy: post-deploy failed"; fail=1; }; \
+	fi; \
 	exit $$fail
+
+post-deploy: ## run POST_DEPLOY (set in local.mk; empty by default) and do nothing when it is empty; `make deploy` runs it last
+	$(if $(strip $(POST_DEPLOY)),@$(POST_DEPLOY),@:)
