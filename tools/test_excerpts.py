@@ -64,7 +64,7 @@ def run(report, *args):
 
 
 # The 2.0 layout (report-assembly-2-0): the report opens with the "How it affects you" summary table, the facts are cards under
-# "What it adds", and a fit report's verdict is a strip inside the first layer. An old-layout report still gives today's excerpt.
+# "What it adds", and a fit report's verdict is a strip inside the first layer. A report in the old layout is refused.
 SUMMARY = """| | Row | In short |
 |---|---|---|
 | 🟩 | Cost | adds 13 to every session, ~3 tokens (13 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |

@@ -74,13 +74,13 @@ Counting what the host cannot see is worse than not counting.
 - the plugin grew to six skills and six commands, 21,177 bytes of skill files in all; the hooks still inject at session start and at every subagent start, and neckbeard reaches the same answer ("reaches subagents: true", from the `SubagentStart` hook)\
   ↳ about the plugin
 - neckbeard cannot say what the three hooks inject. Each runs an inline `node -e` command that requires one script by a path built from `CLAUDE_PLUGIN_ROOT`, and the report prints `<unparsed command>` and "partly read", where 1.0.0 had learned to follow exactly this shape through a script file\
-  ↳ **open**: `hook-inline-require`
+  ↳ fixed since: neckbeard 1.17.8 names all three scripts (`hook-inline-require`)
 - `plugin.json` also lists `hooks/claude-band.json`, which holds no hooks but a `modules` entry: a Claude Code mod, JavaScript that runs inside the session with your permissions. The inventory reads only the `hooks` key, so the mod does not appear in the report at all\
-  ↳ **open**: `mod-inventory`
+  ↳ fixed since: neckbeard 1.17.8 lists the mod, in a Claude Code mods card that names `hooks/band/register.tsx` (`mod-inventory`)
 - the old first-run bullet about doubled skill counts (mirrors for other agents) did not come back: six skills are six folders under `skills/`\
   ↳ guard from 1.0.0 held
 
-A fit verdict on the rerun would need your own rules, so there is none here. The facts show what changed since the first run, and where today's tool reads less than it should.
+A fit verdict on the rerun would need your own rules, so there is none here. The facts show what changed since the first run, and what the tool has fixed since.
 
 ## 2. `neckbeard`: itself, before publishing
 
@@ -116,9 +116,11 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 - the report has a "Read status" gap that the 1.12.7 reports did not: hooks and persistence are "partly read", because broken test fixtures could not be parsed and one script was read only up to 50,000 bytes. The judge's note under its At a glance table names both\
   ↳ worked as designed: the gaps are named, not hidden
 - the judge's Reach row says "main session only; no hooks, so no SubagentStart (certain)", while the facts report on this tree says "reaches subagents: unknown", because the same fixtures stop the hooks search. The judge states more than the inventory knew\
-  ↳ **open**: raised with the maintainers, not yet queued; the report order planned for 2.0 (facts first, fit after) is meant to stop a verdict from outrunning its facts
+  ↳ fixed since: the 2.0 order puts the summary rows first and the verdict strip after them, so a verdict no longer outruns its facts
 - the judge's figures come from its reading: it gives 14,535 bytes for the skill body (the inventory's count) and about 764 bytes for the description, where the 1.17.1 run on the Mac said 14,357 bytes and "about 270 tokens per the manifest"\
   ↳ about the tool: figures in a fit report come from a model's reading and can differ between runs; the facts report is the one to quote
+
+**Since this rerun** · 2026-11-18, neckbeard 1.17.8 @ `ab332f8b`, a new judge run in the 2.0 layout (the report above is that one): it reads in full, since a later version reads scripts up to 2,000,000 characters, so the 50,000-byte gap is gone; its first layer holds the summary rows and the verdict strip, where the 1.17.2 report had an At a glance table; its Reach row reads "on demand only".
 
 ## 3. `obra/superpowers`: the large one
 
@@ -270,7 +272,7 @@ persistence: []
 - the hooks read "partly read": the script `hooks/hooks.sh` was found but what it injects could not be traced, so the report says unknown\
   ↳ worked as designed
 - two persistence candidates (`workflows/scan.js`, `scripts/patch_artifacts.py`) are over the 50,000-byte read cap, and the report says so rather than listing them as clean\
-  ↳ worked as designed: the read cap is named, not hidden
+  ↳ worked as designed: the read cap is named, not hidden. Since this rerun (2026-11-18, neckbeard 1.17.8) the cap is 2,000,000 characters, and the report marks persistence read
 
 ## 6. All 39 Anthropic first-party plugins: the sweep
 
