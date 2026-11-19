@@ -71,7 +71,7 @@ chk("web: temp folder removed", r["temp_left"], [])
 chk("web: title names the sample reader", r["title"], TITLE + " · against the sample reader")
 
 header = hline
-chk("web: header names the target plainly", header(r).endswith("· demo 1.0.0"), True)
+chk("web: header names the target plainly, then who made it", re.fullmatch(r"`\d{4}-\d\d-\d\d` · demo 1\.0\.0 · made by neckbeard \d+\.\d+\.\d+", header(r)) is not None, header(r))
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
 r = run("remote", remote="git@github.com:someone/demo.git")
@@ -153,6 +153,10 @@ rc, out = check("`2026-10-04` · neckbeard 1.12.9 · demo 1.0.0", version="1.1.0
 chk("check: older report fails", (rc, "vets 1.0.0, but" in out and "is 1.1.0" in out), (1, True))
 rc, out = check("`2026-10-04` · neckbeard 1.12.9 · demo 1.0.0")
 chk("check: plain name, no commit passes", rc, 0)
+rc, out = check("`2026-11-18` · [someone/demo](https://github.com/someone/demo) 1.0.0 @ `v1.0.0` · made by neckbeard 2.0.0")
+chk("check: the 2.0 header (version, commit, then made by neckbeard) passes", (rc, "current (1.0.0)" in out), (0, True))
+rc, out = check("`2026-11-18` · demo 1.0.0 · made by neckbeard 2.0.0", version="1.1.0")
+chk("check: the 2.0 header with no commit reads its version too", (rc, "vets 1.0.0, but" in out), (1, True))
 rc, out = check("Vetted some time ago.")
 chk("check: no header fails", (rc, "no header line" in out), (1, True))
 
@@ -213,7 +217,7 @@ chk("facts: a rule file in force is refused, naming it", (u["rc"], u["report"], 
 j = run("judged-header", commit=True)
 f = run("facts-header", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
 want = [hline(j)]
-got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 neckbeard " in l]
+got = [l for l in f["text"].split("\n") if l.startswith("`") and " \u00b7 made by neckbeard " in l]
 chk("facts and judged header lines are equal", (len(want), got), (1, want))
 chk("judged title names the reader it is against", j["title"], TITLE + " \u00b7 against the sample reader")
 

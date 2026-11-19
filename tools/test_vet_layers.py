@@ -41,7 +41,13 @@ def ordered(text):
 
 r = run("layers-facts", commit=True, extra=("--facts",), fake_body=NO_CLAUDE)
 L1, L2, L3 = layers(r["text"])
-chk("layers: a published report: exit 0, the 2.0 title, the header line on line 3", (r["rc"], r["title"], hline(r).startswith("`") and " \u00b7 neckbeard " in hline(r)), (0, TITLE, True))
+chk("layers: a published report: exit 0, the 2.0 title, the header line on line 3", (r["rc"], r["title"], hline(r).startswith("`") and " \u00b7 made by neckbeard " in hline(r)), (0, TITLE, True))
+# report-glance-title-2-0: the plugin is named once in the title (no version, no layer list); the header line carries the source, its version and
+# commit, then "made by neckbeard <version>"; the summary layer has no fold and one card of colour rules
+chk("glance-title: a published title is '# 🔍 <plugin>' alone, and the version is in the header line only", (r["title"], r["text"].count("neckbeard 2.") + r["text"].count("how it affects you, what it adds")), (TITLE, r["text"].count("neckbeard 2.")))
+chk("glance-title: the header line: date, source, its version @ commit, then made by neckbeard <its version>", re.fullmatch(r"`\d{4}-\d\d-\d\d` \u00b7 demo 1\.0\.0 @ `[0-9a-f]+` \u00b7 made by neckbeard \d+\.\d+\.\d+", hline(r)) is not None, hline(r))
+chk("glance-title: the summary layer holds no 'At a glance in full' fold, and one card, the colour rules, after the table", ("At a glance in full" in L1, L1.count("<details><summary><b>How the colours are set</b>"), L1.find("| | Row |") < L1.find("How the colours are set")), (False, 1, True))
+chk("glance-title: the Cost row names its unit", re.search(r"\| Cost \| adds [\d,]+ characters to every session", L1) is not None, L1[:600])
 chk("layers: the Contents list, then each layer's rule, label line and heading, in order", (ordered(r["text"]), all("\n---\n\n" + l + "\n\n" + h + "\n" in r["text"] for l, h in zip(LABELS, HEADINGS))), (True, True))
 contents = r["text"].partition("**Contents**")[2].split("\n---\n", 1)[0]
 chk("layers: Contents has one numbered line per layer, with its anchor", [x in contents for x in ("1. [How it affects you](#how-it-affects-you)", "2. [What it adds](#what-it-adds)", "3. [Where it takes a position](#where-it-takes-a-position)")], [True] * 3)

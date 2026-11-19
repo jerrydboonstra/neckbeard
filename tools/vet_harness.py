@@ -120,7 +120,7 @@ if m:
 reply("🟩 INSTALL · 0/0/0/1/0")
 '''
 
-TITLE = "# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position"
+TITLE = "# \U0001F50D demo"   # 2.0: the plugin once, no version and no layer list (the Contents list names the layers)
 
 fail = checks = 0
 

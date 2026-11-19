@@ -67,16 +67,15 @@ def run(report, *args):
 # "What it adds", and a fit report's verdict is a strip inside the first layer. A report in the old layout is refused.
 SUMMARY = """| | Row | In short |
 |---|---|---|
-| 🟩 | Cost | adds 13 to every session, ~3 tokens (13 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟩 | Cost | adds 13 characters to every session, ~3 tokens (13 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟨 | Reach | a hook in every main session |
 | 🟩 | Leaves state | nothing found |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 | 🟩 | Read completeness | read in full |
 
-<details><summary><b>At a glance in full</b></summary>
+<details><summary><b>How the colours are set</b></summary>
 
-- **Cost** 🟩: adds 13 to every session
-  - skill skills/demo/SKILL.md: 13 of description
+The colours follow written rules. Each is checked top to bottom, and the first match wins.
 
 </details>
 
@@ -156,11 +155,11 @@ NEW_FIT = LAYERS.format(tail=" · against the sample reader", strip=STRIP)
 r, text = run(NEW_FACTS)
 check("2.0 facts: excerpted, not refused", r.returncode == 0, r.stderr)
 check("2.0 facts: the title and the header line are quoted", "> # 🔍 demo 1.2.3 · how it affects you, what it adds, where it takes a position" in text and "`2026-11-15` · neckbeard 2.0.0 · [a/demo]" in text, text)
-check("2.0 facts: the summary table is quoted whole, rows and header", all(s in text for s in ("| | Row | In short |", "| 🟩 | Cost | adds 13 to every session", "| 🟨 | Reach | a hook in every main session", "| 🟩 | Read completeness | read in full |")), text)
+check("2.0 facts: the summary table is quoted whole, rows and header", all(s in text for s in ("| | Row | In short |", "| 🟩 | Cost | adds 13 characters to every session", "| 🟨 | Reach | a hook in every main session", "| 🟩 | Read completeness | read in full |")), text)
 check("2.0 facts: one line per facts card: read marker, name and gist, unescaped",
       "\n> - 🟢 **Injects** · 1 skills · ~3 tokens on demand & more\n" in text and "\n> - 🟡 **Hooks** · partly read\n" in text, text)
-check("2.0 facts: the card bodies, the At a glance card, the footer, the positions layer and the closing line are left out",
-      not any(s in text for s in ("demo: description every session", "At a glance in full", "colours follow written rules", "Commits and git", "No reader's rules", "Contents")), text)
+check("2.0 facts: the card bodies, the colour-rules card, the footer, the positions layer and the closing line are left out",
+      not any(s in text for s in ("demo: description every session", "How the colours are set", "colours follow written rules", "Commits and git", "No reader's rules", "Contents")), text)
 check("2.0 facts: a card's name and gist are unescaped too", "\n> - 🟢 **R&D <tools>** · a & b\n" in text, text)
 check("2.0 facts: no line is quoted twice", len([l for l in text.splitlines() if l.startswith("> - ")]) == 3, text)
 

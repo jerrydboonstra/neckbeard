@@ -246,11 +246,27 @@ for reach, total in ((False, "500"), (True, "900")):
 for name, _ in CASES:
     code, out, err = run(fx(name))
     chk(f"6 {name}: no read marker, five rows, a rules footer, the full card", code == 0 and not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", out) and list(rows(out)) == ROWS
-        and "<summary>" in out and "At a glance in full" in out and "2,000" in out, f"{code} {err[:200]}")
+        and "<summary>" in out and "At a glance in full" not in out and "2,000" in out, f"{code} {err[:200]}")
     chk(f"  {name}: two runs are byte-identical", run(fx(name))[1] == out)
 chk("the output holds no `## How it affects you` line", "## How it affects you" not in run(fx("green"))[1])
-chk("tools/summary prints no layer heading, and its card has no marker",
-    "## " not in run(fx("green"))[1] and "<details><summary><b>At a glance in full</b>" in run(fx("green"))[1], run(fx("green"))[1][:120])
+chk("tools/summary prints no layer heading, and its one card has no marker",
+    "## " not in run(fx("green"))[1] and run(fx("green"))[1].count("<details>") == 1 and "<details><summary><b>How the colours are set</b></summary>" in run(fx("green"))[1], run(fx("green"))[1][:120])
+
+# 7. report-glance-title-2-0: the table, then one collapsed card of colour rules; no repeat of the rows; a unit on Cost; per-row notes only where they add something
+out = run(fx("green"))[1]
+chk("7 no fold repeats the rows: no 'At a glance in full', no per-file 'may write state' or 'skill ...: N of description' list", not re.search(r"At a glance|may write state:|of description$", out, re.M), out[:200])
+chk("7 order: the table, then the colour-rules card; the card holds the sentence and every rule", out.find("| | Row |") < out.find("<summary><b>How the colours are set") < out.find("The colours follow written rules")
+    and all(f"- {r}:" in out.split("How the colours are set", 1)[1] for r in ROWS) and out.rstrip().endswith("</details>"), out[-300:])
+chk("7 the card is closed by </details> and the rules sit inside it, not after it", out.split("</details>")[0].count("The colours follow written rules") == 1 and out.split("</details>")[1].strip() == "", out[-200:])
+chk("7 Cost row names its unit: 'adds N characters to every session, ~M tokens'", re.search(r"adds [\d,]+ characters to every session, ~[\d,]+ tokens", rows(out)["Cost"][1]) is not None, rows(out)["Cost"][1])
+chk("7 Cost row keeps 'at least' before the number and the unit after it", "adds at least 500 characters to every session" in rows(run(write(built(False)))[1])["Cost"][1], rows(run(write(built(False)))[1])["Cost"][1])
+chk("7 a fully read target adds no Read completeness line", "not read in full" not in out and "Read completeness:" not in out.split("<details>")[0].split("| Read completeness |")[1], out[:600])
+sout = run(fx("state-files"))[1].split("<details>")[0]
+chk("7 Leaves state: one line under the table links to the State it may leave card under What it adds", "State it may leave" in sout and "(#what-it-adds)" in sout, sout[-400:])
+chk("7 a target with no state files has no Leaves state line", "State it may leave" not in out.split("<details>")[0], out[:600])
+for name, secs in (("unread", ["mcp_servers"]), ("scan-partial", ["persistence_candidates"])):
+    top = run(fx(name))[1].split("<details>")[0].split("| Read completeness |", 1)[1]
+    chk(f"7 {name}: Read completeness names only the sections not read in full", all(s in top for s in secs) and "skills" not in top and "agents" not in top, top)
 d = load("green")
 del d["target"]["read_status"]
 chk("a dossier with no read_status exits 2", run(write(d))[0] == 2)
