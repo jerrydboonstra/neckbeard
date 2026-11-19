@@ -6,10 +6,20 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## 2.0.2 (2026-11-19)
 
-### The herd
-- **README:** the CI and CodeQL badges now show the latest run on main, and a line under the badges links the changelog.
-- A skill that sets `disable-model-invocation: true` no longer counts toward a plugin's every-session Cost, and its Injects line says it loads only when called by name; the cards also say "1 skill" and "1 file", not "1 skills" and "1 files".
+### Reports
 
+- **Skills marked `disable-model-invocation: true` no longer count as every-session cost.** Claude Code leaves their descriptions out of the session until the user calls the skill by name, but the Cost row and the Injects card counted them anyway. For one plugin that put 57 of its 58 skills behind the key, the report counted 12,394 characters where 275 load. The inventory now records each skill's `model_invocable`, and the Injects card says how many skills load only when called. Reports made from older dossiers render as before.
+- **Cards say "1 file" and "1 skill", not "1 files".**
+
+### README
+
+- **The CI and CodeQL badges show main's result.** Without a branch, a workflow badge shows the latest run on any branch, so a run elsewhere could turn it red.
+- **A changelog link sits under the title.**
+
+### Releasing
+
+- **`make release` refuses a tree that names a word from a private list** (`PRIVATE_WORDS` in the git-ignored `local.mk`), before anything is pushed. A hit is reported by file and line, never by the word.
+- **`make deploy` runs an optional `POST_DEPLOY` command after every host has deployed,** also set in `local.mk`. Empty by default.
 ## 2.0.1 (2026-11-19)
 
 ### Reports
