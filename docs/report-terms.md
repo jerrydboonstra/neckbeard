@@ -11,4 +11,4 @@ What the words in the [README](../README.md) and in a neckbeard report mean.
 - **Persistence candidates:** scripts that might write files outside your project. In neckbeard's own report these are the skill's own scripts, which write only the report you name and temporary folders, as [SECURITY.md](../SECURITY.md) says, and the repo's build, deploy, test and measurement tools.
 - **MCP servers:** programs a plugin can start to give Claude extra tools. [live-mcp.md](live-mcp.md) says how neckbeard can start one, and what it records.
 
-A fit verdict needs the rules you already run, so a facts report gives none. Point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed.
+A fit verdict needs your rules, so a facts report gives none. The [README](../README.md) says how to get one.

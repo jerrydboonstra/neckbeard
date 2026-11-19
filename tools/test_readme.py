@@ -19,8 +19,10 @@ LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\(([^)\s]*)[^)]*\)")
 
 
 def is_links_only(text):
-    """A badge row or a list of links: nothing but links, separators and a short label is left once the links are removed."""
+    """A badge row or a list of links: nothing but short links, separators and a short label. A link holding long text is prose."""
     rest = re.sub(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)", "", text)
+    if any(len(m.group(0)) - len(m.group(1)) > 90 for m in LINK.finditer(rest)):
+        return False
     rest = LINK.sub("", rest)
     rest = re.sub(r"[\s·|,]+", " ", rest).strip()
     return len(rest) <= 20
@@ -111,6 +113,7 @@ check("a paragraph over 500 characters fails", len(dense(good + "\n" + "word " *
 check("an opening over 300 characters fails", dense("# t\n\n" + "word " * 61 + "\n")[1] is not None)
 check("a badge row, a line of links, a blockquote, a table and a code block are exempt",
       dense(good + "\nRounds: " + " · ".join("[r%d](x.md#%d)" % (i, i) for i in range(60)) + "\n\n> " + "word " * 120 + "\n\n| a | b |\n|---|---|\n| " + "w " * 300 + " | x |\n\n```\n" + "w " * 300 + "\n```\n") == ([], None))
+check("a paragraph that hides its prose inside link text fails", len(dense(good + "\n[" + "word " * 120 + "](x.md)\n")[0]) == 1)
 check("a long list item fails", len(dense(good + "\n- " + "word " * 101)[0]) == 1)
 import tempfile
 with tempfile.TemporaryDirectory() as tmp:
@@ -133,10 +136,11 @@ check("every relative link in the README resolves (%s)" % ", ".join(broken_links
 for md in sorted((ROOT / "docs").glob("*.md")):
     check("every relative link in docs/%s resolves" % md.name, not broken_links(md))
 
-# Moved detail is one click from where it was
-text = readme.read_text()
+# Moved detail is one click from where it was (a real link outside code blocks, not a mention)
+real = set(LINK.findall("\n".join(outside_fences(readme.read_text()))))
 for page in ("docs/live-mcp.md", "docs/report-terms.md"):
-    check("the README links %s and the file exists" % page, ("](%s" % page) in text and (ROOT / page).is_file())
+    check("the README links %s and the file exists" % page, page in real and (ROOT / page).is_file())
+check("a link inside a code fence does not count as a link", "x.md" not in set(LINK.findall("\n".join(outside_fences("```\n[a](x.md)\n```\n")))))
 
 if failures:
     print("\n%d failed" % len(failures))

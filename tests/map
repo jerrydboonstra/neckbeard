@@ -83,15 +83,15 @@ tests/map test_test_parallel
 .claude-plugin/** test_selfcheck test_vet test_vet_session test_vet_judge test_deploy
 Makefile test_deploy test_vet test_vet_judge
 docs/** test_vet test_vet_judge test_readme
-docs/publish-your-report.md test_layout
+docs/publish-your-report.md test_layout test_readme
 .claude-plugin/plugin.json test_layout
-examples/** test_selfcheck test_vet test_vet_judge test_vet_stability
+examples/** test_selfcheck test_vet test_vet_judge test_vet_stability test_readme
 CHANGELOG.md test_selfcheck
 README.md test_selfcheck test_deploy test_readme test_excerpts test_vet
 CONTRIBUTING.md test_layout
-CASE-STUDIES.md test_layout
-SECURITY.md test_layout
-ATTRIBUTION.md test_layout
+CASE-STUDIES.md test_layout test_readme
+SECURITY.md test_layout test_readme
+ATTRIBUTION.md test_layout test_readme
 LICENSE test_layout
 .gitignore test_layout
 .github/** test_layout

@@ -53,8 +53,8 @@ The `.` is the plugin's folder, so this reads neckbeard itself. Give another plu
 The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list. Then come three layers:
 
 - **How it affects you:** five rows: cost, reach, leaves state, live surface and read completeness.
-- **What it adds.**
-- **Where it takes a position.**
+- **What it adds:** one card each for the text it injects, hooks, subagents and commands, the state it may leave, what it reaches outside the session, and its source. Each card says if it was read in full, in part, or not at all.
+- **Where it takes a position:** the topics its instruction files take a position on, from a fixed list, with no judgement.
 
 Here is neckbeard's own report, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
@@ -83,7 +83,7 @@ How a repo declares test fixtures, and what the badge colours mean: [docs/publis
 
 A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below).
 
-The words in the report (**Injects**, **Hook-injected text**, **Persistence candidates**, **MCP servers**) are defined in [docs/report-terms.md](docs/report-terms.md).
+[docs/report-terms.md](docs/report-terms.md) defines the words in the report (**Injects**, **Hook-injected text**, **Persistence candidates**, **MCP servers**).
 
 The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
