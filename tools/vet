@@ -48,7 +48,7 @@
 # what it adds, where it takes a position`, the same header line the judged report carries, the Contents list, the three layers (the
 # summary rows with no verdict strip, the facts, the positions) and one closing line. A fit report's title ends ` · against <reader>`.
 # It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error.
-# Exit 0 only when the report passed every check, all made before OUT is written: it holds the three layer headings once and in order, and names no local path; a published (--facts) report also holds no verdict strip and no fit card. Kept out of bin/, which a plugin puts on every session's PATH.
+# Exit 0 only when the report passed every check: it holds the three layer headings once and in order and names no local path, and a published (--facts) report also holds no verdict strip and no fit card. A published report's checks all run before OUT is written; a fit report's local-path and login checks run after, and remove OUT on a hit. Kept out of bin/, which a plugin puts on every session's PATH.
 #
 # vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
 # Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
