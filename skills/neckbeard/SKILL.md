@@ -186,9 +186,9 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 **Verdict** (one, in the strip): 🟥 DON'T INSTALL · 🟨 INSTALL WITH CHANGES · 🟨 COPY RULES, SKIP PLUGIN · 🟩 INSTALL. Step 2's carrying-cost line decides between 🟨 COPY RULES, SKIP PLUGIN and 🟩 INSTALL.
 
 ```
-# 🔍 <target> <version> · how it affects you, what it adds, where it takes a position · against your rules
+# 🔍 <target> · against your rules
 
-`<YYYY-MM-DD>` · neckbeard <version> · <target path or URL>
+`<YYYY-MM-DD>` · <target path or URL> <target version> · made by neckbeard <version>
 
 *Colours, counts, facts and grouping are the model's work here; a neckbeard checkout makes them by code.*
 
@@ -207,9 +207,6 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 > **<verdict emoji> <VERDICT>** · <one-phrase action>
 > <Two or three sentences: cost, conflicts, what is worth keeping.>
 > ⛔ **n** conflicts · 🔁 **n** covered · 🟩 **n** keep · 🗑️ **n** dropped
-
-### At a glance in full
-<What each row counts.>
 
 ### Rule files
 <The rule files, by name.>

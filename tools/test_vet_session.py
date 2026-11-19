@@ -106,7 +106,7 @@ def case_main(tmp):
     fp, nbytes = fingerprint(files), sum(len(d) for _, d in files)
     text = r["text"] or ""
     chk("session: exit 0, report written", (r["rc"], r["text"] is not None), (0, True))
-    chk("session: title ends ' · against your rules'", text.split("\n")[0], "# \U0001F50D demo 1.0.0 · how it affects you, what it adds, where it takes a position · against your rules")
+    chk("session: title ends ' · against your rules'", text.split("\n")[0], "# \U0001F50D demo · against your rules")
     marks = {"INSTALL": "\U0001F7E9", "INSTALL WITH CHANGES": "\U0001F7E8", "COPY RULES, SKIP PLUGIN": "\U0001F7E8", "DON'T INSTALL": "\U0001F7E5"}
     chk("session: the verdict strip is the one units-verdict computes", ("> **" + marks.get(v["verdict"], "?") + " " + v["verdict"] + "**") in text, True)
     chk("session: the Baseline line, with the fingerprint over the shown names", f"Baseline: your rules · 3 rule files · {nbytes} bytes · sha256 {fp}" in text, True)

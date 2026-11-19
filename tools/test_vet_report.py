@@ -50,7 +50,7 @@ r = run("hardstop-yes", units="units-install", finds="one", confirm="yes")
 chk("confirm: hard_stop true is \U0001F7E5 in the Conflicts card, with the file it is held in", ("| \U0001F7E5 |" in cardtext(r, "Conflicts"), "| rules/safety.md |" in cardtext(r, "Conflicts")), (True, True))
 r = run("header", units="units-install")
 lines = r["text"].split("\n")
-chk("header: vet writes the title and the header line itself, in the form --check reads", (lines[0], bool(re.match(r"^`\d{4}-\d\d-\d\d` \u00b7 neckbeard \S+ \u00b7 demo 1.0.0", lines[2]))), ("# \U0001F50D demo 1.0.0 \u00b7 how it affects you, what it adds, where it takes a position \u00b7 against the sample reader", True))
+chk("header: vet writes the title and the header line itself, in the form --check reads", (lines[0], bool(re.match(r"^`\d{4}-\d\d-\d\d` \u00b7 demo 1.0.0 \u00b7 made by neckbeard \S+$", lines[2]))), ("# \U0001F50D demo \u00b7 against the sample reader", True))
 chk("header: Baseline, the Verdict is relative line and Rule files sit inside Why this verdict", ("<b>Why this verdict</b>" in r["text"] and r["text"].find("Baseline: ") > r["text"].find("<b>Why this verdict</b>"), "Verdict is relative to the [sample reader]" in r["text"], "<details><summary><b>Rule files</b></summary>" in r["text"]), (True, True, True))
 
 
