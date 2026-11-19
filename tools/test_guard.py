@@ -33,6 +33,7 @@ def scratch(files, words=None, track=True):
     os.makedirs(repo)
     sh(repo, "git", "init", "-q")
     for name, data in files.items():
+        os.makedirs(os.path.dirname(os.path.join(repo, name)), exist_ok=True)
         with open(os.path.join(repo, name), "wb") as f:
             f.write(data)
     if track:
@@ -95,6 +96,22 @@ code, out, err = guard(repo, os.path.join(d, "missing.txt"))
 chk("GUARD_WORDS naming a missing file exits 2", code, 2)
 shutil.rmtree(d)
 
+d, repo, lst = scratch({"sub/a.txt": f"{WORD}\n".encode()}, LIST)
+code, out, err = guard(os.path.join(repo, "sub"), lst)
+chk("run from a subfolder it still searches the whole repo", (code, "sub/a.txt:1" in out), (1, True))
+shutil.rmtree(d)
+
+d, repo, lst = scratch({"a.txt": b"clean\n"}, LIST)
+code, out, err = guard(repo, lst + "-gone")
+chk("the unreadable-list message holds no path", (code, os.path.basename(d) in out + err, "unreadable" in err), (2, False, True))
+code, out, err = guard(repo, "")
+chk("an empty GUARD_WORDS is the same as unset", (code, bool(err.strip())), (0, True))
+code, out, err = guard(repo, "", GUARD_REQUIRE_WORDS="1")
+chk("an empty GUARD_WORDS with GUARD_REQUIRE_WORDS=1 exits 1", code, 1)
+code, out, err = guard(repo, lst, GUARD_REQUIRE_WORDS="1")
+chk("a clean tree with a list and GUARD_REQUIRE_WORDS=1 exits 0", code, 0)
+shutil.rmtree(d)
+
 print("make guard, and the release recipe")
 d, repo, lst = scratch({"a.txt": f"{WORD}\n".encode()}, LIST)
 os.makedirs(os.path.join(repo, "tools"))
@@ -105,6 +122,12 @@ shutil.copy(os.path.join(ROOT, ".claude-plugin", "plugin.json"), os.path.join(re
 shutil.copy(os.path.join(ROOT, "Makefile"), repo)
 p = subprocess.run(["make", "guard", f"PRIVATE_WORDS={lst}"], cwd=repo, capture_output=True, text=True)
 chk("make guard passes PRIVATE_WORDS as GUARD_WORDS", (p.returncode != 0, "a.txt:1" in p.stdout + p.stderr, WORD in p.stdout + p.stderr), (True, True, False))
+for req, want in [({}, 0), ({"GUARD_REQUIRE_WORDS": "1"}, 1)]:
+    e = {k: v for k, v in os.environ.items() if not k.startswith("GUARD_")}
+    e.update(req)
+    p = subprocess.run(["make", "guard"], cwd=repo, env=e, capture_output=True, text=True)
+    chk("make guard with PRIVATE_WORDS empty " + ("and GUARD_REQUIRE_WORDS=1 fails" if want else "skips and exits 0"),
+        (p.returncode != 0, bool(p.stderr.strip())), (bool(want), True))
 shutil.rmtree(d)
 
 text = open(os.path.join(ROOT, "Makefile")).read()
@@ -112,7 +135,7 @@ m = re.search(r"^release:.*\n((?:\t.*\n)+)", text, re.M)
 recipe = m.group(1) if m else ""
 g, push = recipe.find("GUARD_REQUIRE_WORDS=1"), recipe.find("tools/release-push")
 chk("the release recipe runs the guard with GUARD_REQUIRE_WORDS=1 before tools/release-push", (g != -1, push != -1, -1 < g < push), (True, True, True))
-chk("it runs the guard through the guard target or tools/guard.sh", "guard" in recipe[g:push] if g != -1 else False, True)
+chk("the guard target sits outside the release recipe and has a help line", ("\nguard:" in text, "\nguard: ## " in text, "guard:" in recipe), (True, True, False))
 
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
