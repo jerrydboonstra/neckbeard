@@ -4,10 +4,12 @@ PYTHON  ?= python3
 # Every remote a release goes to: origin (GitHub, whose Actions run the self-check) and any MIRRORS. A fixed
 # list, never `git remote`, which would also push main into whatever else the checkout has (a work queue, say).
 # This machine's own setup lives in local.mk, which git ignores: MIRRORS (more remotes a release pushes to) and
-# HOSTS (machines `make deploy` reaches over plain ssh, besides this one) and POST_DEPLOY (a command `make deploy` runs
+# HOSTS (machines `make deploy` reaches over plain ssh, besides this one), PRIVATE_WORDS (a file of words, one a line, that
+# `make release` refuses to push a tree holding; see tools/guard.sh) and POST_DEPLOY (a command `make deploy` runs
 # once every host has deployed; empty by default, and with $(VERSION) available to it).
 MIRRORS :=
 HOSTS :=
+PRIVATE_WORDS :=
 POST_DEPLOY :=
 # deploy runs post-deploy through this variable, not a literal $(MAKE): make runs a recipe line holding $(MAKE) even under -n,
 # and that line would then deploy for real.
@@ -21,6 +23,7 @@ VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugi
 	check \
 	deploy \
 	excerpts \
+	guard \
 	help \
 	mutate \
 	post-deploy \
@@ -59,6 +62,9 @@ release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Rel
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d' | grep . >/dev/null || { echo "release: CHANGELOG.md has no entry for $(VERSION)" >&2; exit 1; }
 	@awk '/^## $(VERSION) /{f=1;next} /^## /{f=0} f' CHANGELOG.md | sed '/./,$$!d'
 
+guard: ## refuse when a tracked file holds a word from the PRIVATE_WORDS list (empty list: skip; `make release` requires one)
+	@GUARD_WORDS="$(PRIVATE_WORDS)" bash tools/guard.sh
+
 release: check ## push main to GitHub, wait for CI on that commit, then tag and push main and the tag to every remote, fast-forward only, then publish the GitHub Release
 	@$(MAKE) --no-print-directory release-notes >/dev/null
 	@test -z "$$(git status --porcelain --untracked-files=no)" || { echo "release: tracked files are modified; commit first"; exit 1; }
@@ -70,6 +76,7 @@ release: check ## push main to GitHub, wait for CI on that commit, then tag and 
 	else \
 	  $(MAKE) --no-print-directory report-check REF=HEAD || { echo "release: the report is stale; make report, commit, and release again"; exit 1; }; \
 	fi
+	@GUARD_REQUIRE_WORDS=1 $(MAKE) --no-print-directory guard
 	@VERSION=$(VERSION) REMOTES="$(REMOTES)" bash tools/release-push
 	@# A pushed tag is not a GitHub Release; the repo page shows the newest Release as Latest.
 	@if gh release view "v$(VERSION)" >/dev/null 2>&1; then echo "== GitHub Release v$(VERSION) already exists"; \
