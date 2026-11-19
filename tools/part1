@@ -510,17 +510,17 @@ def render(d, commit):
     reach_phrase = "reach subagents" if reach is True else "stay in the main session" if reach is False else ""
     marketplace_word = "no marketplace" if sec("marketplace")[0] in ("read", "not-applicable") and not mk_entries else ""
     gists = {
-        "Injects": gist(*([f"{len(skills)} skills", f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
+        "Injects": gist(*([many(len(skills), "skill"), f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
                            f"~{sum(len(str(s_.get('description') or '')) for s_ in readable if loads_every_session(s_))} chars of skill descriptions every session"
                            + (f"; {many(on_call, 'skill')} load{'s' if on_call == 1 else ''} only when called" if on_call else "")] if skills_ok else []),
                         f"hook text {read_state([hsec[0]])}"),
-        "Hooks": gist(f"{hn} hooks" if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
+        "Hooks": gist(many(hn, "hook") if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
         "Claude Code mods": gist(f"{len(mod_entries)} mod{'' if len(mod_entries) == 1 else 's'}"),
-        "Subagents and commands": gist((f"{len(agents)} agents" if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
-                                       f"{len(commands)} commands" if counted(sec("commands")[0], len(commands)) else ""),
+        "Subagents and commands": gist((many(len(agents), "agent") if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
+                                       many(len(commands), "command") if counted(sec("commands")[0], len(commands)) else ""),
         "State it may leave": gist(f"{many(len(persist), 'file')} that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
                                    f"{len(shown)} named" if ptail and counted(sec("persistence_candidates")[0], len(persist)) else ""),
-        "Reaches outside the session": gist((f"{len(servers)} MCP servers" if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
+        "Reaches outside the session": gist((many(len(servers), "MCP server") if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
         "Source": gist(kind, f"{plain_name}{' ' + plain_version if plain_version else ''}{' from plugin.json' if pj.get('name') or pj.get('version') else ''}",
                        f"commit {safe(commit)[:7]}" if commit else "", marketplace_word),
     }

@@ -22,7 +22,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Subagents and commands</b> · 1 agents · 1 commands</summary>
+<details><summary>🟢 <b>Subagents and commands</b> · 1 agent · 1 command</summary>
 
 - Agents:
   - reviewer

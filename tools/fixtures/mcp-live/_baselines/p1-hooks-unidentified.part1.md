@@ -11,7 +11,7 @@
 
 </details>
 
-<details><summary>🟡 <b>Hooks</b> · 1 hooks · partly read</summary>
+<details><summary>🟡 <b>Hooks</b> · 1 hook · partly read</summary>
 
 - Hooks: partly read
   - SessionStart: hooks/run.sh

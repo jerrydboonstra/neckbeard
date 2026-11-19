@@ -118,7 +118,7 @@ chk("CR1. each card is `<details><summary>`, a blank line, its lines, a blank li
 want = {
     "Injects": "2 skills \u00b7 ~375 tokens on demand \u00b7 ~22 chars of skill descriptions every session \u00b7 hook text read in full",
     "Hooks": "2 hooks \u00b7 stay in the main session \u00b7 read in full",
-    "Subagents and commands": "1 agents \u00b7 1 commands",
+    "Subagents and commands": "1 agent \u00b7 1 command",
     "State it may leave": "2 files that may write state",
     "Reaches outside the session": "2 MCP servers",
     "Source": "plugin \u00b7 demo 1.2.0 from plugin.json \u00b7 commit feed123",
@@ -268,6 +268,10 @@ chk("SD2. the gist counts ~100 chars of skill descriptions every session and say
 chk("SD2. the disabled skill's line says it loads only when called by name; the other keeps its count",
     "  - off: description loads only when called by name (disable-model-invocation); the file on demand (900 bytes, ~225 tokens)" in out.split("\n")
     and "  - on: description every session (100 chars); the file on demand (900 bytes, ~225 tokens)" in out.split("\n"), out)
+def one_skill(d):
+    d["target"]["skills"] = d["target"]["skills"][:1]
+gist = card_gist(render(variant("plugin-found", one_skill))[1], "Injects") or ""
+chk("SD5. one skill reads '1 skill', never '1 skills'", gist.startswith("1 skill \u00b7") and "1 skills" not in gist, gist)
 def two_off(d):
     off_on(d)
     d["target"]["skills"][1]["model_invocable"] = False
@@ -284,7 +288,7 @@ def one_persist(d):
 gist = card_gist(render(variant("plugin-found", one_persist))[1], "State it may leave") or ""
 chk("SD5. one state file reads '1 file that may write state', never '1 files'", gist.startswith("1 file that may write state") and "1 files" not in gist, gist)
 def one_left(d):
-    d["target"]["persistence_candidates"] = [f"d{i:02d}/f" for i in range(10 + 16)]   # 10 shown, then 16 folders of one file: 15 named and 1 other
+    d["target"]["persistence_candidates"] = [f"d{i:02d}/f" for i in range(10 + 16)]   # the first 10 are listed in full; the other 16 sit in 16 folders of one file each: 15 folders named, 1 other
 out = render(variant("plugin-found", one_left))[1]
 chk("SD5. the other-folders line says '1 other folder (1 file)', never '1 other folders (1 files)'",
     "and 1 other folder (1 file)" in out and "1 files" not in out and "1 other folders" not in out, [l for l in out.split("\n") if "other folder" in l])

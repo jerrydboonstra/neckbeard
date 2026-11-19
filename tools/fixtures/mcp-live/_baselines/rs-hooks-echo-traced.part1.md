@@ -13,7 +13,7 @@
 
 </details>
 
-<details><summary>🟢 <b>Hooks</b> · 1 hooks · stay in the main session · read in full</summary>
+<details><summary>🟢 <b>Hooks</b> · 1 hook · stay in the main session · read in full</summary>
 
 - Hooks:
   - SessionStart: hooks/session-start.sh
