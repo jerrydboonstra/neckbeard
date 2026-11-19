@@ -51,7 +51,7 @@ tools/test_deploy.py test_deploy
 tools/test_layout.py test_layout
 tools/test_mcp_live.py test_mcp_live
 tools/test_skill_budget.py test_skill_budget
-tools/test_skill_md.py test_skill_md
+tools/test_skill_md.py test_skill_md test_layout
 tools/fixtures/mcp-live/** test_mcp_live test_read_status
 tools/test_mutate_selfcheck.py test_mutate_selfcheck
 tools/test_part1.py test_part1

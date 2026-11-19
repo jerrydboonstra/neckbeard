@@ -80,10 +80,11 @@ CARD_MARKS = "⛔\U0001F501\U0001F195\U0001F5D1"   # the "How its rules sorted" 
 fit_src = source("fit")
 check("the card marks the Key explains are still the ones tools/fit prints",
       all(ch in fit_src or "\\U%08X" % ord(ch) in fit_src or "\\u%04X" % ord(ch) in fit_src.upper() for ch in CARD_MARKS))
-summary_marks = "\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"   # tools/summary's colours
-check("tools/summary still prints its four colours", all(ch in source("summary") for ch in summary_marks))
+summary = load("summary")
+summary_marks = {summary.G, summary.Y, summary.O, summary.R}   # tools/summary's colours, imported
+check("tools/summary's four colours are the four judgement colours", summary_marks == set("\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"), repr(summary_marks))
 part1 = load("part1")
-union = set(fit.VERDICT_MARK.values()) | {fit.RED, fit.ORANGE, fit.GREEN, fit.WHITE, fit.BLACK, fit.STAR} | set(CARD_MARKS) | set(summary_marks) | set(part1.MARKER.values())
+union = set(fit.VERDICT_MARK.values()) | {fit.RED, fit.ORANGE, fit.GREEN, fit.WHITE, fit.BLACK, fit.STAR} | set(CARD_MARKS) | summary_marks | set(part1.MARKER.values())
 key = next((p for p in re.split(r"\n\s*\n", step3) if p.startswith("**Key:**")), "")
 if not key:   # the Key sits inside the template's code fence, after a blank line
     m = re.search(r"\*\*Key:\*\*.*?(?=\n```|\n\n)", step3, re.S)
@@ -94,8 +95,8 @@ check("the plain template's Key lists exactly the union of the marks tools/fit, 
 
 # 4. the plain template: sections, never cards, and nothing that says it was written by code
 template = step3[step3.find("```"):]
-check("the plain template holds no <details> card", "<details" not in template)
-check("no layer label in Step 3 says 'written by code' for the plain path's layers",
+check("guard (green before the rewrite and after): the plain template holds no <details> card", "<details" not in template)
+check("guard (green before the rewrite and after): no layer label in the plain template says 'written by code'",
       not re.search(r"\*\*[123] · .*written by code", template))
 
 if failures:
