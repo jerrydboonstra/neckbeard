@@ -4,7 +4,7 @@
 VERDICT.json is `tools/units-verdict UNITS ANSWERS --json`: the verdict, the counts and one record per unit. PROSE.json is the prose
 judge's {"why": text, "do_this": [step, ...], "patch": text}. Every number, colour, mark and gist comes from the records, never from
 the prose: the prose fills the Why this verdict paragraph, the Do this steps and the Proposed rules patch, and nothing else.
-Prints the strip (with one line under its counts when the record's carrying_cost is reader-decides and the verdict is COPY RULES, SKIP PLUGIN: the reader decides the trade), then the cards Why this verdict, Conflicts, Already covered, Keep, Dropped, Do this and Proposed rules patch.
+Prints the strip (with one line under its counts when the record's carrying_cost is reader-decides, which units-verdict sets only when a skill is kept, and the verdict is COPY RULES, SKIP PLUGIN), then the cards Why this verdict, Conflicts, Already covered, Keep, Dropped, Do this and Proposed rules patch.
 --label and --target name what the verdict is against ("the sample reader", the plugin); --verdict-text is the "Verdict is relative"
 line; --baseline is the file tools/vet wrote (the Baseline line, the Judge line and the Rule files block), put in raw under it.
 Exit 2 with nothing on stdout when an input is unreadable or the verdict is one units-verdict cannot print. Card markup comes from tools/cards.py.

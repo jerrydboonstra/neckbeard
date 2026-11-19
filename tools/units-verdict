@@ -26,7 +26,7 @@ The verdict, from the counts:
 - any skill kept otherwise: INSTALL with no conflict, INSTALL WITH CHANGES with one;
 - else any new-standing or new-skill-text: COPY RULES, SKIP PLUGIN;
 - else: DON'T INSTALL.
-Rules to copy are listed whatever the verdict, and so are conflicts. With a skill kept, reader-decides adds one line naming the trade. The verdict and counts of tools/vet's fit report
+Rules to copy are listed whatever the verdict, and so are conflicts. With a skill kept, reader-decides adds one line naming the trade, and --json's carrying_cost is the answer only then (else null), so tools/fit's strip line follows the same rule. The verdict and counts of tools/vet's fit report
 come from here (verdict-stability-rules).
 """
 import collections, json, sys
@@ -143,7 +143,7 @@ def records(units, got, cost=None):
     skill = collections.Counter(r["skill"] for r in got.values())
     rules = collections.Counter(r["rules"] for r in got.values())
     rules["conflict"] = c["units_with_conflict"]
-    return {"verdict": verdict(skill, rules, cost), "carrying_cost": cost, "counts": {k: c[k] for k in keys}, "units": recs}
+    return {"verdict": verdict(skill, rules, cost), "carrying_cost": cost if skill["keep"] else None, "counts": {k: c[k] for k in keys}, "units": recs}
 
 
 def main():

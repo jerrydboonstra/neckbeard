@@ -115,6 +115,9 @@ chk("units-verdict: two answers files marked copy agree and are stable", code ==
 code, out = run("units-verdict", U_ON, answers("m5.json", "copy"), answers("m6.json"))
 chk("units-verdict: with several files, one missing its carrying_cost is refused, exit 2", code == 2 and "carrying_cost" in out, (code, out))
 
+code, out = run("units-verdict", U_ON, answers("rd-nokeep.json", "reader-decides", skill="drop", rules="new-standing"), "--json")
+chk("units-verdict --json: reader-decides with no skill kept gives COPY RULES from the new rules and carrying_cost null (the cost did not decide it)",
+    json.loads(out)["verdict"] == COPY and json.loads(out)["carrying_cost"] is None, out[:200])
 # 3. refusals
 for label, units in (("a SessionStart hook", U_ON), ("a hook reaching subagents", units_of("sub", SUB)[2]), ("an unread hook", units_of("unk", UNKNOWN)[2])):
     code, out = run("units-verdict", units, answers("none.json"))
