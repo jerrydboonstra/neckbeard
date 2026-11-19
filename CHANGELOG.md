@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 2.0.2 (2026-11-19)
+
+### The herd
+- **README:** the CI and CodeQL badges now show the latest run on main, and a line under the badges links the changelog.
+- A skill that sets `disable-model-invocation: true` no longer counts toward a plugin's every-session Cost, and its Injects line says it loads only when called by name; the cards also say "1 skill" and "1 file", not "1 skills" and "1 files".
+
 ## 2.0.1 (2026-11-19)
 
 ### Reports
