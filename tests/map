@@ -62,6 +62,7 @@ tools/test_positions.py test_positions
 tools/test_positions_layer.py test_positions_layer
 tools/excerpts test_excerpts test_vet_layers
 tools/test_excerpts.py test_excerpts
+tools/test_readme.py test_readme
 tools/fixtures/part1/** test_part1 test_part1_cards test_hook_inline_require
 tools/fixtures/positions-layer/** test_positions_layer
 tools/test_read_status.py test_read_status
@@ -81,16 +82,16 @@ tests/map test_test_parallel
 # Manifests, docs and the rest
 .claude-plugin/** test_selfcheck test_vet test_vet_session test_vet_judge test_deploy
 Makefile test_deploy test_vet test_vet_judge
-docs/** test_vet test_vet_judge
-docs/publish-your-report.md test_layout
+docs/** test_vet test_vet_judge test_readme
+docs/publish-your-report.md test_layout test_readme
 .claude-plugin/plugin.json test_layout
-examples/** test_selfcheck test_vet test_vet_judge test_vet_stability
+examples/** test_selfcheck test_vet test_vet_judge test_vet_stability test_readme
 CHANGELOG.md test_selfcheck
-README.md test_selfcheck test_deploy
+README.md test_selfcheck test_deploy test_readme test_excerpts test_vet
 CONTRIBUTING.md test_layout
-CASE-STUDIES.md test_layout
-SECURITY.md test_layout
-ATTRIBUTION.md test_layout
+CASE-STUDIES.md test_layout test_readme
+SECURITY.md test_layout test_readme
+ATTRIBUTION.md test_layout test_readme
 LICENSE test_layout
 .gitignore test_layout
 .github/** test_layout

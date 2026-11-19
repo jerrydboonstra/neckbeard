@@ -8,7 +8,12 @@
 >
 > Reads the plugin. Writes the verdict. Edits nothing.
 
-Before you install a plugin into Claude Code, neckbeard reads it for you and lists what it would add to every session. A **hook** is a script Claude Code runs on its own at an event, such as the start of a session. A **subagent** is a helper session that Claude starts for one job. neckbeard lists the hooks, the text a plugin injects, the sessions and subagents it reaches, and the files it may write outside your project, and says which parts it could not read. That list is the **facts report**. Optionally, it then compares each rule the plugin carries with the rules you already run and tells you which of its rules duplicate one of yours, which contradict one, and which are new. That is the **fit report**, and it needs your own rules. It changes nothing.
+Before you install a plugin into Claude Code, neckbeard reads it and lists what it would add to every session. It can also check the plugin's rules against yours. It changes nothing.
+
+- **Facts report:** the hooks a plugin has, the text it injects, the sessions and subagents it reaches, and the files it may write outside your project. It says which parts it could not read.
+- **Fit report:** each rule the plugin carries, compared with the rules you already run: which duplicate one of yours, which contradict one, and which are new. It needs your own rules.
+
+What a hook, a subagent and the other report terms mean: [docs/report-terms.md](docs/report-terms.md).
 
 **Tested by trying to break it, fifteen times, and every round is published.** Each [case study](CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
@@ -43,7 +48,15 @@ tools/vet . report.md --facts
 cat report.md
 ```
 
-The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list, then three layers: how it affects you (five rows: cost, reach, leaves state, live surface and read completeness), what it adds, and where it takes a position. This is neckbeard's own, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
+The `.` is the plugin's folder, so this reads neckbeard itself. Give another plugin's folder to read that one. It needs Python 3.11 or later and no login.
+
+The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list. Then come three layers:
+
+- **How it affects you:** five rows (cost, reach, leaves state, live surface and read completeness).
+- **What it adds:** one card each for the text it injects, hooks, subagents and commands, the state it may leave, what it reaches outside the session, and its source. Each card says whether neckbeard read it in full, read it in part, or left something unread.
+- **Where it takes a position:** the topics its instruction files and hook templates take a position on, from a fixed list, with no judgement.
+
+Here is neckbeard's own report, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard 2.0.0 · how it affects you, what it adds, where it takes a position
@@ -68,7 +81,11 @@ The `.` is the plugin's folder, so this reads neckbeard itself; give another plu
 
 How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](docs/publish-your-report.md#badge-colours-and-declared-fixtures).
 
-**Injects** is the text a plugin adds to the model's context, **Hook-injected text** is what its hooks add, **Persistence candidates** are scripts that might write files outside your project (in neckbeard's own report: the skill's own scripts, which write only the report you name and temporary folders, as [SECURITY.md](SECURITY.md) says, and the repo's build, deploy, test and measurement tools), and **MCP servers** are defined below. A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below). The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
+A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below).
+
+[docs/report-terms.md](docs/report-terms.md) defines the words in the report (**Injects**, **Hook-injected text**, **Persistence candidates**, **MCP servers**).
+
+The [gallery](examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
 Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
@@ -110,11 +127,13 @@ tools/neckbeard <target> --live-mcp NAME [--out FILE]
 
 `--project-dir` (default: cwd) is where rule discovery starts. `--extra-rules` adds a file or directory the discovery would otherwise miss.
 
-`--live-mcp NAME` is a separate, explicit trust decision. An **MCP server** is a program a plugin can start to give Claude extra tools; a **stdio** server talks to Claude over standard input and output. For one local stdio server declared by the target, Neckbeard starts its target-owned entrypoint, initializes MCP, and lists the advertised tools, resources, resource templates, and prompts. It records metadata and schemas only: it never calls a tool, reads a resource, expands a prompt, opens a browser, or performs a login. Remote servers, shell snippets, package runners, missing or outside-tree entrypoints, unbounded output, and hung servers fail closed. Declared environment values are passed only to that isolated process and are redacted from the dossier, even if the server echoes one back (a value of four characters or more wherever it appears, a shorter one only where a whole string equals it).
+`--live-mcp NAME` is a separate, explicit trust decision. It starts one local stdio MCP server (a program a plugin can start to give Claude extra tools) that the target declares, lists what the server advertises, and records metadata and schemas only. It never calls a tool. [docs/live-mcp.md](docs/live-mcp.md) has the full limits and the redaction rules.
 
 It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
 
-**A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that. It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo's `.gitignore` ignores JSON files by default, so a dossier does not get committed by accident.
+**A dossier contains your rules, verbatim.** The comparison needs the text, so the dossier embeds every rule file it discovered: your global `CLAUDE.md`, your project rules, your personal skills, the skills of every plugin you have enabled. A run inside this repo produced 90,533 bytes of exactly that.
+
+It warns you on write and names the files. Do not commit one, and check your `.gitignore` first. This repo's `.gitignore` ignores JSON files by default, so a dossier does not get committed by accident.
 
 ## How it was tested
 
@@ -163,7 +182,13 @@ It resolves hook injection **statically, or says it could not**. A hook that bui
 
 ## Why
 
-I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin, which at the time injected about 1,300 tokens into every session and every subagent, permanently. I asked an LLM to compare its rules with mine, and the answer was a list of overlaps and clashes with rules I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right. So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side. The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
+I nearly installed [ponytail](https://github.com/DietrichGebert/ponytail), the lazy-senior-dev persona plugin, which at the time injected about 1,300 tokens into every session and every subagent, permanently.
+
+I asked an LLM to compare its rules with mine, and the answer was a list of overlaps and clashes with rules I rely on (never act on something risky without my approval). I had no good way to tell whether that answer was right.
+
+So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side.
+
+The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](./ATTRIBUTION.md).
 
 ## The name
 
