@@ -4,7 +4,7 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
-## 2.0.0 (2026-11-18)
+## 2.0.0 (2026-11-19)
 
 **A new report layout, and a fit verdict computed by code.** A report now opens with a contents list and three layers: how the plugin affects you, what it adds, and where it takes a position. In a fit report, code computes the verdict and the counts from a fixed list of the plugin's rule units; a model answers each unit, but no model writes the colours, counts or verdict. The major version marks the new layout: anything that parses a 1.x report needs updating.
 
