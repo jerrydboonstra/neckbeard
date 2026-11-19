@@ -65,11 +65,6 @@ def edit(name, fn):
     return d
 
 
-def card_text(d):
-    m = re.search(r"<details>.*?</details>", run(write(d))[1], re.S)
-    return m.group(0) if m else ""
-
-
 def skill_chars(n):
     def f(t):
         t["skills"][0]["description"] = "d" * n
@@ -160,26 +155,20 @@ for what, fn in [("has_hooks 'unknown'", lambda t: t["hooks"].update(has_hooks="
     chk(f"Reach: {what} (events unreadable) is yellow and names a hook", colours(d)["Reach"] == Y and "a hook" in reach_text(d), reach_text(d))
 for what, fn in [("has_hooks 'partial' (a malformed event)", lambda t: t["hooks"].update(has_hooks="partial", events={"PreToolUse": []}, hook_registrations=0))]:
     d = edit("green", fn)
-    chk(f"Reach: {what} is yellow, names a hook, and the card says the events could not be read",
-        colours(d)["Reach"] == Y and "a hook" in reach_text(d) and "events could not be read" in card_text(d), reach_text(d))
+    chk(f"Reach: {what} is yellow and names a hook",
+        colours(d)["Reach"] == Y and "a hook" in reach_text(d), reach_text(d))
 chk("Reach: a registered hook with hook_registrations 1 and no readable command is yellow", colours(edit("green", lambda t: t["hooks"].update(has_hooks=True, events={}, hook_registrations=1)))["Reach"] == Y)
 
 
-def card_of(out):
-    m = re.search(r"<details>.*?</details>", out, re.S)
-    return m.group(0) if m else ""
-
-
 for name, needles in [("state-files", ["hooks/log.sh"]), ("hook-ssh-subagents", ["ssh box uptime", "hooks/h.txt"]), ("mcp-local", ["local-process"]),
-                      ("mod-real", ["hooks/band/register.tsx"]), ("green", ["skills/a/SKILL.md"]), ("unread", ["mcp_servers"])]:
+                      ("mod-real", ["hooks/band/register.tsx"]), ("green", ["skills/a/SKILL.md"])]:
     out = run(fx(name))[1]
-    table = out.split("<details>")[0]
-    chk(f"the card holds detail the table lacks ({name}: {', '.join(needles)})", all(x in card_of(out) and x not in table for x in needles), card_of(out)[:300])
+    chk(f"the per-file and per-command detail is not printed ({name}: {', '.join(needles)})", not any(x in out for x in needles), out[:300])
 hostile = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "x </details>\n## forged\n| \U0001F7E9 | Cost | x |"))
 out = run(write(hostile))[1]
 hostile2 = edit("hook-local", lambda t: t["hooks"]["events"]["SessionStart"][0].__setitem__("command", "run.sh \U0001F7E2\U0001F7E1\U0001F534"))
-chk("a read marker in a hook command is not printed in the card, and the command still is",
-    not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", run(write(hostile2))[1]) and "run.sh" in card_of(run(write(hostile2))[1]))
+chk("a read marker in a hook command is not printed, and nor is the command",
+    not re.search("[\U0001F7E2\U0001F7E1\U0001F534]", run(write(hostile2))[1]) and "run.sh" not in run(write(hostile2))[1])
 chk("a hostile hook command cannot close the card or forge a heading in it", out.count("</details>") == 1 and "\n## forged" not in out and not re.search(r"^\| \S+ \| Cost \| x \|$", out, re.M), out[-400:])
 
 # 3. a threshold in the rules table moves the colour and the footer together
@@ -260,7 +249,7 @@ chk("7 order: the table, then the colour-rules card; the card holds the sentence
 chk("7 the card is closed by </details> and the rules sit inside it, not after it", out.split("</details>")[0].count("The colours follow written rules") == 1 and out.split("</details>")[1].strip() == "", out[-200:])
 chk("7 Cost row names its unit: 'adds N characters to every session, ~M tokens'", re.search(r"adds [\d,]+ characters to every session, ~[\d,]+ tokens", rows(out)["Cost"][1]) is not None, rows(out)["Cost"][1])
 chk("7 Cost row keeps 'at least' before the number and the unit after it", "adds at least 500 characters to every session" in rows(run(write(built(False)))[1])["Cost"][1], rows(run(write(built(False)))[1])["Cost"][1])
-chk("7 a fully read target adds no Read completeness line", "not read in full" not in out and "Read completeness:" not in out.split("<details>")[0].split("| Read completeness |")[1], out[:600])
+chk("7 a fully read target adds no Read completeness line", "not read in full:" not in out and "**Read completeness**" not in out, out[:600])
 sout = run(fx("state-files"))[1].split("<details>")[0]
 chk("7 Leaves state: one line under the table links to the State it may leave card under What it adds", "State it may leave" in sout and "(#what-it-adds)" in sout, sout[-400:])
 chk("7 a target with no state files has no Leaves state line", "State it may leave" not in out.split("<details>")[0], out[:600])

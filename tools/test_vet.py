@@ -71,7 +71,7 @@ chk("web: temp folder removed", r["temp_left"], [])
 chk("web: title names the sample reader", r["title"], TITLE + " · against the sample reader")
 
 header = hline
-chk("web: header names the target plainly, then who made it", re.fullmatch(r"`\d{4}-\d\d-\d\d` · demo 1\.0\.0 · made by neckbeard \d+\.\d+\.\d+", header(r)) is not None, header(r))
+chk("web: header names the target plainly, then who made it", re.fullmatch(r"`\d{4}-\d\d-\d\d` · demo 1\.0\.0 · made by neckbeard \d+\.\d+\.\d+", header(r)) is not None, True)
 
 # 1b. a target with a GitHub origin: the header links it once, and the ssh form becomes https
 r = run("remote", remote="git@github.com:someone/demo.git")
@@ -248,8 +248,8 @@ try:
     # the header line is vet's own, and the Baseline block sits inside Why this verdict, under its paragraph; --check reads the report
     h = run("header-reader", extra=("--reader", a))
     hl = h["text"].split("\n")
-    chk("reader: the header line is line 3, and the Baseline block is in the Why card", (h["rc"], hl[2].startswith("`") and " \u00b7 neckbeard " in hl[2], h["text"].find("Baseline: readerdir \u00b7 4 rule files") > h["text"].find("<b>Why this verdict</b>") > 0), (0, True, True))
-    chk("reader: that report carries one header line and one Baseline", (sum(1 for l in hl if " \u00b7 neckbeard " in l), sum(1 for l in hl if l.startswith("Baseline: "))), (1, 1))
+    chk("reader: the header line is line 3, and the Baseline block is in the Why card", (h["rc"], hl[2].startswith("`") and " \u00b7 made by neckbeard " in hl[2], h["text"].find("Baseline: readerdir \u00b7 4 rule files") > h["text"].find("<b>Why this verdict</b>") > 0), (0, True, True))
+    chk("reader: that report carries one header line and one Baseline", (sum(1 for l in hl if " \u00b7 made by neckbeard " in l), sum(1 for l in hl if l.startswith("Baseline: "))), (1, 1))
     chk("reader: --check passes on it", facts_check_text(h["text"], "1.0.0"), 0)
     # a non-default folder that happens to be named "the sample reader" is still not the default
     os.makedirs(os.path.join(tmp, "named"))
@@ -329,7 +329,7 @@ chk("badge: a version 1.2.3-rc_1 is escaped 1.2.3--rc__1", "badge/neckbeard-1.2.
 chk("badge: the judged path prints no badge", "img.shields.io" in run("badge-judged")["stdout"], False)
 
 # 11. make report-check: the tagged report must name the tagged version
-def report_check(report_version, tag_after=False, at="`v1.2.0`"):
+def report_check(report_version, tag_after=False, at="`v1.2.0`", old=False):
     tmp = tempfile.mkdtemp()
     try:
         for d in (".claude-plugin", "docs", "tools"):
@@ -338,12 +338,12 @@ def report_check(report_version, tag_after=False, at="`v1.2.0`"):
         shutil.copy(VET, os.path.join(tmp, "tools", "vet"))
         json.dump({"name": "demo", "version": "1.2.0"}, open(os.path.join(tmp, ".claude-plugin", "plugin.json"), "w"))
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
-            "# \U0001F50D demo %s \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo %s @ %s\n" % (report_version, report_version, at))
+            ("# \U0001F50D demo\n\n`2026-11-12` \u00b7 demo %s @ %s \u00b7 made by neckbeard 2.0.0\n" if not old else "# \U0001F50D demo %s \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo %s @ %s\n") % ((report_version, at) if not old else (report_version, report_version, at)))
         git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=tmp, check=True, capture_output=True)
         git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "x"); git("tag", "-a", "v1.2.0", "-m", "x")
         # the working tree is made right after the tag: the check must read the tagged tree, not this one
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
-            "# \U0001F50D demo 1.2.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.2.0 @ `v1.2.0`\n")
+            "# \U0001F50D demo\n\n`2026-11-12` \u00b7 demo 1.2.0 @ `v1.2.0` \u00b7 made by neckbeard 2.0.0\n")
         p = subprocess.run(["make", "--no-print-directory", "report-check"], cwd=tmp, capture_output=True, text=True)
         return p.returncode, p.stdout + p.stderr
     finally:
@@ -372,20 +372,21 @@ def untracked_only(target):   # a commit, then a new untracked file only
     dirty(target)
     subprocess.run(["git", "checkout", "-q", "--", "."], cwd=target, check=True)
     open(os.path.join(target, "new.txt"), "w").write("x\n")
-def header_of(r): return next((l for l in r["text"].splitlines() if " · neckbeard " in l), "")
+NBV = json.load(open(os.path.join(NB, ".claude-plugin", "plugin.json")))["version"]
+def header_of(r): return next((l for l in r["text"].splitlines() if " · made by neckbeard " in l), "")
 def source_commit(r): return next((l for l in r["text"].splitlines() if l.startswith("- Commit: ")), "")
 d = run("dirty", extra=("--facts",), fake_body=NO_CLAUDE, setup=dirty)
-chk("label: a tracked file changed after the commit: the header ends '+ uncommitted changes'", header_of(d).endswith(" + uncommitted changes`"), True)
+chk("label: a tracked file changed after the commit: the header ends '+ uncommitted changes'", header_of(d).removesuffix(" · made by neckbeard " + NBV).endswith(" + uncommitted changes`"), True)
 chk("label: the Source 'Commit:' line shows the same label", re.fullmatch(r"- Commit: [0-9a-f]+ \+ uncommitted changes", source_commit(d)) is not None, True)
 u = run("untracked", extra=("--facts",), fake_body=NO_CLAUDE, setup=untracked_only)
 chk("label: an untracked file alone does not count as uncommitted", ("uncommitted" in header_of(u), "uncommitted" in source_commit(u)), (False, False))
 c = run("clean-label", extra=("--facts",), fake_body=NO_CLAUDE, commit=True)
-chk("label: a clean checkout is unchanged: '@ `<sha>`' and a bare sha in Source", (header_of(c).endswith(" @ `%s`" % c["sha"]), source_commit(c)), (True, "- Commit: " + c["sha"]))
+chk("label: a clean checkout is unchanged: '@ `<sha>`' and a bare sha in Source", (header_of(c).removesuffix(" · made by neckbeard " + NBV).endswith(" @ `%s`" % c["sha"]), source_commit(c)), (True, "- Commit: " + c["sha"]))
 t1 = run("release-tag", extra=("--facts", "--release-tag", "v9.9.9"), fake_body=NO_CLAUDE, commit=True)
-chk("--release-tag: the header names the tag and no sha", (t1["rc"], header_of(t1).endswith(" @ `v9.9.9`"), t1["sha"] in header_of(t1)), (0, True, False))
+chk("--release-tag: the header names the tag and no sha", (t1["rc"], header_of(t1).removesuffix(" · made by neckbeard " + NBV).endswith(" @ `v9.9.9`"), t1["sha"] in header_of(t1)), (0, True, False))
 chk("--release-tag: the Source line names the tag and no sha", (source_commit(t1), t1["sha"] in t1["text"]), ("- Commit: v9.9.9", False))
 t2 = run("release-tag-dirty", extra=("--facts", "--release-tag", "v9.9.9"), fake_body=NO_CLAUDE, setup=dirty)
-chk("--release-tag wins over uncommitted changes", ("uncommitted" in t2["text"], header_of(t2).endswith(" @ `v9.9.9`")), (False, True))
+chk("--release-tag wins over uncommitted changes", ("uncommitted" in t2["text"], header_of(t2).removesuffix(" · made by neckbeard " + NBV).endswith(" @ `v9.9.9`")), (False, True))
 t3 = run("release-tag-judged", extra=("--release-tag", "v9.9.9"))
 chk("--release-tag with a judged run: a usage error, no report, no judge call", (t3["rc"], t3["report"], len(t3["calls"]), "usage:" in t3["out"]), (2, False, 0, True))
 chk("usage names --release-tag", "--facts takes only --repo and --release-tag" in t3["out"], True)
@@ -395,6 +396,8 @@ rc, out = report_check("1.2.0", at="`v1.1.0`")
 chk("report-check: a tagged report naming another tag fails, and says which tag it wanted", (rc != 0, "must name the tag" in out and "v1.2.0" in out), (True, True))
 rc, out = report_check("1.2.0", at="`v1.2.0`")
 chk("report-check: a tagged report naming the tag passes", rc, 0)
+rc, out = report_check("1.2.0", old=True)
+chk("report-check: the pre-2.0 header (neckbeard first, no 'made by') is refused, so a stale report cannot be tagged", (rc != 0, "must name the tag" in out), (True, True))
 chk("--check still passes on a report whose header carries '@ `<sha> + uncommitted changes`'", facts_check_text("# \U0001F50D demo 1.0.0 \u00b7 what it adds\n\n`2026-11-12` \u00b7 neckbeard 1.17.0 \u00b7 demo 1.0.0 @ `abc1234 + uncommitted changes`\n", "1.0.0"), 0)
 chk("--release-tag with a backtick, a slash, a space or a newline: a usage error", [subprocess.run([VET, ".", "/dev/null", "--facts", "--release-tag", v], capture_output=True, text=True).returncode for v in ("v1`x", "/private/x", "v 1", "v1\nx")], [2, 2, 2, 2])
 chk("--release-tag with no value or an empty one: a usage error", [subprocess.run([VET, ".", "/dev/null", "--facts", "--release-tag", *a], capture_output=True, text=True).returncode for a in ([], [""])], [2, 2])

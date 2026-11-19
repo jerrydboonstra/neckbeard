@@ -3,7 +3,7 @@
 (🟩🟨🟧🟥), a name and one line. No model call. Same style as tools/part1: reads only the dossier's `target`, prints Markdown,
 and two runs on one dossier are byte-identical.
 
-The card behind the table lists the files, commands, servers and mods each row counts (the first 10 of each). It prints no layer heading: the report that uses the table writes its own. The Cost bands and the command-word lists live in one table,
+Under the table, one line each for Leaves state (a link to the "State it may leave" card) and Read completeness (the sections not read in full), only when there is something to say, then one collapsed card, "How the colours are set", holding the rules. It prints no layer heading: the report that uses the table writes its own. The Cost bands and the command-word lists live in one table,
 RULES, and the footer prints them from it, so changing one changes the colour and the footer together; the other footer rules are written
 by hand and kept in step with the code by hand.
 A row's rules are checked top to bottom: the first that matches wins. A row whose input sections (target.read_status) are not all
@@ -142,7 +142,7 @@ def cost(t, sec, hooks, hsec):
     b = RULES["cost_bands"]
     colour = G if total < b[0] else Y if total < b[1] else O if total < b[2] else R
     lower = any(isinstance(i, dict) and i.get("built_at_run_time") for i in inj)
-    line = (f"adds {'at least ' if lower else ''}{n(total)} to every session, ~{n((total + 2) // 4)} tokens"
+    line = (f"adds {'at least ' if lower else ''}{n(total)} characters to every session, ~{n((total + 2) // 4)} tokens"
             f" ({n(skills)} skill descriptions, {n(agents)} agent descriptions, {n(rules)} rule files, {n(hook)} hook text"
             f"{', counted twice because hooks reach subagents' if twice and hook else ''})")
     return finish(colour, line, states)
@@ -222,47 +222,6 @@ def safe(text, cap=200):
     return re.sub("[\U0001F7E2\U0001F7E1\U0001F534]", "", part1.safe(text, cap=cap))
 
 
-SHOWN = 10   # entries listed per row in the card; the rest are counted
-
-
-def listed(items):
-    items = list(items)
-    return items[:SHOWN] + ([f"and {len(items) - SHOWN} more"] if len(items) > SHOWN else [])
-
-
-def details(t, hooks, sec):
-    """{row name: [the detail lines behind the row]}: the files, commands and modules the row's line counts."""
-    root = t.get("path") if isinstance(t.get("path"), str) else ""
-
-    def rel(e):
-        p = str(e.get("path") or e.get("source") or e.get("file") or "") if isinstance(e, dict) else str(e)
-        if root and p.startswith(root.rstrip("/") + "/"):
-            p = os.path.relpath(p, root)
-        return safe(p) or "(unnamed)"
-
-    out = {name: [] for name in ROW_NAMES}
-    for kind, key in (("skill", "skills"), ("agent", "agents")):
-        out["Cost"] += [f"{kind} {rel(e)}: {n(len(str(e.get('description') or '')))} of description" for e in as_list(t.get(key)) if isinstance(e, dict) and not e.get("refused")]
-    out["Cost"] += [f"rule file {rel(r)}: {n(r['bytes'])}" for r in as_list(t.get("rule_files")) if isinstance(r, dict) and size_of(r.get("bytes")) is not None and not r.get("refused")]
-    twice = " (counted twice: hooks reach subagents)" if hooks.get("hooks_reach_subagents") is True else ""
-    out["Cost"] += [f"hook text {rel(i)}: {n(i['bytes'])}{twice}" for i in as_list(hooks.get("injected_content")) if isinstance(i, dict) and size_of(i.get("bytes")) is not None]
-    unreadable = ["hook: the events could not be read"] if hook_present(hooks) and not hook_commands(hooks) and not (isinstance(hooks.get("hook_registrations"), int) and hooks["hook_registrations"] > 0) else []
-    out["Reach"] = (unreadable + [f"hook: {safe(c, cap=200)}" for c in hook_commands(hooks)] + [f"mod: {rel(m)}" for m in as_list(hooks.get("mods"))]
-                    + [f"rule file: {rel(r)}" for r in as_list(t.get("rule_files"))])
-    if hooks.get("hooks_reach_subagents_basis"):
-        out["Reach"].append(f"subagent reach: {safe(hooks['hooks_reach_subagents_basis'])}")
-    out["Leaves state"] = [f"may write state: {rel(p)}" for p in as_list(t.get("persistence_candidates"))]
-    ev = hooks.get("events") if isinstance(hooks.get("events"), dict) else {}
-    out["Live surface"] = [f"hook {safe(e)}: {safe(c['command'], cap=200)}" for e, cs in ev.items() for c in as_list(cs) if isinstance(c, dict) and isinstance(c.get("command"), str)]
-    mcp = t.get("mcp_servers") if isinstance(t.get("mcp_servers"), dict) else {}
-    for sv in (x for x in as_list(mcp.get("servers")) if isinstance(x, dict)):
-        how = safe(sv.get("url") or sv.get("command") or "", cap=120)
-        out["Live surface"].append(f"MCP server {safe(sv.get('name') or '(unnamed)')} ({', '.join(x for x in (safe(sv.get('transport')), how) if x)})")
-    out["Live surface"] += [f"mod: {rel(m)}" for m in as_list(hooks.get("mods"))]
-    out["Read completeness"] = [f"{safe(k)}: {safe(v.get('state') if isinstance(v, dict) else 'failed')}" for k, v in sorted(t["read_status"].items())]
-    return {k: listed(v) for k, v in out.items()}
-
-
 def footer():
     b = RULES["cost_bands"]
     return [
@@ -291,10 +250,15 @@ def render(d):
               ("Live surface", *live(t, sec, hooks)), ("Read completeness", READ_COLOUR[state], state)]
     out = ["| | Row | In short |", "|---|---|---|"]
     out += [f"| {c} | {name} | {line} |" for name, c, line in result]
-    more = details(t, hooks, sec)
-    body = [x for name, c, line in result for x in [f"- **{name}** {c}: {line}"] + [f"  - {d}" for d in more[name]]]
-    out += [""] + card("", "At a glance in full", "", body) + [""]
-    return "\n".join(out + footer()) + "\n"
+    notes = []
+    if as_list(t.get("persistence_candidates")):
+        notes.append("- **Leaves state**: the files are listed in the \"State it may leave\" card under [What it adds](#what-it-adds).")
+    state_of = lambda v: v.get("state") if isinstance(v, dict) else "failed"
+    unread = sorted(k for k, v in t["read_status"].items() if state_of(v) not in ("read", "not-applicable"))
+    if unread:
+        notes.append("- **Read completeness**: not read in full: " + ", ".join(f"{safe(k)} ({safe(state_of(t['read_status'][k]))})" for k in unread) + ".")
+    out += ([""] + notes if notes else []) + [""] + card("", "How the colours are set", "", footer()) + [""]
+    return "\n".join(out)
 
 
 def main(argv):

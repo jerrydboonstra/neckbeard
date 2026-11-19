@@ -1,6 +1,6 @@
-# 🔍 viral-launch-pipeline 1.0.0 · how it affects you, what it adds, where it takes a position
+# 🔍 viral-launch-pipeline
 
-`2026-11-18` · neckbeard 1.17.8 · [Koz-TV/viral-launch-pipeline](https://github.com/Koz-TV/viral-launch-pipeline) 1.0.0 @ `475705f`
+`2026-11-18` · [Koz-TV/viral-launch-pipeline](https://github.com/Koz-TV/viral-launch-pipeline) 1.0.0 @ `475705f` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -16,31 +16,13 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟩 | Cost | adds 571 to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟩 | Cost | adds 571 characters to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟩 | Reach | on demand only |
 | 🟩 | Leaves state | nothing found |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 | 🟩 | Read completeness | read in full |
 
-<details><summary><b>At a glance in full</b></summary>
-
-- **Cost** 🟩: adds 571 to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text)
-  - skill skills/viral-launch/SKILL.md: 571 of description
-- **Reach** 🟩: on demand only
-- **Leaves state** 🟩: nothing found
-- **Live surface** 🟩: no hook commands, MCP servers or mods found
-- **Read completeness** 🟩: read in full
-  - agents: read
-  - commands: read
-  - hooks: read
-  - marketplace: read
-  - mcp_servers: read
-  - persistence_candidates: read
-  - plugin_json: read
-  - rule_files: read
-  - skills: read
-
-</details>
+<details><summary><b>How the colours are set</b></summary>
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
@@ -49,6 +31,8 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
 - Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.
+
+</details>
 
 ---
 

@@ -1,6 +1,6 @@
-# 🔍 spec-kit · how it affects you, what it adds, where it takes a position
+# 🔍 spec-kit
 
-`2026-11-18` · neckbeard 1.17.8 · [github/spec-kit](https://github.com/github/spec-kit) @ `0019fa14`
+`2026-11-18` · [github/spec-kit](https://github.com/github/spec-kit) @ `0019fa14` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -16,43 +16,16 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟨 | Cost | adds 626 to every session, ~157 tokens (626 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
+| 🟨 | Cost | adds 626 characters to every session, ~157 tokens (626 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
 | 🟨 | Reach | on demand only (not read in full) |
 | 🟧 | Leaves state | 124 files that may write state |
 | 🟨 | Live surface | no hook commands, MCP servers or mods found (not read in full) |
 | 🟨 | Read completeness | partly read |
 
-<details><summary><b>At a glance in full</b></summary>
+- **Leaves state**: the files are listed in the "State it may leave" card under [What it adds](#what-it-adds).
+- **Read completeness**: not read in full: hooks (partial).
 
-- **Cost** 🟨: adds 626 to every session, ~157 tokens (626 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full)
-  - skill .github/skills/code-review/SKILL.md: 303 of description
-  - skill .github/skills/add-community-extension/SKILL.md: 323 of description
-- **Reach** 🟨: on demand only (not read in full)
-- **Leaves state** 🟧: 124 files that may write state
-  - may write state: .devcontainer/post-create.sh
-  - may write state: .github/scripts/check_extension_version_bump.py
-  - may write state: .github/scripts/check_security_requirements.py
-  - may write state: .github/scripts/validate_community_preset.py
-  - may write state: .github/scripts/validate_community_workflow_step.py
-  - may write state: extensions/agent-context/scripts/bash/update-agent-context.sh
-  - may write state: extensions/agent-context/scripts/python/update_agent_context.py
-  - may write state: extensions/git/scripts/bash/auto-commit.sh
-  - may write state: extensions/git/scripts/bash/create-new-feature-branch.sh
-  - may write state: extensions/git/scripts/bash/git-common.sh
-  - and 114 more
-- **Live surface** 🟨: no hook commands, MCP servers or mods found (not read in full)
-- **Read completeness** 🟨: partly read
-  - agents: read
-  - commands: read
-  - hooks: partial
-  - marketplace: not-applicable
-  - mcp_servers: read
-  - persistence_candidates: read
-  - plugin_json: not-applicable
-  - rule_files: read
-  - skills: read
-
-</details>
+<details><summary><b>How the colours are set</b></summary>
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
@@ -61,6 +34,8 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
 - Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.
+
+</details>
 
 ---
 

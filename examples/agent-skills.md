@@ -1,6 +1,6 @@
-# 🔍 agent-skills 0.6.16 · how it affects you, what it adds, where it takes a position
+# 🔍 agent-skills
 
-`2026-11-18` · neckbeard 1.17.8 · [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) 0.6.16 @ `39b723c`
+`2026-11-18` · [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) 0.6.16 @ `39b723c` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -16,53 +16,16 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟧 | Cost | adds 14,854 to every session, ~3,714 tokens (10,006 skill descriptions, 754 agent descriptions, 4,094 rule files, 0 hook text) (not read in full) |
+| 🟧 | Cost | adds 14,854 characters to every session, ~3,714 tokens (10,006 skill descriptions, 754 agent descriptions, 4,094 rule files, 0 hook text) (not read in full) |
 | 🟨 | Reach | a rule file in every main session (not read in full) |
 | 🟧 | Leaves state | 22 files that may write state |
 | 🟨 | Live surface | no hook commands, MCP servers or mods found (not read in full) |
 | 🟨 | Read completeness | partly read |
 
-<details><summary><b>At a glance in full</b></summary>
+- **Leaves state**: the files are listed in the "State it may leave" card under [What it adds](#what-it-adds).
+- **Read completeness**: not read in full: hooks (partial), marketplace (partial), persistence_candidates (partial).
 
-- **Cost** 🟧: adds 14,854 to every session, ~3,714 tokens (10,006 skill descriptions, 754 agent descriptions, 4,094 rule files, 0 hook text) (not read in full)
-  - skill skills/api-and-interface-design/SKILL.md: 251 of description
-  - skill skills/browser-testing-with-devtools/SKILL.md: 326 of description
-  - skill skills/ci-cd-and-automation/SKILL.md: 207 of description
-  - skill skills/code-review-and-quality/SKILL.md: 374 of description
-  - skill skills/code-simplification/SKILL.md: 418 of description
-  - skill skills/constraint-driven-development/SKILL.md: 880 of description
-  - skill skills/context-engineering/SKILL.md: 198 of description
-  - skill skills/debugging-and-error-recovery/SKILL.md: 599 of description
-  - skill skills/deprecation-and-migration/SKILL.md: 334 of description
-  - skill skills/documentation-and-adrs/SKILL.md: 450 of description
-  - and 20 more
-- **Reach** 🟨: a rule file in every main session (not read in full)
-  - rule file: CLAUDE.md
-- **Leaves state** 🟧: 22 files that may write state
-  - may write state: evals/fixtures/ci-cd-and-automation/src/slug.js
-  - may write state: hooks/sdd-cache-post.sh
-  - may write state: hooks/sdd-cache-pre.sh
-  - may write state: hooks/sdd-cache-test.sh
-  - may write state: hooks/session-start-test.sh
-  - may write state: hooks/session-start.sh
-  - may write state: hooks/simplify-ignore-test.sh
-  - may write state: hooks/simplify-ignore.sh
-  - may write state: scripts/floor-guard-reference-test.js
-  - may write state: scripts/lib/skill-lint-test.js
-  - and 12 more
-- **Live surface** 🟨: no hook commands, MCP servers or mods found (not read in full)
-- **Read completeness** 🟨: partly read
-  - agents: read
-  - commands: read
-  - hooks: partial
-  - marketplace: partial
-  - mcp_servers: read
-  - persistence_candidates: partial
-  - plugin_json: read
-  - rule_files: read
-  - skills: read
-
-</details>
+<details><summary><b>How the colours are set</b></summary>
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
@@ -71,6 +34,8 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
 - Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.
+
+</details>
 
 ---
 
@@ -330,8 +295,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - ""The refactor makes it cleaner" | Relocating complexity isn't reducing it. If the reader still holds the same number of concepts, the structure didn't improve — look for the version where branches di…" [`skills/code-review-and-quality/SKILL.md:367`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-review-and-quality/SKILL.md#L367)
 - ""It's just a version bump" | A bump is a behavior change you didn't write. Read the changelog; semver doesn't guarantee no breakage." [`skills/code-review-and-quality/SKILL.md:369`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-review-and-quality/SKILL.md#L369)
 - "A refactor that moves code around without reducing the number of concepts a reader must hold" [`skills/code-review-and-quality/SKILL.md:382`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-review-and-quality/SKILL.md#L382)
-- "All inputs, outputs, side effects, error behavior, and edge cases must remain identical." [`skills/code-simplification/SKILL.md:34`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-simplification/SKILL.md#L34)
 - "Don't change what the code does — only how it expresses it." [`skills/code-simplification/SKILL.md:34`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-simplification/SKILL.md#L34)
+- "All inputs, outputs, side effects, error behavior, and edge cases must remain identical." [`skills/code-simplification/SKILL.md:34`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-simplification/SKILL.md#L34)
 - "Avoid drive-by refactors of unrelated code unless explicitly asked to broaden scope." [`skills/code-simplification/SKILL.md:103`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-simplification/SKILL.md#L103)
 - "Avoid batching multiple simplifications into a single untested change." [`skills/code-simplification/SKILL.md:169`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-simplification/SKILL.md#L169)
 - ""It's working, no need to touch it" | Working code that's hard to read will be hard to fix when it breaks. Simplifying now saves time on every future change." [`skills/code-simplification/SKILL.md:301`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/code-simplification/SKILL.md#L301)
@@ -1043,8 +1008,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "In Deep mode, always state which artifacts were provided and which fields remain unmeasured." [`agents/web-performance-auditor.md:178`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L178)
 - "Plan if needed. If there is no tasks/plan.md, invoke the planning-and-task-breakdown skill to generate one, and record the spec it was generated from as a \`Source spec: &lt;path>\` line at the top of the…" [`commands/build.toml:32`](https://github.com/addyosmani/agent-skills/blob/39b723c/commands/build.toml#L32)
 - "The personas operate independently — no shared state, no ordering — which is what makes parallel execution safe and useful here." [`commands/ship.toml:6`](https://github.com/addyosmani/agent-skills/blob/39b723c/commands/ship.toml#L6)
-- "**Set retention from the longest retry chain**, not from disk cost." [`skills/api-and-interface-design/SKILL.md:217`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/api-and-interface-design/SKILL.md#L217)
 - "Keys must outlive every path that can re-deliver the same intent, including a dead-letter queue replayed a week later and any provider dispute window." [`skills/api-and-interface-design/SKILL.md:217`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/api-and-interface-design/SKILL.md#L217)
+- "**Set retention from the longest retry chain**, not from disk cost." [`skills/api-and-interface-design/SKILL.md:217`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/api-and-interface-design/SKILL.md#L217)
 - "Add the following to your project's \`.mcp.json\` or Claude Code settings:" [`skills/browser-testing-with-devtools/SKILL.md:28`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/browser-testing-with-devtools/SKILL.md#L28)
 - "**Read-only by default.** Use JavaScript execution for inspecting state (reading variables, querying the DOM, checking computed values), not for modifying page behavior." [`skills/browser-testing-with-devtools/SKILL.md:86`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/browser-testing-with-devtools/SKILL.md#L86)
 - ""I need to read localStorage to debug this" | Credential material is off-limits. Inspect application state through non-sensitive variables instead." [`skills/browser-testing-with-devtools/SKILL.md:291`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/browser-testing-with-devtools/SKILL.md#L291)
@@ -1098,8 +1063,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Event or tag based | Fresh on write, but writers now have to know the cache topology" [`skills/performance-optimization/references/optimization-patterns.md:245`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/performance-optimization/references/optimization-patterns.md#L245)
 - "Versioned keys (\`user:42:profile:v7\`) | Never invalidate, just stop reading old keys. Costs memory until eviction" [`skills/performance-optimization/references/optimization-patterns.md:246`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/performance-optimization/references/optimization-patterns.md#L246)
 - "**Guard against the stampede.** A hot key expires, every concurrent request misses together, and the origin takes the full load at once, which is how a cache turns into an outage instead of preventin…" [`skills/performance-optimization/references/optimization-patterns.md:248`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/performance-optimization/references/optimization-patterns.md#L248)
-- "See \`../../../references/performance-checklist.md#caching-strategies\` for request coalescing, write strategies, negative caching, and the cache checklist." [`skills/performance-optimization/references/optimization-patterns.md:250`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/performance-optimization/references/optimization-patterns.md#L250)
 - "**Do not cache:** anything whose staleness is a correctness bug (balances, permissions, inventory at checkout), or per-user data under a key that does not identify the user." [`skills/performance-optimization/references/optimization-patterns.md:250`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/performance-optimization/references/optimization-patterns.md#L250)
+- "See \`../../../references/performance-checklist.md#caching-strategies\` for request coalescing, write strategies, negative caching, and the cache checklist." [`skills/performance-optimization/references/optimization-patterns.md:250`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/performance-optimization/references/optimization-patterns.md#L250)
 - "**When NOT to use:** Single-file changes with obvious scope, or when the spec already contains well-defined tasks." [`skills/planning-and-task-breakdown/SKILL.md:20`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/planning-and-task-breakdown/SKILL.md#L20)
 - "Instead of building all the database, then all the API, then all the UI — build one complete feature path at a time:" [`skills/planning-and-task-breakdown/SKILL.md:59`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/planning-and-task-breakdown/SKILL.md#L59)
 - "**Plan document:** Save the implementation plan to \`tasks/plan.md\`. This is always a markdown file — design decisions, risks, and open questions don't map cleanly onto individual tracker issues." [`skills/planning-and-task-breakdown/SKILL.md:145`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/planning-and-task-breakdown/SKILL.md#L145)
@@ -1117,8 +1082,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - ""Delete my account" that only flips a flag while the personal data lingers in stores and backups" [`skills/security-and-hardening/SKILL.md:199`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/SKILL.md#L199)
 - "A shape check ("absolute path, at least one directory deep") proves well-formedness and gets mistaken for authorization; that is how a cleanup routine deletes the root instead of the leaf." [`skills/security-and-hardening/references/hardening-patterns.md:213`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/references/hardening-patterns.md#L213)
 - "On refusal, log the rejected target and stop: a cleanup that falls back to a broader default path is the failure this guards against." [`skills/security-and-hardening/references/hardening-patterns.md:215`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/references/hardening-patterns.md#L215)
-- "And resolving a path and then operating on the *name* is a check/use race wherever an untrusted process can swap an ancestor: on a shared volume, hold the target by descriptor and use no-follow, bene…" [`skills/security-and-hardening/references/hardening-patterns.md:217`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/references/hardening-patterns.md#L217)
 - "A marker inside the tree is self-attestation — anything that can write there can write the marker — so the expected owner has to come from authenticated state, and the marker needs integrity protecti…" [`skills/security-and-hardening/references/hardening-patterns.md:217`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/references/hardening-patterns.md#L217)
+- "And resolving a path and then operating on the *name* is a check/use race wherever an untrusted process can swap an ancestor: on a shared volume, hold the target by descriptor and use no-follow, bene…" [`skills/security-and-hardening/references/hardening-patterns.md:217`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/references/hardening-patterns.md#L217)
 - "**Count in a shared store once there is more than one process.** \`express-rate-limit\` keeps its counters in process memory by default." [`skills/security-and-hardening/references/hardening-patterns.md:266`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/security-and-hardening/references/hardening-patterns.md#L266)
 - "Don't nest feature flags (creates exponential combinations)" [`skills/shipping-and-launch/SKILL.md:107`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/shipping-and-launch/SKILL.md#L107)
 - ""We don't need feature flags for this" | Every feature benefits from a kill switch. Even "simple" changes can break things." [`skills/shipping-and-launch/SKILL.md:298`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/shipping-and-launch/SKILL.md#L298)
@@ -1234,8 +1199,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Info** | Best practice recommendation, no current risk | Consider adopting" [`agents/security-auditor.md:65`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/security-auditor.md#L65)
 - "Check the OWASP Top 10 (and the LLM Top 10 for AI features) as a minimum baseline" [`agents/security-auditor.md:103`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/security-auditor.md#L103)
 - "Read the code being tested to understand its behavior" [`agents/test-engineer.md:15`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/test-engineer.md#L15)
-- "If a source is unavailable, do not fabricate." [`agents/web-performance-auditor.md:39`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L39)
 - "Skip the related section of the scorecard and continue with what you have." [`agents/web-performance-auditor.md:39`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L39)
+- "If a source is unavailable, do not fabricate." [`agents/web-performance-auditor.md:39`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L39)
 - "**Never fabricate metrics.** An LLM reading static source code cannot measure real-world LCP, INP, or CLS." [`agents/web-performance-auditor.md:43`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L43)
 - "If no tool data is provided:" [`agents/web-performance-auditor.md:43`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L43)
 - "Field and lab data are not interchangeable: field is what real users experienced, lab is a single synthetic run." [`agents/web-performance-auditor.md:49`](https://github.com/addyosmani/agent-skills/blob/39b723c/agents/web-performance-auditor.md#L49)
@@ -1333,8 +1298,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Work is unfinished.** A stub that throws, an empty \`catch\` turning a failure into silence, a \`TODO\` standing where the implementation should be." [`skills/constraint-driven-development/SKILL.md:218`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L218)
 - "Tightening the bar should be silent; loosening it should be loud." [`skills/constraint-driven-development/SKILL.md:221`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L221)
 - "Check that at least one external constraint is present." [`skills/constraint-driven-development/SKILL.md:231`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L231)
-- "Put it in the "Measured, not yet enforced" table with today's number and a direction." [`skills/constraint-driven-development/SKILL.md:237`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L237)
 - "Every check compares against the recorded value, not an aspiration." [`skills/constraint-driven-development/SKILL.md:237`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L237)
+- "Put it in the "Measured, not yet enforced" table with today's number and a direction." [`skills/constraint-driven-development/SKILL.md:237`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L237)
 - "Architectural rot shows up over months and never reaches the weights." [`skills/constraint-driven-development/SKILL.md:239`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L239)
 - "A ratchet is the missing penalty, written down where the build can see it." [`skills/constraint-driven-development/SKILL.md:239`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L239)
 - "When the user has no opinion, use these." [`skills/constraint-driven-development/SKILL.md:243`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L243)
@@ -1349,8 +1314,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "\`ci-cd-and-automation\` — building the pipeline these constraints run in" [`skills/constraint-driven-development/SKILL.md:316`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/SKILL.md#L316)
 - "Adapt the patterns to your stack; keep the contract identical." [`skills/constraint-driven-development/references/floor-guard.md:5`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/references/floor-guard.md#L5)
 - "**Tightening is silent, loosening is loud:** only surfaces moves that lower the bar." [`skills/constraint-driven-development/references/floor-guard.md:13`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/constraint-driven-development/references/floor-guard.md#L13)
-- "Don't load the entire spec if only one section applies." [`skills/context-engineering/SKILL.md:82`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/context-engineering/SKILL.md#L82)
 - "Load the relevant spec section when starting a feature." [`skills/context-engineering/SKILL.md:82`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/context-engineering/SKILL.md#L82)
+- "Don't load the entire spec if only one section applies." [`skills/context-engineering/SKILL.md:82`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/context-engineering/SKILL.md#L82)
 - "**Wasteful:** "Here's our entire 5000-word spec: \[full spec\]" (when only working on auth)" [`skills/context-engineering/SKILL.md:86`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/context-engineering/SKILL.md#L86)
 - "Read any type definitions or interfaces involved" [`skills/context-engineering/SKILL.md:96`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/context-engineering/SKILL.md#L96)
 - "**Start fresh sessions** when switching between major features" [`skills/context-engineering/SKILL.md:117`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/context-engineering/SKILL.md#L117)
@@ -1384,8 +1349,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Run old and new systems in parallel." [`skills/deprecation-and-migration/SKILL.md:124`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L124)
 - "Consumers keep using the old interface while you migrate the backend." [`skills/deprecation-and-migration/SKILL.md:136`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L136)
 - "**Worked example — renaming \`name\` to \`full_name\`:**" [`skills/deprecation-and-migration/SKILL.md:180`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L180)
-- "Treat each phase as a thin vertical slice — see the \`incremental-implementation\` skill." [`skills/deprecation-and-migration/SKILL.md:188`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L188)
 - "Each step is independently deployable and reversible: if step 4 misbehaves, roll the code back and \`full_name\` is still being populated." [`skills/deprecation-and-migration/SKILL.md:188`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L188)
+- "Treat each phase as a thin vertical slice — see the \`incremental-implementation\` skill." [`skills/deprecation-and-migration/SKILL.md:188`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L188)
 - "**Build large indexes without blocking writes** (e.g. Postgres \`CREATE INDEX CONCURRENTLY\`)." [`skills/deprecation-and-migration/SKILL.md:194`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L194)
 - "No assigned maintainer or team" [`skills/deprecation-and-migration/SKILL.md:202`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L202)
 - "Documentation that references systems that no longer exist" [`skills/deprecation-and-migration/SKILL.md:205`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/deprecation-and-migration/SKILL.md#L205)
@@ -1426,8 +1391,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - ""I'm confident, skip the doubt step" | Confidence correlates poorly with correctness on novel problems. Moments of certainty are exactly when blind spots hide." [`skills/doubt-driven-development/SKILL.md:199`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/doubt-driven-development/SKILL.md#L199)
 - ""If I doubt every step I'll never ship" | The skill applies to non-trivial decisions, not every keystroke. Re-read "When NOT to Use."" [`skills/doubt-driven-development/SKILL.md:203`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/doubt-driven-development/SKILL.md#L203)
 - ""Two opinions are always better than one" | Not when the second has less context and produces noise. Reconcile, don't defer." [`skills/doubt-driven-development/SKILL.md:204`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/doubt-driven-development/SKILL.md#L204)
-- "This means real design system adherence, proper accessibility, thoughtful interaction patterns, and no generic "AI aesthetic."" [`skills/frontend-ui-engineering/SKILL.md:10`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/frontend-ui-engineering/SKILL.md#L10)
 - "Build production-quality user interfaces that are accessible, performant, and visually polished." [`skills/frontend-ui-engineering/SKILL.md:10`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/frontend-ui-engineering/SKILL.md#L10)
+- "This means real design system adherence, proper accessibility, thoughtful interaction patterns, and no generic "AI aesthetic."" [`skills/frontend-ui-engineering/SKILL.md:10`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/frontend-ui-engineering/SKILL.md#L10)
 - "**Prefer composition over configuration:**" [`skills/frontend-ui-engineering/SKILL.md:42`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/frontend-ui-engineering/SKILL.md#L42)
 - "**Keep components focused:**" [`skills/frontend-ui-engineering/SKILL.md:64`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/frontend-ui-engineering/SKILL.md#L64)
 - "When the product needs a distinct visual direction, collect evidence before choosing a layout:" [`skills/frontend-ui-engineering/SKILL.md:124`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/frontend-ui-engineering/SKILL.md#L124)
@@ -1488,8 +1453,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Just "keep your regulars ordering direct."" [`skills/idea-refine/examples.md:43`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L43)
 - "**Core bet:** Restaurants need both the channel (a way to accept orders) and the engine (a way to keep customers coming back through that channel)." [`skills/idea-refine/examples.md:73`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L73)
 - "**The honest read:** Direction A is the sharper bet." [`skills/idea-refine/examples.md:80`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L80)
-- "But if you build the channel first, you're just another Square Online competitor." [`skills/idea-refine/examples.md:82`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L82)
 - "If the regulars engine works, you can add a branded ordering channel later." [`skills/idea-refine/examples.md:82`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L82)
+- "But if you build the channel first, you're just another Square Online competitor." [`skills/idea-refine/examples.md:82`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L82)
 - "And the tool needs to run itself, because the owner is in the kitchen, not at a dashboard." [`skills/idea-refine/examples.md:98`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L98)
 - "Restaurant owner adds regulars manually (name + phone + usual order) — 15-minute setup" [`skills/idea-refine/examples.md:109`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L109)
 - "No delivery — pickup only in v1" [`skills/idea-refine/examples.md:112`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L112)
@@ -1501,8 +1466,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "You need to close deals, which means you need this shipped, which means you need the simplest version that checks the box." [`skills/idea-refine/examples.md:166`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L166)
 - "**User invokes:** \`/ideate a better way to run our weekly team retrospectives — they've gotten stale and people dread them\`" [`skills/idea-refine/examples.md:178`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L178)
 - "**What does a *good* retro look like to you?** Have you had one that worked? What made it different?" [`skills/idea-refine/examples.md:190`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L190)
-- "The first fix should take 0 minutes of prep and $0.*" [`skills/idea-refine/examples.md:218`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L218)
 - "*Phase 3 would produce a one-pager recommending starting with variation 1 (one action item, demo next week) as a zero-cost experiment, combined with variation 3's anonymous submission. "Not Doing" li…" [`skills/idea-refine/examples.md:218`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L218)
+- "The first fix should take 0 minutes of prep and $0.*" [`skills/idea-refine/examples.md:218`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L218)
 - "**The "Not Doing" list does real work.** It's specific and reasoned. Each item is something you might *want* to do but shouldn't yet." [`skills/idea-refine/examples.md:236`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/examples.md#L236)
 - "Use these frameworks selectively." [`skills/idea-refine/frameworks.md:3`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L3)
 - "**Combine:** What if you merged this with another product, service, or idea? What two things that don't usually go together would create something new?" [`skills/idea-refine/frameworks.md:10`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L10)
@@ -1513,8 +1478,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Broad enough to allow creative solutions (not "...add a recommendation sidebar")" [`skills/idea-refine/frameworks.md:29`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L29)
 - "**What are we assuming?** List every assumption, even the ones that feel obvious" [`skills/idea-refine/frameworks.md:44`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L44)
 - "**Rebuild from the truths.** If you only had the fundamental truths, what would you build?" [`skills/idea-refine/frameworks.md:46`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L46)
-- "The competing product isn't always in the same category. (Netflix competes with sleep, not just other streaming services.)" [`skills/idea-refine/frameworks.md:60`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L60)
 - "**Key insight:** People don't buy products — they hire them to do a job." [`skills/idea-refine/frameworks.md:60`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L60)
+- "The competing product isn't always in the same category. (Netflix competes with sleep, not just other streaming services.)" [`skills/idea-refine/frameworks.md:60`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L60)
 - "**Time constraint:** "What if you only had 1 day to build this?"" [`skills/idea-refine/frameworks.md:68`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L68)
 - "**Feature constraint:** "What if it could only have one feature?"" [`skills/idea-refine/frameworks.md:69`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L69)
 - "**Tech constraint:** "What if you couldn't use \[the obvious technology\]?"" [`skills/idea-refine/frameworks.md:70`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/idea-refine/frameworks.md#L70)
@@ -1576,10 +1541,10 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "For resources (queues, pools, hosts), use **USE**: **U**tilization, **S**aturation, **E**rrors." [`skills/observability-and-instrumentation/SKILL.md:110`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L110)
 - "The example below uses Prometheus' \`prom-client\` — one common backend choice, not the only one; the RED/USE and cardinality rules are identical either way." [`skills/observability-and-instrumentation/SKILL.md:112`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L112)
 - "Labels must come from small, fixed sets (route template, status class, provider name)." [`skills/observability-and-instrumentation/SKILL.md:125`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L125)
-- "Use histograms and read p50/p95/p99." [`skills/observability-and-instrumentation/SKILL.md:132`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L132)
 - "Track averages never, percentiles always: an average hides the 1% of users having a terrible time." [`skills/observability-and-instrumentation/SKILL.md:132`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L132)
-- "Sample head-based at a low rate by default; keep 100% of errors if your backend supports tail sampling." [`skills/observability-and-instrumentation/SKILL.md:150`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L150)
+- "Use histograms and read p50/p95/p99." [`skills/observability-and-instrumentation/SKILL.md:132`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L132)
 - "Add manual spans only around meaningful internal units of work (e.g., \`applyDiscounts\`, \`chargeProvider\`) and attach the attributes on-call will filter by." [`skills/observability-and-instrumentation/SKILL.md:150`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L150)
+- "Sample head-based at a low rate by default; keep 100% of errors if your backend supports tail sampling." [`skills/observability-and-instrumentation/SKILL.md:150`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L150)
 - "Use two severities only: **page** (user-facing, act now) and **ticket** (degradation, act this week). A third tier becomes noise that trains people to ignore everything." [`skills/observability-and-instrumentation/SKILL.md:170`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L170)
 - "Follow one request across services in the tracing UI → no broken spans" [`skills/observability-and-instrumentation/SKILL.md:196`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L196)
 - ""I'll add logging after it works" | "After" becomes "after the first incident", which is the most expensive moment to discover you're blind. Instrument as you build." [`skills/observability-and-instrumentation/SKILL.md:203`](https://github.com/addyosmani/agent-skills/blob/39b723c/skills/observability-and-instrumentation/SKILL.md#L203)

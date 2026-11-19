@@ -50,7 +50,7 @@ cat report.md
 
 The `.` is the plugin's folder, so this reads neckbeard itself. Give another plugin's folder to read that one. It needs Python 3.11 or later and no login.
 
-The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list. Then come three layers:
+The report opens with a title, a header line (date, the plugin's version and commit or release tag, and the neckbeard version that made it) and a contents list. Then come three layers:
 
 - **How it affects you:** five rows (cost, reach, leaves state, live surface and read completeness).
 - **What it adds:** one card each for the text it injects, hooks, subagents and commands, the state it may leave, what it reaches outside the session, and its source. Each card says whether neckbeard read it in full, read it in part, or left something unread.
@@ -59,22 +59,22 @@ The report opens with a title, a header line (date, neckbeard version, the plugi
 Here is neckbeard's own report, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
-> # 🔍 neckbeard 2.0.0 · how it affects you, what it adds, where it takes a position
+> # 🔍 neckbeard
 >
-> `2026-11-18` · neckbeard 2.0.0 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.0 @ `v2.0.0`
+> `2026-11-18` · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.0 @ `v2.0.0` · made by neckbeard 2.0.0
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟩 | Cost | adds 764 to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+> | 🟩 | Cost | adds 764 characters to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 > | 🟩 | Reach | on demand only |
-> | 🟧 | Leaves state | 47 files that may write state |
+> | 🟧 | Leaves state | 48 files that may write state |
 > | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 > | 🟩 | Read completeness | read in full |
 >
-> - 🟢 **Injects** · 1 skills · ~4472 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
+> - 🟢 **Injects** · 1 skills · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
 > - 🟢 **Hooks** · 0 hooks · read in full
 > - 🟢 **Subagents and commands** · no agents · 0 commands
-> - 🟢 **State it may leave** · 47 files that may write state · 10 named
+> - 🟢 **State it may leave** · 48 files that may write state · 10 named
 > - 🟢 **Reaches outside the session** · no MCP servers
 > - 🟢 **Source** · plugin · neckbeard 2.0.0 from plugin.json · commit v2.0.0 · no marketplace
 <!-- /report -->

@@ -34,16 +34,16 @@ Every time this tool has been pointed at something real, in order, with what it 
 
 The plugin that prompted this one. Run against the installed `ponytail@ponytail`, then cold against `addyosmani/agent-skills` by GitHub URL to exercise the clone path (25 skills found).
 
-**The report today** · ponytail 5.3.3 @ `7801d06`, a facts report by neckbeard 1.17.8 (no reader, no verdict) · [full report](examples/ponytail.md)
+**The report today** · ponytail 5.3.3 @ `7801d06`, a facts report by neckbeard 2.0.0 (no reader, no verdict) · [full report](examples/ponytail.md)
 
 <!-- report:ponytail -->
-> # 🔍 ponytail 5.3.3 · how it affects you, what it adds, where it takes a position
+> # 🔍 ponytail
 >
-> `2026-11-18` · neckbeard 1.17.8 · [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) 5.3.3 @ `7801d06`
+> `2026-11-18` · [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) 5.3.3 @ `7801d06` · made by neckbeard 2.0.0
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟥 | Cost | adds 47,610 to every session, ~11,903 tokens (1,584 skill descriptions, 0 agent descriptions, 0 rule files, 23,013 hook text, counted twice because hooks reach subagents) (not read in full) |
+> | 🟥 | Cost | adds 47,610 characters to every session, ~11,903 tokens (1,584 skill descriptions, 0 agent descriptions, 0 rule files, 23,013 hook text, counted twice because hooks reach subagents) (not read in full) |
 > | 🟥 | Reach | a hook runs in every session and in every subagent too (not read in full) |
 > | 🟧 | Leaves state | 18 files that may write state |
 > | 🟧 | Live surface | 1 Claude Code mod (not read in full) |
@@ -126,16 +126,16 @@ No hooks, no agents, one skill, at 7,207 bytes when first read. Its own report m
 
 Picked by measurement: real file, hook and skill counts across four candidates from GitHub's tree API, not their descriptions. 231 files across 67 directories as of 2026-09-19 (its size today is in the rerun below).
 
-**The report today** · superpowers 7.0.2 @ `22f0b46`, a facts report by neckbeard 1.17.8 (no reader, no verdict) · [full report](examples/superpowers.md)
+**The report today** · superpowers 7.0.2 @ `22f0b46`, a facts report by neckbeard 2.0.0 (no reader, no verdict) · [full report](examples/superpowers.md)
 
 <!-- report:superpowers -->
-> # 🔍 superpowers 7.0.2 · how it affects you, what it adds, where it takes a position
+> # 🔍 superpowers
 >
-> `2026-11-18` · neckbeard 1.17.8 · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46`
+> `2026-11-18` · [obra/superpowers](https://github.com/obra/superpowers) 7.0.2 @ `22f0b46` · made by neckbeard 2.0.0
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟨 | Cost | adds 2,317 to every session, ~579 tokens (2,317 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
+> | 🟨 | Cost | adds 2,317 characters to every session, ~579 tokens (2,317 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
 > | 🟨 | Reach | a hook in every main session (not read in full) |
 > | 🟧 | Leaves state | 18 files that may write state |
 > | 🟨 | Live surface | 1 hook command, local scripts only (not read in full) |
@@ -177,16 +177,16 @@ Read by hand, `hooks/session-start` cats `skills/using-superpowers/SKILL.md` (3,
 
 Picked with an unseeded `random.choice()` from 183 candidates, filtered by keyword out of Anthropic's official (310) and community (2,282) catalogs. One skill, 15,919 bytes, no hooks, no declared agents.
 
-**The report today** · viral-launch-pipeline 1.0.0 @ `475705f`, a facts report by neckbeard 1.17.8 (no reader, no verdict) · [full report](examples/viral-launch-pipeline.md)
+**The report today** · viral-launch-pipeline 1.0.0 @ `475705f`, a facts report by neckbeard 2.0.0 (no reader, no verdict) · [full report](examples/viral-launch-pipeline.md)
 
 <!-- report:viral-launch-pipeline -->
-> # 🔍 viral-launch-pipeline 1.0.0 · how it affects you, what it adds, where it takes a position
+> # 🔍 viral-launch-pipeline
 >
-> `2026-11-18` · neckbeard 1.17.8 · [Koz-TV/viral-launch-pipeline](https://github.com/Koz-TV/viral-launch-pipeline) 1.0.0 @ `475705f`
+> `2026-11-18` · [Koz-TV/viral-launch-pipeline](https://github.com/Koz-TV/viral-launch-pipeline) 1.0.0 @ `475705f` · made by neckbeard 2.0.0
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟩 | Cost | adds 571 to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+> | 🟩 | Cost | adds 571 characters to every session, ~143 tokens (571 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 > | 🟩 | Reach | on demand only |
 > | 🟩 | Leaves state | nothing found |
 > | 🟩 | Live surface | no hook commands, MCP servers or mods found |
@@ -222,16 +222,16 @@ Picked with an unseeded `random.choice()` from 183 candidates, filtered by keywo
 
 Version 0.11.0. Picked deliberately, because two of its hook events had never appeared in any earlier run: `UserPromptExpansion` and `PostToolUseFailure`. One skill (5,246 bytes), **8 declared agents**, two hook scripts across three events, 476KB.
 
-**The report today** · claude-security 0.12.0 @ `b5b01ac` (the head of the marketplace repo, which has no tags), a facts report by neckbeard 1.17.8 (no reader, no verdict) · [full report](examples/claude-security.md)
+**The report today** · claude-security 0.12.0 @ `b5b01ac` (the head of the marketplace repo, which has no tags), a facts report by neckbeard 2.0.0 (no reader, no verdict) · [full report](examples/claude-security.md)
 
 <!-- report:claude-security -->
-> # 🔍 claude-plugins-official 0.12.0 · how it affects you, what it adds, where it takes a position
+> # 🔍 claude-plugins-official
 >
-> `2026-11-18` · neckbeard 1.17.8 · [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) 0.12.0 @ `b5b01ac4`
+> `2026-11-18` · [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) 0.12.0 @ `b5b01ac4` · made by neckbeard 2.0.0
 >
 > | | Row | In short |
 > |---|---|---|
-> | 🟨 | Cost | adds 2,274 to every session, ~569 tokens (446 skill descriptions, 1,828 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
+> | 🟨 | Cost | adds 2,274 characters to every session, ~569 tokens (446 skill descriptions, 1,828 agent descriptions, 0 rule files, 0 hook text) (not read in full) |
 > | 🟥 | Reach | a hook runs in every session and in every subagent too (not read in full) |
 > | 🟧 | Leaves state | 9 files that may write state |
 > | 🟨 | Live surface | 6 hook commands, local scripts only (not read in full) |

@@ -31,7 +31,7 @@ Clone the plugin, then run neckbeard's one command on it. It needs only python3 
 tools/vet <path-to-plugin> report.md --facts
 ```
 
-The report's header line names the neckbeard version, the plugin's version and its commit. A rerun on the same commit gives the same report apart from the date.
+The report's header line names the plugin's version and its commit, then the neckbeard version that made it. A rerun on the same commit gives the same report apart from the date.
 
 ## How these were made
 

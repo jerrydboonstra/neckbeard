@@ -1,6 +1,6 @@
 # Building a plugin neckbeard will vet
 
-For people who build a Claude Code plugin and want its neckbeard report to come out the way they intend. It lists what neckbeard looks for under each rule of the [sample reader](examples/reader/) and on each card of the report's "At a glance" grid, and the usual way to comply. It also defines a **ledger**: a file in the plugin's repo that records, rule by rule, how far the plugin means to comply.
+For people who build a Claude Code plugin and want its neckbeard report to come out the way they intend. It lists what neckbeard looks for under each rule of the [sample reader](examples/reader/) and on each row of the report's summary table, and the usual way to comply. It also defines a **ledger**: a file in the plugin's repo that records, rule by rule, how far the plugin means to comply.
 
 Nothing here is required. neckbeard vets any plugin the same way, ledger or not. A plugin's own workflow can load this guide when it works on a repo that keeps a ledger, and leave it out everywhere else.
 

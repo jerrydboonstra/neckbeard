@@ -21,7 +21,7 @@
 #      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and
 #      --judge own. The report carries a "Judge:" line beside the Baseline line saying which judge ran.
 #   4. the report: the title and header lines (written here), a Contents list, then three layers, each opened by a `---` rule and its
-#      label line: "How it affects you" (a heading written here, then tools/summary's rows, table, footer and "At a glance in full" card,
+#      label line: "How it affects you" (a heading written here, then tools/summary's table, the notes under it and its "How the colours are set" card,
 #      then tools/fit's verdict strip and seven fit cards), "What it adds" (tools/part1: what the target injects, reaches and leaves
 #      behind, read from the dossier, with no reference to the reader) and "Where it takes a position" (tools/positions on the dossier,
 #      then tools/positions-layer). The renderers run before the judge, and one that exits non-zero stops the run with its stderr.
@@ -45,8 +45,8 @@
 # not HEAD's). --facts --release-tag TAG makes the label TAG instead and wins over the dirty rule: a report committed into a tagged
 # tree cannot name the commit that contains it, so `make report` names the tag.
 # --facts writes the published report instead: no reader, no verdict, no fit and no model call (claude need not be on PATH). The config
-# folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name> <version> · how it affects you,
-# what it adds, where it takes a position`, the same header line the judged report carries, the Contents list, the three layers (the
+# folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name>` (the plugin once: no version and no layer list, which the Contents list names),
+# the same header line the judged report carries (`DATE` · source, its version and commit, then "made by neckbeard <version>"), the Contents list, the three layers (the
 # summary rows with no verdict strip, the facts, the positions) and one closing line. A fit report's title ends ` · against <reader>`.
 # It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error.
 # Exit 0 only when the report passed every check: it holds the three layer headings once and in order and names no local path, and a published (--facts) report also holds no verdict strip and no fit card. A published report's checks all run before OUT is written; a fit report's local-path and login checks run after, and remove OUT on a hit. Kept out of bin/, which a plugin puts on every session's PATH.
@@ -170,10 +170,11 @@ if [ "${1:-}" = --check ]; then
   [ -d "$target" ] || die "$target is not a folder"
   want=$(plugin_version "$target")
   [ -n "$want" ] || die "no version in $target's plugin.json"
-  # the header line tools/vet writes: `DATE` · neckbeard X · <name or [name](url)> VERSION[ @ `commit`], where commit is a sha, "<sha> + uncommitted changes" or a release tag
+  # the header line tools/vet writes: `DATE` · <name or [name](url)> VERSION[ @ `commit`] · made by neckbeard X, where commit is a sha, "<sha> + uncommitted changes" or a release tag
+  # (reports made before 2.0.0 put it as `DATE` · neckbeard X · <name or [name](url)> VERSION[ @ `commit`]; both are read)
   got=$(python3 -c 'import re,sys
 for line in open(sys.argv[1], encoding="utf-8"):
-    m = re.match(r"^`\d{4}-\d{2}-\d{2}` · neckbeard \S+ · (?:\[[^\]]+\]\([^)]+\)|\S+) (\S+)(?: @ |\s*$)", line)
+    m = re.match(r"^`\d{4}-\d{2}-\d{2}` · (?:neckbeard \S+ · )?(?:\[[^\]]+\]\([^)]+\)|\S+) (\S+)(?: @ | · made by neckbeard |\s*$)", line)
     if m: print(m.group(1)); break' "$report")
   [ -n "$got" ] || die "$report has no header line naming a version"
   [ "$got" = "$want" ] || die "$report vets $got, but $target is $want: rebuild it (see examples/README.md)"
@@ -437,10 +438,9 @@ source=$name
 [ -n "$remote" ] && source="[$name]($remote)"
 # header_lines: the title line, then the header line, for both the judged report and --facts (vet --check reads the second)
 header_lines() {
-  echo "# 🔍 ${name##*/}${version:+ $version} · $title_tail"
-  echo "\`$(date +%Y-%m-%d)\` · neckbeard $nbversion · $source${version:+ $version}${commit:+ @ \`$commit\`}"
+  echo "# 🔍 ${name##*/}${title_tail:+ · $title_tail}"
+  echo "\`$(date +%Y-%m-%d)\` · $source${version:+ $version}${commit:+ @ \`$commit\`} · made by neckbeard $nbversion"
 }
-layers_title="how it affects you, what it adds, where it takes a position"
 # render_layers: each layer from the renderer that owns it (code only, no model call), into $work. A renderer that exits non-zero stops the
 # run with its stderr, and this runs before the judge, so a broken one costs no judge call.
 render_layers() {
@@ -496,7 +496,7 @@ sys.exit(1 if bad else 0)
 PYEOF
 }
 if [ "$facts" = yes ]; then
-  title_tail=$layers_title
+  title_tail=
   render_layers
   assemble "$work/facts.md" "$(header_lines | sed -n 1p)" "$(header_lines | sed -n 2p)" "" "" "No reader's rules were read: this report lists facts only and carries no verdict."
   check_report "$work/facts.md" yes
@@ -528,7 +528,7 @@ EOF
   printf '%s\n' "$badge"
   exit 0
 fi
-title_tail="$layers_title · against $label"
+title_tail="against $label"
 title=$(header_lines | sed -n 1p) header=$(header_lines | sed -n 2p)
 render_layers
 if [ "$session" = yes ]; then

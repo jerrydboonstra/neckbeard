@@ -81,9 +81,9 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 
 The colours follow written rules.
 """
-LAYERS = """# 🔍 demo 1.2.3 · how it affects you, what it adds, where it takes a position{tail}
+LAYERS = """# 🔍 demo{tail}
 
-`2026-11-15` · neckbeard 2.0.0 · [a/demo](https://github.com/a/demo) 1.2.3 @ `abc1234`
+`2026-11-15` · [a/demo](https://github.com/a/demo) 1.2.3 @ `abc1234` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -154,7 +154,7 @@ NEW_FIT = LAYERS.format(tail=" · against the sample reader", strip=STRIP)
 
 r, text = run(NEW_FACTS)
 check("2.0 facts: excerpted, not refused", r.returncode == 0, r.stderr)
-check("2.0 facts: the title and the header line are quoted", "> # 🔍 demo 1.2.3 · how it affects you, what it adds, where it takes a position" in text and "`2026-11-15` · neckbeard 2.0.0 · [a/demo]" in text, text)
+check("2.0 facts: the title and the header line are quoted", "> # 🔍 demo\n" in text and "`2026-11-15` · [a/demo](https://github.com/a/demo) 1.2.3 @ `abc1234` · made by neckbeard 2.0.0" in text and "how it affects you, what it adds" not in text, text)
 check("2.0 facts: the summary table is quoted whole, rows and header", all(s in text for s in ("| | Row | In short |", "| 🟩 | Cost | adds 13 characters to every session", "| 🟨 | Reach | a hook in every main session", "| 🟩 | Read completeness | read in full |")), text)
 check("2.0 facts: one line per facts card: read marker, name and gist, unescaped",
       "\n> - 🟢 **Injects** · 1 skills · ~3 tokens on demand & more\n" in text and "\n> - 🟡 **Hooks** · partly read\n" in text, text)

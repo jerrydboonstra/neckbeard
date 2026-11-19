@@ -1,6 +1,6 @@
-# 🔍 neckbeard 2.0.0 · how it affects you, what it adds, where it takes a position
+# 🔍 neckbeard
 
-`2026-11-18` · neckbeard 2.0.0 · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.0 @ `v2.0.0`
+`2026-11-18` · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.0 @ `v2.0.0` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -16,42 +16,15 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟩 | Cost | adds 764 to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟩 | Cost | adds 764 characters to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟩 | Reach | on demand only |
-| 🟧 | Leaves state | 47 files that may write state |
+| 🟧 | Leaves state | 48 files that may write state |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 | 🟩 | Read completeness | read in full |
 
-<details><summary><b>At a glance in full</b></summary>
+- **Leaves state**: the files are listed in the "State it may leave" card under [What it adds](#what-it-adds).
 
-- **Cost** 🟩: adds 764 to every session, ~191 tokens (764 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text)
-  - skill skills/neckbeard/SKILL.md: 764 of description
-- **Reach** 🟩: on demand only
-- **Leaves state** 🟧: 47 files that may write state
-  - may write state: Makefile
-  - may write state: measurements/2026-10-16-units-confirm/reconfirm.py
-  - may write state: skills/neckbeard/hook_shell.py
-  - may write state: skills/neckbeard/inventory.py
-  - may write state: skills/neckbeard/inventory_core.py
-  - may write state: skills/neckbeard/inventory_dossier.py
-  - may write state: skills/neckbeard/inventory_hooks.py
-  - may write state: skills/neckbeard/inventory_parts.py
-  - may write state: skills/neckbeard/mcp_live.py
-  - may write state: skills/neckbeard/selfcheck.py
-  - and 37 more
-- **Live surface** 🟩: no hook commands, MCP servers or mods found
-- **Read completeness** 🟩: read in full
-  - agents: read
-  - commands: read
-  - hooks: read
-  - marketplace: read
-  - mcp_servers: read
-  - persistence_candidates: read
-  - plugin_json: read
-  - rule_files: read
-  - skills: read
-
-</details>
+<details><summary><b>How the colours are set</b></summary>
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
@@ -61,6 +34,8 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
 - Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.
 
+</details>
+
 ---
 
 **2 · Facts · written by code · no judgement**
@@ -69,10 +44,10 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 
 🟢 read in full · 🟡 partly read · 🔴 something unread
 
-<details><summary>🟢 <b>Injects</b> · 1 skills · ~4472 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full</summary>
+<details><summary>🟢 <b>Injects</b> · 1 skills · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full</summary>
 
 - Skills:
-  - neckbeard: description every session (764 chars); the file on demand (17889 bytes, ~4472 tokens)
+  - neckbeard: description every session (764 chars); the file on demand (17792 bytes, ~4448 tokens)
 - Rule files: none
 - Hook-injected text: none
 
@@ -91,7 +66,7 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 
 </details>
 
-<details><summary>🟢 <b>State it may leave</b> · 47 files that may write state · 10 named</summary>
+<details><summary>🟢 <b>State it may leave</b> · 48 files that may write state · 10 named</summary>
 
 - Persistence candidates:
   - Makefile
@@ -104,7 +79,7 @@ The colours follow written rules. Each is checked top to bottom, and the first m
   - skills/neckbeard/inventory_parts.py
   - skills/neckbeard/mcp_live.py
   - skills/neckbeard/selfcheck.py
-  - and 37 more, in: tools/ 37
+  - and 38 more, in: tools/ 38
 
 </details>
 
@@ -153,7 +128,7 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 
 <details><summary><b>Code style and comments</b> · 1 · "Give a proposed name and a one-line description, and mark t…"</summary>
 
-- "Give a proposed name and a one-line description, and mark the name as your proposal, since the target usually does not name the capability itself." [`skills/neckbeard/SKILL.md:274`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L274)
+- "Give a proposed name and a one-line description, and mark the name as your proposal, since the target usually does not name the capability itself." [`skills/neckbeard/SKILL.md:271`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L271)
 
 </details>
 
@@ -180,10 +155,10 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Prose.** Write \`&lt;stem>.prose.json\` as \`{"why": "...", "do_this": \["..."\], "patch": "..."}\`: the Why this verdict paragraph, the Do this steps (they match your \`carrying_cost\`) and Step 4's patch." [`skills/neckbeard/SKILL.md:174`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L174)
 - "**Answer first.** The strip holds the verdict and at most three sentences." [`skills/neckbeard/SKILL.md:179`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L179)
 - "**Verdict** (one, in the strip): 🟥 DON'T INSTALL · 🟨 INSTALL WITH CHANGES · 🟨 COPY RULES, SKIP PLUGIN · 🟩 INSTALL." [`skills/neckbeard/SKILL.md:186`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L186)
-- "If Step 2 produced any "new, standing behavior" rules, propose them as additions to the user's global rules file (\`CLAUDE.md\` for Claude Code), matching whatever numbering and emphasis that file alre…" [`skills/neckbeard/SKILL.md:253`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L253)
-- "Once the section grows past roughly 40 lines, propose splitting it into its own rules file and leaving a summary and a pointer behind, if that is a pattern the user's setup already uses." [`skills/neckbeard/SKILL.md:264`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L264)
-- "If any "new, on-demand behavior" skills came out of Step 2, propose them as skills rather than as rules." [`skills/neckbeard/SKILL.md:273`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L273)
-- "This skill's whole point is to add a rule only when it earns its keep; auto-applying its own output would skip the one review step that makes that true." [`skills/neckbeard/SKILL.md:283`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L283)
+- "If Step 2 produced any "new, standing behavior" rules, propose them as additions to the user's global rules file (\`CLAUDE.md\` for Claude Code), matching whatever numbering and emphasis that file alre…" [`skills/neckbeard/SKILL.md:250`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L250)
+- "Once the section grows past roughly 40 lines, propose splitting it into its own rules file and leaving a summary and a pointer behind, if that is a pattern the user's setup already uses." [`skills/neckbeard/SKILL.md:261`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L261)
+- "If any "new, on-demand behavior" skills came out of Step 2, propose them as skills rather than as rules." [`skills/neckbeard/SKILL.md:270`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L270)
+- "This skill's whole point is to add a rule only when it earns its keep; auto-applying its own output would skip the one review step that makes that true." [`skills/neckbeard/SKILL.md:280`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L280)
 
 </details>
 
@@ -212,9 +187,9 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Run.** \`&lt;base>vet &lt;target> &lt;report> --dossier &lt;stem>.dossier.json --answers &lt;stem>.answers.json --prose &lt;stem>.prose.json\`, and hand over its report unchanged; the plain-Markdown rules below are pa…" [`skills/neckbeard/SKILL.md:175`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L175)
 - "Plain Markdown only (tables, one blockquote, emoji): what are cards in tools/vet's report are \`###\` sections here. No HTML, no \`\[ \]\` checkboxes." [`skills/neckbeard/SKILL.md:183`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L183)
 - "If a section would be empty, keep its heading and say so in one line." [`skills/neckbeard/SKILL.md:184`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L184)
-- "\`examples/\` in this plugin's repository holds real reports in this shape, run against a published sample reader." [`skills/neckbeard/SKILL.md:248`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L248)
-- "**Do not assume a section name.** Read the file and put the rules where they belong: an existing section about how code gets written if there is one, a new section if there is not, and say which you …" [`skills/neckbeard/SKILL.md:257`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L257)
-- "Suggest where it should live only if the dossier tells you where this user keeps skills; if it does not, say so and leave the choice to them rather than inventing a path." [`skills/neckbeard/SKILL.md:276`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L276)
+- "\`examples/\` in this plugin's repository holds real reports in this shape, run against a published sample reader." [`skills/neckbeard/SKILL.md:245`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L245)
+- "**Do not assume a section name.** Read the file and put the rules where they belong: an existing section about how code gets written if there is one, a new section if there is not, and say which you …" [`skills/neckbeard/SKILL.md:254`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L254)
+- "Suggest where it should live only if the dossier tells you where this user keeps skills; if it does not, say so and leave the choice to them rather than inventing a path." [`skills/neckbeard/SKILL.md:273`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L273)
 
 </details>
 
@@ -229,10 +204,10 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "In a plain skill folder, take path B." [`skills/neckbeard/SKILL.md:166`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L166)
 - "**Two paths.** If \`tools/\` sits beside this skill (\`&lt;base>vet\` exists; \`&lt;base>\` is the skill directory from Step 1), take path A." [`skills/neckbeard/SKILL.md:166`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L166)
 - "**Cite, don't gesture.** A conflict names the rule it collides with and the file or skill that holds it. A duplicate names what covers it." [`skills/neckbeard/SKILL.md:182`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L182)
-- "An earlier version of this instruction named one specific heading, which existed only on its author's machine, so any reader whose file was organised differently had to guess (found 2026-09-19 by an …" [`skills/neckbeard/SKILL.md:259`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L259)
-- "Put dated field notes there too, not in the global file, which is read in full every session." [`skills/neckbeard/SKILL.md:269`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L269)
-- "**Show the proposed patch as a diff or a fenced block in the evaluation document (path A: in the prose file's \`patch\`)." [`skills/neckbeard/SKILL.md:280`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L280)
-- "Do not write it into \`CLAUDE.md\`, a rules file, or \`settings.json\` yourself, and do not uninstall or disable the target.** Applying any of it is a separate, explicitly-approved step." [`skills/neckbeard/SKILL.md:281`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L281)
+- "An earlier version of this instruction named one specific heading, which existed only on its author's machine, so any reader whose file was organised differently had to guess (found 2026-09-19 by an …" [`skills/neckbeard/SKILL.md:256`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L256)
+- "Put dated field notes there too, not in the global file, which is read in full every session." [`skills/neckbeard/SKILL.md:266`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L266)
+- "**Show the proposed patch as a diff or a fenced block in the evaluation document (path A: in the prose file's \`patch\`)." [`skills/neckbeard/SKILL.md:277`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L277)
+- "Do not write it into \`CLAUDE.md\`, a rules file, or \`settings.json\` yourself, and do not uninstall or disable the target.** Applying any of it is a separate, explicitly-approved step." [`skills/neckbeard/SKILL.md:278`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L278)
 
 </details>
 
@@ -255,7 +230,7 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "They quote the user's rules: check they are ignored too." [`skills/neckbeard/SKILL.md:164`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L164)
 - "**Grids over prose.** One row per item, a phrase per cell. No section opens with a paragraph." [`skills/neckbeard/SKILL.md:180`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L180)
 - "**Count each unit once.** Each unit (an item Step 2 sorts) lands once among covered, keep and dropped; conflicts are counted apart, as tools/fit counts them. The counts equal the rows below." [`skills/neckbeard/SKILL.md:181`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L181)
-- "Rules live inline while the list is short." [`skills/neckbeard/SKILL.md:264`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L264)
+- "Rules live inline while the list is short." [`skills/neckbeard/SKILL.md:261`](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.0/skills/neckbeard/SKILL.md#L261)
 
 </details>
 

@@ -1,6 +1,6 @@
-# 🔍 skills · how it affects you, what it adds, where it takes a position
+# 🔍 skills
 
-`2026-11-18` · neckbeard 1.17.8 · [calm-trader/skills](https://github.com/calm-trader/skills) @ `d222506`
+`2026-11-18` · [calm-trader/skills](https://github.com/calm-trader/skills) @ `d222506` · made by neckbeard 2.0.0
 
 **Contents**
 
@@ -16,46 +16,15 @@
 
 | | Row | In short |
 |---|---|---|
-| 🟨 | Cost | adds 3,302 to every session, ~826 tokens (3,302 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
+| 🟨 | Cost | adds 3,302 characters to every session, ~826 tokens (3,302 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟩 | Reach | on demand only |
 | 🟧 | Leaves state | 12 files that may write state |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 | 🟩 | Read completeness | read in full |
 
-<details><summary><b>At a glance in full</b></summary>
+- **Leaves state**: the files are listed in the "State it may leave" card under [What it adds](#what-it-adds).
 
-- **Cost** 🟨: adds 3,302 to every session, ~826 tokens (3,302 skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text)
-  - skill tradingview-chart-reading/SKILL.md: 587 of description
-  - skill tradingview-backtesting/SKILL.md: 755 of description
-  - skill supervision/SKILL.md: 322 of description
-  - skill falsify/SKILL.md: 799 of description
-  - skill auto-evolve-agentic-system/SKILL.md: 839 of description
-- **Reach** 🟩: on demand only
-- **Leaves state** 🟧: 12 files that may write state
-  - may write state: auto-evolve-agentic-system/scripts/compare.py
-  - may write state: auto-evolve-agentic-system/scripts/noise.py
-  - may write state: auto-evolve-agentic-system/scripts/seal.py
-  - may write state: auto-evolve-agentic-system/scripts/test_scripts.py
-  - may write state: auto-evolve-agentic-system/scripts/verdict_cache.py
-  - may write state: check-falsify.sh
-  - may write state: falsify/fixtures/target/ledger/capture.py
-  - may write state: falsify/scripts/fixtures/fix-citations.py
-  - may write state: falsify/scripts/selftest.sh
-  - may write state: tradingview-backtesting/scripts/selftest.sh
-  - and 2 more
-- **Live surface** 🟩: no hook commands, MCP servers or mods found
-- **Read completeness** 🟩: read in full
-  - agents: read
-  - commands: read
-  - hooks: read
-  - marketplace: not-applicable
-  - mcp_servers: read
-  - persistence_candidates: read
-  - plugin_json: not-applicable
-  - rule_files: read
-  - skills: read
-
-</details>
+<details><summary><b>How the colours are set</b></summary>
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
@@ -64,6 +33,8 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
 - Read completeness: 🟩 read in full; 🟨 partly read; 🟥 something unread.
+
+</details>
 
 ---
 
@@ -122,10 +93,10 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 
 </details>
 
-<details><summary>🟢 <b>Source</b> · generic-pack · calm-trader-skills · commit d222506 · no marketplace</summary>
+<details><summary>🟢 <b>Source</b> · generic-pack · calm · commit d222506 · no marketplace</summary>
 
 - Kind: generic-pack
-- Name: calm-trader-skills
+- Name: calm
 - Version: no version
 - plugin.json: not applicable
 - Marketplace: not applicable
@@ -272,8 +243,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - ""Not worse" (\`--not-worse\`) is a one-sided test over phrasing clusters with one pseudo-loss as large as the biggest cluster that moved, and it needs at least 20 phrasings per slot. In a simulation wh…" [`auto-evolve-agentic-system/references/statistics.md:60`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L60)
 - "With one writer no test says anything about new writers; the cluster test only stops phrasings from being counted as independent episodes." [`auto-evolve-agentic-system/references/statistics.md:87`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L87)
 - "The per-slot cluster test is an approximation of a crossed design: in a simulated crossed opening x reply design with no true effect it rejected 7.7% at 0.05." [`auto-evolve-agentic-system/references/statistics.md:88`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L88)
-- "The runner opens each cycle once, before any candidate is scored: \`seal.py cycle open --of K --reason T\` gives it the next number N and records K, the mechanism tests it may run. \`noise.py ... --cell…" [`auto-evolve-agentic-system/references/statistics.md:95`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L95)
 - "A mechanism keep is a test the builder may run every cycle." [`auto-evolve-agentic-system/references/statistics.md:95`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L95)
+- "The runner opens each cycle once, before any candidate is scored: \`seal.py cycle open --of K --reason T\` gives it the next number N and records K, the mechanism tests it may run. \`noise.py ... --cell…" [`auto-evolve-agentic-system/references/statistics.md:95`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L95)
 - "Open coding of 100 failures gave 9 classes; the top one, "the edit passes the named test and breaks another" (35% of failures, all at the test-run step), became the candidate: run the full suite afte…" [`auto-evolve-agentic-system/references/worked-example.md:108`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/worked-example.md#L108)
 - "Learned parts read only openings; most failures were in replies | Error analysis by step; coverage map; a reader per step (references/error-analysis-and-classification.md)" [`auto-evolve-agentic-system/references/worked-example.md:125`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/worked-example.md#L125)
 - "**Sabotage verification** (§4) — a guard is not a guard until it has been *seen* to fail. Break the guarded thing, run the test, and if it still passes the test is decorative. Three such tests were f…" [`falsify/ATTRIBUTION.md:29`](https://github.com/calm-trader/skills/blob/d222506/falsify/ATTRIBUTION.md#L29)
@@ -415,8 +386,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Output schema for the workflow: \`{summary: string, findings: \[{title, severity: critical|high|medium|low, category, evidence, why_it_matters, suggested_fix}\], keep: \[string\]}\`." [`auto-evolve-agentic-system/references/prompts.md:109`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L109)
 - "Fix-review variant: \`A previous review found these breaks; fixes are in place: {numbered list with file:function}." [`auto-evolve-agentic-system/references/prompts.md:135`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L135)
 - "Frame review: \`You are a senior advisor to an agentic-platform lead building {SYSTEM} ({ROOT}; read FRAME.md and the files listed)." [`auto-evolve-agentic-system/references/prompts.md:147`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L147)
-- "Critical review, max 600 words: 1. leakage risks in the data discipline and how to close them, including selection bias from measuring holdouts each version; 2. whether the order and content of the v…" [`auto-evolve-agentic-system/references/prompts.md:149`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L149)
 - "Plan review: \`Read {PLAN}." [`auto-evolve-agentic-system/references/prompts.md:149`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L149)
+- "Critical review, max 600 words: 1. leakage risks in the data discipline and how to close them, including selection bias from measuring holdouts each version; 2. whether the order and content of the v…" [`auto-evolve-agentic-system/references/prompts.md:149`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L149)
 - "Report review: \`Read {STRATEGIES.md} and the ledger \`seal.py runs --markdown\`." [`auto-evolve-agentic-system/references/prompts.md:151`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L151)
 - "An independent review routinely finds what the banks never measured: an unsafe effect on fresh text, a limit checked on a declared value, no rollback switch, nobody named to act on a handoff." [`auto-evolve-agentic-system/references/readiness.md:3`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/readiness.md#L3)
 - "FRAME.md already lists these (references/frame-and-build.md); the review confirms they exist and work, rather than discovering they do not:" [`auto-evolve-agentic-system/references/readiness.md:11`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/readiness.md#L11)
@@ -508,8 +479,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Side composition must be read from the All/Long/Short columns or a FULL scroll of the trade list — never from the visible page.** \[VERIFIED failure\] Sampling the first screen once produced a confid…" [`tradingview-backtesting/SKILL.md:128`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L128)
 - "**Float division assigned to an \`int\`** — a compile blocker that survives review easily." [`tradingview-backtesting/SKILL.md:200`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L200)
 - "TradingView flags this only as a non-blocking **CW10002** warning, which is easy to wave through as lint. **The fix is to hoist:** compute \`int bs = ta.barssince(c)\` unconditionally once per bar, the…" [`tradingview-backtesting/SKILL.md:217`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L217)
-- "Reviews check semantics against a spec; they do not check that the language accepts the program. **Compile the script before spending a supervision pass on it**, and treat "reviewed" and "compiles" a…" [`tradingview-backtesting/SKILL.md:220`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L220)
 - "The cheapest ordering is: build → compile → review → read." [`tradingview-backtesting/SKILL.md:220`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L220)
+- "Reviews check semantics against a spec; they do not check that the language accepts the program. **Compile the script before spending a supervision pass on it**, and treat "reviewed" and "compiles" a…" [`tradingview-backtesting/SKILL.md:220`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L220)
 - "**The script COMPILES.** Build → compile → review → read; a reviewed script is not a running script (§11). Zero blocking errors, and treat CW10002 \`ta.*\`-in-a-short-circuit warnings as correctness fi…" [`tradingview-backtesting/SKILL.md:226`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L226)
 - "**Source fidelity.** Before any arm is read, recompute one parameter from the source by hand and read one computed value on-chart. A daily 20-EMA where the source said 15-minute bars voided a whole r…" [`tradingview-backtesting/SKILL.md:266`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L266)
 - "**Cited artefacts** (falsify §5, "did a row appear", applied to citations). Every result file a docket cites must exist and carry the number; a cited leaderboard that was never written, and a batch t…" [`tradingview-backtesting/SKILL.md:270`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L270)
@@ -674,8 +645,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**Last line (§7):** 3/18 pass \`check_report.py\`, with no pattern by arm." [`falsify/MEASUREMENTS.md:68`](https://github.com/calm-trader/skills/blob/d222506/falsify/MEASUREMENTS.md#L68)
 - "One arm-2 reader deleted scratch directories under \`/tmp\` it had not created; later reader prompts say to keep scratch inside the sandbox." [`falsify/MEASUREMENTS.md:75`](https://github.com/calm-trader/skills/blob/d222506/falsify/MEASUREMENTS.md#L75)
 - "The \`FALSIFY:\` last line (§7): compliance across the runs above; \`scripts/check_report.py\` is the scorer." [`falsify/MEASUREMENTS.md:110`](https://github.com/calm-trader/skills/blob/d222506/falsify/MEASUREMENTS.md#L110)
-- "If it tries hard and cannot, the answer is probably right." [`falsify/SKILL.md:20`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L20)
 - "Falsify is the tough but fair teacher: it **tries to prove each answer wrong**." [`falsify/SKILL.md:20`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L20)
+- "If it tries hard and cannot, the answer is probably right." [`falsify/SKILL.md:20`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L20)
 - "**Does it say what "right" looks like?** If nobody wrote down which way is up, nobody can ever be wrong, and that is the problem." [`falsify/SKILL.md:29`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L29)
 - "It only reads and reports." [`falsify/SKILL.md:36`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L36)
 - "6 | **This succeeded** | reports success while storing, sending, or changing nothing | compare the report against the side effect" [`falsify/SKILL.md:101`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L101)
@@ -683,8 +654,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "The signature: assertions on exact output strings; oddly precise floats with no derivation; comments explaining *what* the code returns rather than *why* that is correct." [`falsify/SKILL.md:200`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L200)
 - "Static reachability answers "could this run." The expensive question is **"has it ever run."**" [`falsify/SKILL.md:215`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L215)
 - "**Silent success** is the paired check: does anything report success while its side effect did not happen?" [`falsify/SKILL.md:236`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L236)
-- "Prefer designs where the artefact settles the claim and the report cannot." [`falsify/SKILL.md:237`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L237)
 - "Compare the report to the artefact — the row, the file, the message." [`falsify/SKILL.md:237`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L237)
+- "Prefer designs where the artefact settles the claim and the report cannot." [`falsify/SKILL.md:237`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L237)
 - "The report's last line, with nothing after it, is exactly:" [`falsify/SKILL.md:275`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L275)
 - "2 | **"The held-out data is sealed"** | the seal blocks *reporting* sealed numbers but not *loading* sealed bars; the seal trusts a name that can be spoofed (\`sys.argv\[0\]\`); the "consumed" marker is …" [`falsify/SKILL.md:307`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L307)
 - "5 | **"Fills are realistic"** | fills at the bar's extreme; a touch counted as a fill without trading through; stop and target in one bar resolved in the strategy's favour | rerun stop-first with tra…" [`falsify/SKILL.md:310`](https://github.com/calm-trader/skills/blob/d222506/falsify/SKILL.md#L310)
@@ -977,14 +948,14 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Keep the script in \`prompts/build-team/\`." [`auto-evolve-agentic-system/references/improve.md:225`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/improve.md#L225)
 - "The failure taxonomy table: class, count before, count after, on which bank, fixed by which version; new classes; classes that came back." [`auto-evolve-agentic-system/references/improve.md:234`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/improve.md#L234)
 - "Do not open any dev, TRAIN or other bank entry."" [`auto-evolve-agentic-system/references/prompts.md:44`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L44)
-- "For a replacement holdout after a burn add: "Use a different voice from any earlier bank: {list}." [`auto-evolve-agentic-system/references/prompts.md:63`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L63)
 - "Do not read {BURNED_BANK}."" [`auto-evolve-agentic-system/references/prompts.md:63`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L63)
-- "Read redteam/BRIEF.md (including "Later rounds") and follow it exactly." [`auto-evolve-agentic-system/references/prompts.md:90`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L90)
+- "For a replacement holdout after a burn add: "Use a different voice from any earlier bank: {list}." [`auto-evolve-agentic-system/references/prompts.md:63`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L63)
 - "Also check that the new defences do not misroute ordinary inputs harmfully." [`auto-evolve-agentic-system/references/prompts.md:90`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L90)
 - "Your area is {AREA}: {concrete list of attack surfaces, including paths added by the last round's fixes}." [`auto-evolve-agentic-system/references/prompts.md:90`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L90)
-- "Build a capped first version of strategy {STRATEGY} ({MENU ROW}) in at most {CAP}." [`auto-evolve-agentic-system/references/prompts.md:139`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L139)
+- "Read redteam/BRIEF.md (including "Later rounds") and follow it exactly." [`auto-evolve-agentic-system/references/prompts.md:90`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L90)
 - "Do NOT open {SEALED_PATHS}, other worktrees or other candidates' results." [`auto-evolve-agentic-system/references/prompts.md:139`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L139)
 - "Spike: \`Work only in {WORKTREE}, checked out at {BASE}." [`auto-evolve-agentic-system/references/prompts.md:139`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L139)
+- "Build a capped first version of strategy {STRATEGY} ({MENU ROW}) in at most {CAP}." [`auto-evolve-agentic-system/references/prompts.md:139`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L139)
 - "Measure on dev and TRAIN only: {DEV_CMD}, {TRAIN_CMD}." [`auto-evolve-agentic-system/references/prompts.md:139`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L139)
 - "Do not open {SEALED_PATHS}.\`" [`auto-evolve-agentic-system/references/prompts.md:143`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L143)
 - "Do NOT open {SEALED_PATHS}." [`auto-evolve-agentic-system/references/prompts.md:149`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/prompts.md#L149)
@@ -998,8 +969,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Wherever this skill says "phrasings" (per key, per slot, failing phrasings), read "distinct clusters" in your kind's cluster slots: 20 phrasings per slot means 20 repositories, sources or templates p…" [`auto-evolve-agentic-system/references/runtime-adapters.md:26`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/runtime-adapters.md#L26)
 - "Operator | a named person who owns the off switch and the live guardrails | the domain owner doubles | none: no autonomous stage without one" [`auto-evolve-agentic-system/references/runtime-adapters.md:49`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/runtime-adapters.md#L49)
 - "Workflow tool present: use it for the judge fan-out and the hill-climb (parallel batches, one optimiser per iteration, structured result); keep the script in \`prompts/build-team/\`." [`auto-evolve-agentic-system/references/runtime-adapters.md:56`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/runtime-adapters.md#L56)
-- "Round 0 comes before any accuracy work and is never a tournament." [`auto-evolve-agentic-system/references/safety.md:3`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L3)
 - "Safety is a gate, never points in a total." [`auto-evolve-agentic-system/references/safety.md:3`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L3)
+- "Round 0 comes before any accuracy work and is never a tournament." [`auto-evolve-agentic-system/references/safety.md:3`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L3)
 - "FRAME.md lists the system's own items for each word; the safety banks are written from that list." [`auto-evolve-agentic-system/references/safety.md:15`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L15)
 - "For every system with an "always reaches a person":" [`auto-evolve-agentic-system/references/safety.md:37`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L37)
 - "An invariant checks it from the systems of record, with a negative control: switch the gateway hold off, the invariant must catch the damage." [`auto-evolve-agentic-system/references/safety.md:45`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L45)
@@ -1009,8 +980,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "**False alarms** are measured on enough near misses to show the ceiling (\`noise.py --need\`); 38 items cannot show 10%." [`auto-evolve-agentic-system/references/safety.md:77`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L77)
 - "No sealed look on a version whose safety-relevant code changed after the last falsifier pass." [`auto-evolve-agentic-system/references/safety.md:86`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L86)
 - "A gate-failing version fixed afterwards (references/worked-example.md, example A) needs its own "falsify the fixes" pass before the look." [`auto-evolve-agentic-system/references/safety.md:88`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L88)
-- "The banks only measure what their writers thought of." [`auto-evolve-agentic-system/references/safety.md:104`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L104)
 - "A panel of the people who would use, run and sign off on the system finds what no bank covers." [`auto-evolve-agentic-system/references/safety.md:104`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L104)
+- "The banks only measure what their writers thought of." [`auto-evolve-agentic-system/references/safety.md:104`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L104)
 - "**Falsify the fixes.** Panel fixes add early paths, where regressions hide." [`auto-evolve-agentic-system/references/safety.md:130`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/safety.md#L130)
 - "Wherever this skill or \`noise.py\` says "phrasings", read distinct clusters in your kind's slots (references/runtime-adapters.md, Words)." [`auto-evolve-agentic-system/references/statistics.md:15`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L15)
 - "How sure is one count? | \`noise.py N K\` (add \`--clusters M\` for a rough widening)" [`auto-evolve-agentic-system/references/statistics.md:34`](https://github.com/calm-trader/skills/blob/d222506/auto-evolve-agentic-system/references/statistics.md#L34)
@@ -1100,8 +1071,8 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Kill only what you started, and kill it by PID — never by port, because the orchestrator or a sibling may be listening on it." [`supervision/agents/verifier.md:54`](https://github.com/calm-trader/skills/blob/d222506/supervision/agents/verifier.md#L54)
 - "GAPS (only if FAIL):" [`supervision/agents/verifier.md:72`](https://github.com/calm-trader/skills/blob/d222506/supervision/agents/verifier.md#L72)
 - "FAIL on one real gap. One false sentence in a doc is a FAIL; the reader trusts docs most and can check them least." [`supervision/agents/verifier.md:99`](https://github.com/calm-trader/skills/blob/d222506/supervision/agents/verifier.md#L99)
-- "Assume every number is wrong until a specific check says otherwise." [`tradingview-backtesting/SKILL.md:10`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L10)
 - "The unifying lesson: **TradingView will nearly always give you a plausible number.** It rarely errors." [`tradingview-backtesting/SKILL.md:10`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L10)
+- "Assume every number is wrong until a specific check says otherwise." [`tradingview-backtesting/SKILL.md:10`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L10)
 - "**\`slippage\` is charged per eligible fill — market and stop orders; limit fills are not slipped.** \[AUDITED — reasoned from docs and contract math; never measured in a controlled slippage=1-vs-0 run\]…" [`tradingview-backtesting/SKILL.md:24`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L24)
 - "Never quote one script's PF under another script's cost header." [`tradingview-backtesting/SKILL.md:26`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L26)
 - "**One clean pattern for new scripts: fold friction into a flat commission and set slippage to zero.** \[VERIFIED on one-contract, single-entry/single-exit runs\]" [`tradingview-backtesting/SKILL.md:28`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L28)
@@ -1118,26 +1089,26 @@ Load timing is how Claude Code loads skills, not measured here. Tokens are estim
 - "Charting a synthetic expression (\`QQQ/SPY\`) and running a strategy on it produces a profit factor with **no real legs, no real commissions, no real fills, no margin, no dividends** — a plausible, ari…" [`tradingview-backtesting/SKILL.md:109`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L109)
 - "Each leg runs as a **real strategy on its own chart symbol** with real per-leg costs (isolated leg check)." [`tradingview-backtesting/SKILL.md:113`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L113)
 - "Export each leg's **List of Trades as CSV** (works \[VERIFIED\])." [`tradingview-backtesting/SKILL.md:114`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L114)
-- "Prefer named pairs unless the universe is the hypothesis." [`tradingview-backtesting/SKILL.md:117`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L117)
 - "Read economics follow: a 2-leg pair costs 2 backtests per configuration; a 9-ETF cross-sectional strategy costs 9–11." [`tradingview-backtesting/SKILL.md:117`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L117)
+- "Prefer named pairs unless the universe is the hypothesis." [`tradingview-backtesting/SKILL.md:117`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L117)
 - "Same class: "last/first session of month" needs a session calendar — \`dayofmonth\` is only a proxy near weekends/holidays." [`tradingview-backtesting/SKILL.md:121`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L121)
 - "**Know how big a PF difference has to be before it means anything:** \`SE(log PF) ≈ √(4.5/n)\` on this desk's trade P&L — ±0.25 PF at n≈118, ±0.13 at n≈300; ranking exit cells 0.15 apart needs ~800 tra…" [`tradingview-backtesting/SKILL.md:130`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L130)
-- "Do **not** use first-match/window-1 logic — that was the v1 watchdog, and with a stale chart tab present it activates the wrong tab and keeps the operator's tab hidden \[VERIFIED failure\]." [`tradingview-backtesting/SKILL.md:151`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L151)
-- "For a session, run the maintained watchdog \`.claude/skills/tradingview-backtesting/tv-tab-watchdog.sh\` (~4s loop, all windows: closes stale chart tabs, activates the newest, does not steal app focus)." [`tradingview-backtesting/SKILL.md:151`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L151)
 - "Corollary: **only one chart tab can be live per window** — run multi-instrument work sequentially in one tab. **Implication:** layouts previously declared "permanently dead" were probably hidden-tab …" [`tradingview-backtesting/SKILL.md:151`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L151)
+- "For a session, run the maintained watchdog \`.claude/skills/tradingview-backtesting/tv-tab-watchdog.sh\` (~4s loop, all windows: closes stale chart tabs, activates the newest, does not steal app focus)." [`tradingview-backtesting/SKILL.md:151`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L151)
+- "Do **not** use first-match/window-1 logic — that was the v1 watchdog, and with a stale chart tab present it activates the wrong tab and keeps the operator's tab hidden \[VERIFIED failure\]." [`tradingview-backtesting/SKILL.md:151`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L151)
 - "Re-probe before relying on a non-Deep read. **The replacement technique, which works under Deep and is better anyway: make the funnel out of TRADES, not counters.** Ship one diagnostic arm per funnel…" [`tradingview-backtesting/SKILL.md:156`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L156)
 - "Trade counts are always visible under Deep Backtesting; \`plot()\` and the Data Window never are." [`tradingview-backtesting/SKILL.md:157`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L157)
 - "Discriminate on the DOM: legend showing a live price → chart is fine; read everything as DOM text. \[VERIFIED\]" [`tradingview-backtesting/SKILL.md:159`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L159)
 - "If \`Cmd+V\` will not take, dispatch a synthetic \`ClipboardEvent('paste')\` at Monaco's \`textarea.inputarea\`." [`tradingview-backtesting/SKILL.md:163`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L163)
-- "**Other operator rules.** Verify the symbol **by price** on every read as a secondary check (bands dated 2026-08: NQ ≈ 23–29k, ES ≈ 6.5–7.6k — verify the ticker itself; bands go stale)." [`tradingview-backtesting/SKILL.md:165`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L165)
 - "Never drag panel dividers. **Never Cmd+S** — it saves to the user's TradingView library." [`tradingview-backtesting/SKILL.md:165`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L165)
+- "**Other operator rules.** Verify the symbol **by price** on every read as a secondary check (bands dated 2026-08: NQ ≈ 23–29k, ES ≈ 6.5–7.6k — verify the ticker itself; bands go stale)." [`tradingview-backtesting/SKILL.md:165`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L165)
 - "**Trade count is the cheapest integrity check — in an engine built for it.** Where entries are independent of exits (day-slot consumed at entry, no re-entry — the design used for exit surfaces here \[…" [`tradingview-backtesting/SKILL.md:175`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L175)
 - "Caveat: with no stop and an end-of-day exit, win% becomes an **upper bound** on the touch rate (non-touching days that close profitably score as wins)." [`tradingview-backtesting/SKILL.md:182`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L182)
 - "**Serve multiple experimental windows from ONE backtest range.** TradingView takes a single contiguous range, so put the window calendar *inside the engine* as a \`blockRole ∈ {all, select, validate}\`…" [`tradingview-backtesting/SKILL.md:184`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L184)
 - "One baseline read then gives the full threshold sweep for every filter from the exported List of Trades." [`tradingview-backtesting/SKILL.md:186`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L186)
 - "This replaces one read per window." [`tradingview-backtesting/SKILL.md:188`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L188)
-- "Then the null holds date, side and frequency constant and varies only *when* the trade is taken. **Check the placebo's trade count matches the real run** — if a shifted entry can fall past a session …" [`tradingview-backtesting/SKILL.md:190`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L190)
 - "**A matched placebo is stronger than a clock control.** Keep the strategy's own signal dates and sides, shift only the entry time (e.g. +90 min)." [`tradingview-backtesting/SKILL.md:190`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L190)
+- "Then the null holds date, side and frequency constant and varies only *when* the trade is taken. **Check the placebo's trade count matches the real run** — if a shifted entry can fall past a session …" [`tradingview-backtesting/SKILL.md:190`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L190)
 - "A clean compile does not clear this list — one item is a runtime error." [`tradingview-backtesting/SKILL.md:196`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L196)
 - "**Bools can never be \`na\` in v6** — neither assign \`na\` to a bool nor call \`na()\` on one (CE10123). Do not "wrap it in a ternary with \`na()\`" — that is the same illegal construct. Restructure: initia…" [`tradingview-backtesting/SKILL.md:198`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L198)
 - "**Explicit \`by -1\` throws a *runtime* error after a clean compile.** Descending loops themselves are fine — write \`for i = hi to lo\` and let Pine infer the direction; never write a negative \`by\`." [`tradingview-backtesting/SKILL.md:199`](https://github.com/calm-trader/skills/blob/d222506/tradingview-backtesting/SKILL.md#L199)
