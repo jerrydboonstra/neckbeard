@@ -43,7 +43,7 @@ tools/vet . report.md --facts
 cat report.md
 ```
 
-The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list, then three layers: how it affects you (five rows: cost, reach, leaves state, live surface and read completeness), what it adds, and where it takes a position. This is neckbeard's own, cut down to its headings and top-level bullets ([the full report](docs/neckbeard-report.md) lists every skill and file):
+The `.` is the plugin's folder, so this reads neckbeard itself; give another plugin's folder to read that one. It needs Python 3.11 or later and no login. The report opens with a title, a header line (date, neckbeard version, the plugin's version and commit or release tag) and a contents list, then three layers: how it affects you (five rows: cost, reach, leaves state, live surface and read completeness), what it adds, and where it takes a position. This is neckbeard's own, cut down to its summary rows and one line per card ([the full report](docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard 1.17.8 · how it affects you, what it adds, where it takes a position

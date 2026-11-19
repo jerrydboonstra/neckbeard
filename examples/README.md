@@ -1,6 +1,6 @@
 # Gallery
 
-Facts reports on seven public plugins and skill packs, and one fit report that neckbeard ran on itself. A report has three layers: **how it affects you** (five rows: cost, reach, what it leaves behind, its live surface and how much neckbeard could read), **what it adds** (one card each for the skills and rule text it injects, the hooks it registers, any Claude Code mods, the agents and commands it ships, the files it may write, the servers it reaches and its source), and **where it takes a position** (every place it tells the model what to do, by topic, in its own words). A **facts report** has no verdict and no model call, and it never judges whether the plugin is good. Every report here is dated and names the commit it read, so an old one is easy to spot.
+Facts reports on seven public plugins and skill packs, and one fit report that neckbeard ran on itself. A report has three layers: **how it affects you** (five rows: cost, reach, what it leaves behind, its live surface and how much neckbeard could read), **what it adds** (a card for each of: the skills and rule text it injects, the hooks it registers, any Claude Code mods, the agents and commands it ships, the files it may write, the servers it reaches, and its source), and **where it takes a position** (every place it tells the model what to do, by topic, in its own words). A **facts report** has no verdict and no model call, and it never judges whether the plugin is good. Every report here is dated and names the commit it read, so an old one is easy to spot.
 
 | plugin | version and commit | read state | date |
 |---|---|---|---|
@@ -13,7 +13,7 @@ Facts reports on seven public plugins and skill packs, and one fit report that n
 | [calm-trader/skills](calm-trader-skills.md) | @ `d222506` (head: no release tags). A pack the author of neckbeard contributes to, so this row is a conflict of interest. It is here with the other maintainer's agreement. | read in full | 2026-11-18 |
 | [jerrydboonstra/neckbeard](neckbeard.md), vetting itself | 1.17.8 @ `ab332f8b`: the one fit report, kept as a labelled demo (see below) | not applicable: a fit report, judged by a model | 2026-11-18 |
 
-"Partly read" means neckbeard could not read some part of the plugin, and the report names each gap: a hook whose script it could not trace, a file over its read cap, a file that is not valid JSON. It is a statement about what was read, not about the plugin's quality. "Read in full" means every section was read or does not apply.
+"Partly read" means neckbeard could not read some part of the plugin, and the report names each gap, for example a hook whose script it could not trace, a file over its read cap, a file that is not valid JSON, a symlinked folder it did not follow, or a marketplace entry with no source string. It is a statement about what was read, not about the plugin's quality. "Read in full" means every section was read or does not apply.
 
 ## The one fit report
 
