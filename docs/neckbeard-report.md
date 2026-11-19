@@ -18,7 +18,7 @@
 |---|---|---|
 | 🟩 | Cost | adds 764 characters to every session, ~191 tokens (764 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 | 🟩 | Reach | on demand only |
-| 🟧 | Leaves state | 52 files that may write state |
+| 🟧 | Leaves state | 53 files that may write state |
 | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 | 🟩 | Read completeness | read in full |
 
@@ -28,7 +28,7 @@
 
 The colours follow written rules. Each is checked top to bottom, and the first match wins. A row whose input was not read in full is never 🟩.
 
-- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions in characters, and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says "characters and bytes"; text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
+- Cost: 🟩 under 2,000; 🟨 2,000 to 7,999; 🟧 8,000 to 31,999; 🟥 32,000 and over. Size counts skill and agent descriptions in characters (a skill that sets disable-model-invocation loads only when called by name, so its description is left out), and rule files and hook-injected text in bytes (the dossier's own units), so a total that holds both says "characters and bytes"; text a hook builds at run time counts as at least its known size. Hook text counts twice when hooks reach subagents. An entry that was refused or has no usable size counts as 0.
 - Reach: 🟥 a hook and hooks reach subagents; 🟨 a hook, a Claude Code mod or a rule file (every main session); 🟩 neither (on demand only).
 - Leaves state: 🟧 one or more files that may write state; 🟨 nothing found but the scan was partial or failed; 🟩 nothing found by a full scan.
 - Live surface: 🟥 a hook or MCP command runs ssh, mosh, telnet, rsh, rlogin (each a remote shell); 🟧 any MCP server, any Claude Code mod, a hook running curl, wget, nc or holding an http:// or https:// URL, or a hook command too long to read; 🟨 any hook command; 🟩 none. A command word is the first word of each piece, cut at newlines and at | && || ; & outside quotes, after NAME=value words, by basename; an MCP server's command is compared by its first word and each of its args whole, by basename. The scan does not search inline code (bash -c, node -e), hook script bodies, or commands behind a wrapper (sudo, timeout, command, nohup, exec, xargs, ( ), { }, !, $( ) or backticks).
@@ -66,7 +66,7 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 
 </details>
 
-<details><summary>🟢 <b>State it may leave</b> · 52 files that may write state · 10 named</summary>
+<details><summary>🟢 <b>State it may leave</b> · 53 files that may write state · 10 named</summary>
 
 - Persistence candidates:
   - Makefile
@@ -79,7 +79,7 @@ The colours follow written rules. Each is checked top to bottom, and the first m
   - skills/neckbeard/inventory_parts.py
   - skills/neckbeard/mcp_live.py
   - skills/neckbeard/selfcheck.py
-  - and 42 more, in: tools/ 42
+  - and 43 more, in: tools/ 43
 
 </details>
 

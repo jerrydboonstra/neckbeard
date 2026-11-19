@@ -6,7 +6,7 @@ reader's rule text is read. The server is tools/fixtures/mcp-live/server.py; a d
 each request it gets to calls.log beside it (a notification is not a request). Each plugin is built in a temporary folder.
 
 Point 2 (the flag off changes nothing) is a guard, not a test that fails first: it compares the dossier of every read-status
-fixture and of the packs built here with the dossier 4bece13's inventory.py wrote (the empty config folder written <EMPTY>) (tools/fixtures/mcp-live/_baselines/), with
+fixture and of the packs built here with the dossier 20bcf6a's inventory.py wrote (the empty config folder written <EMPTY>) (tools/fixtures/mcp-live/_baselines/), with
 every read_status.*.causes removed from both sides and each section's notes sorted, and tools/part1's output on each. To write the baselines again from another
 inventory.py: tools/test_mcp_live.py --baselines /path/to/inventory.py."""
 import atexit, json, os, shutil, subprocess, sys, tempfile, time
@@ -342,8 +342,8 @@ for p in sorted(P1_SRC.glob("*.dossier.json")):
     r = subprocess.run([sys.executable, str(PART1), str(p)], capture_output=True, text=True)
     if (r.stdout if r.returncode == 0 else f"exit {r.returncode}") != (BASE / f"p1-{n}.part1.md").read_text():
         bad_names.append("part1 fixture " + n)
-check(f"2. flag off: the dossier of each of {len(fxs)} fixtures and packs, and part1's output, equal 4bece13's "
-      "(read_status causes removed). A guard: it cannot fail on 4bece13 itself", (bad_names, missing), ([], []))
+check(f"2. flag off: the dossier of each of {len(fxs)} fixtures and packs, and part1's output, equal 20bcf6a's "
+      "(read_status causes removed). A guard: it cannot fail on 20bcf6a itself", (bad_names, missing), ([], []))
 # hook-echo-traced changed two baselines on purpose and no other: rs-hooks-untraced gains the stopping line in its unresolved note,
 # and rs-hooks-echo-traced is a new fixture. The guard above holds every other baseline to the text it had; these two pin what the
 # change added, so the new text is the only thing either may differ by (the diff of the commit lists exactly these files).
