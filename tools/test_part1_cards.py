@@ -257,6 +257,38 @@ chk("CR8. card() with an empty marker writes `<details><summary><b>name</b>` wit
 chk("CR8. an empty marker with a gist keeps the gist", cards_mod.card("", "N", "g", [])[0] == "<details><summary><b>N</b> \u00b7 g</summary>", cards_mod.card("", "N", "g", [])[0])
 chk("CR8. a marker still prints marker, space, name as before", cards_mod.card("\U0001F7E2", "N", "", [])[0] == "<details><summary>\U0001F7E2 <b>N</b></summary>", cards_mod.card("\U0001F7E2", "N", "", [])[0])
 
+# ---------------------------------------------------------------- skip-disabled-skill-cost: the Injects card counts only skills that load every session
+def off_on(d):
+    d["target"]["skills"] = [{"name": "off", "description": "o" * 1000, "path": "/x/demo/skills/off/SKILL.md", "source": "skills/off/SKILL.md", "bytes": 900, "text": "x", "model_invocable": False},
+                             {"name": "on", "description": "n" * 100, "path": "/x/demo/skills/on/SKILL.md", "source": "skills/on/SKILL.md", "bytes": 900, "text": "x", "model_invocable": True}]
+out = render(variant("plugin-found", off_on))[1]
+gist = card_gist(out, "Injects") or ""
+chk("SD2. the gist counts ~100 chars of skill descriptions every session and says 1 skill loads only when called",
+    "~100 chars of skill descriptions every session" in gist and "; 1 skill loads only when called" in gist, gist)
+chk("SD2. the disabled skill's line says it loads only when called by name; the other keeps its count",
+    "  - off: description loads only when called by name (disable-model-invocation); the file on demand (900 bytes, ~225 tokens)" in out.split("\n")
+    and "  - on: description every session (100 chars); the file on demand (900 bytes, ~225 tokens)" in out.split("\n"), out)
+def two_off(d):
+    off_on(d)
+    d["target"]["skills"][1]["model_invocable"] = False
+gist = card_gist(render(variant("plugin-found", two_off))[1], "Injects") or ""
+chk("SD5. two skills left out read '2 skills load only when called'", "; 2 skills load only when called" in gist, gist)
+gist = card_gist(render(variant("plugin-found", lambda d: [s_.pop("model_invocable", None) for s_ in d["target"]["skills"]] and None))[1], "Injects") or ""
+chk("SD4. a dossier with no model_invocable field: the Injects gist is exactly as before",
+    gist == "2 skills \u00b7 ~375 tokens on demand \u00b7 ~22 chars of skill descriptions every session \u00b7 hook text read in full", gist)
+out = render(fx("plugin-found"))[1]
+chk("SD4. the same dossier's per-skill lines are exactly as before",
+    "  - alpha: description every session (21 chars); the file on demand (1200 bytes, ~300 tokens)" in out.split("\n"), out)
+def one_persist(d):
+    d["target"]["persistence_candidates"] = d["target"]["persistence_candidates"][:1]
+gist = card_gist(render(variant("plugin-found", one_persist))[1], "State it may leave") or ""
+chk("SD5. one state file reads '1 file that may write state', never '1 files'", gist.startswith("1 file that may write state") and "1 files" not in gist, gist)
+def one_left(d):
+    d["target"]["persistence_candidates"] = [f"d{i:02d}/f" for i in range(10 + 16)]   # 10 shown, then 16 folders of one file: 15 named and 1 other
+out = render(variant("plugin-found", one_left))[1]
+chk("SD5. the other-folders line says '1 other folder (1 file)', never '1 other folders (1 files)'",
+    "and 1 other folder (1 file)" in out and "1 files" not in out and "1 other folders" not in out, [l for l in out.split("\n") if "other folder" in l])
+
 for t_ in TEMPS:
     shutil.rmtree(t_, ignore_errors=True)
 print(f"test_part1_cards: {fail} failed" if fail else "test_part1_cards: all passed")
