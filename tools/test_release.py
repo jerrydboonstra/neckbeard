@@ -75,8 +75,11 @@ def world():
 
 
 def run(home, work, **env):
+    # release-push makes the tag itself, so it needs an identity; useConfigOnly stops git guessing one on any machine
+    ident = dict(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com",
+                 GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="user.useConfigOnly", GIT_CONFIG_VALUE_0="true")
     e = dict(os.environ, FAKE_HOME=home, PATH=os.path.join(home, "bin") + os.pathsep + os.environ["PATH"],
-             CI_POLL="0", CI_GRACE="0", CI_REPO="o/r", VERSION="1.1.0", REMOTES="origin mirror", **env)
+             CI_POLL="0", CI_GRACE="0", CI_REPO="o/r", VERSION="1.1.0", REMOTES="origin mirror", **ident, **env)
     try:
         r = subprocess.run(["bash", os.path.join(work, "tools", "release-push")], cwd=work, env=e, capture_output=True, text=True, timeout=30)
     except subprocess.TimeoutExpired:   # a wait with no bound never ends
