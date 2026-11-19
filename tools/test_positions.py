@@ -114,6 +114,41 @@ code, out = run(D, O3, "--reader", reader)
 chk("4. given a reader folder, the tool reads none of it: no reader line in OUT, and OUT is the same as without it",
     code == 0 and b"semicolons" not in open(O3, "rb").read() and b"linter" not in open(O3, "rb").read() and open(O3, "rb").read() == open(O1, "rb").read(), out)
 
+# Two directive quotes on one line, one order under every hash seed (the sort key once stopped at file and line, so a tie kept
+# the iteration order of a string set, which PYTHONHASHSEED changes).
+tie_dossier = {"target": {"skills": [], "agents": [], "hooks": {}, "rule_files": [], "commands": [
+    {"source": "command", "path": "commands/tie.md", "text": "Always run the tests. Never skip the tests. Run the tests twice. Do not skip the tests.\n"}]}}
+T = os.path.join(d, "tie.json")
+json.dump(tie_dossier, open(T, "w"))
+outs = set()
+for seed in range(16):
+    out_path = os.path.join(d, f"tie{seed}.json")
+    r = subprocess.run([sys.executable, os.path.join(HERE, "positions"), T, out_path], capture_output=True, text=True,
+                       env={**os.environ, "PYTHONHASHSEED": str(seed)})
+    outs.add(open(out_path, "rb").read() if r.returncode == 0 else r.stderr.encode())
+chk("5. quotes on one line keep one order under PYTHONHASHSEED 0 to 15", len(outs) == 1, f"{len(outs)} different outputs")
+tie_got = json.loads(next(iter(outs)))
+tie_quotes = [p["quote"] for t in tie_got["topics"] for p in t["positions"]]
+chk("5b. the tie fixture holds four quotes in one topic on its one line", len(tie_quotes) == 4 and all(p["line"] == 1 for t in tie_got["topics"] for p in t["positions"]), tie_quotes)
+tops = [(t["name"], [p["quote"] for p in t["positions"]]) for t in tie_got["topics"]]
+chk("5c. within a topic, quotes on one line are in quote order", all(qs == sorted(qs) for _, qs in tops), tops)
+
+# Hook-template quotes have no line (line 0), so every quote from one hook file ties on (file, 0): same sixteen seeds.
+hook_dossier = {"target": {"skills": [], "agents": [], "commands": [], "rule_files": [], "hooks": {"injected_content": [
+    {"file": "hooks/h.sh", "bytes": 60, "events": ["SessionStart"], "built_at_run_time": True, "writes": [], "at_least": False,
+     "template": ["Always run the tests.", "Never skip the tests.", "Run the tests twice.", "Do not skip the tests."]}]}}}
+H = os.path.join(d, "hook.json")
+json.dump(hook_dossier, open(H, "w"))
+houts = set()
+for seed in range(16):
+    out_path = os.path.join(d, f"hook{seed}.json")
+    r = subprocess.run([sys.executable, os.path.join(HERE, "positions"), H, out_path], capture_output=True, text=True,
+                       env={**os.environ, "PYTHONHASHSEED": str(seed)})
+    houts.add(open(out_path, "rb").read() if r.returncode == 0 else r.stderr.encode())
+chk("6. hook-template quotes (no line) keep one order under PYTHONHASHSEED 0 to 15", len(houts) == 1, f"{len(houts)} different outputs")
+hq = [p["quote"] for t in json.loads(next(iter(houts)))["topics"] for p in t["positions"]]
+chk("6b. the hook fixture holds four quotes, in quote order", len(hq) == 4 and hq == sorted(hq), hq)
+
 code, out = run(D)
 chk("usage error with one argument", code != 0 and "usage" in out, out)
 sys.exit(1 if fails else 0)

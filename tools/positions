@@ -242,7 +242,7 @@ def build(target):
             line = fixed or line
             if quote and DIRECTIVE_RE.search(quote):
                 found.append((path, line if has_line else 0, has_line, quote))
-    found = sorted(set(found), key=lambda f: (f[0], f[1]))
+    found = sorted(set(found), key=lambda f: (f[0], f[1], f[3]))  # the quote breaks a tie on one line; a set's order changes with the hash seed
     firsts, order = {}, []
     for path, line, has_line, quote in found:
         key = SPACE.sub(" ", quote)
