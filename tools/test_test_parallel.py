@@ -287,6 +287,7 @@ check("every tools/test_X.py has its own row, tools/test_X.py -> test_X",
       all(rows.get(f"tools/{m}.py") and m in rows[f"tools/{m}.py"] for m in own),
       repr([m for m in own if m not in (rows.get(f"tools/{m}.py") or [])]))
 check("tools/vet selects test_vet, test_vet_judge, test_vet_layers, test_vet_report, test_vet_session and test_vet_stability, and nothing else", sorted(rows.get("tools/vet", [])) == ["test_vet", "test_vet_judge", "test_vet_layers", "test_vet_report", "test_vet_session", "test_vet_stability"], repr(rows.get("tools/vet")))
+check("tools/test_vet.py and tools/test_vet_session.py each select test_layout, which holds the size cap on test modules", all("test_layout" in rows.get(f"tools/{m}.py", []) for m in ("test_vet", "test_vet_session")), repr([rows.get("tools/test_vet.py"), rows.get("tools/test_vet_session.py")]))
 check("tools/vet_harness.py (the shared helper of the vet test modules) selects all five", sorted(rows.get("tools/vet_harness.py", [])) == ["test_vet", "test_vet_judge", "test_vet_layers", "test_vet_report", "test_vet_session"], repr(rows.get("tools/vet_harness.py")))
 check("skills/neckbeard/inventory.py selects test_selfcheck", "test_selfcheck" in rows.get("skills/neckbeard/inventory.py", []))
 check("skills/neckbeard/inventory_dossier.py selects the modules inventory.py's row selects, and test_read_status",
