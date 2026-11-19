@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""tools/excerpts quotes a report in CASE-STUDIES.md: a fit report as its verdict box and At-a-glance table (in the 2.0 layout: the How it affects you table and the verdict strip), a facts report
-(no verdict box) as its title line, its source line, and under "What it adds" each ### heading with its top-level bullets (a bullet ending in ":" says how many items it held).
+"""tools/excerpts quotes a report in README.md and CASE-STUDIES.md: a fit report as its How it affects you table and its verdict strip, a facts report as its title line, its source line, the table
+and one line per facts card (read marker, name and gist). A report without the 2.0 summary table is refused.
 Every case runs a copy of the script inside a throwaway tree, since the script finds its root from its own location."""
 import re, shutil, subprocess, sys, tempfile
 from pathlib import Path
@@ -62,82 +62,6 @@ def run(report, *args):
         r = subprocess.run([sys.executable, str(root / "tools" / "excerpts"), *args], capture_output=True, text=True)
         return r, doc.read_text()
 
-
-r, text = run(FACTS)
-check("a facts report is excerpted, not refused", r.returncode == 0, r.stderr)
-check("facts: the title line is quoted", "> # 🔍 demo 1.2.3 · what it adds" in text, text)
-check("facts: the source line is quoted", "`2026-11-15` · neckbeard 1.17.1 · [a/demo]" in text, text)
-check("facts: each ### heading and its top-level bullets are quoted",
-      all(s in text for s in ("### Injects", "- Skills:", "- Rule files: none", "### Hooks", "- Hooks: partly read")), text)
-check("facts: sub-bullets and the closing note are left out",
-      "demo: description every session" not in text and "reaches subagents" not in text and "No reader's rules" not in text, text)
-check("facts: no verdict box is invented", "> ## " not in text and "| | | |" not in text, text)
-
-r, text = run(FIT)
-check("a fit report keeps its verdict box and At-a-glance table",
-      r.returncode == 0 and "> 🟩 install\n> It fits the reader." in text and "| ⛔ conflicts | 0 | none |" in text, r.stderr + text)
-check("fit: the closing 'Verdict is relative' note is left out", "Verdict is relative" not in text, text)
-
-with tempfile.TemporaryDirectory() as d:
-    root = Path(d)
-    (root / "tools").mkdir()
-    shutil.copy(SCRIPT, root / "tools" / "excerpts")
-    (root / "examples").mkdir()
-    (root / "examples" / "demo.md").write_text(FACTS)
-    (root / "CASE-STUDIES.md").write_text("<!-- report:demo -->\nold\n<!-- /report -->\n")
-    ex = [sys.executable, str(root / "tools" / "excerpts")]
-    stale = subprocess.run(ex + ["--check"], capture_output=True, text=True)
-    check("--check names a stale facts excerpt", stale.returncode == 1 and "demo" in stale.stderr, stale.stderr)
-    subprocess.run(ex, capture_output=True, text=True)
-    fresh = subprocess.run(ex + ["--check"], capture_output=True, text=True)
-    check("--check passes once the excerpt is rewritten", fresh.returncode == 0, fresh.stderr)
-
-with tempfile.TemporaryDirectory() as d:
-    root = Path(d)
-    (root / "tools").mkdir()
-    shutil.copy(SCRIPT, root / "tools" / "excerpts")
-    (root / "docs").mkdir()
-    (root / "docs" / "own-report.md").write_text(FACTS)
-    (root / "README.md").write_text("top\n<!-- report:docs/own-report -->\nold\n<!-- /report -->\n")
-    ex = [sys.executable, str(root / "tools" / "excerpts")]
-    r = subprocess.run(ex, capture_output=True, text=True)
-    text = (root / "README.md").read_text()
-    check("README.md takes a marker too, and a name with a folder reads that file in the repo",
-          r.returncode == 0 and "> ### Injects" in text and "old" not in text, r.stderr + text)
-
-# A bullet ending in ":" whose children the excerpt drops carries their count, so no quoted line ends bare.
-COUNTS = FACTS.replace("## Notes", """### State it may leave
-- Persistence candidates:
-  - a.py
-  - b.py
-  - and 19 more, in: tools/ 19
-- Agents:
-- Commands:
-\t- one
-- Tabbed:
-\t- x
-\t- y
-- Nested:
-  - top
-    - detail
-- Lone overflow:
-  - and 3 more, in:
-
-## Notes""")
-r, text = run(COUNTS)
-check("facts: one child gives its count and its name, whole line",
-      "\n> - Skills: 1 (demo)\n" in text, text)
-check("facts: a child with no colon is named whole",
-      "\n> - Commands: 1 (one)\n" in text, text)
-check("facts: 'and N more' adds N to the listed lines",
-      "\n> - Persistence candidates: 21 (see the full report)\n" in text, text)
-check("facts: tab-indented children are counted", "\n> - Tabbed: 2 (see the full report)\n" in text, text)
-check("facts: a nested detail is not a child", "\n> - Nested: 1 (top)\n" in text, text)
-check("facts: a lone 'and N more' counts N and is not named", "\n> - Lone overflow: 3 (see the full report)\n" in text, text)
-check("facts: a bullet ending in a colon with no children says none",
-      "\n> - Agents: none\n" in text, text)
-check("facts: a bullet with text after its colon is unchanged", "\n> - Hooks: partly read\n" in text, text)
-check("facts: no quoted line ends in a colon", not any(l.rstrip().endswith(":") for l in text.splitlines() if l.startswith("> ")), text)
 
 # The 2.0 layout (report-assembly-2-0): the report opens with the "How it affects you" summary table, the facts are cards under
 # "What it adds", and a fit report's verdict is a strip inside the first layer. An old-layout report still gives today's excerpt.
@@ -247,6 +171,33 @@ check("2.0 fit: the summary table and the verdict strip are both there, the tabl
 check("2.0 fit: the strip keeps its counts and its reader line", "⛔ **0** conflicts" in text and "*against the sample reader (demo)*" in text, text)
 check("2.0 fit: the cards and the facts layer are left out", not any(s in text for s in ("Why this verdict", "Verdict is relative", "Injects", "Commits and git")), text)
 
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d)
+    (root / "tools").mkdir()
+    shutil.copy(SCRIPT, root / "tools" / "excerpts")
+    (root / "examples").mkdir()
+    (root / "examples" / "demo.md").write_text(NEW_FACTS)
+    (root / "CASE-STUDIES.md").write_text("<!-- report:demo -->\nold\n<!-- /report -->\n")
+    ex = [sys.executable, str(root / "tools" / "excerpts")]
+    stale = subprocess.run(ex + ["--check"], capture_output=True, text=True)
+    check("--check names a stale facts excerpt", stale.returncode == 1 and "demo" in stale.stderr, stale.stderr)
+    subprocess.run(ex, capture_output=True, text=True)
+    fresh = subprocess.run(ex + ["--check"], capture_output=True, text=True)
+    check("--check passes once the excerpt is rewritten", fresh.returncode == 0, fresh.stderr)
+
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d)
+    (root / "tools").mkdir()
+    shutil.copy(SCRIPT, root / "tools" / "excerpts")
+    (root / "docs").mkdir()
+    (root / "docs" / "own-report.md").write_text(NEW_FACTS)
+    (root / "README.md").write_text("top\n<!-- report:docs/own-report -->\nold\n<!-- /report -->\n")
+    ex = [sys.executable, str(root / "tools" / "excerpts")]
+    r = subprocess.run(ex, capture_output=True, text=True)
+    text = (root / "README.md").read_text()
+    check("README.md takes a marker too, and a name with a folder reads that file in the repo",
+          r.returncode == 0 and "\n> - 🟢 **Injects**" in text and "old" not in text, r.stderr + text)
+
 # odd 2.0 reports: a card body with a rule line, and a "> **" line outside the summary layer
 ODD = NEW_FACTS.replace("- Skills:\n  - demo: description every session (13 chars)", "- Skills:\n\n---\n\n  - demo: description every session (13 chars)")
 r, text = run(ODD)
@@ -258,13 +209,11 @@ r, text = run(ODD3)
 check("2.0 facts: a '> **' line before the summary layer does not make it a fit report", "\n> - 🟢 **Injects**" in text and "quoted note" not in text, text)
 check("2.0 facts: a '> **' line in a card body does not make it a fit report", "\n> - 🟢 **Injects**" in text and "COPY RULES" not in text, text)
 
-# an old-layout report still gives today's excerpt (the gallery regenerates in gallery-2-0)
-r, text = run(FACTS)
-check("old layout: a facts report still gives its ### headings and bullets", r.returncode == 0 and "> ### Injects" in text and "> - Rule files: none" in text, r.stderr + text)
-r, text = run(FIT)
-check("old layout: a fit report still gives its verdict box and table", r.returncode == 0 and "> 🟩 install" in text and "| ⛔ conflicts | 0 | none |" in text, r.stderr + text)
-r, text = run("# demo\n\nnothing recognisable here\n")
-check("a report it can read neither way still exits with today's message", r.returncode != 0 and "is neither a fit report" in r.stderr, r.stderr)
+# A report in the old layout, or one with no summary table, is refused: nothing quotes one now that the gallery is regenerated.
+for name, old in (("an old-layout facts report", FACTS), ("an old-layout fit report", FIT), ("a report with nothing recognisable", "# demo\n\nnothing recognisable here\n")):
+    r, text = run(old)
+    check(f"{name} exits with the 'neither a fit report nor a facts report' message and leaves the page as it was",
+          r.returncode != 0 and "is neither a fit report" in r.stderr and "old text" in text, r.stderr + text)
 
 ROOT = SCRIPT.parent.parent
 for doc in ("README.md", "CASE-STUDIES.md"):
