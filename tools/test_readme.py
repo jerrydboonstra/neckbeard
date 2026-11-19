@@ -83,7 +83,6 @@ check("an opening over 300 characters fails", dense("# t\n\n" + "word " * 61 + "
 check("a badge row, a line of links, a blockquote, a table and a code block are exempt",
       dense(good + "\nRounds: " + " · ".join("[r%d](x.md#%d)" % (i, i) for i in range(60)) + "\n\n> " + "word " * 120 + "\n\n| a | b |\n|---|---|\n| " + "w " * 300 + " | x |\n\n```\n" + "w " * 300 + "\n```\n") == ([], None))
 check("a long list item fails", len(dense(good + "\n- " + "word " * 101)[0]) == 1)
-d = ROOT / "tools" / "fixtures"
 import tempfile
 with tempfile.TemporaryDirectory() as tmp:
     t = Path(tmp)
