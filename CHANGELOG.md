@@ -4,6 +4,12 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 2.0.1 (2026-11-19)
+
+### The herd
+- make release pushes main to GitHub first, waits for CI on that commit, and only then tags and pushes the other remotes.
+- Where it takes a position: quotes on one line, or from one hook, now keep one order on every run, so a report no longer changes between runs with the same input.
+
 ## 2.0.0 (2026-11-19)
 ## Unreleased
 
