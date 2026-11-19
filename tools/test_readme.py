@@ -65,12 +65,41 @@ def dense(text):
     return long_, (opening if len(opening) > MAX_OPENING else None)
 
 
-def broken_links(path):
-    bad = []
-    for target in LINK.findall(path.read_text()):
-        if re.match(r"[a-z][a-z0-9+.-]*:", target) or target.startswith("#") or not target:
+def outside_fences(text):
+    """The lines of a Markdown file that are not inside a fenced code block."""
+    out, fenced = [], False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+        elif not fenced:
+            out.append(line)
+    return out
+
+
+def slugs(path):
+    """The anchors GitHub makes for a file's headings: lowercase, punctuation dropped except - and _, spaces to -, a -1, -2 suffix for repeats."""
+    seen, out = {}, set()
+    for line in outside_fences(path.read_text()):
+        m = re.match(r"#{1,6}\s+(.*?)\s*#*\s*$", line)
+        if not m:
             continue
-        if not (path.parent / target.split("#")[0]).exists():
+        title = LINK.sub(lambda k: re.match(r"!?\[(.*)\]", k.group(0)).group(1), m.group(1))
+        slug = re.sub(r"[^\w\- ]", "", title.lower()).replace(" ", "-")
+        n = seen.get(slug, 0)
+        seen[slug] = n + 1
+        out.add(slug if n == 0 else "%s-%d" % (slug, n))
+    return out
+
+
+def broken_links(path):
+    """The relative links in a file (outside code blocks) whose file is missing or whose #fragment matches no heading in it."""
+    bad = []
+    for target in LINK.findall("\n".join(outside_fences(path.read_text()))):
+        if re.match(r"[a-z][a-z0-9+.-]*:", target) or not target:
+            continue
+        name, _, frag = target.partition("#")
+        dest = path if not name else path.parent / name
+        if not dest.exists() or (frag and (dest.suffix != ".md" or frag not in slugs(dest))):
             bad.append(target)
     return bad
 
@@ -89,6 +118,11 @@ with tempfile.TemporaryDirectory() as tmp:
     (t / "here.md").write_text("x")
     (t / "a.md").write_text("[ok](here.md#h) [web](https://x.org/y) [top](#h) [gone](nowhere.md)")
     check("a relative link that does not resolve is reported", broken_links(t / "a.md") == ["nowhere.md"])
+    (t / "h.md").write_text("# Top\n\n## Try it: three lines, then the `report`\n\n## Again\n\n## Again\n\n```\n# not a heading\n```\n\n[self](#again-1) [bad](#nope) [other](a.md#x)\n")
+    (t / "b.md").write_text("[ok](h.md#try-it-three-lines-then-the-report) [rep](h.md#again-1) [gone](h.md#renamed) [nofile](zz.md#top) [code](h.md#not-a-heading)\n```\n[skip](nowhere.md)\n```\n")
+    check("a fragment that matches no heading in an existing file is reported (and slugs, repeats and code fences are read as GitHub does)",
+          broken_links(t / "b.md") == ["h.md#renamed", "zz.md#top", "h.md#not-a-heading"])
+    check("a bare #fragment is checked against the file's own headings", broken_links(t / "h.md") == ["#nope", "a.md#x"])
 
 # The README itself
 readme = ROOT / "README.md"
