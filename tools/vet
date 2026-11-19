@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]
 #   [--dossier DOSSIER --answers ANSWERS --prose PROSE]: vet one plugin against the sample reader, headless,
-# and write the report to OUT. This is the gallery method in one command, for a plugin that publishes its report
+# and write the report to OUT (or, in session mode below, assemble it from a calling session's own judgement). This is the gallery method in one command, for a plugin that publishes its report
 # and wants to rebuild it, say in a Claude Code web session on its own repo:
 #   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
 #   1. copy examples/reader to a throwaway folder: the judge writes into its config folder (backups/, projects/,
@@ -61,10 +61,10 @@
 # differences: the title ends " · against your rules"; the Baseline line keeps its form, its bytes and fingerprint computed from the rule
 # files' raw bytes on disk, each hashed under the name the report shows; the Rule files block names a file under the
 # project as its project-relative path, else under the home folder as ~/<path below home>, else by its basename (the project is tried first, so
-# the narrower root wins when it sits inside the home folder; a project that is the home folder itself counts as the home), so no local
+# the narrower root wins when it sits inside the home folder; a project that is the home folder or above it counts as the home), so no local
 # path appears; the Judge line reads "Judge: this session". A listed
 # rule file that can no longer be read, answers that units-verdict refuses, or a dossier made for another target exit 1, naming the problem,
-# with no OUT written. A dossier that lists no rule files gets the facts report instead (one stderr line, exit 0), and --note does not carry
+# with no OUT written (an OUT left by an earlier run is removed once the dossier and the three file names pass their checks, as in any fit report). A dossier that lists no rule files gets the facts report instead (one stderr line, exit 0), and --note does not carry
 # over to it, as in any fit report. --repo and --note work as in any fit report; with --reader, --judge, --model, --units or --facts it is a
 # usage error. Beside OUT it keeps only <stem>.units.json and <stem>.verdict.json: the caller's DOSSIER, ANSWERS and PROSE are never written,
 # moved or deleted, and one named like a file vet writes (OUT, <stem>.units.json, <stem>.verdict.json) is refused.
@@ -248,6 +248,8 @@ try:
     named = json.load(open(dossier, encoding="utf-8"))["target"]["path"]
 except (OSError, ValueError, KeyError, TypeError) as e:
     sys.exit(f"vet: can't read the dossier {dossier}: {e}")
+if not isinstance(named, str) or not named:
+    sys.exit(f"vet: the dossier {dossier} names no target path")
 if real(named) != real(target):
     sys.exit(f"vet: the dossier is for {named}, not {target}")
 PYEOF3
@@ -280,10 +282,13 @@ if not rules:
     sys.exit(3)   # no rule files: the facts report, below
 home = os.path.realpath(sys.argv[2])
 proj = os.path.realpath(current["project_root"]) if current.get("project_root") else ""
+inside = lambda rp, root: bool(root) and root != "/" and rp.startswith(root + os.sep)
+if proj == home or inside(home, proj):
+    proj = ""   # a project that is the home folder or above it is not a narrower root: the home folder names its files
 def shown(path):   # the project's own files first (the narrower root), then the home folder, else the basename: never a local path
     rp = os.path.realpath(path)
     for root, prefix in ((proj, ""), (home, "~/")):
-        if root and root != "/" and rp.startswith(root + os.sep) and not (root == proj and proj == home):
+        if inside(rp, root):
             return prefix + os.path.relpath(rp, root)
     return os.path.basename(rp)
 rows = []

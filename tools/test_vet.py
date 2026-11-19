@@ -405,12 +405,12 @@ SESSION_SKILL = "---\nname: demo\ndescription: A demo skill.\n---\n\nAlways run 
 TOOLS = os.path.dirname(VET)
 
 
-def session_fixture(tmp, project_in_home=False, no_rules=False, name="demo"):
+def session_fixture(tmp, project_in_home=False, no_rules=False, name="demo", project="proj"):
     """tmp/home, a project, a plugin and a real dossier of them; returns paths."""
     home = os.path.join(tmp, "home")
     os.makedirs(os.path.join(home, ".claude"))
-    proj = os.path.join(home, "work", "proj") if project_in_home else os.path.join(tmp, "proj")
-    os.makedirs(proj)
+    proj = {"home": home, "above": tmp}.get(project) or (os.path.join(home, "work", "proj") if project_in_home else os.path.join(tmp, "proj"))
+    os.makedirs(proj, exist_ok=True)
     other = os.path.join(tmp, "other"); os.makedirs(other)
     if not no_rules:
         shutil.copy(os.path.join(FIX, "home", ".claude", "CLAUDE.md"), os.path.join(home, ".claude", "CLAUDE.md"))
@@ -483,6 +483,7 @@ def case_main(tmp):
     fx = session_fixture(tmp)
     answers = write_answers(fx)
     caller_before = {f: open(os.path.join(tmp, "caller", f), "rb").read() for f in os.listdir(os.path.join(tmp, "caller"))}
+    prose_before = open(os.path.join(FIX, "prose.json"), "rb").read()
     r = session_vet(fx, answers=answers)
     v = verdict_of(fx, answers)
     files = [("~/.claude/CLAUDE.md", open(os.path.join(FIX, "home", ".claude", "CLAUDE.md"), "rb").read()),
@@ -492,7 +493,8 @@ def case_main(tmp):
     text = r["text"] or ""
     chk("session: exit 0, report written", (r["rc"], r["text"] is not None), (0, True))
     chk("session: title ends ' · against your rules'", text.split("\n")[0], "# \U0001F50D demo 1.0.0 · how it affects you, what it adds, where it takes a position · against your rules")
-    chk("session: the verdict strip is the one units-verdict computes", ("> **" + {"INSTALL": "\U0001F7E9 INSTALL"}[v["verdict"]] + "**") in text, True)
+    marks = {"INSTALL": "\U0001F7E9", "INSTALL WITH CHANGES": "\U0001F7E8", "COPY RULES, SKIP PLUGIN": "\U0001F7E8", "DON'T INSTALL": "\U0001F7E5"}
+    chk("session: the verdict strip is the one units-verdict computes", ("> **" + marks.get(v["verdict"], "?") + " " + v["verdict"] + "**") in text, True)
     chk("session: the Baseline line, with the fingerprint over the shown names", f"Baseline: your rules · 3 rule files · {nbytes} bytes · sha256 {fp}" in text, True)
     chk("session: the Judge line", "Judge: this session" in text, True)
     chk("session: no other judge named", ("the sample reader's config" in text, "told to ignore it" in text), (False, False))
@@ -502,7 +504,8 @@ def case_main(tmp):
     chk("session: the Contents line says 'your rules', not 'your rules's rules'", ("your rules's" in text, "the fit against your rules." in text), (False, True))
     chk("session: no local path in the report", [p in text for p in (tmp, os.path.realpath(tmp), fx["home"], fx["target"])], [False] * 4)
     chk("session: no claude process started", r["calls"], [])
-    chk("session: the caller's dossier, answers and prose are as they were, and not moved", {f: open(os.path.join(tmp, "caller", f), "rb").read() for f in os.listdir(os.path.join(tmp, "caller")) if f in caller_before} == caller_before, True)
+    chk("session: the prose file is as it was", open(os.path.join(FIX, "prose.json"), "rb").read() == prose_before, True)
+    chk("session: the caller's dossier and answers are as they were, and not moved", {f: open(os.path.join(tmp, "caller", f), "rb").read() for f in os.listdir(os.path.join(tmp, "caller")) if f in caller_before} == caller_before, True)
     stem = r["outpath"][:-3]
     chk("session: the units and the verdict records are kept beside the report; the caller's files are not copied there",
         sorted(f for f in os.listdir(os.path.dirname(r["outpath"])) if f != "report.md"), ["report.units.json", "report.verdict.json"])
@@ -510,11 +513,12 @@ def case_main(tmp):
     # a confirmed conflict in the units-confirm form counts
     answers = write_answers(fx, "answers2.json", edit=lambda a: [{**a[0], "conflicts": [{"quote": "Always run the tests before you commit.", "reader_rule": "CLAUDE.md: Prefer small commits.", "held_in": "CLAUDE.md", "hard_stop": False}]}, *a[1:]])
     r = session_vet(fx, answers=answers)
-    chk("session: a conflict gives INSTALL WITH CHANGES and its count", (r["rc"], "> **\U0001F7E8 INSTALL WITH CHANGES**" in (r["text"] or "")), (0, True))
+    v2 = verdict_of(fx, answers)
+    chk("session: a conflict gives INSTALL WITH CHANGES and the counts units-verdict gives", (r["rc"], v2["verdict"], v2["counts"]["conflicts"], "> **\U0001F7E8 INSTALL WITH CHANGES**" in (r["text"] or ""), "\u26d4 **1** conflicts" in (r["text"] or "")), (0, "INSTALL WITH CHANGES", 1, True, True))
     # the session writes held_in as the Rule files block names it, and vet uses it as given
-    answers = write_answers(fx, "answers3.json", edit=lambda a: [{**a[0], "skill": "drop", "rules": "duplicate", "covered_by": "Never run anything destructive", "held_in": "~/.claude/CLAUDE.md", "star": False}, *a[1:]])
+    answers = write_answers(fx, "answers3.json", edit=lambda a: [{**a[0], "skill": "drop", "rules": "duplicate", "covered_by": "Never run anything destructive", "held_in": "~/.claude/CLAUDE.md (as the session wrote it)", "star": False}, *a[1:]])
     r = session_vet(fx, answers=answers)
-    chk("session: held_in is used as given", (r["rc"], "~/.claude/CLAUDE.md" in (r["text"] or "")), (0, True))
+    chk("session: held_in is used as given", (r["rc"], "~/.claude/CLAUDE.md (as the session wrote it)" in (r["text"] or "")), (0, True))
     # --note works beside the three flags
     r = session_vet(fx, answers=answers, args=["--dossier", fx["dossier"], "--answers", answers, "--prose", os.path.join(FIX, "prose.json"), "--note", "A self-vetting."])
     chk("session: --note leads the 'Verdict is relative' sentence", (r["rc"], "A self-vetting. Verdict is relative to your 3 rule files" in (r["text"] or "")), (0, True))
@@ -525,6 +529,15 @@ def case_names(tmp):
     r = session_vet(fx)
     text = r["text"] or ""
     chk("session: a project inside the home folder is named project-relative, the global file ~/...", (r["rc"], "- `CLAUDE.md`" in text, "- `~/.claude/CLAUDE.md`" in text, "work/proj" in text), (0, True, True, False))
+
+
+def case_project_roots(tmp):
+    for where in ("home", "above"):
+        with_session_dir = tempfile.mkdtemp(dir=tmp)
+        fx = session_fixture(with_session_dir, project=where)
+        text = session_vet(fx)["text"] or ""
+        chk("session: a project that is the home folder or above it: the global file is named ~/..., and no folder name leaks (" + where + ")",
+            ("- `~/.claude/CLAUDE.md`" in text, os.path.basename(fx["home"]) + "/.claude" in text.replace("~/.claude", "")), (True, False))
 
 
 def case_refusals(tmp):
@@ -539,6 +552,10 @@ def case_refusals(tmp):
     other = os.path.join(tmp, "elsewhere"); shutil.copytree(fx["target"], other)
     r = session_vet(fx, target=other)
     chk("session: a dossier for another target: exit 1, says so, no report", (r["rc"], "dossier" in r["out"], r["text"]), (1, True, None))
+    d = json.load(open(fx["dossier"])); d["target"]["path"] = None
+    nulled = os.path.join(tmp, "caller", "null-dossier.json"); json.dump(d, open(nulled, "w"))
+    r = session_vet(fx, dossier=nulled)
+    chk("session: a dossier with no target path: exit 1, says so, no traceback, no report", (r["rc"], "names no target path" in r["out"], "Traceback" in r["out"], r["text"]), (1, True, False, None))
     link = os.path.join(tmp, "link"); os.symlink(fx["target"], link)
     r = session_vet(fx, target=link)
     chk("session: the same folder through a symlink is the same target", (r["rc"], r["text"] is not None), (0, True))
@@ -567,6 +584,8 @@ def case_no_rules(tmp):
     r = session_vet(fx, answers=write_answers(fx, edit=lambda a: []))
     chk("session: a dossier that lists no rule files gets the facts report, exit 0, one line saying why",
         (r["rc"], "No reader's rules were read" in (r["text"] or ""), "> **" in (r["text"] or ""), "no rule files" in r["out"], r["calls"]), (0, True, False, True, []))
+    r = session_vet(fx, answers=write_answers(fx, edit=lambda a: []), args=["--dossier", fx["dossier"], "--answers", write_answers(fx, edit=lambda a: []), "--prose", os.path.join(FIX, "prose.json"), "--note", "Dropped here."])
+    chk("session: --note does not carry over to the facts fallback", (r["rc"], "Dropped here." in (r["text"] or ""), "No reader's rules were read" in (r["text"] or "")), (0, False, True))
 
 
 def case_usage(tmp):
@@ -582,7 +601,7 @@ def case_usage(tmp):
     chk("session: the usage line names the three flags", "--dossier DOSSIER --answers ANSWERS --prose PROSE" in session_vet(fx, args=["--dossier", d])["out"], True)
 
 
-for case in (case_main, case_names, case_refusals, case_no_rules, case_usage):
+for case in (case_main, case_names, case_project_roots, case_refusals, case_no_rules, case_usage):
     with_session(case)
 
 
