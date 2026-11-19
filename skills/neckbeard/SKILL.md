@@ -60,7 +60,7 @@ adds a file or directory to the current-rules corpus when the auto-discovery
 below would miss something (a rules file with a name Claude Code doesn't look
 for on its own).
 
-The script prints one JSON dossier (`--out` writes it to `FILE`; Step 3's tools/ path wants `<stem>.dossier.json` beside the report): `target` (what the thing actually does —
+The script prints one JSON dossier, or with `--out` writes it to `FILE` (Step 3's tools/ path wants `<stem>.dossier.json` beside the report): `target` (what the thing actually does —
 its manifest, every skill, command and agent it bundles with their full text,
 any `CLAUDE.md` at its root under `rule_files`, every hook it registers and
 what each one injects where that's statically resolvable, whether
@@ -110,7 +110,7 @@ the user's global `CLAUDE.md`, their project rules, their personal skills and
 the skills of every plugin they have enabled. A run inside this plugin's own
 repo produced 90,533 bytes of it. The script warns on write and names the
 files. Never commit a dossier, never paste one anywhere public, and check the
-`.gitignore` of wherever you are writing it before you write it. An `--out` file is that dossier: the same care.
+`.gitignore` of wherever you are writing it before you write it.
 
 ## Step 2 — Classify every rule the target carries
 
@@ -161,24 +161,24 @@ the project you are sitting in is usually not this plugin's repo, so this
 plugin's `.gitignore` protects nothing there. If the path is not ignored, say
 so and ask before writing.
 
-Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.units.json`, `<stem>.answers.json` and `<stem>.prose.json` (`<stem>`: the report's path without `.md`). They quote the user's rules too, so the same ignore check covers them.
+Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.units.json`, `<stem>.answers.json` and `<stem>.prose.json` (`<stem>`: the report's path without `.md`). They quote the user's rules: check they are ignored too.
 
-**Two paths.** If `tools/` sits beside this skill (`<base>/../../tools/vet` exists, `<base>` being the skill directory from Step 1: a neckbeard checkout or plugin install), take path A. In a plain skill folder, take path B.
+**Two paths.** If `tools/` sits beside this skill (`<base>/../../tools/vet` exists; `<base>` is the skill directory from Step 1), take path A. In a plain skill folder, take path B.
 
 **Path A: the session judges, code reports.** Code gives the colours, counts and verdict; you write none.
 
-- **Target.** It must be a local directory. A local directory goes as given; an installed `name@marketplace`, as the install directory the inventory resolved (the dossier's `target.path`); a git URL, as a shallow clone (`git clone --depth 1 <url> <new temporary directory>/<repo name>`) that you run Step 1 on as a local directory and delete after `tools/vet` returns (for github.com also pass `--repo <url>`, so the header names the URL). A single rule file takes path B.
-- **Units.** `python3 <base>/../../tools/rule-units <stem>.dossier.json <stem>.units.json` lists them. Read `<base>/../../tools/vet-units.md`: each unit gets two answers, skill (keep or drop) and rules (new-standing, new-skill-text, duplicate or none), and its definitions are the mapping from Step 2. Step 2's buckets do not translate one to one, except conflict, below. Ignore its placeholders, its commands and its "write no conflicts field" line.
-- **Answers.** Write `<stem>.answers.json` as `{"answers": [...]}`: one answer per unit, in that file's form (id, skill, rules, quote, why; covered_by and held_in for a duplicate; star on at most one kept unit).
-- **Conflicts.** No separate pass finds them here, so you do, as Step 2's conflict bucket. Each goes in its unit's `conflicts` list as `{"quote": "<its sentence>", "reader_rule": "<held_in>: <the rule it collides with>", "held_in": "<name of the file>", "hard_stop": true}`, `hard_stop` true when that rule is a hard stop or safety rule. A conflict's and a duplicate's `held_in` is the name the report shows (`~/<path below home>`, or the path below the project), never an absolute path.
-- **Prose.** Write `<stem>.prose.json` as `{"why": "...", "do_this": ["..."], "patch": "..."}`: the Why this verdict paragraph, the Do this steps (Step 2's carrying-cost paragraph informs them) and Step 4's patch.
-- **Run.** `<base>/../../tools/vet <target> <report> --dossier <stem>.dossier.json --answers <stem>.answers.json --prose <stem>.prose.json`, and hand over the report it writes unchanged (path B's rules do not bind it). When it refuses, it names the problem: fix that file and run it again, never write the report by hand.
+- **Target.** `tools/vet` takes a local directory: one goes as given; an installed `name@marketplace`, as the install directory the inventory resolved (the dossier's `target.path`); a git URL, as a shallow clone (`git clone --depth 1 -- <url> <temp dir>/<repo name>`) that you run Step 1 on as a local directory and delete when `tools/vet` ends, however it ends (for an `https://github.com/` URL also pass `--repo <url>`, so the header names it). A single rule file: path B.
+- **Units.** `python3 <base>/../../tools/rule-units <stem>.dossier.json <stem>.units.json` writes the units to that file: read it. Read `<base>/../../tools/vet-units.md`: each unit gets two answers, skill (keep or drop) and rules (new-standing, new-skill-text, duplicate or none), and its definitions are the mapping from Step 2. Step 2's buckets do not translate one to one, except conflict, below. Ignore its placeholders, its commands and its "write no conflicts field" line.
+- **Answers.** Write `<stem>.answers.json` as `{"answers": [...]}`: one answer per unit, in that file's form (id, skill, rules, quote, why; covered_by and held_in for a duplicate; star on at most one kept unit), each with a `conflicts` list, `[]` when none.
+- **Conflicts.** No separate pass finds them here, so you do, as Step 2's conflict bucket. Each goes in its unit's `conflicts` list as `{"quote": "<its sentence>", "reader_rule": "<held_in>: <the rule it hits>", "held_in": "<its file>", "hard_stop": true}`, `hard_stop` true when that rule is a hard stop or safety rule. A conflict's and a duplicate's `held_in` is the name the report shows (`~/<path below home>`, or the path below the project), never an absolute path.
+- **Prose.** Write `<stem>.prose.json` as `{"why": "...", "do_this": ["..."], "patch": "..."}`: the Why this verdict paragraph, the Do this steps (Step 2's carrying cost informs them) and Step 4's patch.
+- **Run.** `<base>/../../tools/vet <target> <report> --dossier <stem>.dossier.json --answers <stem>.answers.json --prose <stem>.prose.json`, and hand over its report unchanged; the plain-Markdown rules below are path B's. When it refuses, it names the problem: fix it and run again, never write the report by hand.
 
-**Path B: a plain skill folder, no tools/.** Write the template below by hand, in the 2.0 order; the colours, counts and grouping are the model's work, and the report says so. Rules:
+**Path B: a plain skill folder, no tools/.** Write the template below by hand, in the 2.0 order; it says its colours and counts are the model's. Rules:
 
 - **Answer first.** The strip holds the verdict and at most three sentences.
 - **Grids over prose.** One row per item, a phrase per cell. No section opens with a paragraph.
-- **Count each unit once.** A unit is an item Step 2 sorts. Each lands once among covered, keep and dropped; conflicts are counted apart, as tools/fit counts them. The counts equal the rows below.
+- **Count each unit once.** Each unit (an item Step 2 sorts) lands once among covered, keep and dropped; conflicts are counted apart, as tools/fit counts them. The counts equal the rows below.
 - **Cite, don't gesture.** A conflict names the rule it collides with and the file or skill that holds it. A duplicate names what covers it.
 - Plain Markdown only (tables, one blockquote, emoji): what are cards in tools/vet's report are `###` sections here. No HTML, no `[ ]` checkboxes.
 - If a section would be empty, keep its heading and say so in one line.
@@ -190,7 +190,7 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 
 `<YYYY-MM-DD>` · neckbeard <version> · <target path or URL>
 
-*The colours, counts and grouping here are the model's work; a neckbeard checkout makes them by code.*
+*Colours, counts, facts and grouping are the model's work here; a neckbeard checkout makes them by code.*
 
 **Contents:** How it affects you · What it adds · Where it takes a position
 
@@ -206,7 +206,13 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 
 > **<verdict emoji> <VERDICT>** · <one-phrase action>
 > <Two or three sentences: cost, conflicts, what is worth keeping.>
-> ⛔ **n** conflicts · 🔁 **n** covered · 🟩 **n** keep (🆕 **n** new) · 🗑️ **n** dropped
+> ⛔ **n** conflicts · 🔁 **n** covered · 🟩 **n** keep · 🗑️ **n** dropped
+
+### At a glance in full
+<What each row counts.>
+
+### Rule files
+<The rule files, by name.>
 
 ### ⛔ Conflicts: n
 | # | it says | collides with | held in | |
@@ -221,7 +227,7 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 |:--:|---|:--:|
 
 ### 🗑️ Dropped
-`<item>` · `<item> (⛔n)` · ...
+`<item>` · `<item> (⛔n)`
 
 ### ✅ Do this
 - ⬜ 1. <first action>
@@ -231,10 +237,10 @@ Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.un
 <Step 4's patch, or "nothing to add".>
 
 ## What it adds
-<Per surface: when it loads, whether it reaches subagents, its size.>
+<One ### section each: Injects, Hooks, Subagents and commands, State it may leave, Reaches outside, Source.>
 
 ## Where it takes a position
-<By topic: each place the target tells the model what to do, in its words, with file and line.>
+<One ### section per topic, in the target's words, with file and line.>
 
 **Key:** 🟥 high · 🟧 medium · 🟨 partly · 🟩 keep · ⬜ covered · ⬛ dropped · ⛔ conflict · 🔁 duplicate · 🆕 new · 🗑️ dropped item · ⭐ standout · 🟢 read in full · 🟡 partly read · 🔴 something unread
 ```

@@ -49,8 +49,9 @@ check("the Step 2 guard bites: one word changed inside Step 2 changes the hash",
 
 # 2. Step 3 follows the 2.0 order and calls tools/vet in session mode
 step3 = section(SKILL, "## Step 3", "## Step 4")
-heads = ["How it affects you", "What it adds", "Where it takes a position"]
-at = [step3.find(h) for h in heads]
+heads = ["## How it affects you", "## What it adds", "## Where it takes a position"]
+lines3 = step3.split("\n")
+at = [lines3.index(h) if h in lines3 else -1 for h in heads]   # the heading lines themselves, not the Contents line that names them
 check("Step 3 names the three 2.0 layer headings, in order", all(i >= 0 for i in at) and at == sorted(at), repr(at))
 call = [l for l in step3.split("\n") if "tools/vet" in l and "--dossier" in l and "--answers" in l and "--prose" in l]
 check("Step 3 gives the `tools/vet ... --dossier ... --answers ... --prose ...` call", bool(call))
@@ -63,7 +64,7 @@ check("Step 3 points at tools/rule-units and tools/vet-units.md for the units an
 check("Step 3 gives a conflict in units-confirm's form (quote, reader_rule, held_in, hard_stop)",
       all(w in step3 for w in ("quote", "reader_rule", "held_in", "hard_stop")))
 check("Step 3 names the plain path for a skill folder with no tools/ beside it, and says the colours are the model's",
-      "plain skill folder" in step3 and "model's" in step3)
+      "plain skill folder" in step3 and "model's work" in step3 and "makes them by code" in step3)
 
 # 3. the verdict list equals tools/fit's table; the plain template's Key lists exactly the marks the tools use
 fit = load("fit")
@@ -80,7 +81,7 @@ check("the sentence after the verdict list names the two verdicts the carrying c
 CARD_MARKS = "⛔\U0001F501\U0001F195\U0001F5D1"   # the "How its rules sorted" table's marks: conflicts, covered, new, dropped
 fit_src = source("fit")
 check("the card marks the Key explains are still the ones tools/fit prints",
-      all(ch in fit_src or "\\U%08X" % ord(ch) in fit_src or "\\u%04X" % ord(ch) in fit_src.upper() for ch in CARD_MARKS))
+      all(ch in fit_src or "\\U%08X" % ord(ch) in fit_src for ch in CARD_MARKS))
 summary = load("summary")
 summary_marks = {summary.G, summary.Y, summary.O, summary.R}   # tools/summary's colours, imported
 check("tools/summary's four colours are the four judgement colours", summary_marks == set("\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5"), repr(summary_marks))
@@ -97,8 +98,7 @@ check("the plain template's Key lists exactly the union of the marks tools/fit, 
 # 4. the plain template: sections, never cards, and nothing that says it was written by code
 template = step3[step3.find("```"):]
 check("guard (green before the rewrite and after): the plain template holds no <details> card", "<details" not in template)
-check("guard (green before the rewrite and after): no layer label in the plain template says 'written by code'",
-      not re.search(r"\*\*[123] · .*written by code", template))
+check("guard (green before the rewrite and after): the plain template never says 'written by code'", "written by code" not in template)
 
 if failures:
     print(f"test_skill_md: {len(failures)} failed")
