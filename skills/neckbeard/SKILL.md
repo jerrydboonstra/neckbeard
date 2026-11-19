@@ -29,7 +29,7 @@ skill folder. Claude Code shows the skill's base directory when the skill
 loads; use it:
 
 ```bash
-python3 <this skill's directory>/inventory.py <target> [--project-dir DIR] [--extra-rules PATH]
+python3 <this skill's directory>/inventory.py <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
 ```
 
 The default is static and must stay that way. Only when the user explicitly
@@ -60,7 +60,7 @@ adds a file or directory to the current-rules corpus when the auto-discovery
 below would miss something (a rules file with a name Claude Code doesn't look
 for on its own).
 
-The script prints one JSON dossier: `target` (what the thing actually does —
+The script prints one JSON dossier, or with `--out` writes it to `FILE` (Step 3's tools/ path wants `<stem>.dossier.json` beside the report): `target` (what the thing actually does —
 its manifest, every skill, command and agent it bundles with their full text,
 any `CLAUDE.md` at its root under `rule_files`, every hook it registers and
 what each one injects where that's statically resolvable, whether
@@ -161,83 +161,88 @@ the project you are sitting in is usually not this plugin's repo, so this
 plugin's `.gitignore` protects nothing there. If the path is not ignored, say
 so and ask before writing.
 
-**Write it in this shape.** The reader wants the answer first and a grid they can
-scan, not an essay. Rules:
+Path A's working files go beside the report as `<stem>.dossier.json`, `<stem>.units.json`, `<stem>.answers.json` and `<stem>.prose.json` (`<stem>`: the report's path without `.md`). They quote the user's rules: check they are ignored too.
 
-- **Answer first.** The banner holds the verdict and at most three sentences.
-- **Grids over prose.** One row per item; a cell is a phrase, not a paragraph.
-  No section opens with a paragraph.
-- **Every rule gets a symbol and lands in exactly one grid.** The counts in "How
-  its rules sorted" must equal the rows in the grids below it.
-- **Cite, don't gesture.** A conflict names the rule it collides with and the
-  file or skill that holds it. A duplicate names what covers it.
-- **Bars:** one block per item, up to 10; above 10, write `▰ ×N`.
-- Plain Markdown only (tables, one blockquote, emoji), so it renders the same in
-  a terminal viewer, on GitHub and in an editor. No HTML, no `[ ]` checkboxes.
+**Two paths.** If `tools/` sits beside this skill (`<base>/../../tools/vet` exists; `<base>` is the skill directory from Step 1), take path A. In a plain skill folder, take path B.
+
+**Path A: the session judges, code reports.** Code gives the colours, counts and verdict; you write none.
+
+- **Target.** `tools/vet` takes a local directory: one goes as given; an installed `name@marketplace`, as the install directory the inventory resolved (the dossier's `target.path`); a git URL, as a shallow clone (`git clone --depth 1 -- <url> <temp dir>/<repo name>`) that you run Step 1 on as a local directory and delete when `tools/vet` ends, however it ends (for an `https://github.com/` URL also pass `--repo <url>`, so the header names it). A single rule file: path B.
+- **Units.** `python3 <base>/../../tools/rule-units <stem>.dossier.json <stem>.units.json` writes the units to that file: read it. Read `<base>/../../tools/vet-units.md`: each unit gets two answers, skill (keep or drop) and rules (new-standing, new-skill-text, duplicate or none), and its definitions are the mapping from Step 2. Step 2's buckets do not translate one to one, except conflict, below. Ignore its placeholders, its commands and its "write no conflicts field" line.
+- **Answers.** Write `<stem>.answers.json` as `{"answers": [...]}`: one answer per unit, in that file's form (id, skill, rules, quote, why; covered_by and held_in for a duplicate; star on at most one kept unit), each with a `conflicts` list, `[]` when none.
+- **Conflicts.** No separate pass finds them here, so you do, as Step 2's conflict bucket. Each goes in its unit's `conflicts` list as `{"quote": "<its sentence>", "reader_rule": "<held_in>: <the rule it hits>", "held_in": "<its file>", "hard_stop": true}`, `hard_stop` true when that rule is a hard stop or safety rule. A conflict's and a duplicate's `held_in` is the name the report shows (`~/<path below home>`, or the path below the project), never an absolute path.
+- **Prose.** Write `<stem>.prose.json` as `{"why": "...", "do_this": ["..."], "patch": "..."}`: the Why this verdict paragraph, the Do this steps (Step 2's carrying cost informs them) and Step 4's patch.
+- **Run.** `<base>/../../tools/vet <target> <report> --dossier <stem>.dossier.json --answers <stem>.answers.json --prose <stem>.prose.json`, and hand over its report unchanged; the plain-Markdown rules below are path B's. When it refuses, it names the problem: fix it and run again, never write the report by hand.
+
+**Path B: a plain skill folder, no tools/.** Write the template below by hand, in the 2.0 order; it says its colours and counts are the model's. Rules:
+
+- **Answer first.** The strip holds the verdict and at most three sentences.
+- **Grids over prose.** One row per item, a phrase per cell. No section opens with a paragraph.
+- **Count each unit once.** Each unit (an item Step 2 sorts) lands once among covered, keep and dropped; conflicts are counted apart, as tools/fit counts them. The counts equal the rows below.
+- **Cite, don't gesture.** A conflict names the rule it collides with and the file or skill that holds it. A duplicate names what covers it.
+- Plain Markdown only (tables, one blockquote, emoji): what are cards in tools/vet's report are `###` sections here. No HTML, no `[ ]` checkboxes.
 - If a section would be empty, keep its heading and say so in one line.
 
-**Verdict** (one, in the banner): 🟥 DON'T INSTALL / UNINSTALL · 🟧 INSTALL WITH
-CHANGES · 🟨 COPY RULES, SKIP PLUGIN · 🟩 INSTALL. Step 2's carrying-cost line
-decides between 🟨 and 🟩: a target whose only value is one or two rules is
-cheaper copied as text than carried as an injection.
+**Verdict** (one, in the strip): 🟥 DON'T INSTALL · 🟨 INSTALL WITH CHANGES · 🟨 COPY RULES, SKIP PLUGIN · 🟩 INSTALL. Step 2's carrying-cost line decides between 🟨 COPY RULES, SKIP PLUGIN and 🟩 INSTALL.
 
 ```
-# 🔍 <target> <version> · vetted against your rules
-
-> ## <verdict emoji> <VERDICT> · <one-phrase action>
-> <Two or three sentences: what it costs, what it fights, what is worth keeping.>
+# 🔍 <target> <version> · how it affects you, what it adds, where it takes a position · against your rules
 
 `<YYYY-MM-DD>` · neckbeard <version> · <target path or URL>
 
-## ⚡ At a glance
+*Colours, counts, facts and grouping are the model's work here; a neckbeard checkout makes them by code.*
+
+**Contents:** How it affects you · What it adds · Where it takes a position
+
+## How it affects you
 
 | | | |
 |:--:|---|---|
 | 🟥/🟧/🟨/🟩 | **Cost** | <bytes injected, and when> |
-| .. | **Reach** | <main session only / + subagents (certain / likely)> |
-| .. | **Leaves state** | <files written outside the project, or none found> |
-| .. | **Live surface** | <MCP servers, network, commands it runs; or none> |
-| .. | **Refused reads** | <count of `refused` items, or none>; any refusal is 🟥 |
-| .. | **Worth keeping** | <N rules or skills> |
+| .. | **Reach** | <main session only / + subagents> |
+| .. | **Leaves state** | <files written outside the project, or none> |
+| .. | **Live surface** | <MCP servers, network, commands; or none> |
+| .. | **Read completeness** | <read in full / partly read / something unread>; any refused read is 🟥 |
 
-## 🧮 How its rules sorted
+> **<verdict emoji> <VERDICT>** · <one-phrase action>
+> <Two or three sentences: cost, conflicts, what is worth keeping.>
+> ⛔ **n** conflicts · 🔁 **n** covered · 🟩 **n** keep · 🗑️ **n** dropped
 
-| | verdict | count | |
-|:--:|---|:--:|---|
-| ⛔ | **conflicts** with a rule you run | **n** | 🟥 per item |
-| 🔁 | **already covered** | **n** | ⬜ per item |
-| 🆕 | **new, standing rule** | **n** | 🟩 per item |
-| 🆕 | **new, on-demand skill** | **n** | 🟩 per item |
-| 🗑️ | **dropped** (persona, extras, no value) | **n** | ⬛ per item |
+### At a glance in full
+<What each row counts.>
 
-## ⛔ Conflicts: n
+### Rule files
+<The rule files, by name.>
+
+### ⛔ Conflicts: n
 | # | it says | collides with | held in | |
 |:--:|---|---|---|:--:|
 
-## 🔁 Already covered: n
+### 🔁 Already covered: n
 | its rule | covered by | held in |
 |---|---|---|
 
-## 🟩 Keep: n
-| # | rule or skill | kind | |
-|:--:|---|:--:|:--:|
+### 🟩 Keep: n
+| # | rule or skill | kind |
+|:--:|---|:--:|
 
-## 🗑️ Dropped
-`<item>` · `<item> (⛔n)` · ...
+### 🗑️ Dropped
+`<item>` · `<item> (⛔n)`
 
-## 🧩 What it installs
-| surface | when | reaches subagents | size |
-|---|---|:--:|--:|
-
-## ✅ Do this
+### ✅ Do this
 - ⬜ 1. <first action>
 <One line: which of Step 2's three carrying-cost cases applies.>
 
-## 📋 Proposed rules patch
+### 📋 Proposed rules patch
 <Step 4's patch, or "nothing to add".>
 
-**Key:** 🟥 high · 🟧 medium · 🟨 partly · 🟩 keep · ⬜ covered · ⬛ dropped ·
-⛔ conflict · 🔁 duplicate · 🆕 new · ⭐ standout · ✅ done · ❓ unknown
+## What it adds
+<One ### section each: Injects, Hooks, Subagents and commands, State it may leave, Reaches outside, Source.>
+
+## Where it takes a position
+<One ### section per topic, in the target's words, with file and line.>
+
+**Key:** 🟥 high · 🟧 medium · 🟨 partly · 🟩 keep · ⬜ covered · ⬛ dropped · ⛔ conflict · 🔁 duplicate · 🆕 new · 🗑️ dropped item · ⭐ standout · 🟢 read in full · 🟡 partly read · 🔴 something unread
 ```
 
 `examples/` in this plugin's repository holds real reports in this shape, run
@@ -273,7 +278,7 @@ where this user keeps skills; if it does not, say so and leave the choice to
 them rather than inventing a path.
 
 **Show the proposed patch as a diff or a fenced block in the evaluation
-document. Do not write it into `CLAUDE.md`, a rules file, or
+document (path A: in the prose file's `patch`). Do not write it into `CLAUDE.md`, a rules file, or
 `settings.json` yourself, and do not uninstall or disable the target.**
 Applying any of it is a separate, explicitly-approved step. This skill's whole point is to
 add a rule only when it earns its keep; auto-applying its own output would
