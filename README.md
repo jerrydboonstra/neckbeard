@@ -73,7 +73,7 @@ Here is neckbeard's own report, cut down to its summary rows and one line per ca
 > | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 > | 🟩 | Read completeness | read in full |
 >
-> - 🟢 **Injects** · 1 skills · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
+> - 🟢 **Injects** · 1 skill · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
 > - 🟢 **Hooks** · 0 hooks · read in full
 > - 🟢 **Subagents and commands** · no agents · 0 commands
 > - 🟢 **State it may leave** · 53 files that may write state · 10 named

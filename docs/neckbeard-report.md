@@ -44,7 +44,7 @@ The colours follow written rules. Each is checked top to bottom, and the first m
 
 🟢 read in full · 🟡 partly read · 🔴 something unread
 
-<details><summary>🟢 <b>Injects</b> · 1 skills · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full</summary>
+<details><summary>🟢 <b>Injects</b> · 1 skill · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full</summary>
 
 - Skills:
   - neckbeard: description every session (764 chars); the file on demand (17792 bytes, ~4448 tokens)
