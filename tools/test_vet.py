@@ -345,7 +345,8 @@ def report_check(report_version, tag_after=False, at="`v1.2.0`", old=False, tagg
         # the working tree is made right after the tag: the check must read the tagged tree, not this one
         open(os.path.join(tmp, "docs", "neckbeard-report.md"), "w", encoding="utf-8").write(
             "# \U0001F50D demo\n\n`2026-11-12` \u00b7 demo 1.2.0 @ `v1.2.0` \u00b7 made by neckbeard 2.0.0\n")
-        p = subprocess.run(["make", "--no-print-directory", "report-check"] + ([] if tagged else ["REF=HEAD"]), cwd=tmp, capture_output=True, text=True)
+        env = {k: v for k, v in os.environ.items() if k not in ("MAKELEVEL", "MAKEFLAGS", "MFLAGS")}
+        p = subprocess.run(["make", "--no-print-directory", "report-check"] + ([] if tagged else ["REF=HEAD"]), cwd=tmp, env=env, capture_output=True, text=True)
         return p.returncode, p.stdout + p.stderr
     finally:
         shutil.rmtree(tmp)
