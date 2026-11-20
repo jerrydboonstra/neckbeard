@@ -54,6 +54,7 @@ tools/guard.sh test_guard
 tools/release-push test_release test_vet
 tools/ci-wait.sh test_release
 tools/test_release.py test_release test_layout
+.github/workflows/self-check.yml test_release
 tools/test_layout.py test_layout
 tools/test_mcp_live.py test_mcp_live
 tools/test_skill_budget.py test_skill_budget
