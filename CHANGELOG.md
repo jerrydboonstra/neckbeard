@@ -18,6 +18,7 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ### Releasing
 
+- **`make release` runs CI before public main moves.** It pushes a `release/v<version>` branch to GitHub and waits for CI there. Only a green run moves main, makes the tag and deletes the branch. A red one leaves main untouched (2.0.2's first attempt left a failing commit on main).
 - **`make release` refuses a tree that names a word from a private list** (`PRIVATE_WORDS` in the git-ignored `local.mk`), before anything is pushed. A hit is reported by file and line, never by the word.
 - **`make deploy` runs an optional `POST_DEPLOY` command after every host has deployed,** also set in `local.mk`. Empty by default.
 ## 2.0.1 (2026-11-19)
