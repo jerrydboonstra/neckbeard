@@ -190,7 +190,7 @@ shutil.copy(GUARD, os.path.join(repo, "tools", "guard.sh")) if os.path.exists(GU
 shutil.copy(os.path.join(ROOT, ".claude-plugin", "plugin.json"), os.path.join(repo, ".claude-plugin"))
 with open(os.path.join(repo, "Makefile"), "a") as f:
     f.write("\ngate:\n" + "\n".join(gate) + "\n")
-run = lambda *a: subprocess.run(["make", "gate", *a], cwd=repo, capture_output=True, text=True).returncode
+run = lambda *a: subprocess.run(["make", "--no-print-directory", "gate", *a], cwd=repo, env=env0, capture_output=True, text=True).returncode
 chk("the release recipe's guard line fails with no PRIVATE_WORDS, and passes with a clean list", (len(gate), run() != 0, run(f"PRIVATE_WORDS={lst}")), (1, True, 0))
 with open(os.path.join(repo, "a.txt"), "w") as f:
     f.write(f"{WORD}\n")
