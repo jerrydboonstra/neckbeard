@@ -24,7 +24,10 @@ def chk(name, got, want):
 
 
 def make(cwd, *args):
-    p = subprocess.run(["make", *args], cwd=cwd, capture_output=True, text=True)
+    # Under `make check` (CI) MAKELEVEL and MAKEFLAGS are set, so this make would be a sub-make and GNU make 4
+    # would print "Entering directory" lines. Run it as a top-level make instead.
+    env = {k: v for k, v in os.environ.items() if k not in ("MAKELEVEL", "MAKEFLAGS", "MFLAGS")}
+    p = subprocess.run(["make", "--no-print-directory", *args], cwd=cwd, env=env, capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr
 
 

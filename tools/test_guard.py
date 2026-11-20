@@ -160,12 +160,15 @@ if os.path.exists(GUARD):
 os.makedirs(os.path.join(repo, ".claude-plugin"))
 shutil.copy(os.path.join(ROOT, ".claude-plugin", "plugin.json"), os.path.join(repo, ".claude-plugin"))
 shutil.copy(os.path.join(ROOT, "Makefile"), repo)
-p = subprocess.run(["make", "guard", f"PRIVATE_WORDS={lst}"], cwd=repo, capture_output=True, text=True)
+# a top-level make, not a sub-make: under `make check` MAKELEVEL and MAKEFLAGS are set (see test_make_hooks.py)
+NOMAKE = ("MAKELEVEL", "MAKEFLAGS", "MFLAGS")
+env0 = {k: v for k, v in os.environ.items() if k not in NOMAKE}
+p = subprocess.run(["make", "--no-print-directory", "guard", f"PRIVATE_WORDS={lst}"], cwd=repo, env=env0, capture_output=True, text=True)
 chk("make guard passes PRIVATE_WORDS as GUARD_WORDS", (p.returncode != 0, "a.txt:1" in p.stdout + p.stderr, WORD in p.stdout + p.stderr), (True, True, False))
 for req, want in [({}, 0), ({"GUARD_REQUIRE_WORDS": "1"}, 1)]:
-    e = {k: v for k, v in os.environ.items() if not k.startswith("GUARD_")}
+    e = {k: v for k, v in env0.items() if not k.startswith("GUARD_")}
     e.update(req)
-    p = subprocess.run(["make", "guard"], cwd=repo, env=e, capture_output=True, text=True)
+    p = subprocess.run(["make", "--no-print-directory", "guard"], cwd=repo, env=e, capture_output=True, text=True)
     chk("make guard with PRIVATE_WORDS empty " + ("and GUARD_REQUIRE_WORDS=1 fails" if want else "skips and exits 0"),
         (p.returncode != 0, bool(p.stderr.strip())), (bool(want), True))
 shutil.rmtree(d)
