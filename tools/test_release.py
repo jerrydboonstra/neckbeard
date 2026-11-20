@@ -201,6 +201,29 @@ chk("a release branch holding a commit that is not an ancestor is refused withou
 chk("the refusal says how to go on", "delete" in out and "release/v1.1.0" in out, True)
 shutil.rmtree(home)
 
+def hook(home, remote, body):
+    path = os.path.join(home, remote + ".git", "hooks", "update")
+    with open(path, "w") as f:
+        f.write("#!/bin/sh\n" + body + "\n")
+    os.chmod(path, 0o755)
+
+
+home, work = world()
+hook(home, "origin", '[ "$3" = 0000000000000000000000000000000000000000 ] && exit 1; exit 0')   # origin refuses every delete
+code, out, log = run(home, work)
+chk("a refused delete of the release branch is a warning: exit 0, the tag and main are on both remotes",
+    (code, "couldn't delete" in out, tags(home, "origin"), tags(home, "mirror"), head(home, "mirror")),
+    (0, True, ["v1.1.0"], ["v1.1.0"], git("rev-parse", "HEAD", cwd=work)))
+shutil.rmtree(home)
+
+home, work = world()
+before = head(home, "mirror")
+hook(home, "origin", '[ "$1" = refs/heads/main ] && exit 1; exit 0')   # origin refuses main
+code, out, log = run(home, work)
+chk("origin refusing main after a green CI stops the release: exit 1, nothing on the mirror, the release branch is kept",
+    (code, tags(home, "mirror"), head(home, "mirror"), branch(home, "origin") != ""), (1, [], before, True))
+shutil.rmtree(home)
+
 print("-- the workflow --")
 wf = open(os.path.join(HERE, "..", ".github", "workflows", "self-check.yml")).read()
 m = re.search(r"^on:\n  push:\n    branches: \[([^\]]*)\]", wf, re.M)
