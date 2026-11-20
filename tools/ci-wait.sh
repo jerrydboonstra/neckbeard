@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ci-wait.sh <sha>: pass once GitHub Actions' CI workflow has passed on <sha>, waiting while it runs. tools/release-push runs
-# it after pushing main to GitHub, so a release is tagged only on a commit CI passed. It reads the workflow run for the
+# it after pushing release/v<version> to GitHub, so a release is tagged only on a commit CI passed. It reads the workflow run for the
 # exact commit, looked up by sha. One passing run is enough (a re-run that passed after a flaky one counts). Adapted from
 # Cat Herder's tools/ci-wait.sh.
 # Env: CI_REPO (owner/name), CI_POLL (seconds between looks), CI_WAIT (most seconds to wait for a run to finish),
@@ -23,7 +23,7 @@ while :; do
   fi
   waited=$SECONDS
   if [ -z "$runs" ]; then
-    [ "$waited" -ge "$grace" ] && { echo "ci: no CI run for ${sha:0:7} on $repo; CI starts when main is pushed to GitHub, so look in its Actions tab"; exit 1; }
+    [ "$waited" -ge "$grace" ] && { echo "ci: no CI run for ${sha:0:7} on $repo; CI starts when the release branch is pushed to GitHub, so look in its Actions tab"; exit 1; }
   elif ! grep -qv $'^completed\t' <<<"$runs"; then
     echo "ci: CI didn't pass on ${sha:0:7}:"
     cut -f2,3 <<<"$runs" | sed 's/^/     /'

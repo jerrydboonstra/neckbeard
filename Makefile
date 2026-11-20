@@ -65,7 +65,7 @@ release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Rel
 guard: ## refuse when a tracked file holds a word from the PRIVATE_WORDS list (empty list: skip; `make release` requires one)
 	@GUARD_WORDS="$(PRIVATE_WORDS)" bash tools/guard.sh
 
-release: check ## push main to GitHub, wait for CI on that commit, then tag and push main and the tag to every remote, fast-forward only, then publish the GitHub Release
+release: check ## push release/v<version> to GitHub, wait for CI on it, then tag, push main and the tag to every remote (fast-forward only) and delete the branch, then publish the GitHub Release
 	@$(MAKE) --no-print-directory release-notes >/dev/null
 	@test -z "$$(git status --porcelain --untracked-files=no)" || { echo "release: tracked files are modified; commit first"; exit 1; }
 	@test "$$(git branch --show-current)" = main || { echo "release: not on main"; exit 1; }
