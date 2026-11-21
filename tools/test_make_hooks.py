@@ -88,5 +88,30 @@ code, out = make(work, "deploy", "POST_DEPLOY=echo shipped $(VERSION)")
 chk("a host failed: the hook does not run, and deploy fails (make exits 2)", (code, "shipped" in out), (2, False))
 shutil.rmtree(d)
 
+print("make deploy passes the origin URL to this machine's run only, never to a remote host (ssh stub on PATH)")
+d, work = scratch(0)
+with open(os.path.join(work, "tools", "deploy-host.sh"), "w") as f:
+    f.write('printf "%s\\n" "$@" > "$(dirname "$0")/local-args"\n')
+bindir = os.path.join(d, "bin")
+os.makedirs(bindir)
+with open(os.path.join(bindir, "ssh"), "w") as f:
+    f.write('#!/bin/sh\nprintf "%s\\n" "$@" > "' + os.path.join(d, "ssh-args") + '"\ncat >/dev/null\n')
+os.chmod(os.path.join(bindir, "ssh"), 0o755)
+sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=work, capture_output=True, text=True).stdout.strip()
+env_path = os.environ["PATH"]
+os.environ["PATH"] = bindir + os.pathsep + env_path
+try:
+    code, out = make(work, "deploy", "HOSTS=remotebox")
+    hcode, hout = make(work, "deploy", "HOSTS=remotebox", "POST_DEPLOY=echo shipped $(VERSION)")
+finally:
+    os.environ["PATH"] = env_path
+read = lambda n: open(os.path.join(d, n)).read().splitlines() if os.path.exists(os.path.join(d, n)) else None
+local = open(os.path.join(work, "tools", "local-args")).read().splitlines() if os.path.exists(os.path.join(work, "tools", "local-args")) else None
+chk("this machine's run gets VERSION, the sha and the origin URL", (code, local), (0, [VERSION, sha, os.path.join(d, "origin.git")]))
+chk("with a remote host and a hook: the hook runs once, after the host", (hcode, hout.count("shipped " + VERSION)), (0, 1))
+chk("the remote call carries the host, bash -s, VERSION and the sha, and no URL",
+    read("ssh-args"), ["remotebox", "bash", "-s", "--", VERSION, sha])
+shutil.rmtree(d)
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)

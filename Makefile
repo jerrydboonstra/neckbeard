@@ -83,14 +83,14 @@ release: check ## push release/v<version> to GitHub, wait for CI on it, then tag
 	else $(MAKE) --no-print-directory release-notes | gh release create "v$(VERSION)" --verify-tag --latest \
 	       --title "neckbeard $(VERSION)" --notes-file - && echo "== GitHub Release v$(VERSION) published"; fi
 
-deploy: ## bring this machine and every host in HOSTS to main as released, then print what each one runs
+deploy: ## bring the plugin export (~/.claude/plugin-src/neckbeard) on this machine and every host in HOSTS to main as released, then print what each one runs
 	@test "$$(git branch --show-current)" = main || { echo "deploy: not on main"; exit 1; }
 	@sha=$$(git rev-parse HEAD); \
 	for r in $(REMOTES); do \
 	  test "$$(git ls-remote "$$r" refs/heads/main | cut -f1)" = "$$sha" || { echo "deploy: $$r's main isn't $$sha; run make release first"; exit 1; }; \
 	done; \
 	fail=0; \
-	bash tools/deploy-host.sh "$(VERSION)" "$$sha" || fail=1; \
+	bash tools/deploy-host.sh "$(VERSION)" "$$sha" "$$(git remote get-url origin)" || fail=1; \
 	for h in $(HOSTS); do \
 	  ssh "$$h" bash -s -- "$(VERSION)" "$$sha" < tools/deploy-host.sh || fail=1; \
 	done; \

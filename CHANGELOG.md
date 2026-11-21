@@ -4,6 +4,10 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## Unreleased
+
+- **`make deploy` loads neckbeard from an export, `~/.claude/plugin-src/neckbeard`, not from the working checkout.** Until now the marketplace pointed at the checkout, so any branch switch or edit there reached every running session. `tools/deploy-host.sh` now clones the export when it is missing, fast-forwards it to the released commit only (a commit on `origin/main`, on a clean `main`), refuses an export that is ahead of the release, and fails with the steps to switch when a directory marketplace loads from anywhere else (a git or GitHub source needs no export and deploys as before). The Makefile passes this machine's origin URL to the local run only. A host in `HOSTS` that has no export refuses and prints the one-time clone step, for its owner to run with that host's own URL. `POST_DEPLOY` and `HOSTS` work as in 2.0.2. New cases in `tools/test_deploy.py` and `tools/test_make_hooks.py`.
+
 ## 2.0.2 (2026-11-19)
 
 ### Reports
