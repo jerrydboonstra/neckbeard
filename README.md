@@ -2,7 +2,7 @@
 
 # neckbeard
 
-[![CI](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![release](https://img.shields.io/github/v/release/jerrydboonstra/neckbeard)](https://github.com/jerrydboonstra/neckbeard/releases/latest) [![CodeQL](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml) [![neckbeard: 2.0.2 · read in full](https://img.shields.io/badge/neckbeard-2.0.2%20%C2%B7%20read%20in%20full-brightgreen?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
+[![CI](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![release](https://img.shields.io/github/v/release/jerrydboonstra/neckbeard)](https://github.com/jerrydboonstra/neckbeard/releases/latest) [![CodeQL](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml) [![neckbeard: 2.0.3 · read in full](https://img.shields.io/badge/neckbeard-2.0.3%20%C2%B7%20read%20in%20full-brightgreen?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](docs/neckbeard-report.md)
 
 What changed in each release: [CHANGELOG.md](./CHANGELOG.md), newest first.
 
@@ -63,7 +63,7 @@ Here is neckbeard's own report, cut down to its summary rows and one line per ca
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard
 >
-> `2026-11-19` · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.2 @ `v2.0.2` · made by neckbeard 2.0.2
+> `2026-11-21` · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.3 @ `v2.0.3` · made by neckbeard 2.0.3
 >
 > | | Row | In short |
 > |---|---|---|
@@ -78,7 +78,7 @@ Here is neckbeard's own report, cut down to its summary rows and one line per ca
 > - 🟢 **Subagents and commands** · no agents · 0 commands
 > - 🟢 **State it may leave** · 56 files that may write state · 10 named
 > - 🟢 **Reaches outside the session** · no MCP servers
-> - 🟢 **Source** · plugin · neckbeard 2.0.2 from plugin.json · commit v2.0.2 · no marketplace
+> - 🟢 **Source** · plugin · neckbeard 2.0.3 from plugin.json · commit v2.0.3 · no marketplace
 <!-- /report -->
 
 How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](docs/publish-your-report.md#badge-colours-and-declared-fixtures).
