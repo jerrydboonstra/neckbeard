@@ -6,8 +6,14 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## 2.0.3 (2026-11-21)
 
-### The herd
-- make deploy loads neckbeard from an export clone at ~/.claude/plugin-src/neckbeard, not from the working checkout; a directory marketplace anywhere else is refused with the switch steps.
+### Releasing
+
+- **`make deploy` installs from an export, not from the working checkout.** Until now the neckbeard marketplace loaded from the checkout itself, so a branch switch or an edit there reached every running session. Deploy now keeps a clone of the released repo at `~/.claude/plugin-src/neckbeard`, makes it when it is missing, and moves it only to the released commit, by fast-forward on a clean `main`. It refuses an export that holds commits beyond the release.
+- **Switch each machine once before deploying 2.0.3.** A directory marketplace that loads from anywhere but the export is refused, and deploy prints the steps: clone the export, remove the `neckbeard` marketplace, add the export in its place, and install the plugin again. A marketplace added from GitHub needs no export and deploys as before. A host in `HOSTS` with no export refuses and prints the clone step, to run with that host's own way of reaching the repo.
+
+### Measurements
+
+- **Five vet runs of Cat Herder 0.40.3 on neckbeard 1.14.0 are published** in `measurements/2026-10-16-vet-stability-0.40.3/`: the verdict still flipped (COPY RULES, SKIP PLUGIN in 3 of 5; INSTALL in 2 of 5), on one judgment about the target's workflow skills, and no run found a conflict.
 
 ## 2.0.2 (2026-11-19)
 
