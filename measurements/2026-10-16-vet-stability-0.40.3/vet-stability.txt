@@ -1,0 +1,9 @@
+5 reports
+  run-1.md: COPY RULES, SKIP PLUGIN; 0 / 9 / 4 / 1 / 8  (conflicts / covered / new standing / new skill / dropped)
+  run-2.md: INSTALL; 0 / 10 / 3 / 3 / 8  (conflicts / covered / new standing / new skill / dropped)
+  run-3.md: COPY RULES, SKIP PLUGIN; 0 / 12 / 5 / 1 / 15  (conflicts / covered / new standing / new skill / dropped)
+  run-4.md: INSTALL; 0 / 11 / 4 / 3 / 4  (conflicts / covered / new standing / new skill / dropped)
+  run-5.md: COPY RULES, SKIP PLUGIN; 0 / 10 / 4 / 1 / 8  (conflicts / covered / new standing / new skill / dropped)
+verdicts: COPY RULES, SKIP PLUGIN in 3 of 5, INSTALL in 2 of 5
+  no conflicts in any report
+NOT stable: the reports disagree

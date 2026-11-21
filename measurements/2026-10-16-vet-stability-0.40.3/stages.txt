@@ -1,0 +1,29 @@
+| stage | run 1 | run 2 | run 3 | run 4 | run 5 |
+|---|---|---|---|---|---|
+| rows in the conflict, covered and keep tables | 14 | 16 | 18 | 18 | 15 |
+| entries on the dropped line | 8 | 8 | 15 | 4 | 8 |
+| all items listed | 22 | 24 | 33 | 22 | 23 |
+
+Bucket per run for each rule the judge listed (C conflict, V covered, K keep, - not listed):
+
+| rule | run 1 | run 2 | run 3 | run 4 | run 5 | listed in | bucket changes |
+|---|---|---|---|---|---|---|---|
+| stop only your own processes | K | - | K | K | K | 4 of 5 | no |
+| no dependency for a few lines | V | K | V | K | V | 5 of 5 | yes |
+| never simplify away validation | K | K | K | K | K | 5 of 5 | no |
+| stale brief / premise moved | - | - | K | V | V | 3 of 5 | yes |
+| source priority | V | V | V | V | V | 5 of 5 | no |
+| root cause | V | V | V | V | V | 5 of 5 | no |
+| debt comment | V | V | V | V | V | 5 of 5 | no |
+| new test must fail without the fix | V | - | - | V | V | 3 of 5 | no |
+| work found along the way is queued | - | V | K | V | K | 4 of 5 | yes |
+| never --force alone | - | - | - | V | - | 1 of 5 | no |
+| redact secrets | - | - | V | V | V | 3 of 5 | no |
+| raw output as evidence | - | - | - | V | - | 1 of 5 | no |
+| reviewer method | - | V | - | - | - | 1 of 5 | no |
+| irreversible command: read it back | V | V | V | - | V | 4 of 5 | no |
+| done note says how it was checked | V | V | - | - | KV | 3 of 5 | yes |
+| long commands run in the background | - | - | - | - | K | 1 of 5 | no |
+| queue write on the code branch | - | V | - | - | - | 1 of 5 | no |
+
+50 of 81 rows matched a theme above.
