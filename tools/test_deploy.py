@@ -201,5 +201,12 @@ chk("a clean export on a detached HEAD, not on main, is refused before any insta
     (code, "isn't on main" in out, "plugin update" in log), (1, True, False))
 shutil.rmtree(home)
 
+home, new, old = world()
+shutil.rmtree(SRC(home))
+code, out, log = run(home, new, url=os.path.join(home, "origin.git"), FAKE_PATH=os.path.join(home, "gone"))
+chk("a marketplace on a directory that is gone, with no export, is refused before any install is touched",
+    (code, "loads from " + os.path.join(home, "gone") in out, "plugin update" in log, os.path.isdir(SRC(home))), (1, True, False, False))
+shutil.rmtree(home)
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
