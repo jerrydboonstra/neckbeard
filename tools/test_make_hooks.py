@@ -102,11 +102,13 @@ env_path = os.environ["PATH"]
 os.environ["PATH"] = bindir + os.pathsep + env_path
 try:
     code, out = make(work, "deploy", "HOSTS=remotebox")
+    hcode, hout = make(work, "deploy", "HOSTS=remotebox", "POST_DEPLOY=echo shipped $(VERSION)")
 finally:
     os.environ["PATH"] = env_path
 read = lambda n: open(os.path.join(d, n)).read().splitlines() if os.path.exists(os.path.join(d, n)) else None
 local = open(os.path.join(work, "tools", "local-args")).read().splitlines() if os.path.exists(os.path.join(work, "tools", "local-args")) else None
 chk("this machine's run gets VERSION, the sha and the origin URL", (code, local), (0, [VERSION, sha, os.path.join(d, "origin.git")]))
+chk("with a remote host and a hook: the hook runs once, after the host", (hcode, hout.count("shipped " + VERSION)), (0, 1))
 chk("the remote call carries the host, bash -s, VERSION and the sha, and no URL",
     read("ssh-args"), ["remotebox", "bash", "-s", "--", VERSION, sha])
 shutil.rmtree(d)

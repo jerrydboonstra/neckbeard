@@ -61,7 +61,7 @@ case "${type:-}" in
       { echo "FAIL ${sha:0:7} isn't on $src's origin/main; run make release first"; exit 1; }
     git -C "$src" merge -q --ff-only "$sha" 2>/dev/null || { echo "FAIL $src won't fast-forward to ${sha:0:7}"; exit 1; }
     # an export with commits of its own on top of SHA merges "cleanly" and would be installed as it stands
-    [ "$(git -C "$src" rev-parse HEAD)" = "$sha" ] || { echo "FAIL $src is ahead of ${sha:0:7}; installs would copy commits that were never released"; exit 1; } ;;
+    [ "$(git -C "$src" rev-parse HEAD)" = "$sha" ] || { echo "FAIL $src is ahead of ${sha:0:7}; installs would copy commits beyond the release"; exit 1; } ;;
   *) ;;
 esac
 
