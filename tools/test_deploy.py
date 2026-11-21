@@ -183,5 +183,23 @@ chk("a sha that is not on origin/main is refused before any install is touched",
     (code, "isn't on" in out, "plugin update" in log), (1, True, False))
 shutil.rmtree(home)
 
+home, new, old = world()
+work = os.path.join(home, "work")
+git("checkout", "-q", "-b", "feature", cwd=work)
+git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "--allow-empty", "-m", "unreleased", cwd=work)
+feat = git("rev-parse", "HEAD", cwd=work)
+git("push", "-q", os.path.join(home, "origin.git"), "feature", cwd=work)
+code, out, log = run(home, feat)
+chk("a real commit on another branch of origin, not on main, is refused before any install is touched",
+    (code, "isn't on" in out, "plugin update" in log), (1, True, False))
+shutil.rmtree(home)
+
+home, new, old = world()
+git("checkout", "-q", "--detach", cwd=SRC(home))
+code, out, log = run(home, new)
+chk("a clean export on a detached HEAD, not on main, is refused before any install is touched",
+    (code, "isn't on main" in out, "plugin update" in log), (1, True, False))
+shutil.rmtree(home)
+
 print(f"\n{checks - fail} passed, {fail} failed")
 sys.exit(1 if fail else 0)
