@@ -43,7 +43,10 @@ for m in json.load(sys.stdin):
 case "${type:-}" in
   "") echo "FAIL no $market marketplace on this machine"; switch; exit 1 ;;
   directory)
-    if [ "$(cd "$loads" 2>/dev/null && pwd -P)" != "$(cd "$src" 2>/dev/null && pwd -P)" ]; then
+    # the resolved path when a folder exists, the literal path when it doesn't, so two missing folders never compare equal
+    loads_r=$(cd "$loads" 2>/dev/null && pwd -P) || loads_r=$loads
+    src_r=$(cd "$src" 2>/dev/null && pwd -P) || src_r=$src
+    if [ "$loads_r" != "$src_r" ]; then
       echo "FAIL the $market marketplace loads from $loads, not from $src; any edit or checkout there reaches every session"
       switch; exit 1
     fi
