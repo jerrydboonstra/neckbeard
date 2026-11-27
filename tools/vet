@@ -429,21 +429,29 @@ fi
 # of our own. The user's and system config are left out too, since the target's .gitattributes can pick a driver they define.
 # Submodules are not entered: git would read each one's own config. rev-parse and remote get-url run nothing from a config.
 target_changes() {
-  local top gitdir common head shadow=$work/shadow.git
-  top=$(git -C "$1" rev-parse --show-toplevel) || return 0
+  local top gitdir common head f shadow=$work/shadow.git
+  # the folder compared is the one holding .git, found by walking up: the target's core.worktree must not choose it
+  top=$(cd "$1" && pwd -P) || return 0
+  while [ ! -e "$top/.git" ]; do [ -n "$top" ] || return 0; top=${top%/*}; done
   gitdir=$(git -C "$1" rev-parse --absolute-git-dir) || return 0
   common=$(cd "$1" && cd "$(git rev-parse --git-common-dir)" && pwd -P) || return 0
+  case $common in *$'\n'*) echo "unreadable objects path"; return 0 ;; esac   # a newline would add lines to the alternates file
   head=$(git -C "$1" rev-parse --verify HEAD) || return 0
   local -a own=(env HOME="$work" XDG_CONFIG_HOME="$work" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1)
   local format=()
   [ ${#head} = 64 ] && format=(--object-format=sha256)
-  "${own[@]}" git init -q --bare --template= ${format[@]+"${format[@]}"} "$shadow" || return 0
+  ${own[@]+"${own[@]}"} git init -q --bare --template= ${format[@]+"${format[@]}"} "$shadow" || return 0
   mkdir -p "$shadow/objects/info" && printf '%s\n' "$common/objects" >"$shadow/objects/info/alternates" || return 0
   printf '%s\n' "$head" >"$shadow/HEAD"
-  # -p keeps the index's time, which git compares with each file's to decide what to reread
-  cp -p "$gitdir/index" "$shadow/index" || return 0
-  cp -p "$gitdir"/sharedindex.* "$shadow/" 2>/dev/null
-  "${own[@]}" git --git-dir="$shadow" --work-tree="$top" status --porcelain --untracked-files=no --ignore-submodules=all
+  # -p keeps the index's time, which git compares with each file's to decide what to reread. Only a plain file is copied (a pipe
+  # would block, a link would copy another file); without an index every tracked file reads as removed, so say changed.
+  for f in "$gitdir/index" "$gitdir"/sharedindex.*; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    [ -f "$f" ] && [ ! -L "$f" ] || { echo "unreadable index"; return 0; }
+    cp -p "$f" "$shadow/${f##*/}" || return 0
+  done
+  [ -f "$shadow/index" ] || { echo "no index"; return 0; }
+  ${own[@]+"${own[@]}"} git --git-dir="$shadow" --work-tree="$top" status --porcelain --untracked-files=no --ignore-submodules=all
 }
 version=$(plugin_version "$target")
 commit=$(git -C "$target" rev-parse --short HEAD 2>/dev/null || true)
