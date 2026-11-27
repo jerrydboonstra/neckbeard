@@ -1,0 +1,708 @@
+#!/usr/bin/env bash
+# vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]
+#   [--dossier DOSSIER --answers ANSWERS --prose PROSE]: vet one plugin against the sample reader, headless,
+# and write the report to OUT (or, in session mode below, assemble it from a calling session's own judgement). This is the gallery method in one command, for a plugin that publishes its report
+# and wants to rebuild it, say in a Claude Code web session on its own repo:
+#   git clone --depth 1 https://github.com/jerrydboonstra/neckbeard /tmp/nb && /tmp/nb/tools/vet . docs/neckbeard-report.md
+#   1. copy examples/reader to a throwaway folder: the judge writes into its config folder (backups/, projects/,
+#      synced skills), and that must never land in this checkout
+#   2. inventory TARGET with that copy as the config folder and an empty project, so the only rules in force are
+#      the reader's; refuse if the dossier read anything outside the copy
+#   3. the fit report, from a fixed list of the plugin's rule units (verdict-stability-rules): tools/rule-units lists the units;
+#      three find passes pool their conflict candidates and tools/units-confirm confirms each in a call of its own; the answering
+#      judge (tools/vet-units.md) answers every unit, and the target's carrying cost when a hook is always on; tools/units-verdict computes the verdict and counts by code, carrying cost included; the prose judge
+#      (tools/vet-prose.md) writes only the Why paragraph, the Do this steps and the rules patch; tools/fit draws the verdict strip
+#      and the seven fit cards. Every call is a separate `claude -p` session started in the empty project.
+#      --judge reader (what the default tries first) gives it the copy as its config folder too, so it starts with the reader's
+#      rules and nothing else; that needs a login from the environment, as a web session has, or on Linux a copy of
+#      your login file for the run (for the default judge and for an explicit --judge reader alike). Where the default judge can't
+#      log in (a Mac keeps its login with the default config), it falls back to --judge own, the caller's own config, and says so
+#      and why: the judge is told to ignore those instructions but still starts with them. The fallback is for the default judge
+#      (no --judge given) only: an explicit --judge reader never falls back, and when it can't log in it stops, naming why and
+#      --judge own. The report carries a "Judge:" line beside the Baseline line saying which judge ran.
+#   4. the report: the title and header lines (written here), a Contents list, then three layers, each opened by a `---` rule and its
+#      label line: "How it affects you" (a heading written here, then tools/summary's table, the notes under it and its "How the colours are set" card,
+#      then tools/fit's verdict strip and seven fit cards), "What it adds" (tools/part1: what the target injects, reaches and leaves
+#      behind, read from the dossier, with no reference to the reader) and "Where it takes a position" (tools/positions on the dossier,
+#      then tools/positions-layer). The renderers run before the judge, and one that exits non-zero stops the run with its stderr.
+#      The report must hold the three headings in order and name no local path. vet writes no card markup of its own: cards.py does.
+# OUT's stem .units.json, .answers.json, .verdict.json, .prose.json, .candidates.json, .confirmations.json, .confirmed.json and
+# .finds-N.json are kept beside the report: the evidence for its verdict. --units is a no-op, kept for 2.0 (the units path is the default).
+# --repo names the target's public GitHub repo when the checkout's origin is a private copy (a web session on a
+# -dev sidecar); --note adds a sentence before the "Verdict is relative" one, such as a self-vetting notice.
+# --reader DIR vets against another reader instead: a folder laid out as a Claude config folder, copied the same way. The
+# fit report then carries, inside its Why this verdict card, a `Baseline:` line (the label, the number of rule files in the dossier's current_rules.items, their bytes and a
+# fingerprint of their relative paths and contents) and a Rule files card of the relative paths (made with tools/cards.py); tools/vet writes it after the
+# judge has, never the judge. The label is "the sample reader" for the default, else the folder's name, and the title and the
+# "Verdict is relative to" paragraph carry it. A reader whose dossier lists no rule files gets the --facts report instead
+# (one stderr line says why, exit 0), with no claude needed. The reader is the config folder of the judge's session, so its
+# settings.json hooks run: vet only readers you trust.
+# --facts also prints, as the last line of stdout, one Markdown badge line for OUT (label "neckbeard", message
+# "<version> · <read state>", coloured by the dossier's read_status: failed gives red "something unread", partial yellow
+# "partly read", else brightgreen "read in full"), linked to OUT's path as given. Its other messages go to stderr.
+# The commit label (the header's "@ `...`", Source's "Commit:" line and the dossier's "(commit ...)") is the short sha of the target's
+# HEAD, with " + uncommitted changes" after it when a tracked file differs from HEAD (target_changes, which runs nothing the target names; the files read are
+# not HEAD's). --facts --release-tag TAG makes the label TAG instead and wins over the dirty rule: a report committed into a tagged
+# tree cannot name the commit that contains it, so `make report` names the tag.
+# --facts writes the published report instead: no reader, no verdict, no fit and no model call (claude need not be on PATH). The config
+# folder is a fresh empty one, the dossier must read no rules at all, and OUT is the title line `# 🔍 <name>` (the plugin once: no version and no layer list, which the Contents list names),
+# the same header line the judged report carries (`DATE` · source, its version and commit, then "made by neckbeard <version>"), the Contents list, the three layers (the
+# summary rows with no verdict strip, the facts, the positions) and one closing line. A fit report's title ends ` · against <reader>`.
+# It takes --repo and --release-tag; with --judge, --model, --units, --note or --reader it is a usage error.
+# Exit 0 only when the report passed every check: it holds the three layer headings once and in order and names no local path, and a published (--facts) report also holds no verdict strip and no fit card. A published report's checks all run before OUT is written; a fit report's local-path and login checks run after, and remove OUT on a hit. Kept out of bin/, which a plugin puts on every session's PATH.
+#
+# Session mode (--dossier DOSSIER --answers ANSWERS --prose PROSE, all three or none): assembles the same fit report from a judgement the
+# calling session already made, with no model call: no find pass, confirm call, answering judge or prose judge runs, and claude need not be on
+# PATH. DOSSIER is the one the session wrote with skills/neckbeard/inventory.py (its target path must be TARGET's, compared by realpath, and
+# TARGET must be a local folder, else usage, exit 2); its current_rules are the rules the verdict is against, labelled "your rules". tools/vet does not copy a
+# reader or run the inventory. ANSWERS is the per-unit answers in tools/vet-units.md's format (with a top-level carrying_cost when the dossier shows an always-on hook, else units-verdict refuses it), with each confirmed conflict in the form
+# tools/units-confirm merge writes ({quote, reader_rule, held_in, hard_stop}); PROSE is {why, do_this, patch}, the form tools/fit reads. Then
+# the verdict and counts are computed with tools/units-verdict and the report is rendered and assembled as for any fit report, with these
+# differences: the title ends " · against your rules"; the Baseline line keeps its form, its bytes and fingerprint computed from the rule
+# files' raw bytes on disk, each hashed under the name the report shows; the Rule files block names a file under the
+# project as its project-relative path, else under the home folder as ~/<path below home>, else by its basename (the project is tried first, so
+# the narrower root wins when it sits inside the home folder; a project that is the home folder or above it counts as the home), so no local
+# path appears; the Judge line reads "Judge: this session". A listed
+# rule file that can no longer be read, answers that units-verdict refuses, or a dossier made for another target exit 1, naming the problem,
+# with no OUT written (an OUT left by an earlier run is removed once the dossier and the three file names pass their checks, as in any fit report). A dossier that lists no rule files gets the facts report instead (one stderr line, exit 0), and --note does not carry
+# over to it, as in any fit report. --repo and --note work as in any fit report; with --reader, --judge, --model, --units or --facts it is a
+# usage error. Beside OUT it keeps only <stem>.units.json and <stem>.verdict.json: the caller's DOSSIER, ANSWERS and PROSE are never written,
+# moved or deleted, and one named like a file vet writes (OUT, <stem>.units.json, <stem>.verdict.json) is refused.
+#
+# vet --check REPORT TARGET: the staleness check for a plugin's CI. Needs only python3, no claude and no login.
+# Exit 0 when REPORT's header names the version in TARGET's plugin.json, 1 when it names another version or
+# has no header to read.
+# Targets bash 3.2, the /bin/bash on a Mac (what `#!/usr/bin/env bash` finds when Homebrew is not on PATH): no bash-4 features,
+# and an array that may be empty is expanded as ${a[@]+"${a[@]}"}, because under set -u bash before 4.4 calls an empty one unbound.
+set -u
+usage() {
+  echo "usage: tools/vet TARGET OUT [--judge reader|own] [--model MODEL] [--repo URL] [--note TEXT] [--units] [--reader DIR] [--facts] [--release-tag TAG]" >&2
+  echo "       tools/vet TARGET OUT --dossier DOSSIER --answers ANSWERS --prose PROSE [--repo URL] [--note TEXT]   (a local folder TARGET; no model call)" >&2
+  echo "       --units is a no-op: the units path is the default" >&2
+  echo "       --facts takes only --repo and --release-tag" >&2
+  echo "       tools/vet --check REPORT TARGET" >&2
+  exit 2
+}
+# While a login copy exists (credcopy=yes), no token of it may reach vet's output or a file beside OUT. login_scan checks OUT,
+# the judge's stdout and the files beside OUT, and removes them all on a hit; die redacts the tokens from its message first.
+login_files() {   # the files to check, one per NUL-terminated entry, so a path with spaces stays whole
+  local stem=${out%.md} f
+  for f in "$out" "$stem".units.json "$stem".answers.json "$stem".verdict.json "$stem".prose.json "$stem".candidates.json "$stem".confirmations.json "$stem".confirmed.json "$stem".finds-*.json "${work:-/nonexistent}"/*.err "${work:-/nonexistent}"/find-*.out "${work:-/nonexistent}"/answer.out "${work:-/nonexistent}"/prose.out "${work:-/nonexistent}"/confirm-*.out "${work:-/nonexistent}"/probe.out "${work:-/nonexistent}"/*.md.json; do
+    [ -e "$f" ] && printf '%s\0' "$f"
+  done
+}
+login_scan() {   # returns 1 and removes the files when one holds a token of the login
+  [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ] || return 0
+  login_files >"$work/login.files"
+  python3 - "$credtokens" "${reader:-/nonexistent}/.credentials.json" "${work:-/nonexistent}/judge.out" "$work/login.files" <<'PYEOF' && return 0
+import json, os, sys
+toks = [t for t in open(sys.argv[1]).read().split("\n") if t]
+try:   # a login the judge refreshed holds new tokens
+    o = json.load(open(sys.argv[2]))["claudeAiOauth"]
+    toks += [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
+except Exception:
+    pass
+files = [sys.argv[3]] + [p for p in open(sys.argv[4], "rb").read().decode().split("\0") if p]
+sys.exit(1 if any(os.path.isfile(p) and any(t.encode() in open(p, "rb").read() for t in toks) for p in files) else 0)
+PYEOF
+  while IFS= read -r -d '' f; do rm -f "$f"; done <"$work/login.files"; return 1
+}
+safe_tail() {   # safe_tail FILE N: the last N lines of FILE to stderr, any line holding a token of the login dropped
+  [ -s "$1" ] || return 0
+  python3 - "$1" "$2" "${credtokens:-/nonexistent}" "${reader:-/nonexistent}/.credentials.json" <<'PYEOF' >&2
+import json, sys
+toks = []
+try: toks += [t for t in open(sys.argv[3]).read().split("\n") if t]
+except Exception: pass
+try:
+    o = json.load(open(sys.argv[4]))["claudeAiOauth"]
+    toks += [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
+except Exception: pass
+lines = open(sys.argv[1], encoding="utf-8", errors="replace").read().rstrip("\n").split("\n")[-int(sys.argv[2]):]
+print("\n".join(l for l in lines if l and not any(t in l for t in toks)))
+PYEOF
+}
+show_call_errors() {   # each isolated call's own error output, last 5 lines, before the work folder goes
+  local f
+  for f in "$work"/*.err; do
+    [ -s "$f" ] && [ -e "${f%.err}.failed" ] || continue   # only a call whose claude exited non-zero
+    echo "vet: ${f##*/} said:" >&2; safe_tail "$f" 5
+    rm -f "${f%.err}.failed"   # printed once; a retry that fails again marks it again
+  done
+}
+die() {
+  local m="$*"
+  if [ "${credcopy:-no}" = yes ] && [ -s "${credtokens:-}" ]; then
+    m=$(printf '%s' "$m" | python3 -c 'import sys
+m = sys.stdin.read()
+toks = open(sys.argv[1]).read().split("\n")
+try:
+    import json
+    o = json.load(open(sys.argv[2]))["claudeAiOauth"]
+    toks += [o.get("accessToken"), o.get("refreshToken")]
+except Exception:
+    pass
+for t in toks:
+    if isinstance(t, str) and t: m = m.replace(t, "[login]")
+print(m)' "$credtokens" "${reader:-/nonexistent}/.credentials.json")
+    login_scan || m="$m (files holding your login's secrets were removed)"
+  fi
+  echo "vet: $m" >&2; exit 1
+}
+plugin_version() { python3 -c 'import json,sys
+for f in (".claude-plugin/plugin.json", "plugin.json", "package.json"):
+    try: print(json.load(open(sys.argv[1] + "/" + f))["version"]); break
+    except Exception: pass' "$1"; }
+
+# part1_section DOSSIER COMMIT OUTFILE: tools/part1's "## What it adds" section, written to OUTFILE
+part1_section() {
+  if [ -n "$2" ]; then
+    python3 "$nb/tools/part1" "$1" --commit "$2" >"$3" 2>"$work/part1.err"
+  else
+    python3 "$nb/tools/part1" "$1" >"$3" 2>"$work/part1.err"
+  fi || { cat "$work/part1.err" >&2; die "part 1 could not be rendered"; }
+}
+
+if [ "${1:-}" = --check ]; then
+  [ $# -eq 3 ] || usage
+  report=$2 target=$3
+  [ -f "$report" ] || die "no report at $report"
+  [ -d "$target" ] || die "$target is not a folder"
+  want=$(plugin_version "$target")
+  [ -n "$want" ] || die "no version in $target's plugin.json"
+  # the header line tools/vet writes: `DATE` · <name or [name](url)> VERSION[ @ `commit`] · made by neckbeard X, where commit is a sha, "<sha> + uncommitted changes" or a release tag
+  # (reports made before 2.0.0 put it as `DATE` · neckbeard X · <name or [name](url)> VERSION[ @ `commit`]; both are read)
+  got=$(python3 -c 'import re,sys
+for line in open(sys.argv[1], encoding="utf-8"):
+    m = re.match(r"^`\d{4}-\d{2}-\d{2}` · (?:neckbeard \S+ · )?(?:\[[^\]]+\]\([^)]+\)|\S+) (\S+)(?: @ | · made by neckbeard |\s*$)", line)
+    if m: print(m.group(1)); break' "$report")
+  [ -n "$got" ] || die "$report has no header line naming a version"
+  [ "$got" = "$want" ] || die "$report vets $got, but $target is $want: rebuild it (see examples/README.md)"
+  echo "vet: $report is current ($want)"
+  exit 0
+fi
+[ $# -ge 2 ] || usage
+target=$1 out=$2 out_given=$2; shift 2
+judge=auto model=${NECKBEARD_MODEL:-sonnet} repo="" note="" notegiven=no facts=no judgeflags=no readerdir="" releasetag="" sdossier="" sanswers="" sprose=""
+while [ $# -gt 0 ]; do case $1 in
+  --judge) [ $# -ge 2 ] || usage; case $2 in reader|own) judge=$2 ;; *) usage ;; esac; judgeflags=yes; shift 2 ;;
+  --model) [ $# -ge 2 ] || usage; model=$2; judgeflags=yes; shift 2 ;;
+  --repo) [ $# -ge 2 ] || usage; case $2 in https://github.com/*/*) repo=${2%/} ;; *) usage ;; esac; shift 2 ;;
+  --note) [ $# -ge 2 ] || usage; note=$2; notegiven=yes; shift 2 ;;
+  --dossier) [ $# -ge 2 ] && [ -n "$2" ] || usage; sdossier=$2; shift 2 ;;
+  --answers) [ $# -ge 2 ] && [ -n "$2" ] || usage; sanswers=$2; shift 2 ;;
+  --prose) [ $# -ge 2 ] && [ -n "$2" ] || usage; sprose=$2; shift 2 ;;
+  --units) judgeflags=yes; shift ;;   # a no-op: the units path is the default
+  --reader) [ $# -ge 2 ] && [ -n "$2" ] || usage; readerdir=$2; judgeflags=yes; shift 2 ;;
+  --release-tag) [ $# -ge 2 ] && [ -n "$2" ] || usage; case $2 in *[!A-Za-z0-9._-]*) usage ;; esac; releasetag=$2; shift 2 ;;   # a plain tag name: it goes into a public header line
+  --facts) facts=yes; shift ;;
+  *) usage ;;
+esac; done
+[ "$facts" = no ] || { [ "$judgeflags" = no ] && [ "$notegiven" = no ]; } || usage
+# session mode: all three of --dossier, --answers and --prose, a local folder as TARGET, and none of the judge's flags
+session=no
+if [ -n "$sdossier$sanswers$sprose" ]; then
+  [ -n "$sdossier" ] && [ -n "$sanswers" ] && [ -n "$sprose" ] || usage
+  [ "$facts" = no ] && [ "$judgeflags" = no ] && [ -d "$target" ] || usage
+  session=yes
+fi
+[ -z "$releasetag" ] || [ "$facts" = yes ] || usage
+
+nb=$(cd "$(dirname "$0")/.." && pwd -P)
+[ -d "$target" ] || die "$target is not a folder"
+target=$(cd "$target" && pwd -P)
+mkdir -p "$(dirname "$out")" || die "can't make the folder for $out"
+out=$(cd "$(dirname "$out")" && pwd -P)/$(basename "$out")
+command -v python3 >/dev/null || die "no python3 on PATH"
+
+default_reader=$(cd "$nb/examples/reader" && pwd -P)
+[ -z "$readerdir" ] || [ -d "$readerdir" ] || die "--reader $readerdir is not a folder"
+[ -z "$readerdir" ] && readerdir=$default_reader || readerdir=$(cd "$readerdir" && pwd -P)
+label="the sample reader" is_default=yes
+[ "$readerdir" = "$default_reader" ] || { label=$(basename "$readerdir") is_default=no; }   # not by name: a folder may be called "the sample reader"
+
+# 1. a throwaway reader and an empty project, removed however this exits
+work=$(mktemp -d "${TMPDIR:-/tmp}/neckbeard-vet.XXXXXX") || die "mktemp failed"
+trap 'rm -rf "$work"' EXIT
+reader=$work/reader project=$work/project
+if [ "$facts" = yes ] || [ "$session" = yes ]; then   # session mode copies no reader: the dossier is the caller's
+  mkdir "$reader" "$project" || die "couldn't make the empty config folder"
+else
+  cp -R "$readerdir" "$reader" && mkdir "$project" || die "couldn't copy the reader ($label)"
+fi
+reader=$(cd "$reader" && pwd -P) project=$(cd "$project" && pwd -P)
+
+# 2. the dossier
+dossier=$project/dossier.json
+if [ "$session" = yes ]; then
+  # the caller's own file, never copied, moved or deleted: it must be for TARGET, and the three files must not be ones vet writes
+  dossier=$sdossier
+  stem=${out%.md}
+  python3 - "$target" "$dossier" "$out" "$stem.units.json" "$stem.verdict.json" "$sanswers" "$sprose" <<'PYEOF3' || exit 1
+import json, os, sys
+target, dossier, out, units, verdict, answers, prose = sys.argv[1:8]
+real = os.path.realpath
+for name, path in (("--dossier", dossier), ("--answers", answers), ("--prose", prose)):
+    if real(path) in (real(out), real(units), real(verdict)):
+        sys.exit(f"vet: {name} {path} is a file vet writes (OUT or its .units.json or .verdict.json), so it is refused and left as it is")
+try:
+    named = json.load(open(dossier, encoding="utf-8"))["target"]["path"]
+except (OSError, ValueError, KeyError, TypeError) as e:
+    sys.exit(f"vet: can't read the dossier {dossier}: {e}")
+if not isinstance(named, str) or not named:
+    sys.exit(f"vet: the dossier {dossier} names no target path")
+if real(named) != real(target):
+    sys.exit(f"vet: the dossier is for {named}, not {target}")
+PYEOF3
+  for f in "$sdossier" "$sanswers" "$sprose"; do [ -f "$f" ] || die "no file at $f"; done
+  rm -f "$out" "$stem.units.json" "$stem.verdict.json"
+else
+# its note about the dossier holding your rules is moot here: the dossier is deleted on exit
+CLAUDE_CONFIG_DIR=$reader python3 "$nb/skills/neckbeard/inventory.py" "$target" --project-dir "$project" --out "$dossier" >"$work/inventory.log" 2>&1 ||
+  { cat "$work/inventory.log" >&2; die "the inventory failed"; }
+fi
+if [ "$facts" = yes ]; then
+  # --facts reads no reader: the rule list must be empty
+  python3 - "$dossier" <<'EOF' || die "the dossier read rules, and a facts report must read none"
+import json, sys
+rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
+if rules:
+    print("vet: the dossier read: " + ", ".join(r.get("path") or "?" for r in rules), file=sys.stderr)
+    sys.exit(1)
+EOF
+elif [ "$session" = yes ]; then
+  # the rules the verdict is against are the dossier's current_rules, named for the report as the header comment says
+  baseline_file=$work/baseline.md label="your rules" is_default=no
+  cat >"$work/baseline.py" <<'PYEOF3'
+import hashlib, json, os, sys
+sys.path.insert(0, sys.argv[5])
+from cards import card
+current = json.load(open(sys.argv[1], encoding="utf-8")).get("current_rules", {})
+rules = current.get("items", [])
+if not rules:
+    sys.exit(3)   # no rule files: the facts report, below
+home = os.path.realpath(sys.argv[2])
+proj = os.path.realpath(current["project_root"]) if current.get("project_root") else ""
+inside = lambda rp, root: bool(root) and root != "/" and rp.startswith(root + os.sep)
+if proj == home or inside(home, proj):
+    proj = ""   # a project that is the home folder or above it is not a narrower root: the home folder names its files
+def shown(path):   # the project's own files first (the narrower root), then the home folder, else the basename: never a local path
+    rp = os.path.realpath(path)
+    for root, prefix in ((proj, ""), (home, "~/")):
+        if inside(rp, root):
+            return prefix + os.path.relpath(rp, root)
+    return os.path.basename(rp)
+rows = []
+for r in rules:
+    name = shown(r["path"])
+    try:
+        rows.append((name, open(r["path"], "rb").read()))
+    except OSError as e:
+        sys.exit(f"vet: the dossier lists the rule file {name}, which can no longer be read ({e.strerror})")
+rows.sort()
+h, total = hashlib.sha256(), 0
+for name, data in rows:
+    total += len(data)
+    h.update(name.encode("utf-8") + b"\0" + data + b"\0")
+fp = h.hexdigest()[:12]
+with open(sys.argv[4], "w", encoding="utf-8") as f:
+    f.write(f"\nBaseline: {sys.argv[3]} \u00b7 {len(rows)} rule files \u00b7 {total} bytes \u00b7 sha256 {fp}\n\n")
+    f.write("\n".join(card("", "Rule files", "", [f"- `{name}`" for name, _ in rows])) + "\n")
+print(len(rows), total, fp)
+PYEOF3
+  baseline_out=$(python3 "$work/baseline.py" "$dossier" "${HOME:-/nonexistent}" "$label" "$baseline_file" "$nb/tools"); rc=$?
+  case $rc in
+    0) read -r nfiles nbytes fingerprint <<<"$baseline_out" ;;
+    3) echo "vet: the dossier lists no rule files, so there is no verdict to give; writing the facts report instead" >&2
+       rm -rf "$work"; trap - EXIT
+       exec "$0" "$target" "$out_given" --facts ${repo:+--repo "$repo"} ;;
+    *) exit 1 ;;
+  esac
+else
+python3 - "$dossier" "$reader" <<'EOF'
+import json, os, sys
+rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
+paths = [r.get("path") or "" for r in rules]
+root = os.path.realpath(sys.argv[2]) + os.sep
+if not paths:
+    sys.exit(3)   # no rule files: the facts report, below
+sys.exit(0 if all(os.path.realpath(p).startswith(root) for p in paths) else 1)
+EOF
+  case $? in
+    0) ;;
+    3) # nothing to vet against: start again as --facts, with a fresh empty folder and a fresh inventory
+       echo "vet: $label has no rule files, so there is no verdict to give; writing the facts report instead" >&2
+       rm -rf "$work"; trap - EXIT
+       exec "$0" "$target" "$out_given" --facts ${repo:+--repo "$repo"} ;;
+    *) die "the dossier read rules from outside $label" ;;
+  esac
+  command -v claude >/dev/null || die "no claude on PATH"
+  # the baseline: what the verdict is relative to, from the rule files the inventory listed
+  baseline_file=$work/baseline.md
+  read -r nfiles nbytes fingerprint < <(python3 - "$dossier" "$reader" "$label" "$baseline_file" "$nb/tools" <<'EOF'
+import hashlib, json, os, sys
+sys.path.insert(0, sys.argv[5])
+from cards import card
+rules = json.load(open(sys.argv[1])).get("current_rules", {}).get("items", [])
+root = os.path.realpath(sys.argv[2])
+rows = sorted((os.path.relpath(os.path.realpath(r["path"]), root), r["path"]) for r in rules)
+h, total = hashlib.sha256(), 0
+for rel, path in rows:
+    data = open(path, "rb").read()
+    total += len(data)
+    h.update(rel.encode("utf-8") + b"\0" + data + b"\0")
+fp = h.hexdigest()[:12]
+with open(sys.argv[4], "w", encoding="utf-8") as f:
+    f.write(f"\nBaseline: {sys.argv[3]} \u00b7 {len(rows)} rule files \u00b7 {total} bytes \u00b7 sha256 {fp}\n\n")
+    f.write("\n".join(card("", "Rule files", "", [f"- `{rel}`" for rel, _ in rows])) + "\n")
+print(len(rows), total, fp)
+EOF
+) || die "couldn't compute the baseline"
+fi
+
+# 3. the judge (--facts and session mode have none)
+# On Linux the login lives in the config folder's login file, so the default reader gets a copy of the caller's for this
+# run (mode 600, removed with the work folder). A --reader folder never does: its settings.json hooks run.
+credcopy=no credsum="" credtokens=$work/login.tokens login_why=""
+copy_login() {   # sets login_why and returns 1 when there is nothing to copy
+  [ "$is_default" = yes ] || { login_why="a --reader folder never gets your login"; return 1; }
+  [ "$(uname -s)" = Linux ] || { login_why="reader mode logs in only on Linux"; return 1; }
+  local f=${CLAUDE_CONFIG_DIR:-${HOME:-}/.claude}/.credentials.json
+  [ -f "$f" ] || { login_why="no login file in your config folder"; return 1; }
+  python3 - "$f" "$credtokens" <<'PYEOF'
+import json, sys, time
+try:
+    o = json.load(open(sys.argv[1]))["claudeAiOauth"]
+    exp = int(o["expiresAt"]) / 1000.0
+    toks = [o[k] for k in ("accessToken", "refreshToken") if isinstance(o.get(k), str) and o[k]]
+except Exception:
+    sys.exit(3)
+open(sys.argv[2], "w").write("\n".join(toks))
+sys.exit(0 if exp > time.time() + 3600 else 4)
+PYEOF
+  case $? in
+    0) ;;
+    4) rm -f "$credtokens"; login_why="your login is due to refresh within the hour"; return 1 ;;
+    *) rm -f "$credtokens"; login_why="your login file couldn't be read"; return 1 ;;
+  esac
+  (umask 077; cp "$f" "$reader/.credentials.json") && chmod 600 "$reader/.credentials.json" || { login_why="your login file couldn't be read"; return 1; }
+  credcopy=yes credsum=$(cksum <"$reader/.credentials.json")
+}
+if [ "$facts" = no ] && [ "$session" = no ] && { [ "$judge" = auto ] || [ "$judge" = reader ]; }; then
+  forced=no; [ "$judge" = reader ] && forced=yes
+  copy_login || true
+  probe_out=$work/probe.out
+  (cd "$project" && CLAUDE_CONFIG_DIR=$reader timeout 120 claude -p --model "$model" "Reply with the single word ok") >"$probe_out" 2>&1
+  if grep -qx ok "$probe_out"; then
+    judge=reader
+  elif [ "$forced" = yes ]; then   # you asked for the reader, so you get the reader or a reason, never the own judge
+    [ "$credcopy" != yes ] || [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the probe rewrote its login file, so you may need to log in again" >&2
+    [ "$credcopy" != yes ] || login_why="your login didn't work as the reader"
+    echo "vet: --judge reader can't log in with $label as its config folder here ($login_why); run without --judge to fall back, or with --judge own" >&2
+    safe_tail "$probe_out" 1
+    exit 1
+  else
+    judge=own
+    if [ "$credcopy" = yes ]; then
+      [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the probe rewrote its login file, so you may need to log in again" >&2
+      login_why="your login didn't work as the reader"; rm -f "$reader/.credentials.json" "$credtokens"; credcopy=no
+    fi
+    echo "vet: the judge can't log in with $label as its config folder here ($login_why), so it runs with your own config and is told to ignore it" >&2
+  fi
+fi
+if [ "$facts" = no ]; then   # the report names the judge that ran, beside the Baseline line
+  if [ "$session" = yes ]; then judge_says="this session"
+  elif [ "$judge" = own ]; then judge_says="your own config, told to ignore it"
+  elif [ "$is_default" = yes ]; then judge_says="the sample reader's config"
+  else judge_says="$label's config"; fi
+  python3 - "$baseline_file" "Judge: $judge_says" <<'PYEOF' || die "couldn't name the judge in the baseline"
+import sys
+lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
+i = next(i for i, l in enumerate(lines) if l.startswith("Baseline: "))
+lines[i + 1:i + 1] = ["", sys.argv[2]]
+open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
+PYEOF
+fi
+# target_changes DIR: print the tracked files of DIR's repo that differ from HEAD, without running anything the target names.
+# `git status` in the target runs what its .git/config names (core.fsmonitor, the filter drivers its .gitattributes picks), so it is
+# asked of a throwaway git folder instead: HEAD's commit, a copy of the index, the target's objects by alternates, and a config
+# of our own. The user's and system config are left out too, since the target's .gitattributes can pick a driver they define.
+# Submodules are not entered: git would read each one's own config. rev-parse and remote get-url run nothing from a config.
+target_changes() {
+  local top gitdir common head f shadow=$work/shadow.git
+  # the folder compared is the one holding .git, found by walking up: the target's core.worktree must not choose it
+  top=$(cd "$1" && pwd -P) || return 0
+  while [ ! -e "$top/.git" ]; do [ -n "$top" ] || return 0; top=${top%/*}; done
+  gitdir=$(git -C "$1" rev-parse --absolute-git-dir) || return 0
+  common=$(cd "$1" && cd "$(git rev-parse --git-common-dir)" && pwd -P) || return 0
+  case $common in *$'\n'*) echo "unreadable objects path"; return 0 ;; esac   # a newline would add lines to the alternates file
+  head=$(git -C "$1" rev-parse --verify HEAD) || return 0
+  local -a own=(env HOME="$work" XDG_CONFIG_HOME="$work" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1)
+  local format=()
+  [ ${#head} = 64 ] && format=(--object-format=sha256)
+  ${own[@]+"${own[@]}"} git init -q --bare --template= ${format[@]+"${format[@]}"} "$shadow" || return 0
+  mkdir -p "$shadow/objects/info" && printf '%s\n' "$common/objects" >"$shadow/objects/info/alternates" || return 0
+  printf '%s\n' "$head" >"$shadow/HEAD"
+  # -p keeps the index's time, which git compares with each file's to decide what to reread. Only a plain file is copied (a pipe
+  # would block, a link would copy another file); without an index every tracked file reads as removed, so say changed.
+  for f in "$gitdir/index" "$gitdir"/sharedindex.*; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    [ -f "$f" ] && [ ! -L "$f" ] || { echo "unreadable index"; return 0; }
+    cp -p "$f" "$shadow/${f##*/}" || return 0
+  done
+  [ -f "$shadow/index" ] || { echo "no index"; return 0; }
+  ${own[@]+"${own[@]}"} git --git-dir="$shadow" --work-tree="$top" status --porcelain --untracked-files=no --ignore-submodules=all
+}
+version=$(plugin_version "$target")
+commit=$(git -C "$target" rev-parse --short HEAD 2>/dev/null || true)
+# the files read are the working tree's: say so when a tracked file differs from HEAD, and name the tag under --release-tag
+if [ -n "$releasetag" ]; then commit=$releasetag
+elif [ -n "$commit" ] && [ -n "$(target_changes "$target" 2>/dev/null)" ]; then commit="$commit + uncommitted changes"; fi
+remote=$(git -C "$target" remote get-url origin 2>/dev/null | sed -E 's#^git@github\.com:#https://github.com/#; s#\.git$##' || true)
+case $remote in https://github.com/*) ;; *) remote="" ;; esac
+[ -n "$repo" ] && remote=${repo%.git}
+nbversion=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$nb/.claude-plugin/plugin.json")
+name=$(basename "$target")
+[ -n "$remote" ] && name=${remote#https://github.com/}
+source=$name
+[ -n "$remote" ] && source="[$name]($remote)"
+# header_lines: the title line, then the header line, for both the judged report and --facts (vet --check reads the second)
+header_lines() {
+  echo "# 🔍 ${name##*/}${title_tail:+ · $title_tail}"
+  echo "\`$(date +%Y-%m-%d)\` · $source${version:+ $version}${commit:+ @ \`$commit\`} · made by neckbeard $nbversion"
+}
+# render_layers: each layer from the renderer that owns it (code only, no model call), into $work. A renderer that exits non-zero stops the
+# run with its stderr, and this runs before the judge, so a broken one costs no judge call.
+render_layers() {
+  part1_section "$dossier" "$commit" "$work/part1.md"
+  python3 "$nb/tools/summary" "$dossier" >"$work/summary.md" 2>"$work/layer.err" || { cat "$work/layer.err" >&2; die "the summary rows could not be rendered"; }
+  python3 "$nb/tools/positions" "$dossier" "$work/positions.json" >/dev/null 2>"$work/layer.err" || { cat "$work/layer.err" >&2; die "the positions could not be found"; }
+  python3 "$nb/tools/positions-layer" "$work/positions.json" ${remote:+--repo "$remote"} ${commit:+--commit "$commit"} >"$work/positions.md" 2>"$work/layer.err" ||
+    { cat "$work/layer.err" >&2; die "the positions layer could not be rendered"; }
+}
+# assemble OUTFILE TITLE HEADER LABEL FITFILE CLOSING: the title, the header line, the Contents list and the three layers, each opened by a
+# rule and its label line (the first layer's heading is written here: tools/summary prints none). LABEL is the reader the fit is against,
+# empty for a published report, whose first Contents line leaves out the fit and the verdict; FITFILE is tools/fit's strip and cards, or empty.
+assemble() {
+  python3 - "$@" "$work" <<'PYEOF' || die "couldn't assemble the report"
+import sys
+out, title, header, label, fit, closing, work = sys.argv[1:8]
+read = lambda name: open(f"{work}/{name}", encoding="utf-8").read().strip("\n")
+rules = label if label == "your rules" else f"{label}'s rules"   # session mode's label already ends in "rules"
+first = "cost, reach, state and live surface at a glance" + (f", then the fit against {rules}. Carries a judgement: the colours, and the verdict against {label}." if label else ". Carries a judgement: the colours.")
+parts = [title, header, "**Contents**",
+         "1. [How it affects you](#how-it-affects-you): " + first + "\n"
+         "2. [What it adds](#what-it-adds): what the plugin loads, injects and may leave on disk, written by code. No judgement.\n"
+         "3. [Where it takes a position](#where-it-takes-a-position): every place it tells the model what to do, by topic, in its own words. No judgement.",
+         "---", "**1 \u00b7 Summary \u00b7 carries a judgement**", "## How it affects you", read("summary.md")]
+if fit:
+    parts.append(open(fit, encoding="utf-8").read().strip("\n"))
+parts += ["---", "**2 \u00b7 Facts \u00b7 written by code \u00b7 no judgement**", read("part1.md"),
+          "---", "**3 \u00b7 Positions \u00b7 the plugin's own words \u00b7 no judgement**", read("positions.md")]
+if closing:
+    parts.append(closing)
+open(out, "w", encoding="utf-8").write("\n\n".join(parts) + "\n")
+PYEOF
+}
+# check_report FILE yes|no: the report holds the three layer headings, once each and in order; a published report (yes) holds no verdict strip and no fit card
+check_report() {
+  python3 - "$1" "$2" <<'PYEOF' || die "the report failed its own checks, so no report was written"
+import re, sys
+text, facts = "\n" + open(sys.argv[1], encoding="utf-8").read(), sys.argv[2] == "yes"
+spots, bad = [], False
+for h in ("How it affects you", "What it adds", "Where it takes a position"):
+    n = text.count("\n## " + h + "\n")
+    if n != 1:
+        print(f"vet: the report must hold the heading '## {h}' once, and holds it {n} times", file=sys.stderr); bad = True
+    spots.append(text.find("\n## " + h + "\n"))
+if not bad and spots != sorted(spots):
+    print("vet: the layer headings are out of order: they must read How it affects you, What it adds, Where it takes a position", file=sys.stderr); bad = True
+if facts:
+    if re.search(r"^> \*\*[\U0001F7E9\U0001F7E8\U0001F7E7\U0001F7E5] ", text, re.M):
+        print("vet: a published report must hold no verdict strip", file=sys.stderr); bad = True
+    if re.search(r"<b>(Why this verdict|Conflicts|Already covered|Keep|Dropped|Do this|Proposed rules patch)</b>", text):
+        print("vet: a published report must hold no fit card", file=sys.stderr); bad = True
+sys.exit(1 if bad else 0)
+PYEOF
+}
+if [ "$facts" = yes ]; then
+  title_tail=
+  render_layers
+  assemble "$work/facts.md" "$(header_lines | sed -n 1p)" "$(header_lines | sed -n 2p)" "" "" "No reader's rules were read: this report lists facts only and carries no verdict."
+  check_report "$work/facts.md" yes
+  # the badge for it, as stdout's last line: the label, the target's version and how much of it was read, the word from
+  # tools/part1 --read-state on the dossier (whoever's limit a gap is, it counts). Worked out before OUT is written, so a failure leaves no report.
+  read_word=$(python3 "$nb/tools/part1" --read-state "$dossier" 2>"$work/part1.err") || { cat "$work/part1.err" >&2; die "couldn't write the badge line"; }
+  badge=$(python3 - "$read_word" "$version" "$out_given" "$nb/tools/badge-logo" <<'EOF'
+import sys
+from urllib.parse import quote
+state, version, link, logo_file = sys.argv[1:]
+colour = {"read in full": "brightgreen", "partly read": "yellow", "something unread": "red"}.get(state)   # the word comes from tools/part1 --read-state
+if colour is None:
+    sys.exit("tools/part1 --read-state printed a word the badge does not know: " + state)
+message = (version + " \u00b7 " if version else "") + state
+shield = quote(message.replace("-", "--").replace("_", "__"), safe="")   # shields.io: "-" and "_" are doubled, the rest percent-encoded
+alt = message.replace("]", "\\]")
+logo = open(logo_file, encoding="utf-8").read().strip()
+link = link.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
+print(f"[![neckbeard: {alt}](https://img.shields.io/badge/neckbeard-{shield}-{colour}?logo={logo})]({link})")
+EOF
+  ) || die "couldn't write the badge line"
+  # the local-path check runs before OUT is written, so a report that names one never lands there
+  for p in "$work" "$(cd "$work" && pwd -P)" "$target" "${HOME:-/nonexistent}"; do
+    [ "$p" = / ] && continue
+    grep -qF -- "$p" "$work/facts.md" && die "the facts report names a local path ($p), so $out was not written"
+  done
+  mv "$work/facts.md" "$out"
+  echo "vet: facts report $out" >&2
+  printf '%s\n' "$badge"
+  exit 0
+fi
+title_tail="against $label"
+title=$(header_lines | sed -n 1p) header=$(header_lines | sed -n 2p)
+render_layers
+if [ "$session" = yes ]; then
+  reader_noun="your rules" reader_cite="their shown names, never a local path"   # not read: no prose judge runs in this mode
+  verdict_text="Verdict is relative to your $nfiles rule files (fingerprint $fingerprint), not a judgment of the plugin's quality."
+elif [ "$is_default" = yes ]; then
+  reader_noun="the sample reader" reader_cite="examples/reader/... paths, never by the folder above"
+  verdict_text="Verdict is relative to the [sample reader](https://github.com/jerrydboonstra/neckbeard/tree/main/examples/reader), not a judgment of the plugin's quality. Reproduce: see [examples/README.md](https://github.com/jerrydboonstra/neckbeard/blob/main/examples/README.md)."
+else
+  reader_noun="the reader $label" reader_cite="their path inside the reader (for example rules/safety.md), never by the folder above"
+  verdict_text="Verdict is relative to $label's $nfiles rule files (fingerprint $fingerprint), not a judgment of the plugin's quality."
+fi
+stem=${out%.md}
+unitsf=$stem.units.json answers=$stem.answers.json cands=$stem.candidates.json confs=$stem.confirmations.json confirmed=$stem.confirmed.json verdictf=$stem.verdict.json prose=$stem.prose.json
+if [ "$session" = yes ]; then
+  answers=$sanswers prose=$sprose   # the caller's, read and never written
+else
+  rm -f "$out" "$answers" "$cands" "$confs" "$confirmed" "$verdictf" "$prose" "$stem".finds-*.json
+fi
+python3 "$nb/tools/rule-units" "$dossier" "$unitsf" >&2 || die "rule-units failed"
+if [ "$session" = yes ]; then
+  # the answers are the session's: only the verdict and counts are computed here, by code
+  computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers" 2>&1) || { echo "$computed" >&2; die "the answers were refused"; }
+  echo "vet: units: $computed" >&2
+  python3 "$nb/tools/units-verdict" "$unitsf" "$answers" --json >"$verdictf" || die "couldn't write the verdict records"
+else
+test_text=$(cat "$nb/tools/vet-conflict-test.md")
+ucfg=()
+[ "$judge" = reader ] && ucfg=(env CLAUDE_CONFIG_DIR="$reader")
+usage_log=$work/usage.log
+# an isolated judge call: PROMPT-FILE in, its text answer on stdout; its cost and time go to the usage log
+call() { # call TOOLS PROMPT-FILE
+  local rc
+  rm -f "${2%.md}.failed"
+  (cd "$project" && ${ucfg[@]+"${ucfg[@]}"} claude -p --model "$model" --allowedTools "$1" --output-format json < "$2") >"$2.json"
+  rc=$?
+  [ "$rc" = 0 ] || { : >"${2%.md}.failed"; return "$rc"; }   # its own error is already in the call's .err file
+  python3 -c 'import json,sys
+r = json.load(sys.stdin)
+print(r.get("result", ""))
+open(sys.argv[1], "a").write("%s %s\n" % (r.get("total_cost_usd", 0), r.get("duration_ms", 0)))' "$usage_log" <"$2.json"
+}
+# 3a. three find passes, side by side, each writing its own candidates
+for i in 1 2 3; do
+  python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossier=sys.argv[3], finds=sys.argv[4], test=sys.argv[5]))' \
+    "$nb/tools/vet-find.md" "$unitsf" "$dossier" "$stem.finds-$i.json" "$test_text" >"$work/find-$i.md"
+  call Read,Write,Glob,Grep "$work/find-$i.md" >"$work/find-$i.out" 2>"$work/find-$i.err" &
+done
+wait
+show_call_errors
+for i in 1 2 3; do [ -s "$stem.finds-$i.json" ] || die "find pass $i wrote no candidates ($(head -c 300 "$work/find-$i.out" "$work/find-$i.err"))"; done
+python3 "$nb/tools/units-confirm" pool "$unitsf" "$dossier" "$cands" "$stem".finds-[123].json >&2 || die "pooling the candidates failed"
+# 3b. each candidate confirmed alone: it sees the reader rule (with its file and heading), the sentence and the written test, and nothing else
+python3 -c 'import json,sys
+for c in json.load(open(sys.argv[1]))["candidates"]:
+    open("%s/confirm-%s.rule" % (sys.argv[2], c["cid"]), "w").write(c["reader_rule"])
+    open("%s/confirm-%s.label" % (sys.argv[2], c["cid"]), "w").write(c["reader_rule"].split(": ", 1)[0])
+    open("%s/confirm-%s.heading" % (sys.argv[2], c["cid"]), "w").write(c.get("heading", ""))
+    open("%s/confirm-%s.sentence" % (sys.argv[2], c["cid"]), "w").write(c["quote"])' "$cands" "$work"
+for f in "$work"/confirm-*.rule; do
+  [ -e "$f" ] || break
+  cid=${f##*/confirm-}; cid=${cid%.rule}
+  python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(rule=open(sys.argv[2]).read(), sentence=open(sys.argv[3]).read(), test=sys.argv[4], label=open(sys.argv[5]).read(), heading=open(sys.argv[6]).read()))' \
+    "$nb/tools/vet-confirm.md" "$f" "$work/confirm-$cid.sentence" "$test_text" "$work/confirm-$cid.label" "$work/confirm-$cid.heading" >"$work/confirm-$cid.md"
+  call "" "$work/confirm-$cid.md" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err" &
+done
+wait
+show_call_errors
+# a confirm call that answered with no JSON (a refusal, a hiccup) gets one more try, alone
+for f in "$work"/confirm-*.md; do
+  [ -e "$f" ] || break
+  cid=${f##*/confirm-}; cid=${cid%.md}
+  grep -q '"conflict"' "$work/confirm-$cid.out" || call "" "$f" >"$work/confirm-$cid.out" 2>"$work/confirm-$cid.err"
+done
+show_call_errors   # a retry that failed again
+python3 - "$cands" "$work" "$confs" "$confirmed" 2>"$work/confirm-parse.err" <<'PYEOF2' || { safe_tail "$work/confirm-parse.err" 5; die "a confirm call gave no usable answer"; }
+import json, re, sys
+cands = json.load(open(sys.argv[1]))["candidates"]
+confs, kept = [], []
+for c in cands:
+    text = ""
+    try:
+        text = open(f"{sys.argv[2]}/confirm-{c['cid']}.out", encoding="utf-8").read()
+        a = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
+        assert isinstance(a["conflict"], bool)
+        assert isinstance(a.get("hard_stop"), bool) or not a["conflict"]   # a confirmed conflict says whether its rule is a hard stop
+    except Exception:
+        print(f"vet: the confirm call for {c['cid']} gave no usable answer: {text[:200]!r}", file=sys.stderr)
+        sys.exit(1)
+    confs.append({"cid": c["cid"], "conflict": a["conflict"], "hard_stop": a.get("hard_stop") is True, "why": str(a.get("why", ""))})
+    if a["conflict"]:
+        kept.append({**c, "hard_stop": a["hard_stop"], "why": str(a.get("why", ""))})
+json.dump({"confirmations": confs}, open(sys.argv[3], "w"), indent=1)
+json.dump({"confirmed": kept}, open(sys.argv[4], "w"), indent=1)
+print(f"vet: units: {len(kept)} of {len(cands)} candidates confirmed", file=sys.stderr)
+PYEOF2
+cat "$work/confirm-parse.err" >&2   # the python step's one summary line
+# 3c. the answering judge: one call that answers every unit
+python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(units=sys.argv[2], dossier=sys.argv[3], answers=sys.argv[4]))' "$nb/tools/vet-units.md" "$unitsf" "$dossier" "$answers" >"$work/answer.md" || die "couldn't write the answering prompt"
+call Read,Write,Glob,Grep "$work/answer.md" >"$work/answer.out" 2>"$work/answer.err" || { show_call_errors; echo "vet: the answering judge said:" >&2; safe_tail "$work/answer.md.json" 5; die "the answering judge exited non-zero"; }
+show_call_errors
+login_scan || die "the judge's output held your login's secrets, so no report was written"
+[ -s "$answers" ] || die "the answering judge wrote no answers to $answers ($(head -c 300 "$work/answer.out" "$work/answer.err"))"
+# whatever the judge wrote under conflicts, only the confirmed ones count: put them in, with the file each is held in and whether its rule is a hard stop
+python3 "$nb/tools/units-confirm" merge "$cands" "$confs" "$answers" >/dev/null || die "couldn't put the confirmed conflicts into the answers"
+# 3d. the verdict and counts, by code
+computed=$(python3 "$nb/tools/units-verdict" "$unitsf" "$answers") || { echo "$computed" >&2; die "the judge's answers were refused"; }
+echo "vet: units: $computed" >&2
+python3 "$nb/tools/units-verdict" "$unitsf" "$answers" --json >"$verdictf" || die "couldn't write the verdict records"
+# 3e. the prose judge: only the Why paragraph, the Do this steps and the rules patch
+python3 -c 'import sys
+print(open(sys.argv[1], encoding="utf-8").read().format(reader_noun=sys.argv[2], reader_cite=sys.argv[3], name=sys.argv[4], target=sys.argv[5], dossier=sys.argv[6], verdict_json=open(sys.argv[7], encoding="utf-8").read(), prose=sys.argv[8]))' \
+  "$nb/tools/vet-prose.md" "$reader_noun" "$reader_cite" "$name${version:+ $version}" "$target" "$dossier" "$verdictf" "$prose" >"$work/prose.md" || die "couldn't write the prose prompt"
+call Read,Write,Glob,Grep "$work/prose.md" >"$work/prose.out" 2>"$work/prose.err"
+prose_rc=$?
+if [ "$credcopy" = yes ]; then
+  [ "$(cksum <"$reader/.credentials.json" 2>/dev/null)" = "$credsum" ] || echo "vet: the judge rewrote its login file, so you may need to log in again" >&2
+  login_scan || die "the judge's output held your login's secrets, so no report was written"
+fi
+[ "$prose_rc" = 0 ] || { show_call_errors; echo "vet: the prose judge said:" >&2; safe_tail "$work/prose.md.json" 5; }
+[ "$prose_rc" = 0 ] || die "the prose judge exited non-zero"
+show_call_errors
+[ -s "$prose" ] || die "the prose judge wrote no prose to $prose"
+python3 - "$usage_log" "$SECONDS" <<'PYEOF2' >&2
+import sys
+try: rows = [l.split() for l in open(sys.argv[1]) if l.strip()]
+except OSError: rows = []
+print(f"vet: units cost: {len(rows)} calls, ${sum(float(r[0]) for r in rows):.2f}, {sum(int(float(r[1])) for r in rows) // 1000} s of call time; whole vet {sys.argv[2]} s")
+PYEOF2
+fi   # session mode skips the judge steps above
+
+# 4. the report: title, header, Contents, then the three layers (the summary rows, then the fit strip and cards, the facts, the positions)
+python3 "$nb/tools/fit" "$verdictf" "$prose" --label "$label" --target "${name##*/}" --verdict-text "${note:+$note }$verdict_text" --baseline "$baseline_file" >"$work/fit.md" || die "the fit report could not be drawn from $verdictf and $prose"
+assemble "$work/report.md" "$title" "$header" "$label" "$work/fit.md" ""
+check_report "$work/report.md" no
+cp "$work/report.md" "$out" || die "couldn't write $out"
+login_scan || die "the report held your login's secrets, so no report was written"
+rm -f "$credtokens"   # kept until here: the finished report, with part 1 from the dossier, is the last thing scanned; the work folder goes at exit
+for p in "$work" "$(cd "$work" && pwd -P)" "$target" "$readerdir" "${HOME:-/nonexistent}" "$(cd "${HOME:-/nonexistent}" 2>/dev/null && pwd -P)" "$(python3 -c 'import json,sys
+print(json.load(open(sys.argv[1])).get("current_rules", {}).get("project_root") or "")' "$dossier" 2>/dev/null)"; do
+  [ "$p" = / ] || [ -z "$p" ] && continue
+  grep -qF -- "$p" "$out" && { rm -f "$out"; die "$out names a local path ($p); fix it by hand or rerun"; }
+done
+echo "vet: report $out (judge: $judge)"

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Runs the inventory from a clone: finds inventory.py relative to itself.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$HERE/../skills/neckbeard/inventory.py" "$@"

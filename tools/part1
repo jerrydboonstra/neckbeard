@@ -1,0 +1,594 @@
+#!/usr/bin/env python3
+"""part1 DOSSIER [--commit SHA]: print "## What it adds", what a tool adds to a session, from the dossier alone.
+
+DOSSIER is the JSON inventory.py writes. This reads only its `target`: never `current_rules`, never the target
+folder, so nothing here mentions a reader's rules. Output is sorted and has no clock in it, so two runs on one
+dossier are byte-identical. tools/vet puts it in the report as the second layer, under "## What it adds".
+
+Each card is one collapsible block made by tools/cards.py's card(): a summary line (read marker, name, then a gist computed
+from the dossier) and under it one `- <label>:` line per section, in the state target.read_status gives. The legend line
+`🟢 read in full · 🟡 partly read · 🔴 something unread` comes before the first card. A card's marker is the read state of
+its own line states: something unread if any is failed (a section missing from read_status or not a dict is failed), else read in
+full if each is read or not-applicable, else partly read (partial and any other word). `part1 --read-state DOSSIER` prints the
+overall read state on one line: the read state of every card's line states and every read_status section no card uses.
+  read, entries     the label's line, then each entry on its own `  - ` line (no state word)
+  read, none        `none`
+  partial           `partly read`, then the entries found, then one `  - ` line per cause that has notes, tool-limit first:
+                    `neckbeard did not read: <tool-limit notes joined by "; ">`, `broken in the plugin: <target-fault notes>`
+                    (read_status.<section>.causes says which; a section with no causes list, an old dossier, prints
+                    `  - not read: <notes>` as before; omitted with no notes)
+  failed            `<the same two phrases joined by "; ">` on the label's line in place of `not read: <notes>` (`not read`
+                    alone with no notes, or with no causes list `not read: <notes>`)
+  not-applicable    `not applicable`
+A dossier with no read_status exits 2: without it the card cannot tell "none" from "could not read".
+
+Field (under target) -> label (card), the section whose read_status gives its state:
+  skills[]                        Skills (Injects)               skills
+  rule_files[]                    Rule files (Injects)           rule_files
+  hooks.injected_content[]        Hook-injected text (Injects)   hooks
+  hooks.events                    Hooks (Hooks)                  hooks      (+ hooks_reach_subagents, its _basis)
+  hooks.mods[]                    Mods (Claude Code mods, a card after Hooks, only when present)   hooks   (each mod's path; a refused one says so, a missing one too)
+  agents[]                        Agents (Subagents and commands)    agents
+  commands[]                      Commands (Subagents and commands)  commands
+  persistence_candidates[]        Persistence candidates (State it may leave)   persistence_candidates
+                                  (the first 10 by path, then `and N more, in: <folder> <count>, ...`; the not read line holds
+                                  the first 5 notes, then `and N more`)
+  mcp_servers.servers[]           MCP servers (Reaches outside the session)     mcp_servers
+  plugin_json                     plugin.json (Source)           plugin_json
+  marketplace                     Marketplace (Source)           marketplace
+  kind, path, plugin_json.name/.version, --commit   Kind, Name, Version, Commit (Source), no section
+
+An injected_content entry with built_at_run_time (a shell hook traced from its own text) prints one
+`<file> (<events>, built at run time, at least N bytes): <template line>` line per template line, then `  writes: <items joined by "; ">`
+when it writes; with no template line it prints `<file> (<events>, built at run time): prints nothing; writes: <items>`. The caveat
+line (BUILT_NOTE) follows the entries once per report.
+A hooks section read with injected_content null and an injected_content_note prints the note as not read, never none.
+An entry with `refused`, or with bytes and text both None, prints `<name>: not read`. Notes are cleaned before they
+print: a hook command in one becomes its script (script_of), any other absolute or ~ path its basename. Every string
+taken from the dossier is put on one line, cut at 200 characters (400 for a note), and has absolute and ~ paths cut to their
+basenames, so a target cannot forge a heading, a verdict line or a table row, or put a path in the report."""
+import json, os, re, shlex, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cards import card
+from urllib.parse import urlsplit
+
+INTERPRETERS = {"bash", "sh", "zsh", "python", "python3", "node", "uv", "uvx", "npx", "deno"}
+FOOTER = ('Load timing is how Claude Code loads skills, not measured here. Tokens are estimated as bytes / 4; '
+          'where the inventory fell back to a character count, "bytes" counts characters.')
+ABS_PATH = re.compile(r"(?:~|\$HOME|\$\{HOME\})(?:/[\w.@+-]+)+|(?<![\w/.~$}])/[\w.@+-]+(?:/[\w.@+-]+)+")
+ENV_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+MAX_COMMAND = 4000   # characters of a hook command that script_of will parse
+INLINE_CODE = {"-c", "-e", "-p", "--eval", "--print", "--command"}
+INLINE_LETTERS = set("cep")   # a short-flag cluster such as -lc, -ec, -xc, -Bc carries inline code when it holds one of these
+SCRIPT_LIKE = re.compile(r"/|\.(?:sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|php)$")
+HOME_FORMS = ("~", "$HOME", "${HOME}")
+SAFE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")   # what a printed script may be: a name or a relative path
+
+
+def expand_plugin_root(s, plugin_root):
+    """A copy of inventory_hooks.py's _expand_plugin_root, kept equal to it by tools/test_part1.py. tools/part1 passes the
+    literal ${CLAUDE_PLUGIN_ROOT} as the root, so the prefix strip in script_of then runs on every form.
+    Replace every reference to CLAUDE_PLUGIN_ROOT in a hook command with the
+    plugin root: $CLAUDE_PLUGIN_ROOT, ${CLAUDE_PLUGIN_ROOT}, and the shell's
+    default forms ${CLAUDE_PLUGIN_ROOT:-word}, ${...-word}, ${...:=word},
+    ${...=word}, ${...:?word} and ${...?word}, whose word may itself hold ${...}. Claude Code always sets the
+    variable, so each of those forms is its value and the word never runs.
+    Cat Herder writes "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/bin/meow" so one
+    hook file serves several hosts; matching only the plain forms reported all
+    three of its hooks as unidentifiable. ${...:+word} (word when set) is left
+    alone: its value is the word, not the root. So is $CLAUDE_PLUGIN_ROOTX, a
+    different variable (1.14.0 and earlier expanded it, by a substring replace). The scan
+    does not read quotes, so a quoted } inside the word ends it early and the
+    hook reads as unidentifiable: an unknown, never a false all-clear."""
+    head = "${CLAUDE_PLUGIN_ROOT"
+    out, i = [], 0
+    while True:
+        j = s.find(head, i)
+        if j < 0:
+            break
+        k = j + len(head)
+        op = next((o for o in (":-", ":=", ":?", "-", "=", "?") if s.startswith(o, k)), None)   # in place: slicing the rest of a long command per reference is quadratic
+        if not s.startswith("}", k) and op is None:
+            out.append(s[i:k])
+            i = k
+            continue
+        # Find the closing brace of this ${...}, counting nested ${ ... }.
+        depth, m = 1, k
+        while m < len(s) and depth:
+            if s.startswith("${", m):
+                depth, m = depth + 1, m + 2
+                continue
+            if s[m] == "}":
+                depth -= 1
+            m += 1
+        if depth:
+            break
+        out.append(s[i:j] + plugin_root)
+        i = m
+    s = "".join(out) + s[i:]
+    return re.sub(r"\$CLAUDE_PLUGIN_ROOT(?![A-Za-z0-9_])", lambda _: plugin_root, s)
+
+
+def safe(text, root="", cap=200):
+    """A string from the dossier as printed: one line, absolute and ~ paths cut to their basenames, cut at CAP characters."""
+    text = "" if text is None else str(text)
+    text = re.sub(r"[\x00-\x1f\x7f\s]+", " ", text).strip()
+    if root:
+        text = text.replace(root.rstrip("/") + "/", "")
+    text = ABS_PATH.sub(lambda m: os.path.basename(m.group(0)), text)
+    return text if len(text) <= cap else text[: cap - 1] + "\u2026"
+
+
+def words(command):
+    """The command's words with any leading NAME=value assignments dropped, or None if it does not parse."""
+    try:
+        if not isinstance(command, str):
+            return None
+        lex = shlex.shlex(command, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        toks = list(lex)
+    except ValueError:
+        return None
+    for i, t in enumerate(toks):   # only the first command: stop at ; && | & < > ( )
+        if t and all(c in "();<>|&" for c in t):
+            toks = toks[:i]
+            break
+    while toks and (ENV_ASSIGN.match(toks[0]) or os.path.basename(toks[0]) == "env"):
+        if os.path.basename(toks[0]) == "env" and not ENV_ASSIGN.match(toks[0]):   # env [-flags] [NAME=value ...] COMMAND: look through it
+            toks = toks[1:]
+            while toks and (toks[0].startswith("-") or ENV_ASSIGN.match(toks[0])):
+                toks = toks[1:]
+        else:
+            toks = toks[1:]
+    return toks or None
+
+
+INLINE_REQUIRE_RE = re.compile(
+    r"""^require\(require\((['"])path\1\)\.(?:join|resolve)\(process\.env\.CLAUDE_PLUGIN_ROOT"""
+    r"""(?:\.split\(String\.fromCharCode\(92\)\)\.join\((['"])/\2\))?,(['"])([^'"]*)\3\)\)\Z""")
+INLINE_REQUIRE_WORD = re.compile(r"^[\w.@+-]+(?:/[\w.@+-]+)*\Z")
+
+
+def inline_require_script(command):
+    """The plugin-relative script of the one allowed inline form, else None. The form is `node -e <body>` where the body, with
+    whitespace outside its string literals removed, is `require(require('path').join(process.env.CLAUDE_PLUGIN_ROOT<N>,'<rel>'))`:
+    path.join or path.resolve, either quote, <N> empty or the backslash fix `.split(String.fromCharCode(92)).join('/')`. <rel> is
+    a relative plain path with no . or .. segment. Any other command, or a body that does more, is None. The same function, with the
+    same body, is in tools/part1 and skills/neckbeard/inventory_hooks.py; tools/test_hook_inline_require.py keeps the two equal."""
+    if not isinstance(command, str) or len(command) > 4000:   # the length guard script_of has
+        return None
+    try:
+        toks = shlex.split(command)
+    except ValueError:
+        return None
+    if len(toks) != 3 or toks[0] != "node" or toks[1] != "-e":
+        return None
+    body = re.sub(r"""('[^']*'|"[^"]*")|\s+""", lambda m: m.group(1) or "", toks[2])
+    m = INLINE_REQUIRE_RE.match(body)
+    rel = m.group(4) if m else None
+    if rel is None or not INLINE_REQUIRE_WORD.match(rel) or {".", ".."} & set(rel.split("/")):
+        return None
+    return rel
+
+
+def script_of(command, root=""):
+    """The script a hook command runs, with no arguments: drop NAME=value prefixes; skip an interpreter to the next token
+    that looks like a script (a path or a known extension), and give up (<unparsed command>) on inline code (-c, -e, or a
+    cluster such as -lc), when none does, or when the token holds whitespace; look through env; strip ${CLAUDE_PLUGIN_ROOT}/ or the target path; print what is still absolute or ~ as its basename."""
+    if isinstance(command, str) and len(command) > MAX_COMMAND:   # shlex is slow on a huge token; no script call is this long
+        return "<unparsed command>"
+    rel = inline_require_script(command) if isinstance(command, str) else None
+    if rel:   # node -e require(<plugin root>/<rel>): the script is <rel>
+        return rel
+    if isinstance(command, str):   # before the split, so a default word holding spaces stays one token
+        command = expand_plugin_root(command, "${CLAUDE_PLUGIN_ROOT}")
+    toks = words(command)
+    if not toks:
+        return "<unparsed command>"
+    tok = toks[0]
+    if os.path.basename(tok) in INTERPRETERS:
+        if len(toks) == 1:
+            return os.path.basename(tok)
+        tok = None
+        for t in toks[1:]:
+            if t in INLINE_CODE or (re.match(r"^-[A-Za-z]+$", t) and INLINE_LETTERS & set(t[1:])):
+                return "<unparsed command>"
+            if t == "-m" or re.match(r"^-[A-Za-z]*m$", t):   # python -m MODULE: the module is the script
+                tok = toks[toks.index(t) + 1] if toks.index(t) + 1 < len(toks) else None
+                break
+            if not t.startswith("-") and SCRIPT_LIKE.search(t):
+                tok = t
+                break
+        if tok is None:
+            return "<unparsed command>"
+    for prefix in ("${CLAUDE_PLUGIN_ROOT}/", "$CLAUDE_PLUGIN_ROOT/", root.rstrip("/") + "/" if root else None):
+        if prefix and tok.startswith(prefix):
+            tok = tok[len(prefix):]
+            break
+    tok = os.path.basename(tok) if tok.startswith("/") or tok.split("/")[0] in HOME_FORMS else tok
+    if not SAFE_WORD.match(tok):   # a url, a second command, a quote, an argument: anything but a plain path or name
+        return "<unparsed command>"
+    return tok
+
+
+def clean_note(note, root=""):
+    """A read_status note as printed: hook commands in an unidentifiable or unresolved list reduced to their script,
+    then the target path dropped and every other absolute path cut to its basename."""
+    m = re.match(r"^(.*?\b(?:unidentifiable|unresolved) hooks: )(.*)$", str(note), re.S)
+    if m:
+        items = re.split(r"; (?=\w+: )", m.group(2))
+        fixed = []
+        for it in items:
+            e = re.match(r"^(\w+): (.*)$", it, re.S)
+            fixed.append(f"{e.group(1)}: {script_of(e.group(2), root)}" if e else "<unparsed command>")
+        note = m.group(1) + "; ".join(fixed)
+    return safe(note, root, 400)
+
+
+def many(count, noun):
+    """'1 file', '2 files': the one plural helper for counts in the cards."""
+    return f"{count} {noun}" + ("" if count == 1 else "s")
+
+
+def loads_every_session(s):
+    """Claude Code leaves the description of a skill with disable-model-invocation out of every session; a dossier with no field counts as loaded."""
+    return s.get("model_invocable") is not False
+
+
+def toks(n):
+    return f"{n} bytes, ~{n // 4} tokens"
+
+
+MODS_NOTE = ("a mod is code that runs inside the session with your permissions and no sandbox; neckbeard lists the files "
+             "a plugin names and does not read their source")
+BUILT_NOTE = ("built at run time: read from the script's own text, not run; commands it runs are not followed "
+              "and may print or write files")
+
+
+def injected_line(i, root):
+    """One Hook-injected text entry. A text file: `<file>: N bytes, ~T tokens`. A script traced as printing text it builds at
+    run time: one `<file> (<events>, built at run time, at least N bytes): <template line>` per line, then `  writes: <items>`;
+    one that only writes prints `<file> (<events>, built at run time): prints nothing; writes: <items>`."""
+    f = safe(i.get("file"), root)
+    if not i.get("built_at_run_time"):
+        return f"{f}: {toks(i['bytes'])}"
+    events = ", ".join(safe(e) for e in as_list(i.get("events")) if isinstance(e, str))
+    head = f"{f} ({events + ', ' if events else ''}built at run time"
+    writes = "; ".join(safe(w) for w in as_list(i.get("writes")) if isinstance(w, str))
+    lines = [safe(x) for x in as_list(i.get("template")) if isinstance(x, str)]
+    if not lines:
+        return f"{head}): prints nothing; writes: {writes}"
+    out = f"{head}, at least {i['bytes']} bytes): " + f"\n  - {head}, at least {i['bytes']} bytes): ".join(lines)
+    return out + (f"\n  writes: {writes}" if writes else "")
+
+
+CAUSES = ("tool-limit", "target-fault")
+CAUSE_WORDS = {"tool-limit": "neckbeard did not read", "target-fault": "broken in the plugin"}
+
+
+def by_cause(notes, causes, cap=None):
+    """[(words, [notes])] for the notes whose cause is known, tool-limit first, or None when the section has no valid
+    causes list (an old dossier): the caller then prints the notes as one `not read:` list. `cap` limits each group to its
+    first `cap` notes, then `and N more`."""
+    if not isinstance(causes, list) or len(causes) != len(notes) or not set(causes) <= set(CAUSES):
+        return None
+    groups = []
+    for c in CAUSES:
+        ns = [n for n, k in zip(notes, causes) if k == c]
+        if cap and len(ns) > cap:
+            ns = ns[:cap] + [f"and {len(ns) - cap} more"]
+        if ns:
+            groups.append((CAUSE_WORDS[c], ns))
+    return groups
+
+
+def block(label, section, entries, root, tail=(), cap=None):
+    """The lines for one section: its state from read_status, its entries when it has them. A note carries its cause:
+    `neckbeard did not read: <tool-limit notes>` first, then `broken in the plugin: <target-fault notes>`, each its own
+    `  - ` line under a partly read section, both on the label's line (joined by "; ") in a failed one."""
+    state, notes, *rest = section
+    causes = rest[0] if rest else None
+    notes = [clean_note(n, root) for n in notes]
+    groups = by_cause(notes, causes, cap)
+    if groups is None and cap and len(notes) > cap:
+        notes = notes[:cap] + [f"and {len(notes) - cap} more"]
+    if state == "not-applicable":
+        return [f"- {label}: not applicable"]
+    if state == "failed":
+        if groups:
+            return [f"- {label}: " + "; ".join(f"{w}: {'; '.join(ns)}" for w, ns in groups)]
+        return [f"- {label}: not read" + (": " + "; ".join(notes) if notes else "")]
+    if state not in ("read", "partial"):
+        return [f"- {label}: not read: unknown state {safe(state)}"]
+    entries = sorted(entries)
+    if state == "partial":
+        unread = [f"  - {w}: {'; '.join(ns)}" for w, ns in groups] if groups is not None else ([f"  - not read: {'; '.join(notes)}"] if notes else [])
+        return [f"- {label}: partly read"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail] + unread
+    if not entries:
+        return [f"- {label}: none"]
+    return [f"- {label}:"] + [f"  - {e}" for e in entries] + [f"  - {t}" for t in tail]
+
+
+PERSIST_SHOWN = 10   # persistence candidates printed in full; the rest become one "and N more" line
+NOTES_SHOWN = 5      # a persistence card's "not read" notes printed in full
+
+
+FOLDERS_SHOWN = 15
+FOLDER_NAME = re.compile(r"[A-Za-z0-9._-]{1,40}\Z")
+
+
+def cap_entries(entries):
+    """(the first PERSIST_SHOWN entries by path, the tail lines): past that, one line counting the rest by folder (the
+    first path segment with a slash, or ./ for a file at the root), the biggest folder first, then by name. At most
+    FOLDERS_SHOWN folders are named, the rest counted; a folder name that is not plain (spaces, commas, long) counts
+    as (other)/, so a path cannot write text into the line."""
+    entries = sorted(entries)
+    if len(entries) <= PERSIST_SHOWN:
+        return entries, []
+    rest = entries[PERSIST_SHOWN:]
+    count = {}
+    for e in rest:
+        e = e[2:] if e.startswith("./") else e
+        folder = e.split("/", 1)[0] if "/" in e else None
+        folder = "./" if folder is None else (folder + "/" if FOLDER_NAME.match(folder) else "(other)/")
+        count[folder] = count.get(folder, 0) + 1
+    ranked = sorted(count.items(), key=lambda kv: (-kv[1], kv[0]))
+    where = ", ".join(f"{f} {n}" for f, n in ranked[:FOLDERS_SHOWN])
+    if len(ranked) > FOLDERS_SHOWN:
+        left = ranked[FOLDERS_SHOWN:]
+        where += f", and {many(len(left), 'other folder')} ({many(sum(n for _, n in left), 'file')})"
+    return entries[:PERSIST_SHOWN], [f"and {len(rest)} more, in: {where}"]
+
+
+def as_list(v):
+    return v if isinstance(v, list) else []
+
+
+def name_of(e, root=""):
+    if not isinstance(e, dict):
+        return "(unreadable entry)"
+    return safe(e.get("name") or os.path.basename(str(e.get("source") or e.get("path") or "")) or "(unnamed)", root)
+
+
+def unread(e):
+    return not isinstance(e, dict) or bool(e.get("refused")) or e.get("bytes") is None
+
+
+def not_read(e, root=""):
+    return f"{name_of(e, root)}: not read" + (f": {safe(e['refused'], root)}" if isinstance(e, dict) and e.get("refused") else "")
+
+
+def first_word(command):
+    """An MCP server command's first word (its program), or 'command' when it has none."""
+    w = words(command)
+    return safe(os.path.basename(w[0])) if w else "command"
+
+
+LEGEND = "\U0001F7E2 read in full \u00b7 \U0001F7E1 partly read \u00b7 \U0001F534 something unread"
+MARKER = {"read in full": "\U0001F7E2", "partly read": "\U0001F7E1", "something unread": "\U0001F534"}
+CARD_SECTIONS = {"skills", "rule_files", "hooks", "agents", "commands", "persistence_candidates", "mcp_servers", "plugin_json", "marketplace"}
+
+
+def read_state(states):
+    """The read state of a set of line states: something unread if any is failed, else read in full if every one is read or
+    not-applicable, else partly read (partial, and any word this tool does not know)."""
+    states = list(states)
+    if "failed" in states:
+        return "something unread"
+    return "read in full" if all(x in ("read", "not-applicable") for x in states) else "partly read"
+
+
+def sec_of(rs):
+    """sec(name) -> (state, notes, causes) for one read_status section; a section missing or not a dict is failed."""
+    return lambda name: (rs[name].get("state") if isinstance(rs.get(name), dict) else "failed",
+                         as_list(rs[name].get("notes")) if isinstance(rs.get(name), dict) else ["no read_status for this section"],
+                         rs[name].get("causes") if isinstance(rs.get(name), dict) else None)
+
+
+def hooks_sec(sec, hooks):
+    """The Hook-injected text line's state: a hooks section read with injected_content null and a note counts as failed."""
+    hsec = sec("hooks")
+    if hsec[0] == "read" and hooks.get("injected_content") is None and hooks.get("injected_content_note"):
+        hsec = ("failed", [hooks["injected_content_note"]], ["tool-limit"])
+    return hsec
+
+
+def card_states(t):
+    """{card name: [the state of each of its lines]}, in the report's card order: the one place a card's states are chosen."""
+    sec = sec_of(t["read_status"])
+    hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
+    st = lambda *names: [sec(n)[0] for n in names]
+    mods = {"Claude Code mods": st("hooks")} if isinstance(hooks.get("mods"), list) else {}   # a seventh card, only when a hooks file lists mods
+    return {"Injects": st("skills", "rule_files") + [hooks_sec(sec, hooks)[0]], "Hooks": st("hooks"), **mods, "Subagents and commands": st("agents", "commands"),
+            "State it may leave": st("persistence_candidates"), "Reaches outside the session": st("mcp_servers"), "Source": st("plugin_json", "marketplace")}
+
+
+def overall_read_state(t):
+    """The read state of every card's line states and of every read_status section no card uses."""
+    rs = t["read_status"]
+    unused = [(v.get("state") if isinstance(v, dict) else "failed") for k, v in rs.items() if k not in CARD_SECTIONS]
+    return read_state([x for v in card_states(t).values() for x in v] + unused)
+
+
+def gist(*parts):
+    return " \u00b7 ".join(p for p in parts if p)
+
+
+def counted(state, n=1):
+    """Whether a section's count is known: a read section's, or a partly read one's when it found something (a lower bound;
+    a partly read section with nothing found has no known count, so no "no agents" or "0 hooks")."""
+    return state == "read" or (state == "partial" and n > 0)
+
+
+def render(d, commit):
+    t = d["target"]
+    root = t.get("path") if isinstance(t.get("path"), str) else ""
+    rs = t["read_status"]
+    sec = sec_of(rs)
+    capped = lambda e: " (read capped)" if e.get("truncated") else ""
+    hooks = t.get("hooks") if isinstance(t.get("hooks"), dict) else {}
+
+    skills = []
+    for s in as_list(t.get("skills")):
+        if unread(s):
+            skills.append(not_read(s, root))
+        else:
+            when = (f"description every session ({len(str(s.get('description') or ''))} chars)" if loads_every_session(s)
+                    else "description loads only when called by name (disable-model-invocation)")
+            skills.append(f"{name_of(s, root)}: {when}; "
+                          f"the file on demand ({toks(s['bytes'])}){capped(s)}")
+    rules = []
+    for r in as_list(t.get("rule_files")):
+        if unread(r):
+            rules.append(not_read(r, root))
+            continue
+        p = str(r.get("path") or "")
+        rel = os.path.basename(p) if t.get("kind") == "rule-file" or not root or not p.startswith(root.rstrip("/") + "/") else os.path.relpath(p, root)
+        rules.append(f"{safe(rel) or name_of(r, root)}: every session ({toks(r['bytes'])}){capped(r)}")
+    injected = [injected_line(i, root) for i in as_list(hooks.get("injected_content"))
+                if isinstance(i, dict) and isinstance(i.get("bytes"), int)]
+    built_note = [BUILT_NOTE] if any(isinstance(i, dict) and i.get("built_at_run_time") for i in as_list(hooks.get("injected_content"))) else []
+    hsec = hooks_sec(sec, hooks)
+    events = []
+    ev = hooks.get("events")
+    for event, cmds in (ev.items() if isinstance(ev, dict) else []):
+        for c in as_list(cmds):
+            m = c.get("matcher") if isinstance(c, dict) else None
+            events.append(f"{safe(event)}{f' ({safe(m)})' if m else ''}: {script_of(c.get('command') if isinstance(c, dict) else None, root)}")
+    reach = hooks.get("hooks_reach_subagents")
+    basis = hooks.get("hooks_reach_subagents_basis")
+    reach_line = "reaches subagents: " + ("unknown" if reach is None else safe(json.dumps(reach)) + (f" ({safe(basis)})" if basis else ""))
+    agents = [not_read(a, root) if unread(a) else name_of(a, root) for a in as_list(t.get("agents"))]
+    commands = [not_read(c, root) if unread(c) else name_of(c, root) for c in as_list(t.get("commands"))]
+    persist = [safe(p if isinstance(p, str) else p.get("path") or p.get("file") if isinstance(p, dict) else "(unreadable entry)", root) or "(unnamed)"
+               for p in as_list(t.get("persistence_candidates"))]
+    servers = []
+    mcp = t.get("mcp_servers") if isinstance(t.get("mcp_servers"), dict) else {}
+    for s in as_list(mcp.get("servers")):
+        if not isinstance(s, dict):
+            servers.append("(unreadable entry)")
+            continue
+        how = ""
+        url = s.get("url")
+        if url:
+            try:
+                u = urlsplit(url) if isinstance(url, str) else None
+                host = u.hostname if u else None
+            except ValueError:
+                u = host = None
+            how = f"{safe(u.scheme)}://{safe(host)}" if u and u.scheme and host else "url"
+        elif s.get("command"):
+            how = first_word(s["command"])
+        servers.append(f"{name_of(s, root)} ({', '.join(x for x in (safe(s.get('transport')), how) if x)})")
+    pj = t.get("plugin_json") if isinstance(t.get("plugin_json"), dict) else {}
+    kind = safe(t.get("kind")) or "unknown"
+    rf = as_list(t.get("rule_files"))
+    if pj.get("name"):
+        name = f"{safe(pj['name'], root)} (from plugin.json)"
+    elif kind == "rule-file" and rf and isinstance(rf[0], dict):
+        name = safe(os.path.basename(str(rf[0].get("path") or ""))) or name_of(rf[0], root)
+    else:
+        name = safe(os.path.basename(root.rstrip("/"))) or "unknown"
+    version = f"{safe(pj['version'], root)} (from plugin.json)" if pj.get("version") else "no version"
+    plain_name = safe(pj["name"], root) if pj.get("name") else name
+    plain_version = safe(pj["version"], root) if pj.get("version") else ""
+    mk = t.get("marketplace")
+    mk_entries = [safe(mk.get("name") or "(unnamed)", root)] if isinstance(mk, dict) and mk else []
+
+    states = card_states(t)
+    marker = lambda name: MARKER[read_state(states[name])]
+    nots = lambda name: all(x == "failed" for x in states[name])   # every section the card reads failed: its gist is "not read"
+    mod_list = hooks.get("mods") if isinstance(hooks.get("mods"), list) else None
+    mod_entries = [(safe(m.get("path"), root) or "(unnamed)") + (" (outside the plugin, not opened)" if m.get("refused") else " (not found)" if m.get("exists") is False else "")
+                   if isinstance(m, dict) else "(unreadable entry)" for m in as_list(mod_list)]
+    shown, ptail = cap_entries(persist)
+    skills_ok = counted(sec("skills")[0], len(skills))
+    readable = [s_ for s_ in as_list(t.get("skills")) if not unread(s_)]
+    on_call = sum(1 for s_ in readable if not loads_every_session(s_))
+    hn = sum(1 for _ in events)
+    reach_phrase = "reach subagents" if reach is True else "stay in the main session" if reach is False else ""
+    marketplace_word = "no marketplace" if sec("marketplace")[0] in ("read", "not-applicable") and not mk_entries else ""
+    gists = {
+        "Injects": gist(*([many(len(skills), "skill"), f"~{sum(s_['bytes'] // 4 for s_ in readable)} tokens on demand",
+                           f"~{sum(len(str(s_.get('description') or '')) for s_ in readable if loads_every_session(s_))} chars of skill descriptions every session"
+                           + (f"; {many(on_call, 'skill')} load{'s' if on_call == 1 else ''} only when called" if on_call else "")] if skills_ok else []),
+                        f"hook text {read_state([hsec[0]])}"),
+        "Hooks": gist(many(hn, "hook") if counted(sec("hooks")[0], hn) else "", reach_phrase if counted(sec("hooks")[0]) else "", read_state(states["Hooks"])),
+        "Claude Code mods": gist(f"{len(mod_entries)} mod{'' if len(mod_entries) == 1 else 's'}"),
+        "Subagents and commands": gist((many(len(agents), "agent") if agents else "no agents") if counted(sec("agents")[0], len(agents)) else "",
+                                       many(len(commands), "command") if counted(sec("commands")[0], len(commands)) else ""),
+        "State it may leave": gist(f"{many(len(persist), 'file')} that may write state" if counted(sec("persistence_candidates")[0], len(persist)) else "",
+                                   f"{len(shown)} named" if ptail and counted(sec("persistence_candidates")[0], len(persist)) else ""),
+        "Reaches outside the session": gist((many(len(servers), "MCP server") if servers else "no MCP servers") if counted(sec("mcp_servers")[0], len(servers)) else ""),
+        "Source": gist(kind, f"{plain_name}{' ' + plain_version if plain_version else ''}{' from plugin.json' if pj.get('name') or pj.get('version') else ''}",
+                       f"commit {safe(commit)[:7]}" if commit else "", marketplace_word),
+    }
+    lines = {"Injects": [], "Hooks": [], "Claude Code mods": [], "Subagents and commands": [], "State it may leave": [], "Reaches outside the session": [], "Source": []}
+    lines["Injects"] += block("Skills", sec("skills"), skills, root)
+    lines["Injects"] += block("Rule files", sec("rule_files"), rules, root)
+    lines["Injects"] += block("Hook-injected text", hsec, injected, root, tail=built_note)
+    lines["Hooks"] += block("Hooks", sec("hooks"), events, root, tail=[reach_line])
+    lines["Claude Code mods"] += block("Mods", sec("hooks"), mod_entries, root, tail=[MODS_NOTE])
+    lines["Subagents and commands"] += block("Agents", sec("agents"), agents, root) + block("Commands", sec("commands"), commands, root)
+    lines["State it may leave"] += block("Persistence candidates", sec("persistence_candidates"), shown, root, tail=ptail, cap=NOTES_SHOWN)
+    lines["Reaches outside the session"] += block("MCP servers", sec("mcp_servers"), servers, root)
+    lines["Source"] += [f"- Kind: {kind}", f"- Name: {name}", f"- Version: {version}"]
+    lines["Source"] += block("plugin.json", sec("plugin_json"), ["name and version, shown above"] if pj else [], root)
+    lines["Source"] += block("Marketplace", sec("marketplace"), mk_entries, root)
+    lines["Source"] += [f"- Commit: {safe(commit) if commit else 'commit not given'}"]
+    decl = [safe(f, root) for f in as_list(t.get("declared_fixtures")) if isinstance(f, str)]
+    if decl:
+        lines["Source"] += [f"- Declared fixtures: {', '.join(decl)} (files there that the hooks and persistence scans can't read don't count against the badge)"]
+    out = ["## What it adds", "", LEGEND, ""]
+    for cname in states:
+        out += card(marker(cname), cname, "not read" if nots(cname) else gists[cname], lines[cname]) + [""]
+    out += [FOOTER]
+    return "\n".join(out) + "\n"
+
+
+def main(argv):
+    commit, args, only_state = None, [], False
+    it = iter(argv)
+    for a in it:
+        if a == "--commit":
+            commit = next(it, None)
+            if not commit:
+                break
+        elif a == "--read-state":
+            only_state = True
+        else:
+            args.append(a)
+    if len(args) != 1 or (commit is None and "--commit" in argv) or (only_state and "--commit" in argv):
+        print("usage: part1 DOSSIER [--commit SHA]  |  part1 --read-state DOSSIER", file=sys.stderr)
+        return 2
+    try:
+        d = json.load(open(args[0], encoding="utf-8"))
+        t = d["target"]
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"part1: cannot read a dossier from {args[0]}: {e}", file=sys.stderr)
+        return 2
+    if not isinstance(t, dict) or not isinstance(t.get("read_status"), dict):
+        print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
+        return 2
+    if only_state:
+        if not t["read_status"]:
+            print("part1: dossier has no read_status; rerun inventory.py", file=sys.stderr)
+            return 2
+        try:
+            print(overall_read_state(t))
+        except Exception as e:
+            print(f"part1: could not read this dossier's read_status ({type(e).__name__}: {safe(e, cap=200)})", file=sys.stderr)
+            return 2
+        return 0
+    try:
+        text = render(d, commit)
+    except Exception as e:   # a dossier shape this tool does not know: fail, and vet stops, rather than print a card that may be wrong
+        print(f"part1: could not render this dossier ({type(e).__name__}: {safe(e, cap=200)})", file=sys.stderr)
+        return 2
+    sys.stdout.write(text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
