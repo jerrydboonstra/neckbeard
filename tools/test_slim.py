@@ -140,6 +140,8 @@ print("-- limits --")
 home, work = world()
 chk("a tree within the limits passes", slim("check", "HEAD", cwd=work)[0], 0)
 put(work, "tools/big", "x" * (256 * 1024 + 1))
+put(work, "tools/pic.png", "x" * (256 * 1024 + 1))
+put(work, "tools/huge.png", "x" * (5 * 1024 * 1024 + 1))
 os.symlink("run", os.path.join(work, "tools", "link"))
 for i in range(520):
     put(work, f"tools/many/{i}", "x\n")
@@ -148,6 +150,7 @@ git("commit", "-q", "-m", "over", cwd=work)
 code, out = slim("check", "HEAD", cwd=work)
 chk("a file over 256 KiB, a symlink and over 512 files each fail it",
     (code, "tools/big" in out, "tools/link" in out, "512" in out), (1, True, True, True))
+chk("an image may pass 256 KiB, and no file may pass 5 MiB", ("tools/pic.png" in out, "tools/huge.png" in out), (False, True))
 shutil.rmtree(home)
 
 print("-- this repo's slim tree --")

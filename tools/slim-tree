@@ -22,7 +22,11 @@ import sys
 import tempfile
 
 MAX_FILES = 512
+# https://claude.com/docs/plugins/pre-submission-checklist: files that aren't images or fonts stay under 256 KiB (else held for a
+# reviewer), and every file in the plugin folder under 5 MiB (else validation stops).
 MAX_BYTES = 256 * 1024
+MAX_ANY_BYTES = 5 * 1024 * 1024
+MEDIA = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".woff", ".woff2", ".ttf", ".otf")
 BRANCH = "refs/heads/plugin"
 PLACEHOLDER = "OWNER/NAME"
 IMAGE = re.compile(r"(!\[[^\]]*\]\()([^)\s]+)")
@@ -130,8 +134,10 @@ def over_limits(entries):
             found.append(f"{path} is a symlink")
         elif mode == "160000":
             found.append(f"{path} is a submodule")
-        elif size > MAX_BYTES:
-            found.append(f"{path} is {size} bytes, over {MAX_BYTES}")
+        else:
+            cap = MAX_ANY_BYTES if path.lower().endswith(MEDIA) else MAX_BYTES
+            if size > cap:
+                found.append(f"{path} is {size} bytes, over {cap}")
     return found
 
 

@@ -86,7 +86,7 @@ release: check ## push release/v<version> to GitHub, wait for CI on it, then tag
 	else $(MAKE) --no-print-directory release-notes | gh release create "v$(VERSION)" --verify-tag --latest \
 	       --title "neckbeard $(VERSION)" --notes-file - && echo "== GitHub Release v$(VERSION) published" || \
 	     { echo "release: the GitHub Release failed; main and the tag stand. Create it, then run: make slim-push TAG=v$(VERSION)"; exit 1; }; fi
-	@# The plugin directory's branch. Without --strict it only warns: the release above stands either way.
+	@# The plugin directory's branch. This step only warns when it fails: the release above stands either way.
 	@REMOTES="$(REMOTES)" $(PYTHON) tools/slim-tree publish v$(VERSION) --repo $(GITHUB_REPO)
 
 slim-push: ## publish TAG's slim plugin copy (default: this version's) as branch `plugin` on every release remote
