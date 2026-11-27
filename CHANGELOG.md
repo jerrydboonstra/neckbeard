@@ -4,6 +4,14 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 2.0.4 (2026-11-27)
+
+### The herd
+- neckbeard now has a listing icon for the plugin directory, its README logo uses Markdown image syntax, and a new README section says what it runs, fetches and sends.
+- Each release now also publishes a slim copy of the plugin as the `plugin` branch, for the plugin directory; `make slim-push` reruns it if the push fails.
+- The guide to publishing a report has a new "Invite an author" section: when to invite another plugin's author to publish one, what to include, and who sends it.
+- Fixed: vetting a folder that came with its own `.git` can no longer run programs its git config or attributes name while neckbeard checks for uncommitted changes.
+
 ## 2.0.3 (2026-11-21)
 
 ### Releasing
