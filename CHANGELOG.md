@@ -6,11 +6,18 @@ What each round cost the tool is written up in `CASE-STUDIES.md`. This file is t
 
 ## 2.0.4 (2026-11-27)
 
-### The herd
-- neckbeard now has a listing icon for the plugin directory, its README logo uses Markdown image syntax, and a new README section says what it runs, fetches and sends.
-- Each release now also publishes a slim copy of the plugin as the `plugin` branch, for the plugin directory; `make slim-push` reruns it if the push fails.
-- The guide to publishing a report has a new "Invite an author" section: when to invite another plugin's author to publish one, what to include, and who sends it.
-- Fixed: vetting a folder that came with its own `.git` can no longer run programs its git config or attributes name while neckbeard checks for uncommitted changes.
+### Security
+
+- **Vetting a folder that came with its own `.git` no longer lets that folder's git settings run a program.** To mark a report "+ uncommitted changes", vet ran `git status` in the target, and git ran any `core.fsmonitor` command or filter driver the target's own config named. Vet now checks with a temporary git folder that carries none of the target's config. `SECURITY.md` now says that by default vet never runs the target (`--live-mcp` is the named exception), and it lists the files the skill writes.
+
+### Plugin directory
+
+- **neckbeard has a listing icon,** `.claude-plugin/icon.png`, made from its logo at 1024 px. The README shows the logo in Markdown image syntax, and a new section says in one place what neckbeard runs, fetches and sends.
+- **Each release also publishes a slim copy of the plugin as the `plugin` branch.** It holds only what the plugin loads and runs, within the directory's limits, with README links rewritten to the release's tag. The repo's layout and install paths don't change. If that push fails, the release still completes and prints a warning, and `make slim-push` runs it again.
+
+### Docs
+
+- **The guide to publishing a report has an "Invite an author" section:** when to invite another plugin's author to publish their report, what a good invitation includes, and that only the person who ran the vet sends it.
 
 ## 2.0.3 (2026-11-21)
 
