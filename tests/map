@@ -20,7 +20,7 @@ skills/neckbeard/mcp_live.py test_mcp_live test_selfcheck test_read_status test_
 skills/neckbeard/selfcheck.py test_selfcheck test_mutate_selfcheck test_slim
 skills/neckbeard/SKILL.md test_carrying_cost test_selfcheck test_vet test_vet_judge test_vet_stability test_mcp_live test_skill_budget test_skill_md test_slim
 # Tools
-tools/vet test_vet test_vet_judge test_vet_session test_vet_stability test_vet_report test_vet_layers test_carrying_cost test_slim
+tools/vet test_vet test_vet_judge test_vet_session test_vet_stability test_vet_report test_vet_layers test_carrying_cost test_slim test_vet_target_git
 tools/badge-logo test_vet test_vet_judge test_slim
 tools/part1 test_part1 test_part1_cards test_summary test_vet test_vet_session test_mcp_live test_hook_inline_require test_positions_layer test_mod_inventory test_vet_layers test_skill_md test_slim
 tools/cards.py test_part1_cards test_summary test_part1 test_vet test_vet_session test_mcp_live test_positions_layer test_vet_layers test_slim
@@ -110,3 +110,4 @@ tools/test_inventory_skills.py test_inventory_skills
 tools/test_slim.py test_slim
 tools/slim-tree test_slim
 tools/slim-set test_slim
+tools/test_vet_target_git.py test_vet_target_git
