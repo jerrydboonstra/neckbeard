@@ -60,7 +60,10 @@ def vet(tmp, target):
     if os.path.exists(out):
         os.remove(out)
     subprocess.run([VET, target, out, "--facts"], env=ENV, capture_output=True, text=True, timeout=300)
-    return open(out, encoding="utf-8").read().split("\n")[2] if os.path.exists(out) else "no report"
+    line = open(out, encoding="utf-8").read().split("\n")[2] if os.path.exists(out) else ""
+    if "made by neckbeard" not in line:
+        chk(f"vet wrote a report with its header for {target}", line, "a header line")
+    return line
 
 
 def world():
@@ -103,6 +106,17 @@ git("worktree", "add", "-q", os.path.join(tmp, "wt"), cwd=target)
 chk("a linked worktree is read as clean", "uncommitted" in vet(tmp, os.path.join(tmp, "wt")), False)
 put(os.path.join(tmp, "wt", "notes.txt"), "three\n")
 chk("and as changed when it is", "+ uncommitted changes`" in vet(tmp, os.path.join(tmp, "wt")), True)
+shutil.rmtree(tmp)
+
+print("-- a config that points elsewhere, and a missing index --")
+tmp, target, marker, script = world()
+repo(target)
+put(os.path.join(tmp, "other", "notes.txt"), "not the target's file\n")
+git("config", "core.worktree", os.path.join(tmp, "other"), cwd=target)
+chk("the target's core.worktree does not choose the folder compared", "uncommitted" in vet(tmp, target), False)
+git("config", "--unset", "core.worktree", cwd=target)
+os.remove(os.path.join(target, ".git", "index"))
+chk("a repo with no index is called changed, as git status would", "+ uncommitted changes`" in vet(tmp, target), True)
 shutil.rmtree(tmp)
 
 print("-- core.fsmonitor --")
