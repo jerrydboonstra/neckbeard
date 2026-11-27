@@ -107,3 +107,6 @@ assets/** test_layout
 tools/test_nested_plugin.py test_nested_plugin
 .neckbeard.json test_read_status test_part1 test_vet test_layout
 tools/test_inventory_skills.py test_inventory_skills
+tools/test_slim.py test_slim
+tools/slim-tree test_slim
+tools/slim-set test_slim
