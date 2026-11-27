@@ -41,7 +41,7 @@
 # "<version> · <read state>", coloured by the dossier's read_status: failed gives red "something unread", partial yellow
 # "partly read", else brightgreen "read in full"), linked to OUT's path as given. Its other messages go to stderr.
 # The commit label (the header's "@ `...`", Source's "Commit:" line and the dossier's "(commit ...)") is the short sha of the target's
-# HEAD, with " + uncommitted changes" after it when `git status --porcelain --untracked-files=no` prints anything (the files read are
+# HEAD, with " + uncommitted changes" after it when a tracked file differs from HEAD (target_changes, which runs nothing the target names; the files read are
 # not HEAD's). --facts --release-tag TAG makes the label TAG instead and wins over the dirty rule: a report committed into a tagged
 # tree cannot name the commit that contains it, so `make report` names the tag.
 # --facts writes the published report instead: no reader, no verdict, no fit and no model call (claude need not be on PATH). The config
@@ -423,11 +423,33 @@ lines[i + 1:i + 1] = ["", sys.argv[2]]
 open(sys.argv[1], "w", encoding="utf-8").write("\n".join(lines))
 PYEOF
 fi
+# target_changes DIR: print the tracked files of DIR's repo that differ from HEAD, without running anything the target names.
+# `git status` in the target runs what its .git/config names (core.fsmonitor, the filter drivers its .gitattributes picks), so it is
+# asked of a throwaway git folder instead: HEAD's commit, a copy of the index, the target's objects by alternates, and a config
+# of our own. The user's and system config are left out too, since the target's .gitattributes can pick a driver they define.
+# Submodules are not entered: git would read each one's own config. rev-parse and remote get-url run nothing from a config.
+target_changes() {
+  local top gitdir common head shadow=$work/shadow.git
+  top=$(git -C "$1" rev-parse --show-toplevel) || return 0
+  gitdir=$(git -C "$1" rev-parse --absolute-git-dir) || return 0
+  common=$(cd "$1" && cd "$(git rev-parse --git-common-dir)" && pwd -P) || return 0
+  head=$(git -C "$1" rev-parse --verify HEAD) || return 0
+  local -a own=(env HOME="$work" XDG_CONFIG_HOME="$work" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1)
+  local format=()
+  [ ${#head} = 64 ] && format=(--object-format=sha256)
+  "${own[@]}" git init -q --bare --template= ${format[@]+"${format[@]}"} "$shadow" || return 0
+  mkdir -p "$shadow/objects/info" && printf '%s\n' "$common/objects" >"$shadow/objects/info/alternates" || return 0
+  printf '%s\n' "$head" >"$shadow/HEAD"
+  # -p keeps the index's time, which git compares with each file's to decide what to reread
+  cp -p "$gitdir/index" "$shadow/index" || return 0
+  cp -p "$gitdir"/sharedindex.* "$shadow/" 2>/dev/null
+  "${own[@]}" git --git-dir="$shadow" --work-tree="$top" status --porcelain --untracked-files=no --ignore-submodules=all
+}
 version=$(plugin_version "$target")
 commit=$(git -C "$target" rev-parse --short HEAD 2>/dev/null || true)
 # the files read are the working tree's: say so when a tracked file differs from HEAD, and name the tag under --release-tag
 if [ -n "$releasetag" ]; then commit=$releasetag
-elif [ -n "$commit" ] && [ -n "$(git -C "$target" status --porcelain --untracked-files=no 2>/dev/null)" ]; then commit="$commit + uncommitted changes"; fi
+elif [ -n "$commit" ] && [ -n "$(target_changes "$target" 2>/dev/null)" ]; then commit="$commit + uncommitted changes"; fi
 remote=$(git -C "$target" remote get-url origin 2>/dev/null | sed -E 's#^git@github\.com:#https://github.com/#; s#\.git$##' || true)
 case $remote in https://github.com/*) ;; *) remote="" ;; esac
 [ -n "$repo" ] && remote=${repo%.git}
