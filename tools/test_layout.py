@@ -97,5 +97,8 @@ check("docs/publish-your-report.md pins the clone to the manifest version", _gui
 check("the guide check fails when the manifest version moves on (seen to fail)", not _guide_pins(_guide, _ver + ".1"))
 check("the guide check fails on a guide that pins an older tag (seen to fail)", not _guide_pins(_guide.replace("--branch v" + _ver, "--branch v0.0.1"), _ver))
 
+# The guide tells a reader who vetted someone else's plugin how to invite its author.
+check("docs/publish-your-report.md has an \"Invite an author\" section", "\n## Invite an author\n" in _guide)
+
 print(f"test_layout: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)
