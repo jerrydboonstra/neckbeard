@@ -90,7 +90,7 @@ release: check ## push release/v<version> to GitHub, wait for CI on it, then tag
 	@REMOTES="$(REMOTES)" $(PYTHON) tools/slim-tree publish v$(VERSION) --repo $(GITHUB_REPO)
 
 slim-push: ## publish TAG's slim plugin copy (default: this version's) as branch `plugin` on every release remote
-	@REMOTES="$(REMOTES)" $(PYTHON) tools/slim-tree publish $(or $(TAG),v$(VERSION)) --repo $(GITHUB_REPO) --strict
+	@REMOTES="$(REMOTES)" $(PYTHON) tools/slim-tree publish '$(or $(TAG),v$(VERSION))' --repo $(GITHUB_REPO) --strict
 
 deploy: ## bring the plugin export (~/.claude/plugin-src/neckbeard) on this machine and every host in HOSTS to main as released, then print what each one runs
 	@test "$$(git branch --show-current)" = main || { echo "deploy: not on main"; exit 1; }
