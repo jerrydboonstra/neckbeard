@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""The slim copy of the plugin that the plugin directory reads: the files tools/slim-set names, published as branch `plugin`.
+
+  slim-tree check [REF] [--repo OWNER/NAME]      build REF's slim tree (default HEAD); exit 1 if it breaks a limit
+  slim-tree build REF DIR [--repo OWNER/NAME]    write that tree's files into DIR
+  slim-tree publish TAG --repo OWNER/NAME [--strict]
+                                                 add TAG's slim tree as one commit on each remote's `plugin` branch (env REMOTES)
+
+README.md is the one file that differs from REF: a relative link to a file the set leaves out becomes that tag's GitHub URL.
+The tree is made from REF's own files and REF's own tools/slim-set, never from the working tree.
+
+publish refuses a tag older than the newest release tag, so a rerun can't take the branch back. It only warns when something
+fails, and exits 0: it runs after the release is out, which stands either way. --strict (the
+`make slim-push` rerun) exits 1 instead. It never forces a push.
+"""
+import fnmatch
+import json
+import os
+import posixpath
+import re
+import subprocess
+import sys
+import tempfile
+
+MAX_FILES = 512
+# https://claude.com/docs/plugins/pre-submission-checklist: files that aren't images or fonts stay under 256 KiB (else held for a
+# reviewer), and every file in the plugin folder under 5 MiB (else validation stops).
+MAX_BYTES = 256 * 1024
+MAX_ANY_BYTES = 5 * 1024 * 1024
+MEDIA = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".woff", ".woff2", ".ttf", ".otf")
+BRANCH = "refs/heads/plugin"
+PLACEHOLDER = "OWNER/NAME"
+IMAGE = re.compile(r"(!\[[^\]]*\]\()([^)\s]+)")
+TARGET = re.compile(r"(\]\()([^)\s]+)")
+
+
+class SlimError(Exception):
+    pass
+
+
+def git(*args, data=None, env=None, raw=False):
+    r = subprocess.run(["git", *args], input=data, capture_output=True, env=env)
+    if r.returncode:
+        raise SlimError(f"git {args[0]}: {r.stderr.decode('utf-8', 'replace').strip()}")
+    return r.stdout if raw else r.stdout.decode("utf-8").strip()
+
+
+def read_set(ref):
+    """(includes, excludes) from the ref's tools/slim-set."""
+    includes, excludes = [], []
+    for line in git("show", f"{ref}:tools/slim-set").splitlines():
+        words = line.split("#", 1)[0].split()
+        if not words:
+            continue
+        if len(words) != 2 or words[0] not in ("include", "exclude"):
+            raise SlimError(f"tools/slim-set: can't read the line {line!r}")
+        (includes if words[0] == "include" else excludes).append(words[1])
+    return includes, excludes
+
+
+def matches(path, pattern):
+    return path == pattern or path.startswith(pattern + "/") or fnmatch.fnmatchcase(path, pattern)
+
+
+def select(ref):
+    """{path: (mode, sha, size)} of the ref's files in the set. An include that takes nothing is an error: a typo, or a moved file."""
+    includes, excludes = read_set(ref)
+    entries = {}
+    for row in git("ls-tree", "-r", "-l", "-z", "--full-tree", ref, raw=True).split(b"\0"):
+        if row:
+            meta, path = row.split(b"\t", 1)
+            mode, _, sha, size = meta.split()
+            entries[path.decode("utf-8")] = (mode.decode(), sha.decode(), 0 if size == b"-" else int(size))
+    for pattern in includes:
+        if not any(matches(p, pattern) for p in entries):
+            raise SlimError(f"tools/slim-set: include {pattern} matches no file in {ref}")
+    return {p: e for p, e in entries.items() if any(matches(p, i) for i in includes) and not any(matches(p, x) for x in excludes)}
+
+
+def rewrite_readme(text, files, repo, tag):
+    """Relative links and images that name nothing in `files` become the tag's GitHub URLs. Fenced code is left alone."""
+    folders = {posixpath.dirname(p) for p in files}
+    folders |= {"/".join(f.split("/")[:i]) for f in folders for i in range(1, f.count("/") + 1)}
+
+    def to(base):
+        def change(m):
+            target = m.group(2)
+            if re.match(r"[a-z][a-z0-9+.-]*:|#", target):
+                return m.group(0)
+            name, hash_, fragment = target.partition("#")
+            path = posixpath.normpath(name)
+            if path in files or path in folders:
+                return m.group(0)
+            return m.group(1) + f"{base}/{path}{hash_}{fragment}"
+        return change
+
+    out, fenced = [], False
+    for line in text.split("\n"):
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+        elif not fenced:
+            # images first: once rewritten they are absolute, so the link pass leaves them
+            line = IMAGE.sub(to(f"https://raw.githubusercontent.com/{repo}/{tag}"), line)
+            line = TARGET.sub(to(f"https://github.com/{repo}/blob/{tag}"), line)
+        out.append(line)
+    return "\n".join(out)
+
+
+def tag_name(ref):
+    return "v" + json.loads(git("show", f"{ref}:.claude-plugin/plugin.json"))["version"]
+
+
+def make_tree(ref, repo, tag):
+    """(tree sha, entries) of the slim copy of ref, written into this repo's object store."""
+    entries = select(ref)
+    if "README.md" in entries:
+        mode, sha, _ = entries["README.md"]
+        text = git("cat-file", "blob", sha, raw=True).decode("utf-8")
+        data = rewrite_readme(text, set(entries), repo, tag).encode("utf-8")
+        entries["README.md"] = (mode, git("hash-object", "-w", "--stdin", data=data), len(data))
+    with tempfile.TemporaryDirectory(prefix="slim-") as tmp:
+        env = dict(os.environ, GIT_INDEX_FILE=os.path.join(tmp, "index"))
+        rows = "".join(f"{mode} {sha}\t{path}\0" for path, (mode, sha, _) in sorted(entries.items()))
+        git("update-index", "-z", "--index-info", data=rows.encode("utf-8"), env=env)
+        return git("write-tree", env=env), entries
+
+
+def over_limits(entries):
+    """What the plugin directory would hold or refuse."""
+    found = []
+    if len(entries) > MAX_FILES:
+        found.append(f"{len(entries)} files, over {MAX_FILES}")
+    for path, (mode, _, size) in sorted(entries.items()):
+        if mode == "120000":
+            found.append(f"{path} is a symlink")
+        elif mode == "160000":
+            found.append(f"{path} is a submodule")
+        else:
+            cap = MAX_ANY_BYTES if path.lower().endswith(MEDIA) else MAX_BYTES
+            if size > cap:
+                found.append(f"{path} is {size} bytes, over {cap}")
+    return found
+
+
+def check(ref, repo):
+    tree, entries = make_tree(ref, repo, tag_name(ref))
+    found = over_limits(entries)
+    for problem in found:
+        print(f"slim-tree: {problem}")
+    if not found:
+        print(f"slim-tree: {len(entries)} files, within the limits")
+    return 1 if found else 0
+
+
+def build(ref, directory, repo):
+    tree, _ = make_tree(ref, repo, tag_name(ref))
+    os.makedirs(directory, exist_ok=True)
+    archive = git("archive", "--format=tar", tree, raw=True)
+    subprocess.run(["tar", "-x", "-C", directory], input=archive, check=True)
+    return 0
+
+
+def newest_tag():
+    tags = git("tag", "--list", "v[0-9]*", "--sort=-v:refname").split()
+    return tags[0] if tags else None
+
+
+def push_one(remote, tree, message):
+    """One commit on the remote's own plugin tip (a root commit the first time), pushed plainly. Returns what happened."""
+    quiet = dict(os.environ, GIT_TERMINAL_PROMPT="0")  # fail and warn, never stop a release at a password prompt
+    listed = git("ls-remote", remote, BRANCH, env=quiet)
+    parent = listed.split()[0] if listed else None
+    if parent:
+        git("fetch", "--quiet", "--no-tags", remote, BRANCH, env=quiet)
+        if git("rev-parse", f"{parent}^{{tree}}") == tree:
+            return "already holds this tree"
+    commit = git("commit-tree", tree, *(["-p", parent] if parent else []), "-m", message)
+    git("push", "--quiet", remote, f"{commit}:{BRANCH}", env=quiet)
+    return f"now at {commit[:12]}"
+
+
+def publish(tag, repo, strict):
+    rerun = f"make slim-push TAG={tag}"
+    remotes = os.environ.get("REMOTES", "").split()
+    try:
+        if not remotes:
+            raise SlimError("REMOTES is not set")
+        commit = git("rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}")
+        if newest_tag() not in (None, tag):
+            raise SlimError(f"{newest_tag()} is newer than {tag}")
+        tree, entries = make_tree(commit, repo, tag)
+        found = over_limits(entries)
+        if found:
+            raise SlimError("the slim tree breaks a limit: " + "; ".join(found))
+    except Exception as error:  # the release is already out: whatever goes wrong here is a warning
+        print(f"slim-tree: WARNING: the plugin branch was not published for {tag}: {error}. The release stands. Rerun: {rerun}")
+        return 1 if strict else 0
+    failed = 0
+    for remote in remotes:
+        try:
+            done = push_one(remote, tree, f"neckbeard {tag.lstrip('v')}: the plugin's files at {tag} ({commit[:12]})")
+            print(f"== {remote}: plugin {done}")
+        except Exception as error:
+            failed += 1
+            print(f"slim-tree: WARNING: {remote}'s plugin branch was not updated: {error}. The release stands. Rerun: {rerun}")
+    return 1 if strict and failed else 0
+
+
+def main(argv):
+    args, repo, strict = [], PLACEHOLDER, False
+    it = iter(argv)
+    for a in it:
+        if a == "--repo":
+            repo = next(it, "")
+        elif a == "--strict":
+            strict = True
+        else:
+            args.append(a)
+    command = args[0] if args else ""
+    try:
+        if command == "check" and len(args) <= 2:
+            return check(args[1] if len(args) == 2 else "HEAD", repo)
+        if command == "build" and len(args) == 3:
+            return build(args[1], args[2], repo)
+        if command == "publish" and len(args) == 2 and repo not in ("", PLACEHOLDER):
+            return publish(args[1], repo, strict)
+    except SlimError as error:
+        print(f"slim-tree: {error}")
+        return 1
+    print(__doc__.strip(), file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -16,6 +16,8 @@ POST_DEPLOY :=
 RUN_POST_DEPLOY = $(MAKE) --no-print-directory post-deploy VERSION=$(VERSION)
 -include local.mk
 REMOTES := origin $(MIRRORS)
+# The public GitHub repo: the published report and the slim plugin copy's README link to it.
+GITHUB_REPO := jerrydboonstra/neckbeard
 VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugin/plugin.json'))['version'])")
 
 .DEFAULT_GOAL := check
@@ -30,7 +32,8 @@ VERSION := $(shell $(PYTHON) -c "import json;print(json.load(open('.claude-plugi
 	release \
 	release-notes \
 	report \
-	report-check
+	report-check \
+	slim-push
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -49,7 +52,7 @@ excerpts: ## rewrite the report excerpts in README.md and CASE-STUDIES.md from t
 	$(PYTHON) tools/excerpts
 
 report: ## regenerate docs/neckbeard-report.md, neckbeard's own published report (no reader, no verdict, no model call), and print its badge line (and refresh the README excerpt of it)
-	tools/vet . docs/neckbeard-report.md --facts --release-tag v$(VERSION) --repo https://github.com/jerrydboonstra/neckbeard
+	tools/vet . docs/neckbeard-report.md --facts --release-tag v$(VERSION) --repo https://github.com/$(GITHUB_REPO)
 	@$(PYTHON) tools/excerpts >/dev/null   # the README's excerpt of this report, so the badge line stays the last output
 
 report-check: ## fail unless the report in the tagged tree names the tagged version (a tag set before the report commit is refused); REF=HEAD checks the tree before the tag exists
@@ -65,7 +68,7 @@ release-notes: ## print this version's CHANGELOG entry, the notes its GitHub Rel
 guard: ## refuse when a tracked file holds a word from the PRIVATE_WORDS list (empty list: skip; `make release` requires one)
 	@GUARD_WORDS="$(PRIVATE_WORDS)" bash tools/guard.sh
 
-release: check ## push release/v<version> to GitHub, wait for CI on it, then tag, push main and the tag to every remote (fast-forward only) and delete release/v<version>, then publish the GitHub Release
+release: check ## push release/v<version> to GitHub, wait for CI on it, then tag, push main and the tag to every remote (fast-forward only) and delete release/v<version>, then publish the GitHub Release and the slim `plugin` branch
 	@$(MAKE) --no-print-directory release-notes >/dev/null
 	@test -z "$$(git status --porcelain --untracked-files=no)" || { echo "release: tracked files are modified; commit first"; exit 1; }
 	@test "$$(git branch --show-current)" = main || { echo "release: not on main"; exit 1; }
@@ -81,7 +84,13 @@ release: check ## push release/v<version> to GitHub, wait for CI on it, then tag
 	@# A pushed tag is not a GitHub Release; the repo page shows the newest Release as Latest.
 	@if gh release view "v$(VERSION)" >/dev/null 2>&1; then echo "== GitHub Release v$(VERSION) already exists"; \
 	else $(MAKE) --no-print-directory release-notes | gh release create "v$(VERSION)" --verify-tag --latest \
-	       --title "neckbeard $(VERSION)" --notes-file - && echo "== GitHub Release v$(VERSION) published"; fi
+	       --title "neckbeard $(VERSION)" --notes-file - && echo "== GitHub Release v$(VERSION) published" || \
+	     { echo "release: the GitHub Release failed; main and the tag stand. Create it, then run: make slim-push TAG=v$(VERSION)"; exit 1; }; fi
+	@# The plugin directory's branch. This step only warns when it fails: the release above stands either way.
+	@REMOTES="$(REMOTES)" $(PYTHON) tools/slim-tree publish v$(VERSION) --repo $(GITHUB_REPO)
+
+slim-push: ## publish TAG's slim plugin copy (default: this version's) as branch `plugin` on every release remote
+	@REMOTES="$(REMOTES)" $(PYTHON) tools/slim-tree publish '$(or $(TAG),v$(VERSION))' --repo $(GITHUB_REPO) --strict
 
 deploy: ## bring the plugin export (~/.claude/plugin-src/neckbeard) on this machine and every host in HOSTS to main as released, then print what each one runs
 	@test "$$(git branch --show-current)" = main || { echo "deploy: not on main"; exit 1; }

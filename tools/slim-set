@@ -1,0 +1,30 @@
+# The files in the slim copy of the plugin that each release publishes as branch `plugin`, the branch the plugin directory reads.
+# tools/slim-tree reads this file from the tree it is building, so this is the one place the set lives.
+# `include P` takes the file P, or every file under the folder P. `exclude P` drops what an include took; it may be a glob.
+include .claude-plugin
+include LICENSE
+include README.md
+include SECURITY.md
+include assets/logo.webp      # the README's logo, so the slim README shows a bundled image
+include examples/reader       # tools/vet's default reader
+include skills
+include tools
+
+# Left out of tools/: nothing in the slim set runs these.
+exclude tools/check-no-bin      # `make check` only
+exclude tools/ci-wait.sh        # release only
+exclude tools/deploy-host.sh    # deploy only
+exclude tools/excerpts          # rewrites this repo's report quotes
+exclude tools/fixtures          # test data, deliberately broken plugin files
+exclude tools/guard.sh          # release only
+exclude tools/mutate-selfcheck  # tests the self-check
+exclude tools/release-push      # release only
+exclude tools/skill-budget.txt  # read by a test
+exclude tools/slim-set          # builds the slim copy
+exclude tools/slim-tree         # builds the slim copy
+exclude tools/test-changed      # runs tests
+exclude tools/test-parallel     # runs tests
+exclude tools/test_*.py         # tests
+exclude tools/vet-repeat        # measures vet's own stability
+exclude tools/vet-stability     # measures vet's own stability
+exclude tools/vet_harness.py    # used by tests
