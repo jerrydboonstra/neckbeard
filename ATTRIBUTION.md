@@ -30,4 +30,4 @@ Not a source of code or of rules, but of three other things:
 
 ## The logo
 
-`assets/logo.webp` was generated with OpenAI's image model, from prompts written for this project. Under current US law a purely AI-generated image has no human author, so the repository's MIT copyright line does not cover it. To the extent any rights exist in it, they are released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
+`assets/logo.webp` and `.claude-plugin/icon.png`, two sizes of one image, were generated with OpenAI's image model, from prompts written for this project. Under current US law a purely AI-generated image has no human author, so the repository's MIT copyright line does not cover it. To the extent any rights exist in it, they are released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).

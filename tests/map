@@ -91,6 +91,7 @@ tests/map test_test_parallel
 Makefile test_deploy test_release test_vet test_vet_judge test_make_hooks test_guard
 docs/** test_vet test_vet_judge test_readme
 docs/publish-your-report.md test_layout test_readme
+.claude-plugin/icon.png test_layout
 .claude-plugin/plugin.json test_layout
 examples/** test_selfcheck test_vet test_vet_judge test_vet_stability test_readme
 CHANGELOG.md test_selfcheck

@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MAX_PARAGRAPH = 500
 MAX_OPENING = 300
+MAX_ALT = 200
 failures = []
 
 
@@ -21,6 +22,8 @@ LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\(([^)\s]*)[^)]*\)")
 def is_links_only(text):
     """A badge row or a list of links: nothing but short links, separators and a short label. A link holding long text is prose."""
     rest = re.sub(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)", "", text)
+    if re.fullmatch(r"!\[[^\]]{0,%d}\]\([^)]*\)" % MAX_ALT, rest.strip()):  # one image alone: its alt text is not prose
+        return True
     if any(len(m.group(0)) - len(m.group(1)) > 90 for m in LINK.finditer(rest)):
         return False
     rest = LINK.sub("", rest)
@@ -135,6 +138,28 @@ check("the README opening is at most %d characters" % MAX_OPENING, opening is No
 check("every relative link in the README resolves (%s)" % ", ".join(broken_links(readme)), not broken_links(readme))
 for md in sorted((ROOT / "docs").glob("*.md")):
     check("every relative link in docs/%s resolves" % md.name, not broken_links(md))
+
+# The plugin directory asks for Markdown image syntax for a bundled image, and for one place that says what the plugin runs, fetches and sends.
+def has_img_tag(text):
+    return "<img" in "\n".join(outside_fences(text))
+
+
+def section(text, heading):
+    """The text under a `## heading`, up to the next `## `, or "" when there is no such heading."""
+    m = re.search(r"^## %s\n(.*?)(?=^## |\Z)" % re.escape(heading), "\n".join(outside_fences(text)) + "\n", re.M | re.S)
+    return m.group(1) if m else ""
+
+
+check("an HTML img tag is found, one inside a code fence is not", has_img_tag('<img src="a">\n') and not has_img_tag('```\n<img src="a">\n```\n'))
+check("a section ends at the next ## heading", section("## A\n\none\n\n## B\n\ntwo\n", "A").split() == ["one"])
+check("an image line with a long alt text is not prose", prose_paragraphs("![" + "word " * 30 + "](a.webp)\n") == [])
+check("an image whose alt text is a long paragraph is still prose", len(dense(good + "\n![" + "word " * 101 + "](a.webp)\n")[0]) == 1)
+text = readme.read_text()
+check("the README shows no image with an HTML img tag", not has_img_tag(text))
+check("the README logo is a Markdown image of a bundled file", re.match(r"!\[[^\]]+\]\(\./assets/logo\.webp\)\n", text) is not None)
+disclosure = section(text, "What it runs, fetches and sends")
+for fact in ("git clone", "--live-mcp", "claude -p"):
+    check("the README section on what it runs, fetches and sends names %s" % fact, fact in disclosure)
 
 # Moved detail is one click from where it was (a real link outside code blocks, not a mention)
 real = set(LINK.findall("\n".join(outside_fences(readme.read_text()))))

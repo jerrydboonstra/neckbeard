@@ -1,4 +1,4 @@
-<img src="./assets/logo.webp" alt="A bearded developer under a desk lamp, arms crossed, scowling at a terminal full of struck-out lines." width="280">
+![A bearded developer under a desk lamp, arms crossed, scowling at a terminal full of struck-out lines.](./assets/logo.webp)
 
 # neckbeard
 
@@ -40,7 +40,7 @@ claude plugin marketplace add jerrydboonstra/neckbeard
 claude plugin install neckbeard@neckbeard
 ```
 
-It needs Claude Code and Python 3.11 or later, plus git to read a plugin from a git URL. Want the report without installing anything? [Try it](#try-it-three-lines-then-the-report) runs it from a clone.
+It needs Claude Code and Python 3.11 or later, plus git to read a plugin from a git URL. Want the report without installing anything? [Try it](#try-it-three-lines-then-the-report) runs it from a clone. See [What it runs, fetches and sends](#what-it-runs-fetches-and-sends).
 
 ## Try it: three lines, then the report
 
@@ -50,7 +50,7 @@ tools/vet . report.md --facts
 cat report.md
 ```
 
-The `.` is the plugin's folder, so this reads neckbeard itself. Give another plugin's folder to read that one. It needs Python 3.11 or later and no login.
+The `.` is the plugin's folder, so this reads neckbeard itself. Give another plugin's folder to read that one. It needs Python 3.11 or later and no login. See [What it runs, fetches and sends](#what-it-runs-fetches-and-sends).
 
 The report opens with a title, a header line (date, the plugin's version and commit or release tag, and the neckbeard version that made it) and a contents list. Then come three layers:
 
@@ -91,11 +91,19 @@ The [gallery](examples/README.md) has seven public plugins and skill packs as fa
 
 Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
+## What it runs, fetches and sends
+
+- **git:** when the target is a git URL, neckbeard runs `git clone --depth 1` of it into a temporary folder. `tools/vet` also runs `git` in the target's folder to name its commit and repo.
+- **`--live-mcp NAME`:** only when this option is given, by you or by Claude at your request, neckbeard starts that one local MCP server from the target and asks for its metadata. The server is the target's code, running under your account.
+- **`claude -p`:** without `--facts`, `tools/vet` judges in separate Claude sessions and sends the target's text and the reader's rules to Claude on your account. Some of those sessions may use the Read, Write, Glob and Grep tools. On Linux it may copy your login file into a throwaway folder for the run.
+- **Files:** `tools/vet` writes the report and its JSON files beside it, replacing those from an earlier run. The skill writes the evaluation and its working files.
+- **The installed skill:** it runs `inventory.py` with `python3` in your session. From a plugin install it may also run `tools/rule-units`, and `tools/vet` on answers your session wrote, which calls no model. It registers no hooks, so it runs only when the skill is used.
+
 ## Install it. It adds one skill and nothing else.
 
 Requires Claude Code and Python 3.11 or later (standard library only), plus `git` if you point it at a git URL. Tested on macOS and, in CI, Linux.
 
-You can also install it as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update:
+You can also install it as a plain skill, with no plugin machinery at all. Everything neckbeard needs lives in one folder, so a clone and a link are the whole install, and `git pull` is the update ([what it runs, fetches and sends](#what-it-runs-fetches-and-sends)):
 
 ```bash
 git clone https://github.com/jerrydboonstra/neckbeard.git ~/src/neckbeard
@@ -113,7 +121,7 @@ That gap is the point. A tool that catches plugins for running in the background
 
 ## Point it at the next plugin before you install it
 
-Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, which writes a **dossier** (a JSON record of everything it read), then judges the fit. From a clone, you can also run the inventory directly. `tools/vet` (above) writes the finished report; `tools/neckbeard` prints the raw dossier that report is built from:
+Ask Claude to "vet this plugin" or "should I install X". The skill runs the inventory, which writes a **dossier** (a JSON record of everything it read), then judges the fit. From a clone, you can also run the inventory directly. `tools/vet` (above) writes the finished report; `tools/neckbeard` prints the raw dossier that report is built from ([what it runs, fetches and sends](#what-it-runs-fetches-and-sends)):
 
 ```bash
 tools/neckbeard <target> [--project-dir DIR] [--extra-rules PATH] [--out FILE]
@@ -125,11 +133,11 @@ tools/neckbeard <target> --live-mcp NAME [--out FILE]
 - an **installed plugin**, `name@marketplace` (e.g. `ponytail@ponytail`). It reads `installed_plugins.json` first, falling back to the marketplace manifest when that record has no working `installPath` (true for most directory-source installs, but not all: see [CASE-STUDIES, round 2](CASE-STUDIES.md#2-neckbeard-itself-before-publishing))
 - a **local directory**: an already-cloned repo, a skill pack, a plugin source tree
 - a **marketplace** repo (local or a git URL): its plugin is inventoried, not the repo root. When it lists several, `--plugin NAME` picks one; without it, hooks are reported as unknown rather than absent
-- a **git URL**, cloned read-only, depth 1, into a temp directory that is gone when the command exits
+- a **git URL**, cloned read-only, depth 1, into a temp directory that is gone when the command exits ([what it runs, fetches and sends](#what-it-runs-fetches-and-sends))
 
 `--project-dir` (default: cwd) is where rule discovery starts. `--extra-rules` adds a file or directory the discovery would otherwise miss.
 
-`--live-mcp NAME` is a separate, explicit trust decision. It starts one local stdio MCP server (a program a plugin can start to give Claude extra tools) that the target declares, lists what the server advertises, and records metadata and schemas only. It never calls a tool. [docs/live-mcp.md](docs/live-mcp.md) has the full limits and the redaction rules.
+`--live-mcp NAME` is a separate, explicit trust decision. It starts one local stdio MCP server (a program a plugin can start to give Claude extra tools) that the target declares, lists what the server advertises, and records metadata and schemas only. It never calls a tool. [docs/live-mcp.md](docs/live-mcp.md) has the full limits and the redaction rules. See [What it runs, fetches and sends](#what-it-runs-fetches-and-sends).
 
 It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
 
@@ -157,7 +165,7 @@ Rounds: [ponytail](CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itsel
 - Every hook event it registers, and whether `SubagentStart` (the event that fires when a subagent starts, so a hook on it reaches every helper session) is one of them.
 - What each hook injects, where a static read can work that out. It follows one hop of local `require()` and rebuilds `path.join(__dirname, ...)` literals.
 - Anything its scripts write to disk outside your project.
-- Any **MCP server** the manifest declares, with its name, command and transport. This remains declaration-only by default. With the explicit `--live-mcp NAME` option, one contained local stdio server can also be initialized and asked only for its advertised metadata.
+- Any **MCP server** the manifest declares, with its name, command and transport. This remains declaration-only by default. With the explicit `--live-mcp NAME` option, one contained local stdio server can also be initialized and asked only for its advertised metadata. See [What it runs, fetches and sends](#what-it-runs-fetches-and-sends).
 
 No manifest means a plain pack of rules: neckbeard searches wider for skills, and still checks for hooks, because a directory can carry `hooks/hooks.json` with no manifest at all. A single file works too: point it at someone's `CLAUDE.md` and it compares that file's rules against yours.
 
