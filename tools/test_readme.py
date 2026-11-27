@@ -21,6 +21,8 @@ LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\(([^)\s]*)[^)]*\)")
 def is_links_only(text):
     """A badge row or a list of links: nothing but short links, separators and a short label. A link holding long text is prose."""
     rest = re.sub(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)", "", text)
+    if re.fullmatch(r"!\[[^\]]*\]\([^)]*\)", rest.strip()):  # one image alone: its alt text is not prose
+        return True
     if any(len(m.group(0)) - len(m.group(1)) > 90 for m in LINK.finditer(rest)):
         return False
     rest = LINK.sub("", rest)
