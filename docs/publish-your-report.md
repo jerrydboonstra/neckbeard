@@ -50,9 +50,9 @@ A repo can declare its test fixtures, the files it keeps broken on purpose, in a
 
 ## Invite an author
 
-After you vet someone else's public plugin, and the report is worth sharing, you can invite its author to publish one. Run the command above from a clone of their plugin, so the badge line links to `docs/neckbeard-report.md`.
+After you vet someone else's public plugin, and the report is worth sharing, you can invite its author to publish one. Run the `/tmp/nb/tools/vet` command above from a clone of their plugin, so the badge line links to `docs/neckbeard-report.md`.
 
-A good invitation holds:
+A good invitation includes:
 
 - **What the report found.** Say what you saw in it. The facts report gives no verdict, so don't add one in its name.
 - **Advice with a fix.** Put each finding as general advice with a way to fix it, not as blame.
