@@ -100,5 +100,13 @@ check("the guide check fails on a guide that pins an older tag (seen to fail)", 
 # The guide tells a reader who vetted someone else's plugin how to invite its author.
 check("docs/publish-your-report.md has an \"Invite an author\" section", "\n## Invite an author\n" in _guide)
 
+# The plugin directory takes its listing icon from .claude-plugin/icon.png: a square PNG of 512 to 2048 px, under 2 MB.
+def _png_size(data):
+    return (int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")) if data[:8] == b"\x89PNG\r\n\x1a\n" else None
+_icon = ROOT / ".claude-plugin" / "icon.png"
+_bytes = _icon.read_bytes() if _icon.is_file() else b""
+check("the listing icon .claude-plugin/icon.png is a 1024 px square PNG under 2 MB", _png_size(_bytes) == (1024, 1024) and len(_bytes) < 2_000_000)
+check("the icon check refuses a file that is not a PNG (seen to fail)", _png_size(b"RIFF....WEBPVP8 ") is None)
+
 print(f"test_layout: {'all passed' if not failures else str(len(failures)) + ' failed'}")
 sys.exit(1 if failures else 0)

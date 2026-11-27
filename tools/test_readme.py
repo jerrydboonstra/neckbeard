@@ -136,6 +136,27 @@ check("every relative link in the README resolves (%s)" % ", ".join(broken_links
 for md in sorted((ROOT / "docs").glob("*.md")):
     check("every relative link in docs/%s resolves" % md.name, not broken_links(md))
 
+# The plugin directory asks for Markdown image syntax for a bundled image, and for one place that says what the plugin runs, fetches and sends.
+def has_img_tag(text):
+    return "<img" in "\n".join(outside_fences(text))
+
+
+def section(text, heading):
+    """The text under a `## heading`, up to the next `## `, or "" when there is no such heading."""
+    m = re.search(r"^## %s\n(.*?)(?=^## |\Z)" % re.escape(heading), "\n".join(outside_fences(text)) + "\n", re.M | re.S)
+    return m.group(1) if m else ""
+
+
+check("an HTML img tag is found, one inside a code fence is not", has_img_tag('<img src="a">\n') and not has_img_tag('```\n<img src="a">\n```\n'))
+check("a section ends at the next ## heading", section("## A\n\none\n\n## B\n\ntwo\n", "A").split() == ["one"])
+check("an image line with a long alt text is not prose", prose_paragraphs("![" + "word " * 30 + "](a.webp)\n") == [])
+text = readme.read_text()
+check("the README shows no image with an HTML img tag", not has_img_tag(text))
+check("the README logo is a Markdown image of a bundled file", re.match(r"!\[[^\]]+\]\(\./assets/logo\.webp\)\n", text) is not None)
+disclosure = section(text, "What it runs, fetches and sends")
+for fact in ("git clone", "--live-mcp", "claude -p"):
+    check("the README section on what it runs, fetches and sends names %s" % fact, fact in disclosure)
+
 # Moved detail is one click from where it was (a real link outside code blocks, not a mention)
 real = set(LINK.findall("\n".join(outside_fences(readme.read_text()))))
 for page in ("docs/live-mcp.md", "docs/report-terms.md"):
