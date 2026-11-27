@@ -110,3 +110,12 @@ tools/test_inventory_skills.py test_inventory_skills
 tools/test_slim.py test_slim
 tools/slim-tree test_slim
 tools/slim-set test_slim
+skills/** test_slim
+examples/reader/** test_slim
+.claude-plugin/** test_slim
+tools/** test_slim
+assets/logo.webp test_slim
+LICENSE test_slim
+SECURITY.md test_slim
+README.md test_slim
+Makefile test_slim

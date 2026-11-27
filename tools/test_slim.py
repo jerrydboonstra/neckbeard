@@ -46,15 +46,15 @@ def slim(*a, cwd, **env):
 
 
 SET = """# a test set
-repo o/r
 include .claude-plugin
+include assets/in.png
 include tools
 include README.md
 exclude tools/test_*.py   # tests
 exclude tools/fixtures    # fixtures
 """
 
-README = """![logo](./assets/logo.png)
+README = """![logo](./assets/logo.png) ![bundled](./assets/in.png)
 
 [![badge](https://img.shields.io/x)](docs/report.md) [kept](tools/run) [gone](docs/a.md#part) [here](#top) [web](https://x.org/y)
 
@@ -63,7 +63,7 @@ README = """![logo](./assets/logo.png)
 ```
 """
 
-WANT_README = """![logo](https://raw.githubusercontent.com/o/r/v1.0.0/assets/logo.png)
+WANT_README = """![logo](https://raw.githubusercontent.com/o/r/v1.0.0/assets/logo.png) ![bundled](./assets/in.png)
 
 [![badge](https://img.shields.io/x)](https://github.com/o/r/blob/v1.0.0/docs/report.md) [kept](tools/run) [gone](https://github.com/o/r/blob/v1.0.0/docs/a.md#part) [here](#top) [web](https://x.org/y)
 
@@ -81,7 +81,7 @@ def world():
     git("init", "-q", "-b", "main", cwd=work)
     for path, text in (("tools/slim-set", SET), ("README.md", README), (".claude-plugin/plugin.json", '{"name": "x", "version": "1.0.0"}\n'),
                        ("tools/run", "#!/bin/sh\n"), ("tools/test_x.py", "x\n"), ("tools/fixtures/f", "f\n"), ("docs/a.md", "a\n"),
-                       ("assets/logo.png", "png\n")):
+                       ("assets/logo.png", "png\n"), ("assets/in.png", "png\n")):
         put(work, path, text)
     os.chmod(os.path.join(work, "tools", "run"), 0o755)
     git("add", ".", cwd=work)
@@ -104,21 +104,21 @@ def files(home, remote):
 
 print("-- publish --")
 home, work = world()
-code, out = slim("publish", "v1.0.0", cwd=work, REMOTES="origin mirror")
+code, out = slim("publish", "v1.0.0", "--repo", "o/r", cwd=work, REMOTES="origin mirror")
 chk("the first publish exits 0", code, 0)
-LISTED = [".claude-plugin/plugin.json", "README.md", "tools/run", "tools/slim-set"]
+LISTED = [".claude-plugin/plugin.json", "README.md", "assets/in.png", "tools/run", "tools/slim-set"]
 chk("each remote's plugin branch holds exactly the listed files", (files(home, "origin"), files(home, "mirror")), (LISTED, LISTED))
 chk("the first commit is a root commit", at(home, "origin", "rev-list", "--count", "refs/heads/plugin"), "1")
 chk("README.md is the rewritten one", at(home, "origin", "show", "refs/heads/plugin:README.md"), WANT_README.strip())
 chk("another file is the tag's own, mode included", at(home, "origin", "ls-tree", "refs/heads/plugin", "tools/run"), git("ls-tree", "v1.0.0", "tools/run", cwd=work))
 first = at(home, "origin", "rev-parse", "refs/heads/plugin")
-code, out = slim("publish", "v1.0.0", cwd=work, REMOTES="origin mirror")
+code, out = slim("publish", "v1.0.0", "--repo", "o/r", cwd=work, REMOTES="origin mirror")
 chk("publishing the same tag again adds no commit", (code, at(home, "origin", "rev-parse", "refs/heads/plugin")), (0, first))
 put(work, "tools/new", "n\n")
 git("add", ".", cwd=work)
 git("commit", "-q", "-m", "two", cwd=work)
 git("tag", "v1.1.0", cwd=work)
-code, out = slim("publish", "v1.1.0", cwd=work, REMOTES="origin mirror")
+code, out = slim("publish", "v1.1.0", "--repo", "o/r", cwd=work, REMOTES="origin mirror")
 chk("the next release adds one commit on the branch's last one", (code, at(home, "origin", "rev-parse", "refs/heads/plugin^")), (0, first))
 chk("and its tree is the new slim copy", "tools/new" in files(home, "mirror"), True)
 shutil.rmtree(home)
@@ -126,13 +126,13 @@ shutil.rmtree(home)
 print("-- a push that fails --")
 home, work = world()
 git("remote", "add", "broken", os.path.join(home, "nowhere.git"), cwd=work)
-code, out = slim("publish", "v1.0.0", cwd=work, REMOTES="broken origin")
+code, out = slim("publish", "v1.0.0", "--repo", "o/r", cwd=work, REMOTES="broken origin")
 chk("the release's step still exits 0", code, 0)
 chk("it warns, naming the remote and the rerun command", ("broken" in out, "make slim-push TAG=v1.0.0" in out), (True, True))
 chk("the other remote still got the branch", files(home, "origin") != [], True)
-code, out = slim("publish", "v1.0.0", "--strict", cwd=work, REMOTES="broken origin")
+code, out = slim("publish", "v1.0.0", "--repo", "o/r", "--strict", cwd=work, REMOTES="broken origin")
 chk("the rerun target's --strict exits 1", code, 1)
-code, out = slim("publish", "v9.9.9", cwd=work, REMOTES="origin")
+code, out = slim("publish", "v9.9.9", "--repo", "o/r", cwd=work, REMOTES="origin")
 chk("a tag that does not exist warns and exits 0", (code, "v9.9.9" in out), (0, True))
 shutil.rmtree(home)
 
@@ -159,9 +159,9 @@ code, out = slim("check", "HEAD", cwd=ROOT)
 chk("it is within the directory's limits and its README links resolve" + ("" if code == 0 else f" ({out.strip()[-300:]})"), code, 0)
 code, out = slim("build", "HEAD", tree, cwd=ROOT)
 chk("it builds", code, 0)
-chk("it carries the icon, the skill and vet's default reader, and no fixtures or tests",
-    [os.path.exists(os.path.join(tree, p)) for p in (".claude-plugin/icon.png", "skills/neckbeard/SKILL.md", "examples/reader/CLAUDE.md", "tools/fixtures", "tools/test_vet.py")],
-    [True, True, True, False, False])
+chk("it carries the icon, the logo, the skill and vet's default reader, and no fixtures or tests",
+    [os.path.exists(os.path.join(tree, p)) for p in (".claude-plugin/icon.png", "assets/logo.webp", "skills/neckbeard/SKILL.md", "examples/reader/CLAUDE.md", "tools/fixtures", "tools/test_vet.py")],
+    [True, True, True, True, False, False])
 links = []
 if os.path.isfile(os.path.join(tree, "README.md")):
     fenced = False
@@ -198,6 +198,8 @@ recipe = make.split("\nrelease: ", 1)[1].split("\n\n", 1)[0]
 chk("make release publishes the slim branch, after the GitHub Release and without --strict",
     ("slim-tree publish" in recipe, recipe.find("gh release create") < recipe.find("slim-tree publish"), "--strict" in recipe), (True, True, False))
 chk("make slim-push reruns it alone, with --strict", re.search(r"^slim-push:.*\n(\t.*\n)*?\t.*slim-tree publish .*--strict", make, re.M) is not None, True)
+chk("both pass the release's own remote list and repo",
+    len(re.findall(r'REMOTES="\$\(REMOTES\)" \$\(PYTHON\) tools/slim-tree publish .*--repo \$\(GITHUB_REPO\)', make)), 2)
 
 print(f"test_slim: {'all passed' if not fail else str(fail) + ' of ' + str(checks) + ' failed'}")
 sys.exit(1 if fail else 0)
