@@ -47,3 +47,16 @@ For a private copy of the plugin, add `--repo https://github.com/<you>/<plugin>`
 ## Badge colours and declared fixtures
 
 A repo can declare its test fixtures, the files it keeps broken on purpose, in a `.neckbeard.json` at its root, for example `{"fixtures": ["tools/fixtures"]}`. neckbeard still walks those folders and reports what it finds there, but a file in one that the hooks search or the persistence scan cannot read no longer makes that section "partly read", and the report says which folders were declared. neckbeard declares `tools/fixtures`, so its own badge is green. A yellow badge means some part of the repo was not read.
+
+## Invite an author
+
+After you vet someone else's public plugin, and the report is worth sharing, you can invite its author to publish one. Run the command above from a clone of their plugin, so the badge line links to `docs/neckbeard-report.md`.
+
+A good invitation holds:
+
+- **What the report found.** Say what you saw in it. The facts report gives no verdict, so don't add one in its name.
+- **Advice with a fix.** Put each finding as general advice with a way to fix it, not as blame.
+- **The badge line** that `tools/vet` printed. Its link works once the author commits a report at that path.
+- **The neckbeard version you used.** The report's header names it.
+
+Only the person who ran the vet sends the invitation, in their own words, through whatever channel the plugin's author asks for (often an issue or a discussion). Nothing is sent automatically.
