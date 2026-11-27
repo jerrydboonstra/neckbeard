@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MAX_PARAGRAPH = 500
 MAX_OPENING = 300
+MAX_ALT = 200
 failures = []
 
 
@@ -21,7 +22,7 @@ LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\(([^)\s]*)[^)]*\)")
 def is_links_only(text):
     """A badge row or a list of links: nothing but short links, separators and a short label. A link holding long text is prose."""
     rest = re.sub(r"\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)", "", text)
-    if re.fullmatch(r"!\[[^\]]*\]\([^)]*\)", rest.strip()):  # one image alone: its alt text is not prose
+    if re.fullmatch(r"!\[[^\]]{0,%d}\]\([^)]*\)" % MAX_ALT, rest.strip()):  # one image alone: its alt text is not prose
         return True
     if any(len(m.group(0)) - len(m.group(1)) > 90 for m in LINK.finditer(rest)):
         return False
@@ -152,6 +153,7 @@ def section(text, heading):
 check("an HTML img tag is found, one inside a code fence is not", has_img_tag('<img src="a">\n') and not has_img_tag('```\n<img src="a">\n```\n'))
 check("a section ends at the next ## heading", section("## A\n\none\n\n## B\n\ntwo\n", "A").split() == ["one"])
 check("an image line with a long alt text is not prose", prose_paragraphs("![" + "word " * 30 + "](a.webp)\n") == [])
+check("an image whose alt text is a long paragraph is still prose", len(dense(good + "\n![" + "word " * 101 + "](a.webp)\n")[0]) == 1)
 text = readme.read_text()
 check("the README shows no image with an HTML img tag", not has_img_tag(text))
 check("the README logo is a Markdown image of a bundled file", re.match(r"!\[[^\]]+\]\(\./assets/logo\.webp\)\n", text) is not None)

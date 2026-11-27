@@ -93,11 +93,11 @@ Building a plugin of your own? **[PLUGIN-GUIDE.md](PLUGIN-GUIDE.md)** lists what
 
 ## What it runs, fetches and sends
 
-- **git clone:** when the target you name is a git URL, neckbeard runs `git clone --depth 1` of that URL into a temporary folder.
-- **`--live-mcp NAME`:** only when you pass it, neckbeard starts that one local MCP server from the target and asks for its metadata. The server is the target's own code, running under your account.
-- **`claude -p`:** `tools/vet` without `--facts` judges in separate Claude sessions, which sends the target's text and the reader's rules to Claude on your account. It writes the report, with JSON files beside it. On Linux it may copy your login file into a throwaway folder for the run.
-
-The installed skill itself runs `inventory.py` with `python3`, in your session. It registers no hooks, so nothing runs until you ask.
+- **git:** when the target is a git URL, neckbeard runs `git clone --depth 1` of it into a temporary folder. `tools/vet` also runs `git` in the target's folder to name its commit and repo.
+- **`--live-mcp NAME`:** only when this option is given, by you or by Claude at your request, neckbeard starts that one local MCP server from the target and asks for its metadata. The server is the target's code, running under your account.
+- **`claude -p`:** without `--facts`, `tools/vet` judges in separate Claude sessions and sends the target's text and the reader's rules to Claude on your account. Some of those sessions may use the Read, Write, Glob and Grep tools. On Linux it may copy your login file into a throwaway folder for the run.
+- **Files:** `tools/vet` writes the report and its JSON files beside it, replacing those from an earlier run. The skill writes the evaluation and its working files. [SECURITY.md](SECURITY.md) covers where.
+- **The installed skill:** it runs `inventory.py` with `python3` in your session. From a plugin install it may also run `tools/rule-units`, and `tools/vet` on answers your session wrote, which calls no model. It registers no hooks, so it runs only when the skill is used.
 
 ## Install it. It adds one skill and nothing else.
 
