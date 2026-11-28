@@ -98,11 +98,11 @@ def assigned(line):
 each("5. every assignment form collects the variable", "writes", [
     "V=$HOME/x", 'V="$HOME/x y"', "V='~/x'", "local V=~/x", "export V=${HOME}/x", "readonly V=$XDG_STATE_HOME", "declare -x -r V=/home/u/x",
     "A=1 V=/Users/u/x", "local a b=2 V=$HOME/x", 'V="${X:-$HOME/.local/state}"', "V=${XDG_CACHE_HOME:-/tmp}", "# V=$HOME/x",
-    "if true; then V=$HOME/x; fi",
+    "if true; then V=$HOME/x; fi", 'V="$HOME"/.local/state/x', 'V="${HOME}"/x', "V='/home'/u/x",
 ], run=assigned)
 each("5. a value with no home path literal does not collect the variable", None, [
     "V=$HOME", "V=/tmp/x", "V=https://example.com/home/u/x", "V=file:///Users/u/x", "V=/home/<user>/x", "V=./rel/~x",
-    "run --V=$HOME/x",
+    "run --V=$HOME/x", 'V="$HOME"', 'V="$HOME" x/y',
 ], run=assigned)
 got = tiers({"setup": "#!/usr/bin/env bash\nV=$HOME/x\n", "use": "#!/bin/sh\ntouch $V\n", "z.zsh": "rm $V\n",
              "n.py": "touch $V\n", "other": "#!/usr/bin/env fish\ntouch $V\n"})
