@@ -63,12 +63,13 @@ def _shell_home_write(text):
 
 
 # The devices a redirect can name without leaving anything behind, each whole: `/dev/nullx`, `/dev/null/x`,
-# `/dev/null,log` and `/dev/../x` are other files. The name ends where a shell word ends. A quote or a backslash-newline
-# does not end a word, so each counts only when such an end follows it: `"/dev/null"` is the device, `/dev/null"x"` is not.
-# debt: matching text cannot tell a closing quote from an opening one, so `/dev/null" x"` is taken for the device; and a
-# device inside a quoted string that a comma or bracket follows (`run('x >/dev/null', 1)`) is still counted, which
-# over-states. Upgrade path: tokenise shell lines instead of matching text.
-DEVICE_PATTERN = r"/dev/(?:null|stdout|stderr|tty|fd/[0-9]+)(?=(?:[\"']|\\\r?\n)*(?:$|[\s;&|()<>`]))"
+# `/dev/null,log` and `/dev/../x` are other files. The name ends where a shell word ends. A quote, a backtick or a
+# backslash-newline does not end a word, so each counts only when such an end follows it: `"/dev/null"` is the device,
+# `/dev/null"x"` is not.
+# debt: matching text cannot tell a closing quote from an opening one, so `/dev/null" x"` and `"/dev/null x"` are taken
+# for the device; and a device inside a quoted string that a comma or bracket follows (`run('x >/dev/null', 1)`) is
+# still counted, which over-states. Upgrade path: tokenise shell lines instead of matching text.
+DEVICE_PATTERN = r"/dev/(?:null|stdout|stderr|tty|fd/[0-9]+)(?=(?:[\"'`]|\\\r?\n)*(?:$|[\s;&|()<>]))"
 
 # A shell redirect to a file that persists: $HOME, ~, or an absolute path that is not a device. The second branch
 # takes a `/` straight after the `>`, except where that `>` ends `<word>` (letters, digits, `_`, `-`): the
