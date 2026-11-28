@@ -2,9 +2,9 @@
 
 # neckbeard
 
-[![CI](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![release](https://img.shields.io/github/v/release/jerrydboonstra/neckbeard)](https://github.com/jerrydboonstra/neckbeard/releases/latest) [![CodeQL](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml) [![neckbeard: 2.0.4 · read in full](https://img.shields.io/badge/neckbeard-2.0.4%20%C2%B7%20read%20in%20full-brightgreen?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/neckbeard-report.md)
+[![CI](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/self-check.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![release](https://img.shields.io/github/v/release/jerrydboonstra/neckbeard)](https://github.com/jerrydboonstra/neckbeard/releases/latest) [![CodeQL](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/jerrydboonstra/neckbeard/actions/workflows/codeql.yml) [![neckbeard: 2.0.5 · read in full](https://img.shields.io/badge/neckbeard-2.0.5%20%C2%B7%20read%20in%20full-brightgreen?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPG1hc2sgaWQ9Im0iPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik02LjYgOC4yIDEwLjkgOS42IDEwLjYgMTAuNiA2LjMgOS4yWiBNMTcuNCA4LjIgMTMuMSA5LjYgMTMuNCAxMC42IDE3LjcgOS4yWiIgZmlsbD0iIzAwMCIvPjxyZWN0IHg9IjgiIHk9IjExLjEiIHdpZHRoPSIyLjIiIGhlaWdodD0iMS4xIiBmaWxsPSIjMDAwIi8%2BPHJlY3QgeD0iMTMuOCIgeT0iMTEuMSIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIxLjEiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS44IDE2LjIgQzExIDE1LjQgMTMgMTUuNCAxNC4yIDE2LjIgTDEzLjkgMTYuOSBDMTIuOCAxNi4zIDExLjIgMTYuMyAxMC4xIDE2LjlaIiBmaWxsPSIjMDAwIi8%2BPC9tYXNrPjxnIG1hc2s9InVybCgjbSkiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjciIGN5PSI3LjIiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEwLjMiIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjEzLjciIGN5PSI0LjYiIHI9IjMuNCIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iNy4yIiByPSIzLjQiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMC41IiByeD0iNi44IiByeT0iNi44Ii8%2BPHBhdGggZD0iTTQuNiAxMS41IEM0LjIgMTYgNS44IDE5LjYgOC4yIDIxLjQgTDkuNiAyMyAxMSAyMiAxMiAyMy42IDEzIDIyIDE0LjQgMjMgMTUuOCAyMS40IEMxOC4yIDE5LjYgMTkuOCAxNiAxOS40IDExLjUgWiIvPjwvZz48L3N2Zz4%3D)](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/neckbeard-report.md)
 
-What changed in each release: [CHANGELOG.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CHANGELOG.md), newest first.
+What changed in each release: [CHANGELOG.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CHANGELOG.md), newest first.
 
 > **I read the whole thing. You’re welcome.**
 >
@@ -15,9 +15,9 @@ Before you install a plugin into Claude Code, neckbeard reads it and lists what 
 - **Facts report:** the hooks a plugin has, the text it injects, the sessions and subagents it reaches, and the files it may write outside your project. It says which parts it could not read.
 - **Fit report:** each rule the plugin carries, compared with the rules you already run: which duplicate one of yours, which contradict one, and which are new. It needs your own rules.
 
-What a hook, a subagent and the other report terms mean: [docs/report-terms.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/report-terms.md).
+What a hook, a subagent and the other report terms mean: [docs/report-terms.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/report-terms.md).
 
-**Tested by trying to break it, fifteen times, and every round is published.** Each [case study](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
+**Tested by trying to break it, fifteen times, and every round is published.** Each [case study](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md) shows what the tool printed and what that round cost it: the bug, the version that fixed it, and the check that guards it now.
 
 ## Install
 
@@ -58,38 +58,38 @@ The report opens with a title, a header line (date, the plugin's version and com
 - **What it adds:** one card each for the text it injects, hooks, subagents and commands, the state it may leave, what it reaches outside the session, and its source. Each card says whether neckbeard read it in full, read it in part, or left something unread.
 - **Where it takes a position:** the topics its instruction files and hook templates take a position on, from a fixed list, with no judgement.
 
-Here is neckbeard's own report, cut down to its summary rows and one line per card ([the full report](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/neckbeard-report.md) lists every skill and file):
+Here is neckbeard's own report, cut down to its summary rows and one line per card ([the full report](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/neckbeard-report.md) lists every skill and file):
 
 <!-- report:docs/neckbeard-report -->
 > # 🔍 neckbeard
 >
-> `2026-11-26` · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.4 @ `v2.0.4` · made by neckbeard 2.0.4
+> `2026-11-28` · [jerrydboonstra/neckbeard](https://github.com/jerrydboonstra/neckbeard) 2.0.5 @ `v2.0.5` · made by neckbeard 2.0.5
 >
 > | | Row | In short |
 > |---|---|---|
 > | 🟩 | Cost | adds 764 characters to every session, ~191 tokens (764 characters of skill descriptions, 0 agent descriptions, 0 rule files, 0 hook text) |
 > | 🟩 | Reach | on demand only |
-> | 🟧 | Leaves state | 59 files that may write state |
+> | 🟧 | Leaves state | 54 files that may write state |
 > | 🟩 | Live surface | no hook commands, MCP servers or mods found |
 > | 🟩 | Read completeness | read in full |
 >
 > - 🟢 **Injects** · 1 skill · ~4448 tokens on demand · ~764 chars of skill descriptions every session · hook text read in full
 > - 🟢 **Hooks** · 0 hooks · read in full
 > - 🟢 **Subagents and commands** · no agents · 0 commands
-> - 🟢 **State it may leave** · 59 files that may write state · 10 named
+> - 🟢 **State it may leave** · 54 files that may write state · 10 named
 > - 🟢 **Reaches outside the session** · no MCP servers
-> - 🟢 **Source** · plugin · neckbeard 2.0.4 from plugin.json · commit v2.0.4 · no marketplace
+> - 🟢 **Source** · plugin · neckbeard 2.0.5 from plugin.json · commit v2.0.5 · no marketplace
 <!-- /report -->
 
-How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/publish-your-report.md#badge-colours-and-declared-fixtures).
+How a repo declares test fixtures, and what the badge colours mean: [docs/publish-your-report.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/publish-your-report.md#badge-colours-and-declared-fixtures).
 
 A fit verdict needs the rules you already run, so a facts report gives none. To get one, point neckbeard at your own rules with `--reader DIR` (a folder of rules standing in for yours), or ask Claude to "vet this plugin" with the skill installed (see below).
 
-[docs/report-terms.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/report-terms.md) defines the words in the report (**Injects**, **Hook-injected text**, **Persistence candidates**, **MCP servers**).
+[docs/report-terms.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/report-terms.md) defines the words in the report (**Injects**, **Hook-injected text**, **Persistence candidates**, **MCP servers**).
 
-The [gallery](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
+The [gallery](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/examples/README.md) has seven public plugins and skill packs as facts reports, and neckbeard's fit report on itself, as a labelled demo of what a fit report looks like.
 
-Building a plugin of your own? **[PLUGIN-GUIDE.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
+Building a plugin of your own? **[PLUGIN-GUIDE.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/PLUGIN-GUIDE.md)** lists what neckbeard looks for under each of the sample reader's rules and on each card, and gives a ledger format for recording, rule by rule, how far your plugin means to comply.
 
 ## What it runs, fetches and sends
 
@@ -113,7 +113,7 @@ ln -s ~/src/neckbeard/skills/neckbeard ~/.claude/skills/neckbeard
 
 Use one or the other, not both: two copies means two skills with the same name.
 
-One skill. Its plugin manifest registers no hooks and no agents. By the [published report](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/neckbeard-report.md) (tokens estimated as bytes / 4): the skill's description is 764 characters, about 190 tokens, in every session, since that is all Claude Code shows its router so it knows the tool is there; the skill file is 14,535 bytes, about 3,600 tokens, loaded each time you use it. Both figures are the same for either install.
+One skill. Its plugin manifest registers no hooks and no agents. By the [published report](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/neckbeard-report.md) (tokens estimated as bytes / 4): the skill's description is 764 characters, about 190 tokens, in every session, since that is all Claude Code shows its router so it knows the tool is there; the skill file is 14,535 bytes, about 3,600 tokens, loaded each time you use it. Both figures are the same for either install.
 
 The same report says "Hooks: none", and that is the report reading everything: the deliberately broken fixtures under `tools/fixtures` are declared in `.neckbeard.json`, so they no longer stop the hooks search from counting as finished. The plugin that prompted this one injected about 1,300 tokens into every session *and* every subagent when I first read it.
 
@@ -130,14 +130,14 @@ tools/neckbeard <target> --live-mcp NAME [--out FILE]
 
 `<target>` is one of:
 
-- an **installed plugin**, `name@marketplace` (e.g. `ponytail@ponytail`). It reads `installed_plugins.json` first, falling back to the marketplace manifest when that record has no working `installPath` (true for most directory-source installs, but not all: see [CASE-STUDIES, round 2](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#2-neckbeard-itself-before-publishing))
+- an **installed plugin**, `name@marketplace` (e.g. `ponytail@ponytail`). It reads `installed_plugins.json` first, falling back to the marketplace manifest when that record has no working `installPath` (true for most directory-source installs, but not all: see [CASE-STUDIES, round 2](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#2-neckbeard-itself-before-publishing))
 - a **local directory**: an already-cloned repo, a skill pack, a plugin source tree
 - a **marketplace** repo (local or a git URL): its plugin is inventoried, not the repo root. When it lists several, `--plugin NAME` picks one; without it, hooks are reported as unknown rather than absent
 - a **git URL**, cloned read-only, depth 1, into a temp directory that is gone when the command exits ([what it runs, fetches and sends](#what-it-runs-fetches-and-sends))
 
 `--project-dir` (default: cwd) is where rule discovery starts. `--extra-rules` adds a file or directory the discovery would otherwise miss.
 
-`--live-mcp NAME` is a separate, explicit trust decision. It starts one local stdio MCP server (a program a plugin can start to give Claude extra tools) that the target declares, lists what the server advertises, and records metadata and schemas only. It never calls a tool. [docs/live-mcp.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/docs/live-mcp.md) has the full limits and the redaction rules. See [What it runs, fetches and sends](#what-it-runs-fetches-and-sends).
+`--live-mcp NAME` is a separate, explicit trust decision. It starts one local stdio MCP server (a program a plugin can start to give Claude extra tools) that the target declares, lists what the server advertises, and records metadata and schemas only. It never calls a tool. [docs/live-mcp.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/docs/live-mcp.md) has the full limits and the redaction rules. See [What it runs, fetches and sends](#what-it-runs-fetches-and-sends).
 
 It prints the dossier to stdout, or writes it to `--out FILE` and warns you what it contains. The static default writes nothing else. Live inventory executes target code under your user account; the temporary home reduces accidental access but is not a sandbox, so read the static report first.
 
@@ -147,14 +147,14 @@ It warns you on write and names the files. Do not commit one, and check your `.g
 
 ## How it was tested
 
-Fifteen rounds, some against real plugins and some against neckbeard itself. **[CASE-STUDIES.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
+Fifteen rounds, some against real plugins and some against neckbeard itself. **[CASE-STUDIES.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md)** has every round, including the false claims it caught in its own docs.
 
-Rounds: [ponytail](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itself](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#2-neckbeard-itself-before-publishing) · [superpowers](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#3-obrasuperpowers-the-large-one) · [a random pick](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#4-koz-tvviral-launch-pipeline-the-random-one) · [claude-security](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#5-claude-security-anthropics-own-security-plugin) · [all 39 Anthropic plugins](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#6-all-39-anthropic-first-party-plugins-the-sweep) · [built to break](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#7-purpose-built-directories-attacking-the-unexercised-branches) · [a crash and a lie](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#8-the-last-unexercised-branches-a-crash-and-a-lie) · [independent audit](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#9-an-independent-audit-the-one-that-found-the-most) · [judgment](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#10-the-judgment-half-the-first-thing-that-passed) · [judgment, hard case](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#11-the-judgment-half-again-on-the-hard-case) · [the fix that regressed](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#12-the-fix-that-was-the-regression) · [sealed fixture](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#13-the-last-claim-resting-on-the-builders-word) · [before going public](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing) · [four pstack ports](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#15-four-pstack-ports-hooks-where-the-manifest-did-not-say)
+Rounds: [ponytail](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#1-ponytail-the-one-that-started-it) · [itself](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#2-neckbeard-itself-before-publishing) · [superpowers](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#3-obrasuperpowers-the-large-one) · [a random pick](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#4-koz-tvviral-launch-pipeline-the-random-one) · [claude-security](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#5-claude-security-anthropics-own-security-plugin) · [all 39 Anthropic plugins](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#6-all-39-anthropic-first-party-plugins-the-sweep) · [built to break](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#7-purpose-built-directories-attacking-the-unexercised-branches) · [a crash and a lie](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#8-the-last-unexercised-branches-a-crash-and-a-lie) · [independent audit](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#9-an-independent-audit-the-one-that-found-the-most) · [judgment](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#10-the-judgment-half-the-first-thing-that-passed) · [judgment, hard case](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#11-the-judgment-half-again-on-the-hard-case) · [the fix that regressed](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#12-the-fix-that-was-the-regression) · [sealed fixture](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#13-the-last-claim-resting-on-the-builders-word) · [before going public](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing) · [four pstack ports](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#15-four-pstack-ports-hooks-where-the-manifest-did-not-say)
 
 - **Who reviewed it:** AI agents only. Each was a separate Claude session that had not written the code. The only outside user ran an early version and hit bugs that later rounds fixed.
 - **Hardest round:** the ninth, the first by a session outside the build. Eleven problems, four published claims proved false, one of them a path that could leak 90,533 bytes of private rules into a public repo.
 - **The code:** checked against the filesystem. Every self-check case has been seen to fail with the code it guards broken.
-- **The judgment:** graded blind against two sealed fixtures (test sets with known answers, built by separate sessions; the author has never seen the answers). On the 31 items of the second graded with and without neckbeard's instructions, the instructions scored 30 and the same model without them scored 16 ([the scores and data](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing)).
+- **The judgment:** graded blind against two sealed fixtures (test sets with known answers, built by separate sessions; the author has never seen the answers). On the 31 items of the second graded with and without neckbeard's instructions, the instructions scored 30 and the same model without them scored 16 ([the scores and data](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CASE-STUDIES.md#14-before-going-public-the-tests-that-tested-the-wrong-thing)).
 
 ## What it reads, and what it refuses to touch
 
@@ -198,7 +198,7 @@ I asked an LLM to compare its rules with mine, and the answer was a list of over
 
 So I copied the rules I wanted into my config as plain text, deleted the plugin, and wrote neckbeard to make that comparison something you can check: every call cites the rule on each side.
 
-The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/ATTRIBUTION.md).
+The method is [Yanhua's](https://x.com/yanhua1010/status/2094612609932910828), who did the same audit by hand, against his own config, and published it. See [ATTRIBUTION.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/ATTRIBUTION.md).
 
 ## The name
 
@@ -206,6 +206,6 @@ The name is the developer who reads all of your hook code first, and wants the s
 
 ## License
 
-MIT. See [LICENSE](./LICENSE) and [ATTRIBUTION.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/ATTRIBUTION.md).
+MIT. See [LICENSE](./LICENSE) and [ATTRIBUTION.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/ATTRIBUTION.md).
 
-Version history, and why the number is high for a first release: [CHANGELOG.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.4/CHANGELOG.md).
+Version history, and why the number is high for a first release: [CHANGELOG.md](https://github.com/jerrydboonstra/neckbeard/blob/v2.0.5/CHANGELOG.md).
