@@ -62,6 +62,17 @@ def _shell_home_write(text):
     return False
 
 
+# The devices a redirect can name without leaving anything behind, each whole: `/dev/nullx`, `/dev/null/x` and
+# `/dev/../x` are other files.
+DEVICE_PATTERN = r"/dev/(?:null|stdout|stderr|tty|fd/[0-9]+)(?=$|[\s\"';&|()<>`\\,])"
+
+# A shell redirect to a file that persists: $HOME, ~, or an absolute path that is not a device. The second branch
+# takes a `/` straight after the `>`, except where that `>` closes a `<name>` placeholder in usage text.
+_SHELL_REDIRECT = re.compile(
+    r">>?(?!/)\s*[\"']?(?:\$HOME|~|(?!%(device)s)/)"
+    r"|(?:(?<![\w<-])[\w-]*|(?<=<))>>?(?!%(device)s)/" % {"device": DEVICE_PATTERN})
+
+
 PERSIST_PATTERNS = [
     # node/js
     re.compile(r"\b(writeFileSync|appendFileSync|createWriteStream|copyFileSync|mkdirSync|rmSync)\b"),
@@ -71,7 +82,7 @@ PERSIST_PATTERNS = [
     re.compile(r"\.(write_text|write_bytes|mkdir|touch|unlink|rename|replace)\("),
     re.compile(r"\b(shutil\.(copy|move|rmtree)|os\.(remove|rename|makedirs|mkdir))\b"),
     # shell
-    re.compile(r">>?\s*[\"']?(\$HOME|~|/)"),
+    _SHELL_REDIRECT,
     # anywhere: names a home-ish destination
     re.compile(r"os\.homedir\(\)|homedir\(\)|expanduser\(|Path\.home\(\)|process\.env\.HOME"),
     re.compile(r"[\"'/]\.(config|cache|local|claude)[\"'/]"),

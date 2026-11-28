@@ -32,6 +32,7 @@ NOT_WRITES = {
     "1. a redirect to /dev/null is not a write": [
         "cmd >/dev/null 2>&1", "cmd 2>/dev/null", "cmd >> /dev/null", "cmd &>/dev/null", 'cmd > "/dev/null"',
         "x=$(cmd 2>/dev/null)", "cmd >/dev/null; next", "cmd >/dev/null|next",
+        "cmd >/dev/null\nnext", "first\ncmd 2>/dev/null\nsecond\nthird",
     ],
     "1. a redirect to /dev/stderr, /dev/fd/2, /dev/stdout or /dev/tty is not a write": [
         "echo x >/dev/stderr", "echo x > /dev/fd/2", "echo x >/dev/stdout", "echo x > /dev/tty", "echo x >/dev/fd/10",
