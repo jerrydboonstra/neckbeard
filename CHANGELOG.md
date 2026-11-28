@@ -4,6 +4,15 @@
 
 What each round cost the tool is written up in `CASE-STUDIES.md`. This file is the short version.
 
+## 2.0.5 (2026-11-28)
+
+### The herd
+- The persistence list no longer counts a redirect to /dev/null or another standard device, or <name>/ text in usage messages, as writing a file.
+- The persistence scan now tells a file that writes from one that only names a home path, and catches writes made through a shell variable another script sets.
+- The plugin's author, the marketplace's owner and the license's copyright line now read Jerry D. Boonstra.
+- A named pipe or device inside a target no longer hangs the scan: only regular files are read, and the persistence note names what was left unread.
+- The persistence scan now reads ${HOME:-x}/ and ${HOME:+x}/ as home paths, and counts a write to a path's dirname.
+
 ## 2.0.4 (2026-11-27)
 
 ### Security
