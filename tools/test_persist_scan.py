@@ -34,7 +34,7 @@ NOT_WRITES = {
         "x=$(cmd 2>/dev/null)", "cmd >/dev/null; next", "cmd >/dev/null|next",
         "cmd >/dev/null\nnext", "first\ncmd 2>/dev/null\nsecond\nthird",
         "cmd >/dev/null& next", "sh -c 'cmd >/dev/null'", "(cmd >/dev/null)", "x=`cmd 2>/dev/null`", "cmd >/dev/null<in",
-        "cmd 2>/dev/null>log", 'sh -c "cmd >/dev/null\\"x\\""', "# quiet with >/dev/null, then run",
+        "cmd 2>/dev/null>log", "sh -c \"sh -c 'cmd >/dev/null'\"", "cmd >/dev/null \\\n  --flag", "cmd >/dev/null\\\n next",
     ],
     "1. a redirect to /dev/stderr, /dev/fd/2, /dev/stdout or /dev/tty is not a write": [
         "echo x >/dev/stderr", "echo x > /dev/fd/2", "echo x >/dev/stdout", "echo x > /dev/tty", "echo x >/dev/fd/10",
@@ -49,6 +49,8 @@ WRITES = [
     "echo x >/dev/fd/x", "cmd >/dev/null >/tmp/x", "echo '<name>' >/tmp/x", "sort <in >/tmp/x", "echo <name>>/tmp/x",
     "sort <in>~/x", "exec 3<>/tmp/x", "echo x > '/tmp/x'", "echo x > '$HOME/x'", "echo x >>$HOME/x", "echo x >~/x",
     "echo x >>/tmp/x",
+    'echo x >/dev/null"x"', "echo x >/dev/null'x'", "echo x >/dev/null,log", "echo x >/dev/null\\ x", 'sh -c "cmd >/dev/null\\"x\\""',
+    "echo x >/dev/null\\\nx",
 ]
 
 for name, lines in NOT_WRITES.items():
