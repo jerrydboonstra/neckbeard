@@ -205,7 +205,7 @@ HOSTILE_BOUND = 30.0
 def gen_hostile_scan(run=None, cpu=None):
     """A 2,000,000-character one-line file built to backtrack (many cp/mv/tee or open( words, no $HOME) scans in under HOSTILE_BOUND s of CPU time (not wall time, which a loaded host stretches). RUN scans a tree and CPU reads the CPU seconds spent so far; both are stubbed only to check this check."""
     import resource
-    def child_cpu():   # CPU seconds of every finished child: a loaded host stretches wall time, not this
+    def child_cpu():   # CPU seconds of every finished child: a loaded host stretches this too, but far less than wall time
         u = resource.getrusage(resource.RUSAGE_CHILDREN)
         return u.ru_utime + u.ru_stime
     run, cpu = run or dossier, cpu or child_cpu

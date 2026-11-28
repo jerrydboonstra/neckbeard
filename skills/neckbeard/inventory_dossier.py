@@ -315,7 +315,7 @@ def add_read_status(dossier):
           match"
       PS4 inventory_persistence -> persistence_candidates: a script is read in full up to 2000000 characters
       PS5 inventory_persistence -> persistence_candidates: a write past byte 100000 of a script is found
-      PS6 inventory_persistence -> persistence_candidates: 2000000-character hostile one-line files scan in under 10 seconds of CPU
+      PS6 inventory_persistence -> persistence_candidates: 2000000-character hostile one-line files scan in under 30 seconds of CPU
       PS7 inventory_persistence -> persistence_candidates: a cp whose ~/ destination is on the next line (backslash continuation) is found
       PJ1 inventory_target -> plugin_json: plugin.json does not parse (it read as {})
       PJ2 inventory_target -> plugin_json: plugin.json parses to something that is not an object (it
