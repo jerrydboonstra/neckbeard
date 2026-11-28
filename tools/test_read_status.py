@@ -435,6 +435,27 @@ for sid, fn in SITES.items():
         ok, detail = False, repr(e)
     check(f"6. site {sid}", ok, detail)
 
+
+def pretend_hostile_scan(seconds):
+    """PS6 with its scan and CPU clock stubbed, so nothing is scanned: the sixth body costs SECONDS, each other one 1 s."""
+    spent, runs = [0.0], []
+
+    def run(_tree):
+        runs.append(1)
+        spent[0] += seconds if len(runs) == 6 else 1.0
+
+    try:
+        return gen_hostile_scan(run=run, cpu=lambda: spent[0])
+    except TypeError as e:
+        return None, repr(e)
+
+
+ok, detail = pretend_hostile_scan(31.0)
+check("6. PS6 fails when one body costs 31 s of CPU, and names it",
+      ok is False and detail.startswith("slowest hostile scan: variable map, tee 31.0s"), repr((ok, detail)))
+ok, detail = pretend_hostile_scan(29.0)
+check("6. PS6 passes at 29 s: the bound is 30 (a guard against a blow-up, not against a loaded host)", ok is True, repr((ok, detail)))
+
 # ---------------------------------------------------------------- notes are one bounded line, named from the right folder
 rf = tmp_tree({"CLAUDE.md": "Rules.\n@sub/big.md\n", "sub/big.md": "Big.\n" + over(250_000)})
 rs = status(rf / "CLAUDE.md").get("rule_files", {})
