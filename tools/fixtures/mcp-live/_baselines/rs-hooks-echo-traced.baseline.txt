@@ -51,7 +51,7 @@
     "persistence_detail": [
       {
         "path": "hooks/session-start.sh",
-        "tier": "mentions"
+        "tier": "writes"
       }
     ],
     "read_status": {
