@@ -57,6 +57,9 @@ for fn in ("read_text", "read_json"):
         got = read(path, fn)
         chk(f"2. {fn} of {label} returns None at once", got is None, got)
 chk("3. read_text of a regular file and of a link to one", (read(reg), read(link)) == ('{"a": 1}\n', '{"a": 1}\n'), (read(reg), read(link)))
+with open(os.path.join(d, "bytes"), "wb") as f:
+    f.write(b"a\xffb")
+chk("3. bytes that are not UTF-8 are still replaced, not refused", read(os.path.join(d, "bytes")) == "a\ufffdb")
 chk("3. read_json of a regular file and of a link to one", (read(reg, "read_json"), read(link, "read_json")) == ({"a": 1}, {"a": 1}))
 # the path is swapped for a pipe between the check and the open: os.stat says "regular", the descriptor says otherwise
 swapped = child("""real = os.stat
