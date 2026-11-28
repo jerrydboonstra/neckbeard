@@ -113,6 +113,7 @@ _PIECE = re.compile(_CUT)
 _QUOTED_OR_CUT = re.compile(r"""("[^"\n]*"|'[^'\n]*')|""" + _CUT)
 _TARGET_CMD = re.compile(r"\b(mkdir|touch|tee|rm|cp|mv)\b")
 _ARG = re.compile(r"""(?:"[^"]*"|'[^']*'|[^\s"'])+|["']""")
+_CLOSERS = "'\")`}\\"   # a word of only these closes a wrapper (`sh -c '...'`, `( ... )`, `$( ... )`), and is no argument
 _REDIR_WORD = re.compile(r"[0-9]*(?:&?>>?[|&]?|<<?<?)")
 _SHELL_SHEBANG = re.compile(r"#!.*\b(?:ba|z)?sh\b")
 
@@ -153,13 +154,13 @@ def _variables_written_through(text):
     touch, tee and rm, and the last argument of cp and mv, where it begins $NAME or ${NAME}. Linear in the text."""
     if "$" not in text:
         return set()
-    names = {m.group(1) or m.group(2) for m in _VAR_REDIRECT.finditer(text)}
     joined = text.replace("\\\n", " ")
+    names = {m.group(1) or m.group(2) for t in (text, joined) for m in _VAR_REDIRECT.finditer(t)}
     for piece in itertools.chain(_PIECE.split(joined), _pieces_outside_quotes(joined)):
         cmd = "$" in piece and _TARGET_CMD.search(piece)
         if not cmd:
             continue
-        args, skip = [], False
+        args, closed, skip = [], [], False   # closed: arguments a wrapper may end at, each a possible last one
         for token in _ARG.finditer(piece, cmd.end()):
             word = token.group()
             if word.startswith("#"):
@@ -169,9 +170,13 @@ def _variables_written_through(text):
                 skip = redirect.end() == len(word)   # `2> file`: the next word is the redirect's, not the command's
             elif skip:
                 skip = False
+            elif not word.strip(_CLOSERS):
+                closed += args[-1:]
             elif not word.startswith("-"):
                 args.append(word)
-        for word in args[-1:] if cmd.group(1) in ("cp", "mv") else args:
+                if word.endswith((")", "`")):
+                    closed.append(word)
+        for word in closed + args[-1:] if cmd.group(1) in ("cp", "mv") else args:
             m = _VAR_ARG.match(word)
             if m:
                 names.add(m.group(1) or m.group(2))
