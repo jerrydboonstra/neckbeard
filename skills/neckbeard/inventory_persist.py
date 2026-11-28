@@ -102,7 +102,8 @@ _HOME_LITERAL = re.compile(r"\$HOME/|\$\{HOME\}/|~/|\$\{?XDG_[A-Za-z0-9_]*_HOME|
 _HOME_HINT = re.compile(r"HOME|~/|/home|/Users")   # no literal without one of these, quotes in or out
 _ASSIGN = re.compile(r"(?<![^\s;&|({`])([A-Za-z_][A-Za-z0-9_]*)=")
 _VALUE = re.compile(r"""(?:"[^"]*"?|'[^']*'?|\$\{[^}]*\}?|\$\([^)]*\)?|[^\s;&|()<>"'$]+|\$)*""")
-_VAR = r"\"?\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
+# The quotes before the `$` may be a wrapper's (`sh -c "cp t '$X/f'"`, `"... \"$X\""`), which the outer shell expands.
+_VAR = r"""(?:\\?["']){0,4}\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"""
 _VAR_ARG = re.compile(_VAR)
 _VAR_REDIRECT = re.compile(r">[>|&]?[ \t]*" + _VAR)
 # Where one command ends. Text is cut twice, once at every one of these and once only at those outside quotes, and the
