@@ -3,7 +3,7 @@
   "name": "neckbeard",
   "description": "Reads a Claude Code plugin before you install it: what it injects, what it costs, which rules clash with yours.",
   "owner": {
-    "name": "Jerry Boonstra",
+    "name": "Jerry D. Boonstra",
     "url": "https://github.com/jerrydboonstra"
   },
   "plugins": [
