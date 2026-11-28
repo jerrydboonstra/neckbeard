@@ -65,6 +65,11 @@ os.stat = lambda p, *a, **k: reg if p == sys.argv[1] else real(p, *a, **k)
 print(json.dumps([inventory_core.read_text(sys.argv[1]), inventory_core.read_json(sys.argv[1])]))""", fifo, reg)
 chk("2. a pipe swapped in after the check does not block the open and is refused", swapped == [None, None], swapped)
 
+opened = child("""calls, real = [], os.open
+os.open = lambda p, *a, **k: calls.append(p) or real(p, *a, **k)
+inventory_core.read_text(sys.argv[1]); inventory_core.read_text("/dev/null")
+print(json.dumps(calls))""", fifo)
+chk("2. a pipe or device that is there at the check is never opened", opened == [], opened)
 # refused 2,000 times under a 64-file limit: a descriptor left open on the refusal path would run the process out
 leak = child("""import resource
 resource.setrlimit(resource.RLIMIT_NOFILE, (64, resource.getrlimit(resource.RLIMIT_NOFILE)[1]))
