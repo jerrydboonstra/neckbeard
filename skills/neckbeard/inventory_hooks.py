@@ -62,6 +62,25 @@ def _shell_home_write(text):
     return False
 
 
+# The devices a redirect can name without leaving anything behind, each whole: `/dev/nullx`, `/dev/null/x`,
+# `/dev/null,log` and `/dev/../x` are other files. The name ends where a shell word ends. A quote, a backtick or a
+# backslash-newline does not end a word, so each counts only when such an end follows it: `"/dev/null"` is the device,
+# `/dev/null"x"` is not.
+# debt: matching text cannot tell a closing quote from an opening one, so `/dev/null" x"` and `"/dev/null x"` are taken
+# for the device; and a device inside a quoted string that a comma or bracket follows (`run('x >/dev/null', 1)`) is
+# still counted, which over-states. Upgrade path: tokenise shell lines instead of matching text.
+DEVICE_PATTERN = r"/dev/(?:null|stdout|stderr|tty|fd/[0-9]+)(?=(?:[\"'`]|\\\r?\n)*(?:$|[\s;&|()<>]))"
+
+# A shell redirect to a file that persists: $HOME, ~, or an absolute path that is not a device. The second branch
+# takes a `/` straight after the `>`, except where that `>` ends `<word>` (letters, digits, `_`, `-`): the
+# `<name>/` placeholder in usage text.
+# debt: the pattern cannot tell that placeholder from a real redirect written with no spaces, so `cmd <in>/tmp/x`
+# (read `in`, write /tmp/x) is not counted; upgrade path: tokenise shell lines instead of matching text.
+_SHELL_REDIRECT = re.compile(
+    r">>?(?!/)\s*[\"']?(?:\$HOME|~|(?!%(device)s)/)"
+    r"|(?:(?<![\w<-])[\w-]*|(?<=<))>>?(?!%(device)s)/" % {"device": DEVICE_PATTERN})
+
+
 PERSIST_PATTERNS = [
     # node/js
     re.compile(r"\b(writeFileSync|appendFileSync|createWriteStream|copyFileSync|mkdirSync|rmSync)\b"),
@@ -71,7 +90,7 @@ PERSIST_PATTERNS = [
     re.compile(r"\.(write_text|write_bytes|mkdir|touch|unlink|rename|replace)\("),
     re.compile(r"\b(shutil\.(copy|move|rmtree)|os\.(remove|rename|makedirs|mkdir))\b"),
     # shell
-    re.compile(r">>?\s*[\"']?(\$HOME|~|/)"),
+    _SHELL_REDIRECT,
     # anywhere: names a home-ish destination
     re.compile(r"os\.homedir\(\)|homedir\(\)|expanduser\(|Path\.home\(\)|process\.env\.HOME"),
     re.compile(r"[\"'/]\.(config|cache|local|claude)[\"'/]"),
