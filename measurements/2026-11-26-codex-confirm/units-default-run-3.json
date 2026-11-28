@@ -1,0 +1,51 @@
+{
+ "source": "measurements/2026-11-18-units-default/run-3.candidates.json",
+ "candidates": [
+  {
+   "cid": "c1",
+   "unit": "u16",
+   "unit_file": "skills/herd/roles/reviewer.md",
+   "unit_heading": "Limits",
+   "sentence": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "Safety: hard stops",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": true,
+    "why": "The sentence gives unlimited permission to retry an action on the model's own judgement, which could include destructive actions (rm -rf, force-push) that the rule forbids without an explicit go-ahead in the conversation."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits trying the action without limiting destructive cases that require explicit go-ahead under the reader's safety rule.",
+     "attempts": 1,
+     "seconds": 10.3,
+     "tool_items": [],
+     "input_tokens": 56811,
+     "output_tokens": 60
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence grants unlimited permission to try the action on the model's judgment, including destructive actions that the safety rule requires explicit go-ahead to run.",
+     "attempts": 1,
+     "seconds": 5.4,
+     "tool_items": [],
+     "input_tokens": 56842,
+     "output_tokens": 71
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits trying the action without limiting destructive cases that require explicit go-ahead in this conversation.",
+     "attempts": 1,
+     "seconds": 5.6,
+     "tool_items": [],
+     "input_tokens": 56840,
+     "output_tokens": 68
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,97 @@
+{
+ "source": "measurements/2026-11-18-units-default/run-4.candidates.json",
+ "candidates": [
+  {
+   "cid": "c1",
+   "unit": "u16",
+   "unit_file": "skills/herd/roles/reviewer.md",
+   "unit_heading": "Limits",
+   "sentence": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "Safety: hard stops",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": true,
+    "why": "The sentence gives unlimited permission to retry an action on the model's own judgement, including destructive ones the safety rule forbids without an explicit go-ahead, and it needs a limit such as 'only if it isn't destructive'."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits trying the action without limiting destructive actions to those explicitly approved in this conversation, conflicting with the reader's safety hard stop.",
+     "attempts": 1,
+     "seconds": 5.8,
+     "tool_items": [],
+     "input_tokens": 55428,
+     "output_tokens": 69
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence grants unlimited permission to try an action on the model's own judgment, including destructive actions that the safety rule requires explicit go-ahead for in this conversation.",
+     "attempts": 1,
+     "seconds": 6.9,
+     "tool_items": [],
+     "input_tokens": 56807,
+     "output_tokens": 74
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits trying the action without a limit excluding destructive actions that require explicit go-ahead under the reader's safety rule.",
+     "attempts": 1,
+     "seconds": 6.6,
+     "tool_items": [],
+     "input_tokens": 56809,
+     "output_tokens": 71
+    }
+   ]
+  },
+  {
+   "cid": "c2",
+   "unit": "u19",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "Safety: hard stops",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": true,
+    "why": "The sentence lets a reviewer retry a refused action on its own judgement with no limit, which could include destructive actions (rm -rf, force-push) that the rule forbids without explicit go-ahead in the conversation."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying a refused destructive action on the reviewer's own judgment without requiring the explicit go-ahead that the safety rule demands.",
+     "attempts": 1,
+     "seconds": 7.0,
+     "tool_items": [],
+     "input_tokens": 55475,
+     "output_tokens": 72
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying any refused action on the reviewer's own judgment, including destructive actions that require explicit go-ahead in this conversation.",
+     "attempts": 1,
+     "seconds": 7.6,
+     "tool_items": [],
+     "input_tokens": 56827,
+     "output_tokens": 75
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying a refused action without limiting destructive actions to those explicitly authorized in this conversation, contrary to the reader's safety hard stop.",
+     "attempts": 1,
+     "seconds": 7.6,
+     "tool_items": [],
+     "input_tokens": 56848,
+     "output_tokens": 74
+    }
+   ]
+  }
+ ]
+}

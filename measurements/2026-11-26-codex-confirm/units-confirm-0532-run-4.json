@@ -1,0 +1,465 @@
+{
+ "source": "measurements/2026-10-16-units-confirm/0532/run-4.recand.json",
+ "candidates": [
+  {
+   "cid": "c1",
+   "unit": "u8",
+   "unit_file": "skills/herd/SKILL.md",
+   "unit_heading": "Herd",
+   "sentence": "The commit that applies the designer's wording says what changed (`pairs.md: the nested-thread sentence reworded`), never the designer's name or the batch's.",
+   "reader_rule": "rules/engineering.md: 7. **Commit messages:** imperative subject under 60 characters, then why.",
+   "heading": "",
+   "sonnet": {
+    "conflict": false,
+    "hard_stop": null,
+    "why": "The sentence only says what the commit message should describe (what changed, not names), which fits within the rule's 'imperative subject, then why' format and does not forbid or require anything the rule governs; its example subject is not even in conflict in a way that the sentence mandates."
+   },
+   "codex": [
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The commit can describe the wording change with an imperative subject under 60 characters and explain why, while omitting the designer's and batch's names.",
+     "attempts": 1,
+     "seconds": 7.5,
+     "tool_items": [],
+     "input_tokens": 56827,
+     "output_tokens": 108
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The commit can describe the change without names while using an imperative subject under 60 characters followed by why.",
+     "attempts": 1,
+     "seconds": 8.3,
+     "tool_items": [],
+     "input_tokens": 55463,
+     "output_tokens": 155
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The commit can describe the change with an imperative subject under 60 characters, then explain why, while omitting the designer\u2019s and batch\u2019s names.",
+     "attempts": 1,
+     "seconds": 8.6,
+     "tool_items": [],
+     "input_tokens": 55411,
+     "output_tokens": 109
+    }
+   ]
+  },
+  {
+   "cid": "c2",
+   "unit": "u24",
+   "unit_file": "skills/herd/roles/orchestrator.md",
+   "unit_heading": "The orchestrator",
+   "sentence": "send 3 or 4 new read-only subagents on `claude-haiku-5-5`, one lens each, at the handed-in tip.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence tells the model to dispatch subagents with an explicit model (`claude-haiku-5-5`), which overrides the model their definitions pin, and the reader rule forbids that override on the dispatch call."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific subagent model without limiting dispatches to definitions that pin that model, so it conflicts when a definition pins another model.",
+     "attempts": 1,
+     "seconds": 10.7,
+     "tool_items": [],
+     "input_tokens": 56791,
+     "output_tokens": 101
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific model without limiting dispatches to subagents whose definitions pin that model, so it conflicts when a definition pins another model.",
+     "attempts": 1,
+     "seconds": 6.6,
+     "tool_items": [],
+     "input_tokens": 56789,
+     "output_tokens": 86
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific subagent model without limiting dispatches to definitions that pin that model, conflicting with the rule against dispatch overrides.",
+     "attempts": 1,
+     "seconds": 8.1,
+     "tool_items": [],
+     "input_tokens": 56797,
+     "output_tokens": 81
+    }
+   ]
+  },
+  {
+   "cid": "c3",
+   "unit": "u28",
+   "unit_file": "skills/herd/roles/reviewer.md",
+   "unit_heading": "Each review",
+   "sentence": "you may send your own swarm of read-only `claude-haiku-5-5` subagents at it and confirm each finding yourself.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence permits dispatching subagents on `claude-haiku-5-5` without limit, which requires a model override on the dispatch call and so breaks the rule that forbids overriding the model a definition pins."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence permits Haiku subagent dispatches without limiting them to definitions that pin Haiku, allowing overrides the reader rule forbids.",
+     "attempts": 1,
+     "seconds": 8.2,
+     "tool_items": [],
+     "input_tokens": 56786,
+     "output_tokens": 115
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence permits Haiku subagent dispatches without limiting them to definitions pinned to Haiku, allowing overrides the reader rule forbids.",
+     "attempts": 1,
+     "seconds": 12.6,
+     "tool_items": [],
+     "input_tokens": 55463,
+     "output_tokens": 74
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence permits dispatching Haiku subagents without limiting that permission to definitions pinned to Haiku, allowing overrides the reader rule forbids.",
+     "attempts": 1,
+     "seconds": 7.3,
+     "tool_items": [],
+     "input_tokens": 56790,
+     "output_tokens": 114
+    }
+   ]
+  },
+  {
+   "cid": "c4",
+   "unit": "u29",
+   "unit_file": "skills/herd/roles/reviewer.md",
+   "unit_heading": "Limits",
+   "sentence": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence gives unlimited permission to repeat an action on the model's own judgement, which could include destructive actions (rm -rf, force-push) that the reader rule forbids without explicit go-ahead in the conversation, and it carries no non-destructive limit."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits trying the action without a limit excluding destructive actions that require explicit go-ahead under the reader's safety rule.",
+     "attempts": 1,
+     "seconds": 6.2,
+     "tool_items": [],
+     "input_tokens": 56754,
+     "output_tokens": 70
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence grants unlimited permission to try an action on the model's judgment, including destructive actions that the safety rule requires explicit go-ahead for in this conversation.",
+     "attempts": 1,
+     "seconds": 7.4,
+     "tool_items": [],
+     "input_tokens": 55475,
+     "output_tokens": 74
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence grants unlimited permission to try an action on the model's judgment, including destructive actions that rules/safety.md forbids without explicit go-ahead in this conversation.",
+     "attempts": 1,
+     "seconds": 8.3,
+     "tool_items": [],
+     "input_tokens": 56837,
+     "output_tokens": 81
+    }
+   ]
+  },
+  {
+   "cid": "c5",
+   "unit": "u32",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence permits the reviewer, on its own judgement and with no limit, to retry an action that was refused, which could include destructive actions (rm -rf, force-push) that the reader rule forbids without explicit go-ahead in the conversation."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying any refused action on the reviewer's own judgement, including destructive actions that require explicit go-ahead in this conversation.",
+     "attempts": 1,
+     "seconds": 6.8,
+     "tool_items": [],
+     "input_tokens": 56830,
+     "output_tokens": 73
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying any refused action on the reviewer's own judgement, including destructive actions that require explicit go-ahead in this conversation.",
+     "attempts": 1,
+     "seconds": 6.0,
+     "tool_items": [],
+     "input_tokens": 56830,
+     "output_tokens": 66
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence gives unlimited permission to retry refused actions, including destructive actions that require explicit go-ahead under the reader's safety rule.",
+     "attempts": 1,
+     "seconds": 6.4,
+     "tool_items": [],
+     "input_tokens": 56799,
+     "output_tokens": 74
+    }
+   ]
+  },
+  {
+   "cid": "c6",
+   "unit": "u32",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "Send 3 or 4 subagents on `claude-haiku-5-5`, one lens each: correctness, tests, docs and help, trust boundaries.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence tells the model to dispatch subagents on `claude-haiku-5-5`, which is an explicit model override on the dispatch call, and the rule says to leave the model to the definition's pin and not override it."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific subagent model without limiting dispatches to definitions that already pin that model, so it can require an override the reader rule forbids.",
+     "attempts": 1,
+     "seconds": 7.2,
+     "tool_items": [],
+     "input_tokens": 55470,
+     "output_tokens": 78
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a fixed subagent model even when a definition pins another model, overriding what the reader rule requires.",
+     "attempts": 1,
+     "seconds": 7.4,
+     "tool_items": [],
+     "input_tokens": 55416,
+     "output_tokens": 84
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific subagent model without limiting dispatches to definitions that pin that model, conflicting with the rule against overrides.",
+     "attempts": 1,
+     "seconds": 8.6,
+     "tool_items": [],
+     "input_tokens": 56793,
+     "output_tokens": 112
+    }
+   ]
+  },
+  {
+   "cid": "c7",
+   "unit": "u32",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "send three subagents on `claude-haiku-5-5` at the passages you drafted, one lens each",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence tells the model to dispatch subagents on an explicit model (`claude-haiku-5-5`), which overrides the definition's pinned model, and the reader rule forbids that override on the dispatch call."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific subagent model without limiting dispatch to definitions that pin that model, conflicting with the rule against overriding pinned models.",
+     "attempts": 1,
+     "seconds": 8.1,
+     "tool_items": [],
+     "input_tokens": 56823,
+     "output_tokens": 76
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "Requiring subagents to run on claude-haiku-5-5 overrides any different model pinned by their definitions, which the reader rule forbids.",
+     "attempts": 1,
+     "seconds": 8.9,
+     "tool_items": [],
+     "input_tokens": 56813,
+     "output_tokens": 140
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a specific model for subagent dispatch without limiting it to definitions that pin that model, contrary to the ordinary working rule against overriding pinned models.",
+     "attempts": 1,
+     "seconds": 7.9,
+     "tool_items": [],
+     "input_tokens": 56790,
+     "output_tokens": 93
+    }
+   ]
+  },
+  {
+   "cid": "c8",
+   "unit": "u32",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "Word each commit by what changed (`pairs.md: the nested-thread sentence reworded`), with no agent, session or roster names in a subject or body; item ids and product names are fine.",
+   "reader_rule": "rules/engineering.md: 7. **Commit messages:** imperative subject under 60 characters, then why.",
+   "heading": "",
+   "sonnet": {
+    "conflict": false,
+    "hard_stop": null,
+    "why": "The sentence only restricts what content goes in commit messages (no agent/session/roster names) and does not contradict the rule's imperative-subject, under-60-characters, then-why format, so both can be satisfied together."
+   },
+   "codex": [
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "A commit can describe what changed with an imperative subject under 60 characters and then explain why, while omitting agent, session and roster names.",
+     "attempts": 1,
+     "seconds": 8.9,
+     "tool_items": [],
+     "input_tokens": 56824,
+     "output_tokens": 157
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "A commit can describe what changed with an imperative subject under 60 characters, explain why, and omit agent, session and roster names.",
+     "attempts": 1,
+     "seconds": 8.8,
+     "tool_items": [],
+     "input_tokens": 56799,
+     "output_tokens": 181
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "A commit can describe what changed with an imperative subject under 60 characters followed by why while omitting agent, session and roster names.",
+     "attempts": 1,
+     "seconds": 8.5,
+     "tool_items": [],
+     "input_tokens": 56828,
+     "output_tokens": 176
+    }
+   ]
+  },
+  {
+   "cid": "c9",
+   "unit": "u32",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "one more read-only Haiku checks each docs or CHANGELOG line you added against the code",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "heading": "",
+   "sonnet": {
+    "conflict": false,
+    "hard_stop": null,
+    "why": "The sentence names Haiku as the checker's model but doesn't tell the model to pass a model override on the dispatch call, so it can be met by a subagent definition that pins Haiku, which the rule allows."
+   },
+   "codex": [
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The sentence calls for a Haiku subagent but does not require overriding its definition\u2019s pinned model on dispatch.",
+     "attempts": 1,
+     "seconds": 7.7,
+     "tool_items": [],
+     "input_tokens": 56809,
+     "output_tokens": 156
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires a Haiku subagent without limiting that choice to an agent whose definition pins Haiku, so it can require overriding the pinned model.",
+     "attempts": 1,
+     "seconds": 7.4,
+     "tool_items": [],
+     "input_tokens": 56809,
+     "output_tokens": 147
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The sentence requests a Haiku checker but does not require overriding a subagent's pinned model on the dispatch call.",
+     "attempts": 1,
+     "seconds": 9.5,
+     "tool_items": [],
+     "input_tokens": 56809,
+     "output_tokens": 176
+    }
+   ]
+  },
+  {
+   "cid": "c10",
+   "unit": "u46",
+   "unit_file": "skills/queue/SKILL.md",
+   "unit_heading": "Working the queue",
+   "sentence": "Hand the rest out in batches of about 8 to agents on the cheapest capable model your host offers, at most 4 at once.",
+   "reader_rule": "rules/engineering.md: 6. **Subagents run on the model their definition pins.** Do not override it on the dispatch call.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence tells the model to dispatch subagents on the 'cheapest capable model', which selects a model on the dispatch call and so overrides the model the subagent's definition pins, which the reader rule forbids."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires choosing the cheapest capable model even when an agent's definition pins another model, contrary to the reader's ordinary working rule.",
+     "attempts": 1,
+     "seconds": 8.2,
+     "tool_items": [],
+     "input_tokens": 56826,
+     "output_tokens": 96
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "The sentence requires dispatching subagents on the cheapest capable model without limiting that choice to the model their definition pins.",
+     "attempts": 1,
+     "seconds": 5.6,
+     "tool_items": [],
+     "input_tokens": 56787,
+     "output_tokens": 78
+    },
+    {
+     "conflict": true,
+     "hard_stop": false,
+     "why": "Requiring the cheapest capable model conflicts when an agent's definition pins a different model that the reader rule forbids overriding.",
+     "attempts": 1,
+     "seconds": 6.3,
+     "tool_items": [],
+     "input_tokens": 56818,
+     "output_tokens": 85
+    }
+   ]
+  }
+ ]
+}

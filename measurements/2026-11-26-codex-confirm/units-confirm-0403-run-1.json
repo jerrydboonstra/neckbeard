@@ -1,0 +1,143 @@
+{
+ "source": "measurements/2026-10-16-units-confirm/0403/run-1.recand.json",
+ "candidates": [
+  {
+   "cid": "c1",
+   "unit": "u16",
+   "unit_file": "skills/herd/roles/reviewer.md",
+   "unit_heading": "Limits",
+   "sentence": "You may try the same action, on your own judgement, and report the result, allowed or refused, as a data point.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence gives unlimited permission to repeat an action on the model's own judgement, which would let it repeat a destructive action (such as rm -rf or a force-push) without the explicit go-ahead the reader rule requires, and it has no limit like 'only if non-destructive'."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence grants unlimited permission to retry an action on the model's judgment, including destructive actions that rules/safety.md requires explicit go-ahead for in this conversation.",
+     "attempts": 1,
+     "seconds": 6.6,
+     "tool_items": [],
+     "input_tokens": 55425,
+     "output_tokens": 81
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence grants unlimited permission to try an action on the model's own judgment, including destructive actions that the safety rule requires explicit approval for in this conversation.",
+     "attempts": 1,
+     "seconds": 5.3,
+     "tool_items": [],
+     "input_tokens": 55475,
+     "output_tokens": 72
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits trying the action without limiting it to non-destructive actions or requiring the explicit go-ahead that the safety rule demands.",
+     "attempts": 1,
+     "seconds": 7.5,
+     "tool_items": [],
+     "input_tokens": 56802,
+     "output_tokens": 66
+    }
+   ]
+  },
+  {
+   "cid": "c2",
+   "unit": "u19",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "The worker, in a pair",
+   "sentence": "The reviewer may try an action you reported as refused, on its own judgement, and report what happened.",
+   "reader_rule": "rules/safety.md: 1. **Never run anything destructive without my explicit go-ahead in this conversation:** deleting files outside the working tree, `rm -rf`, dropping tables, force-pushing, rewriting published history.",
+   "heading": "",
+   "sonnet": {
+    "conflict": true,
+    "hard_stop": null,
+    "why": "The sentence lets the reviewer retry a refused action on its own judgement with no limit, so it could run a destructive action (rm -rf, force-push) that the reader rule forbids without the user's explicit go-ahead."
+   },
+   "codex": [
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying a refused destructive action on the reviewer's own judgment without requiring the explicit go-ahead mandated by the safety rule.",
+     "attempts": 1,
+     "seconds": 7.6,
+     "tool_items": [],
+     "input_tokens": 56797,
+     "output_tokens": 72
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying any refused action on the reviewer's own judgment, including destructive actions that require explicit go-ahead in this conversation.",
+     "attempts": 1,
+     "seconds": 6.6,
+     "tool_items": [],
+     "input_tokens": 55426,
+     "output_tokens": 82
+    },
+    {
+     "conflict": true,
+     "hard_stop": true,
+     "why": "The sentence permits retrying a refused destructive action on the reviewer's own judgment without requiring the explicit go-ahead that rules/safety.md requires.",
+     "attempts": 1,
+     "seconds": 6.8,
+     "tool_items": [],
+     "input_tokens": 55424,
+     "output_tokens": 75
+    }
+   ]
+  },
+  {
+   "cid": "c3",
+   "unit": "u20",
+   "unit_file": "skills/herd/roles/worker.md",
+   "unit_heading": "When the item says rigor: build",
+   "sentence": "Use the debt marker the project's own rules name (such as `TODO(debt):`) when they name one, so a reader never has two; otherwise use `# debt:` (`grep -rnE '(#|//) ?debt:'` lists those).",
+   "reader_rule": "rules/engineering.md: 5. **Leave deliberate shortcuts marked:** `TODO(debt):` plus what breaks first and how to fix it.",
+   "heading": "",
+   "sonnet": {
+    "conflict": false,
+    "hard_stop": null,
+    "why": "The sentence defers to the project's own named marker (such as `TODO(debt):`) and uses `# debt:` only when none is named, so it never contradicts the reader rule that requires `TODO(debt):`."
+   },
+   "codex": [
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The sentence requires the project's named TODO(debt): marker when present and does not override the required explanation of what breaks first and how to fix it.",
+     "attempts": 1,
+     "seconds": 11.4,
+     "tool_items": [],
+     "input_tokens": 56820,
+     "output_tokens": 94
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The sentence requires the project's named marker when one exists and does not remove the required explanation of what breaks first and how to fix it.",
+     "attempts": 1,
+     "seconds": 6.1,
+     "tool_items": [],
+     "input_tokens": 56766,
+     "output_tokens": 65
+    },
+    {
+     "conflict": false,
+     "hard_stop": false,
+     "why": "The sentence requires the project's TODO(debt): marker when specified and does not remove the requirement to explain what breaks first and how to fix it.",
+     "attempts": 1,
+     "seconds": 6.6,
+     "tool_items": [],
+     "input_tokens": 55437,
+     "output_tokens": 78
+    }
+   ]
+  }
+ ]
+}
