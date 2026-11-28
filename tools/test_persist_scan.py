@@ -50,7 +50,7 @@ WRITES = [
     "sort <in>~/x", "exec 3<>/tmp/x", "echo x > '/tmp/x'", "echo x > '$HOME/x'", "echo x >>$HOME/x", "echo x >~/x",
     "echo x >>/tmp/x",
     'echo x >/dev/null"x"', "echo x >/dev/null'x'", "echo x >/dev/null,log", "echo x >/dev/null\\ x", 'sh -c "cmd >/dev/null\\"x\\""',
-    "echo x >/dev/null\\\nx",
+    "echo x >/dev/null\\\nx", "echo x >/dev/null`printf .log`",
 ]
 
 for name, lines in NOT_WRITES.items():
