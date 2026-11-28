@@ -126,6 +126,25 @@ chk("6. a variable assigned a home path and only read through is a mention", got
 got = tiers({"a.sh": "st=$HOME/.local/state/x\n", "b.sh": 'echo x > "$status"\ntouch ${stx} $st_dir\n'})
 chk("6b. st does not match $status, ${stx} or $st_dir", got == {"a.sh": "mentions"}, got)
 
+# ------------------------------------------------------------ ${HOME:-x}/, ${HOME:+x}/ and $(dirname "$X")
+DEFAULTS = ["${HOME:-/nonexistent}", "${HOME:+/x}", "${HOME:-}", '"${HOME:-/n o}"']
+each("9. a name set to ${HOME:-x}/ or ${HOME:+x}/ and written through writes", "writes",
+     [f'marker={h}/.cache/x/f\n: > "$marker"\n' for h in DEFAULTS])
+each("9. and mkdir -p of its dirname is a write", "writes",
+     [f'marker={h}/.cache/x/f\nmkdir -p "$(dirname "$marker")"\n' for h in DEFAULTS])
+DIR = "marker=$HOME/.cache/x/f\n"
+each("10. $(dirname) of a mapped name is a write target, quoted or not", "writes", [
+    'mkdir -p "$(dirname "$marker")"', "mkdir -p $(dirname $marker)", 'mkdir -p "$(dirname "${marker}")"',
+    'mkdir -p -- "$(dirname -- "$marker")"', 'sh -c "mkdir -p \\"$(dirname \\"$marker\\")\\""',
+    'echo > "$(dirname "$marker")/g"', 'cp t "$(dirname "$marker")/"',
+], run=lambda c: one(DIR + c + "\n"))
+each("10. reading $(dirname) of it, or the dirname of an unmapped name, is not a write", "mentions", [
+    'ls "$(dirname "$marker")"', 'cp "$(dirname "$marker")/g" ./here', 'mkdir -p "$(dirname "$other")"',
+    'mkdir -p "$(basename "$marker")"',
+], run=lambda c: one(DIR + c + "\n"))
+each("11. ${HOME:+x} or ${HOME:-x} with no / after the brace is not a home path literal", None,
+     ['V=${HOME:+x}\ntouch "$V"\n', 'V=${HOME:-/x}y\ntouch "$V"\n'])
+
 # ------------------------------------------------------------ the dossier
 FILES = {"z/b.sh": "touch $HOME/x\n", "a.sh": "cat ~/.config/y\n", "m.py": "open(f, 'w')\n"}
 WANT = [{"path": "a.sh", "tier": "mentions"}, {"path": "m.py", "tier": "writes"}, {"path": "z/b.sh", "tier": "writes"}]
