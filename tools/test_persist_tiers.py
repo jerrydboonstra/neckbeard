@@ -90,6 +90,10 @@ each("5. a closing quote or bracket around cp and mv does not hide the target", 
     'echo "$( cp a "$STATE/f" )"', "sh -c 'cp t $STATE/f' sh", "echo $(cp t $STATE) done", 'x=` mv a "$STATE/f" `',
     '{ cp a "$STATE/f" }', 'ssh h "cp a $STATE/f"', 'find . -exec cp {} "$STATE" \\;',
 ], run=through)
+each("5. a quoted or escaped variable inside a double-quoted wrapper keeps its target", "writes", [
+    "sh -c \"cp t '$STATE/f'\"", "ssh h \"mkdir -p '$STATE/x'\"", "sh -c \"cat t > '$STATE/f'\"", "sh -c \"mv a '$STATE/f'\" x",
+    'sh -c "cp a \\"$STATE/f\\"" x', 'sh -c "echo x >> \\"$STATE/f\\""',
+], run=through)
 each("5. a redirect continued onto the next line keeps its target", "writes", [
     'cat template > \\\n  "$STATE/settings.json"', 'cat template >> \\\n  "$STATE/settings.json"', "cat t >\\\n$STATE/f",
 ], run=through)
