@@ -67,7 +67,10 @@ def _shell_home_write(text):
 DEVICE_PATTERN = r"/dev/(?:null|stdout|stderr|tty|fd/[0-9]+)(?=$|[\s\"';&|()<>`\\,])"
 
 # A shell redirect to a file that persists: $HOME, ~, or an absolute path that is not a device. The second branch
-# takes a `/` straight after the `>`, except where that `>` closes a `<name>` placeholder in usage text.
+# takes a `/` straight after the `>`, except where that `>` ends `<word>` (letters, digits, `_`, `-`): the
+# `<name>/` placeholder in usage text.
+# debt: the pattern cannot tell that placeholder from a real redirect written with no spaces, so `cmd <in>/tmp/x`
+# (read `in`, write /tmp/x) is not counted; upgrade path: tokenise shell lines instead of matching text.
 _SHELL_REDIRECT = re.compile(
     r">>?(?!/)\s*[\"']?(?:\$HOME|~|(?!%(device)s)/)"
     r"|(?:(?<![\w<-])[\w-]*|(?<=<))>>?(?!%(device)s)/" % {"device": DEVICE_PATTERN})
