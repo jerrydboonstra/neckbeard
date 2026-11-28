@@ -99,6 +99,7 @@ SCRIPT_EXTS = (".js", ".py", ".sh", ".mjs", ".cjs", ".ts", ".bash", ".zsh", ".rb
 # A script sets a variable to a path under a home folder, and the same script or one that sources it writes through it.
 # A name assigned in any shell file counts in every one: a collision can over-state, never hide. Comment lines are read too.
 _HOME_LITERAL = re.compile(r"\$HOME/|\$\{HOME\}/|~/|\$\{?XDG_[A-Za-z0-9_]*_HOME|/(?:home|Users)/[^/\s<>\"'$:}]+/")
+_HOME_HINT = re.compile(r"HOME|~/|/home|/Users")   # no literal without one of these, quotes in or out
 _ASSIGN = re.compile(r"(?<![^\s;&|({`])([A-Za-z_][A-Za-z0-9_]*)=")
 _VALUE = re.compile(r"""(?:"[^"]*"?|'[^']*'?|\$\{[^}]*\}?|\$\([^)]*\)?|[^\s;&|()<>"'$]+|\$)*""")
 _VAR = r"\"?\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
@@ -123,15 +124,16 @@ def _is_shell(name, text):
 def _home_variables(text):
     """The names this shell text assigns a value holding a home path literal (not one inside a :// URL)."""
     names = set()
-    if not _HOME_LITERAL.search(text):
+    if not _HOME_HINT.search(text):
         return names
     for m in _ASSIGN.finditer(text):
         if m.group(1) in names:
             continue
         # debt: a value is read for _SPAN characters on its line; a literal further in is missed.
         value = _VALUE.match(text[m.end():m.end() + _SPAN].partition("\n")[0]).group()
+        value = value.replace('"', "").replace("'", "")   # `"$HOME"/x` is the path `$HOME/x`
         for lit in _HOME_LITERAL.finditer(value):
-            if "://" not in value[:lit.start()].split(" ")[-1]:
+            if "://" not in value[:lit.start()].rpartition(" ")[2]:
                 names.add(m.group(1))
                 break
     return names
