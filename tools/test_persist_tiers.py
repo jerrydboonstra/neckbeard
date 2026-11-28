@@ -82,7 +82,8 @@ each("5. every write target through the variable", "writes", [
     'echo > "$STATE/f"', "echo >> $STATE/f", "echo >${STATE}/f", 'echo 2> "${STATE}/log"', 'mkdir -p "$STATE"', "touch a $STATE/f",
     "tee -a $STATE/f", 'rm -rf "$STATE"', 'cp a b "$STATE/"', "mv a $STATE", 'cp a "$STATE/my file" 2>/dev/null', 'cp a "$STATE" # keep',
     'x=$(mkdir -p "$STATE")', "true && rm $STATE/f", "if x; then touch $STATE; fi", 'mkdir -p \\\n  "$STATE"', 'cp a "$STATE" 2>&1 | cat',
-    '# mkdir "$STATE"',
+    '# mkdir "$STATE"', 'sudo mkdir -p "$STATE"', 'if mkdir "$STATE"; then', 'cp "a;b" $STATE/f', 'cp "a|b && c" "$STATE"',
+    "mkdir 'x;y' $STATE", "echo don't; cp a $STATE; echo 'b'",
 ], run=through)
 each("5. reading through the variable is not a write", None, [
     'cat "$STATE/f"', 'cp "$STATE/f" /dev/null', 'mv "$STATE/f" ./here', "ls $STATE; rm ./x", "grep x < $STATE/f",
@@ -121,9 +122,14 @@ for label, extra in (("a plain folder", {}), ("a plugin", {".claude-plugin/plugi
     chk(f"7. {label}: persistence_detail has one entry per persistence_candidates path, in the same order",
         t.get("persistence_detail") == WANT and t["persistence_candidates"] == [e["path"] for e in WANT],
         (t.get("persistence_candidates"), t.get("persistence_detail")))
-    chk(f"7. {label}: persistence_detail has no read_status entry", "persistence_detail" not in (t.get("read_status") or {}))
+    inventory.add_read_status(t)
+    chk(f"7. {label}: persistence_detail has no read_status entry", "persistence_candidates" in t["read_status"]
+        and "persistence_detail" not in t["read_status"], sorted(t["read_status"]))
 t = inventory.inventory_target(os.path.join(tree({"CLAUDE.md": "Do x.\n"}), "CLAUDE.md"))
 chk("7. a rule-file target has neither key", "persistence_detail" not in t and "persistence_candidates" not in t, sorted(t))
+
+setters = [os.path.basename(p) for p in glob.glob(os.path.join(NB, "skills", "neckbeard", "*.py")) if '"persistence_candidates":' in open(p).read()]
+chk("7. only persistence_keys sets persistence_candidates, so no builder sets it without the detail", setters == ["inventory_persist.py"], setters)
 
 got = inventory.settings_writers(tree({"mention.sh": 'cat "$HOME/.claude/settings.json"\n', "write.py": "open('settings.json', 'w')\n"}))
 chk("8. settings_writers returns only files that write", got == ["write.py"], got)
