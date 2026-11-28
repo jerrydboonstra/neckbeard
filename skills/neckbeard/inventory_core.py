@@ -7,12 +7,43 @@ in behaviour, one step toward every shipped file being under neckbeard's own rea
 import json
 import os
 import re
+import stat
 
 
 # ------------------------------------------------------------------ helpers
+# O_NONBLOCK: a pipe swapped in after the check cannot block the open. O_NOCTTY: a terminal cannot take this process over.
+_OPEN_FLAGS = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOCTTY", 0)
+
+
+def open_regular(path, errors=None):
+    """PATH open for reading as text when it is a regular file (a link to one is followed), else OSError, and anything else
+    is never opened: a pipe would block the read and a device might never end it. The open file is checked again, for a
+    path swapped between the check and the open."""
+    if not stat.S_ISREG(os.stat(path).st_mode):
+        raise OSError(f"not a regular file: {path}")
+    fd = os.open(path, _OPEN_FLAGS)
+    if not stat.S_ISREG(os.fstat(fd).st_mode):
+        os.close(fd)
+        raise OSError(f"not a regular file: {path}")
+    return os.fdopen(fd, "r", errors=errors)
+
+
+def special_kind(path):
+    """"a named pipe", "a socket" or "a device" when that is what PATH leads to, else None."""
+    try:
+        mode = os.stat(path).st_mode
+    except OSError:
+        return None
+    if stat.S_ISFIFO(mode):
+        return "a named pipe"
+    if stat.S_ISSOCK(mode):
+        return "a socket"
+    return "a device" if stat.S_ISCHR(mode) or stat.S_ISBLK(mode) else None
+
+
 def read_json(path):
     try:
-        with open(path) as f:
+        with open_regular(path) as f:
             return json.load(f)
     except Exception:
         return None
@@ -77,7 +108,7 @@ def _walk_gaps(notes, dirpath, dirnames, root):
 
 def read_text(path, limit=READ_LIMIT):
     try:
-        with open(path, "r", errors="replace") as f:
+        with open_regular(path, errors="replace") as f:
             return f.read(limit)
     except Exception:
         return None

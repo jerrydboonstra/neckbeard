@@ -30,6 +30,8 @@ import subprocess
 import tempfile
 import time
 
+from inventory_core import open_regular
+
 
 PROTOCOL_VERSION = "2025-06-18"
 SAFE_INTERPRETERS = {"python", "python3", "node", "bash", "sh", "ruby"}
@@ -86,7 +88,7 @@ def _within(path, root):
 
 def _read_json(path):
     try:
-        with open(path) as f:
+        with open_regular(path) as f:
             return json.load(f)
     except Exception:
         return None

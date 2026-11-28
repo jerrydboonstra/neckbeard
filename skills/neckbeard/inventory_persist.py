@@ -8,7 +8,7 @@ import itertools
 import os
 import re
 
-from inventory_core import _mark_scan, _note, _walk_error, _walk_gaps, _within, read_text
+from inventory_core import _mark_scan, _note, _walk_error, _walk_gaps, _within, read_text, special_kind
 
 
 # Deliberately broad. Matches constructed writes as well as direct calls --
@@ -240,7 +240,8 @@ def _persistence_walk(plugin_root, notes):
                     continue
             text = read_text(fp, limit=PERSIST_READ_CEILING)
             if text is None:
-                _note(notes, f"{rel_fp}: could not be read; not scanned", cause="tool-limit")
+                kind = special_kind(fp)
+                _note(notes, f"{rel_fp}: {kind}, not read" if kind else f"{rel_fp}: could not be read; not scanned", cause="tool-limit")
                 text = ""
             elif len(text) >= PERSIST_READ_CEILING and os.path.getsize(fp) > PERSIST_READ_CEILING:
                 _note(notes, f"{rel_fp}: read capped at {PERSIST_READ_CEILING} characters", cause="tool-limit")

@@ -65,11 +65,24 @@ os.stat = lambda p, *a, **k: reg if p == sys.argv[1] else real(p, *a, **k)
 print(json.dumps([inventory_core.read_text(sys.argv[1]), inventory_core.read_json(sys.argv[1])]))""", fifo, reg)
 chk("2. a pipe swapped in after the check does not block the open and is refused", swapped == [None, None], swapped)
 
+# refused 2,000 times under a 64-file limit: a descriptor left open on the refusal path would run the process out
+leak = child("""import resource
+resource.setrlimit(resource.RLIMIT_NOFILE, (64, resource.getrlimit(resource.RLIMIT_NOFILE)[1]))
+real = os.stat
+reg = real(sys.argv[2])
+os.stat = lambda p, *a, **k: reg if p == sys.argv[1] else real(p, *a, **k)
+refused = [inventory_core.read_text(sys.argv[1]) for _ in range(2000)]
+print(json.dumps([set(refused) == {None}, inventory_core.read_text(sys.argv[2])]))""", fifo, reg)
+chk("2. a refused open closes what it opened", leak == [True, '{"a": 1}\n'], leak)
+live = child("""import mcp_live
+print(json.dumps(mcp_live._read_json(sys.argv[1])))""", fifo)
+chk("2. the live-server reader refuses a pipe too", live is None, live)
+
 # ------------------------------------------------------------ a whole target
 EMPTY = tmp()
 
 
-def inventory(files, pipes):
+def inventory(files, pipes, sockets=()):
     t = tmp()
     for rel, text in files.items():
         os.makedirs(os.path.dirname(os.path.join(t, rel)), exist_ok=True)
@@ -78,6 +91,11 @@ def inventory(files, pipes):
     for rel in pipes:
         os.makedirs(os.path.dirname(os.path.join(t, rel)), exist_ok=True)
         os.mkfifo(os.path.join(t, rel))
+    for rel in sockets:
+        back = os.getcwd()
+        os.chdir(t)
+        socket.socket(socket.AF_UNIX).bind(rel)
+        os.chdir(back)
     try:
         r = subprocess.run([sys.executable, os.path.join(CODE, "inventory.py"), t, "--project-dir", EMPTY], capture_output=True, text=True,
                            timeout=10, env={"PATH": os.environ["PATH"], "HOME": EMPTY, "CLAUDE_CONFIG_DIR": EMPTY})
@@ -97,6 +115,10 @@ chk("1. and the pipe is listed as not read, by its kind", "hook.sh: a named pipe
 chk("1. and the script beside it is still scanned", isinstance(t, dict) and "ok.sh" in t["persistence_candidates"], t)
 t = inventory(PLUGIN, ["hooks/run"])
 chk("1. an extension-less pipe too", "hooks/run: a named pipe, not read" in notes(t), (t if not isinstance(t, dict) else notes(t)))
+t = inventory(PLUGIN, [], sockets=["s.sh"])
+chk("1. a socket is named as one", "s.sh: a socket, not read" in notes(t), (t if not isinstance(t, dict) else notes(t)))
+kinds = child("print(json.dumps([inventory_core.special_kind(p) for p in ('/dev/null', sys.argv[1], sys.argv[2])]))", fifo, reg)
+chk("1. the kinds: a device, a named pipe, and nothing for a regular file", kinds == ["a device", "a named pipe", None], kinds)
 
 NAMES = ["plugin.json", ".mcp.json", "CLAUDE.md", "AGENTS.md", "README.md", "hooks/hooks.json", "hooks/hooks.js", "skills/a/SKILL.md",
          "skills/a/notes.md", "agents/x.md", "commands/y.md", ".claude-plugin/marketplace.json", "settings.json", ".neckbeard.json",
