@@ -26,6 +26,7 @@ nohup, exec, xargs, subshells, `$( )`, backticks) are not searched. A hook comma
 read and makes Live surface 🟧. A size that is not a whole number counts as an unread input, and so does a wrong-typed mcp_servers.servers, hooks.mods or
 persistence_candidates; a wrong-typed skills, agents, rule_files or injected_content list counts as 0.
 A refused skill, agent or rule entry counts 0 toward Cost.
+persistence_detail, the tier of each persistence_candidates path, is not read here.
 A dossier with no read_status exits 2."""
 import importlib.machinery, importlib.util, json, os, re, shlex, sys
 

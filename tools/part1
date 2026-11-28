@@ -31,6 +31,7 @@ Field (under target) -> label (card), the section whose read_status gives its st
   agents[]                        Agents (Subagents and commands)    agents
   commands[]                      Commands (Subagents and commands)  commands
   persistence_candidates[]        Persistence candidates (State it may leave)   persistence_candidates
+  persistence_detail[]            not rendered: {path, tier} per candidate      persistence_candidates
                                   (the first 10 by path, then `and N more, in: <folder> <count>, ...`; the not read line holds
                                   the first 5 notes, then `and N more`)
   mcp_servers.servers[]           MCP servers (Reaches outside the session)     mcp_servers

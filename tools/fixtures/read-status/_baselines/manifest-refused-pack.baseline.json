@@ -10,6 +10,7 @@
  "mcp_servers": null,
  "path": "<ROOT>",
  "persistence_candidates": [],
+ "persistence_detail": [],
  "readme_excerpt": null,
  "requested_target": "<ROOT>",
  "resolved_via": "local-path",

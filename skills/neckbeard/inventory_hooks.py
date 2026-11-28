@@ -13,7 +13,8 @@ from hook_shell import trace_shell_hook
 from inventory_mods import events_of, read_mods
 from inventory_persist import (  # noqa: F401  (each name stays reachable as inventory_hooks.<name>)
     DEVICE_PATTERN, PERSIST_PATTERNS, PERSIST_READ_CEILING, SCRIPT_EXTS, _HOME_ARG, _HOME_NEXT_LINE, _SHELL_REDIRECT,
-    _SHELL_WORD, _SPAN, _persistence_walk, _shell_home_write, inventory_persistence,
+    _SHELL_WORD, _SPAN, _persistence_walk, _shell_home_write, inventory_persistence, inventory_persistence_detail,
+    persistence_keys,
 )
 from inventory_core import (
     READ_LIMIT, _mark_scan, _note, _prune_skipped, _walk_error, _walk_gaps, _within, measure, read_json, read_text,
@@ -516,7 +517,7 @@ def _hook_events_in(obj):
 
 def settings_writers(root):
     """Scripts that write files and name a settings.json: the likely installers."""
-    return [rel for rel in inventory_persistence(root)
+    return [rel for rel in [e["path"] for e in inventory_persistence_detail(root) if e["tier"] == "writes"]
             if re.search(r"settings(\.local)?\.json",
                          read_text(os.path.join(root, rel), limit=50_000) or "")]
 

@@ -68,6 +68,12 @@
  "persistence_candidates": [
   "hooks/install.sh"
  ],
+ "persistence_detail": [
+  {
+   "path": "hooks/install.sh",
+   "tier": "writes"
+  }
+ ],
  "plugin_json": {
   "description": null,
   "license": null,

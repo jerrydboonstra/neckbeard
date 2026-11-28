@@ -14,7 +14,7 @@ from inventory_core import (
     READ_LIMIT, _Note, _note, _rel, _within, read_json, read_text, rule_item,
 )
 from inventory_hooks import (
-    inventory_hooks, inventory_persistence,
+    inventory_hooks, persistence_keys,
 )
 from inventory_parts import (
     _CODE_RE, _IMPORT_RE, inventory_commands_agents, inventory_skills, marketplace_listing, mcp_servers,
@@ -166,7 +166,7 @@ def inventory_target(path, plugin_name=None, _read_root=False):
                                 **{k: market[k] for k in ("parse_error", "refused") if k in market}}}
                if market else {}),
             "mcp_servers": mcp_servers({}, path, notes["mcp_servers"]),
-            "persistence_candidates": inventory_persistence(path, notes["persistence_candidates"]),
+            **persistence_keys(path, notes["persistence_candidates"]),
             "rule_files": target_rule_files(path, notes["rule_files"]),
             **dict(zip(("commands", "agents"), inventory_commands_agents(path, notes))),
             "readme_excerpt": readme,
@@ -189,7 +189,7 @@ def inventory_target(path, plugin_name=None, _read_root=False):
         "mcp_servers": mcp_servers(plugin_json, path, notes["mcp_servers"]),
         "skills": skills,
         "hooks": inventory_hooks(path, plugin_json, notes["hooks"]),
-        "persistence_candidates": inventory_persistence(path, notes["persistence_candidates"]),
+        **persistence_keys(path, notes["persistence_candidates"]),
         "rule_files": target_rule_files(path, notes["rule_files"]),
         **dict(zip(("commands", "agents"), inventory_commands_agents(path, notes))),
         **({"manifest_refused": manifest_refused} if manifest_refused else {}),
@@ -315,7 +315,7 @@ def add_read_status(dossier):
           match"
       PS4 inventory_persistence -> persistence_candidates: a script is read in full up to 2000000 characters
       PS5 inventory_persistence -> persistence_candidates: a write past byte 100000 of a script is found
-      PS6 inventory_persistence -> persistence_candidates: a 2000000-character hostile one-line file scans in under 5 seconds
+      PS6 inventory_persistence -> persistence_candidates: 2000000-character hostile one-line files scan in under 10 seconds of CPU
       PS7 inventory_persistence -> persistence_candidates: a cp whose ~/ destination is on the next line (backslash continuation) is found
       PJ1 inventory_target -> plugin_json: plugin.json does not parse (it read as {})
       PJ2 inventory_target -> plugin_json: plugin.json parses to something that is not an object (it
@@ -358,7 +358,7 @@ def add_read_status(dossier):
     with os.walk, which skips a folder it cannot list (onerror: "<folder>: folder could not be listed", untested
     because it takes a folder that exists and cannot be opened, which a test may not chmod) and does not enter
     a symlinked folder ("<folder>: a symlinked folder, not followed", tested as SK8 below); both make the section partial.
-    Not noted: settings_writers re-reads files inventory_persistence just read, so a file it cannot
+    Not noted: settings_writers re-reads files the persistence walk just read, so a file it cannot
     read already has a persistence note; the reader's own rules (current_rules), which are
     reader-read-status's; a marketplace entry that is external, which is a choice the manifest makes.
     A site added to any inventory*.py module without a line here, or a line without a test, sends the item back at

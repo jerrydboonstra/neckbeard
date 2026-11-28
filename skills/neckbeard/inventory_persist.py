@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The persistence scan of neckbeard's inventory: which files under a target may write something that persists. Every rule
-about what counts as a write, and what a file merely names, lives here. Moved out of inventory_hooks.py, which was at the
-size cap; inventory_hooks imports each name back, so `inventory.<name>` still resolves. Stdlib only.
+about what counts as a write, and what a file merely names, lives here. Each file it lists has a tier: "writes" when a write
+is found in its text (evidence, not proof that it runs), "mentions" when it only names a home path. Moved out of
+inventory_hooks.py, which was at the size cap; inventory_hooks imports each name back, so `inventory.<name>` still resolves. Stdlib only.
 """
 import os
 import re
@@ -62,27 +63,128 @@ _SHELL_REDIRECT = re.compile(
     r"|(?:(?<![\w<-])[\w-]*|(?<=<))>>?(?!%(device)s)/" % {"device": DEVICE_PATTERN})
 
 
+# The two patterns that only name a home location: alone, off a comment line, they make a file a "mention".
+_HOME_PATTERNS = [
+    re.compile(r"os\.homedir\(\)|homedir\(\)|expanduser\(|Path\.home\(\)|process\.env\.HOME"),
+    re.compile(r"[\"'/]\.(config|cache|local|claude)[\"'/]"),
+]
+_COMMENT_LINE = re.compile(r"(?m)^[ \t]*(?:#(?!!)|//).*$")
+# `.replace(` is a write only in a file that uses pathlib; elsewhere it is nearly always a string's replace.
+_PATHLIB = re.compile(r"Path\(|pathlib")
+
 PERSIST_PATTERNS = [
     # node/js
     re.compile(r"\b(writeFileSync|appendFileSync|createWriteStream|copyFileSync|mkdirSync|rmSync)\b"),
     re.compile(r"fs\.(write|append|copy|rename|unlink|rm|mkdir)\w*\("),
     # python
     re.compile(r"\bopen\([^)]{0,%d}['\"][wax]" % _SPAN),
-    re.compile(r"\.(write_text|write_bytes|mkdir|touch|unlink|rename|replace)\("),
+    re.compile(r"\.(write_text|write_bytes|mkdir|touch|unlink|rename)\("),
     re.compile(r"\b(shutil\.(copy|move|rmtree)|os\.(remove|rename|makedirs|mkdir))\b"),
     # shell
     _SHELL_REDIRECT,
     # anywhere: names a home-ish destination
-    re.compile(r"os\.homedir\(\)|homedir\(\)|expanduser\(|Path\.home\(\)|process\.env\.HOME"),
-    re.compile(r"[\"'/]\.(config|cache|local|claude)[\"'/]"),
+    *_HOME_PATTERNS,
+    # python, whatever else the file imports
+    re.compile(r"\bos\.replace\("),
 ]
+_WRITE_PATTERNS = [p for p in PERSIST_PATTERNS if p not in _HOME_PATTERNS]
 
 # Extensions alone missed superpowers' own hook, which is the extension-less
 # file `hooks/session-start`. Scan anything small and text-shaped instead.
 SCRIPT_EXTS = (".js", ".py", ".sh", ".mjs", ".cjs", ".ts", ".bash", ".zsh", ".rb", ".pl")
 
 
+# ------------------------------------------------------------ writes through a shell variable
+# A script sets a variable to a path under a home folder, and the same script or one that sources it writes through it.
+# A name assigned in any shell file counts in every one: a collision can over-state, never hide. Comment lines are read too.
+_HOME_LITERAL = re.compile(r"\$HOME/|\$\{HOME\}/|~/|\$\{?XDG_[A-Za-z0-9_]*_HOME|/(?:home|Users)/[^/\s<>\"'$:}]+/")
+_ASSIGN = re.compile(r"(?<![^\s;&|({`])([A-Za-z_][A-Za-z0-9_]*)=")
+_VALUE = re.compile(r"""(?:"[^"]*"?|'[^']*'?|\$\{[^}]*\}?|\$\([^)]*\)?|[^\s;&|()<>"'$]+|\$)*""")
+_VAR = r"\"?\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
+_VAR_ARG = re.compile(_VAR)
+_VAR_REDIRECT = re.compile(r">[>|&]?[ \t]*" + _VAR)
+# A command is cut here, quotes not tracked: that can cut a quoted argument, which over-states rather than hides.
+_PIECE = re.compile(r"\n|;|\|\||&&|(?<![<>])&(?!>)|(?<!>)\|")
+_TARGET_CMD = re.compile(r"\b(mkdir|touch|tee|rm|cp|mv)\b")
+_ARG = re.compile(r"""(?:"[^"]*"|'[^']*'|[^\s"'])+|["']""")
+_REDIR_WORD = re.compile(r"[0-9]*(?:&?>>?[|&]?|<<?<?)")
+_SHELL_SHEBANG = re.compile(r"#!.*\b(?:ba|z)?sh\b")
+
+
+def _is_shell(name, text):
+    return name.endswith((".sh", ".bash", ".zsh")) or ("." not in name and bool(_SHELL_SHEBANG.match(text)))
+
+
+def _home_variables(text):
+    """The names this shell text assigns a value holding a home path literal (not one inside a :// URL)."""
+    names = set()
+    if not _HOME_LITERAL.search(text):
+        return names
+    for m in _ASSIGN.finditer(text):
+        if m.group(1) in names:
+            continue
+        # debt: a value is read for _SPAN characters on its line; a literal further in is missed.
+        value = _VALUE.match(text[m.end():m.end() + _SPAN].partition("\n")[0]).group()
+        for lit in _HOME_LITERAL.finditer(value):
+            if "://" not in value[:lit.start()].split(" ")[-1]:
+                names.add(m.group(1))
+                break
+    return names
+
+
+def _variables_written_through(text):
+    """The names of the variables this shell text writes through: a redirect's target, every argument of mkdir,
+    touch, tee and rm, and the last argument of cp and mv, where it begins $NAME or ${NAME}. Linear in the text."""
+    if "$" not in text:
+        return set()
+    names = {m.group(1) or m.group(2) for m in _VAR_REDIRECT.finditer(text)}
+    for piece in _PIECE.split(text.replace("\\\n", " ")):
+        cmd = "$" in piece and _TARGET_CMD.search(piece)
+        if not cmd:
+            continue
+        args, skip = [], False
+        for token in _ARG.finditer(piece, cmd.end()):
+            word = token.group()
+            if word.startswith("#"):
+                break
+            redirect = _REDIR_WORD.match(word)
+            if redirect:
+                skip = redirect.end() == len(word)   # `2> file`: the next word is the redirect's, not the command's
+            elif skip:
+                skip = False
+            elif not word.startswith("-"):
+                args.append(word)
+        for word in args[-1:] if cmd.group(1) in ("cp", "mv") else args:
+            m = _VAR_ARG.match(word)
+            if m:
+                names.add(m.group(1) or m.group(2))
+    return names
+
+
+# ------------------------------------------------------------ the walk
+def _tier(text):
+    """"writes", "mentions" or None, from this file's text alone."""
+    if (any(p.search(text) for p in _WRITE_PATTERNS) or _shell_home_write(text)
+            or (".replace(" in text and _PATHLIB.search(text))):
+        return "writes"
+    if any(p.search(text) for p in _HOME_PATTERNS):
+        code = _COMMENT_LINE.sub("", text)
+        if any(p.search(code) for p in _HOME_PATTERNS):
+            return "mentions"
+    return None
+
+
+def persistence_keys(plugin_root, notes=None):
+    """The dossier's two keys from one walk: every listed path, and the same paths with their tiers."""
+    detail = inventory_persistence_detail(plugin_root, notes)
+    return {"persistence_candidates": [e["path"] for e in detail], "persistence_detail": detail}
+
+
 def inventory_persistence(plugin_root, notes=None):
+    return [e["path"] for e in inventory_persistence_detail(plugin_root, notes)]
+
+
+def inventory_persistence_detail(plugin_root, notes=None):
     first_note = len(notes) if notes is not None else 0
     try:
         return _persistence_walk(plugin_root, notes)
@@ -91,7 +193,7 @@ def inventory_persistence(plugin_root, notes=None):
 
 
 def _persistence_walk(plugin_root, notes):
-    hits = []
+    tiers, assigned, through = {}, set(), {}
     for dirpath, dirnames, filenames in os.walk(plugin_root, onerror=_walk_error(notes, plugin_root)):
         dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__", "vendor", "benchmarks", "tests", "test")]
         _walk_gaps(notes, dirpath, dirnames, plugin_root)
@@ -119,11 +221,14 @@ def _persistence_walk(plugin_root, notes):
                 text = ""
             elif len(text) >= PERSIST_READ_CEILING and os.path.getsize(fp) > PERSIST_READ_CEILING:
                 _note(notes, f"{rel_fp}: read capped at {PERSIST_READ_CEILING} characters", cause="tool-limit")
-            for pat in PERSIST_PATTERNS:
-                if pat.search(text):
-                    hits.append(os.path.relpath(fp, plugin_root))
-                    break
-            else:
-                if _shell_home_write(text):
-                    hits.append(os.path.relpath(fp, plugin_root))
-    return sorted(set(hits))
+            tier = _tier(text)
+            if tier:
+                tiers[rel_fp] = tier
+            if _is_shell(fn, text):
+                assigned |= _home_variables(text)
+                if tier != "writes":
+                    through[rel_fp] = _variables_written_through(text)
+    for rel, names in through.items():
+        if names & assigned:
+            tiers[rel] = "writes"
+    return [{"path": p, "tier": tiers[p]} for p in sorted(tiers)]

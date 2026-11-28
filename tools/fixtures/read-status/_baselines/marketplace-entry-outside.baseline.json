@@ -29,6 +29,7 @@
  "mcp_servers": null,
  "path": "<ROOT>/plugins/a",
  "persistence_candidates": [],
+ "persistence_detail": [],
  "plugin_json": {
   "description": null,
   "license": null,
