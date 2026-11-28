@@ -1,6 +1,6 @@
 {
   "name": "neckbeard",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Reads the plugin. Writes the verdict. Edits nothing. Before you install a Claude Code plugin, neckbeard lists what it adds (hooks, injected text, agents, files it may write) and can check each rule it carries against yours.",
   "author": {
     "name": "Jerry D. Boonstra",
