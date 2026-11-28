@@ -98,12 +98,15 @@ SCRIPT_EXTS = (".js", ".py", ".sh", ".mjs", ".cjs", ".ts", ".bash", ".zsh", ".rb
 # ------------------------------------------------------------ writes through a shell variable
 # A script sets a variable to a path under a home folder, and the same script or one that sources it writes through it.
 # A name assigned in any shell file counts in every one: a collision can over-state, never hide. Comment lines are read too.
-_HOME_LITERAL = re.compile(r"\$HOME/|\$\{HOME\}/|~/|\$\{?XDG_[A-Za-z0-9_]*_HOME|/(?:home|Users)/[^/\s<>\"'$:}]+/")
+_HOME_LITERAL = re.compile(r"\$HOME/|\$\{HOME\}/|\$\{HOME:[-+][^}\n]*\}/|~/|\$\{?XDG_[A-Za-z0-9_]*_HOME|/(?:home|Users)/[^/\s<>\"'$:}]+/")
 _HOME_HINT = re.compile(r"HOME|~/|/home|/Users")   # no literal without one of these, quotes in or out
 _ASSIGN = re.compile(r"(?<![^\s;&|({`])([A-Za-z_][A-Za-z0-9_]*)=")
 _VALUE = re.compile(r"""(?:"[^"]*"?|'[^']*'?|\$\{[^}]*\}?|\$\([^)]*\)?|[^\s;&|()<>"'$]+|\$)*""")
 # The quotes before the `$` may be a wrapper's (`sh -c "cp t '$X/f'"`, `"... \"$X\""`), which the outer shell expands.
-_VAR = r"""(?:\\?["']){0,4}\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"""
+# `$(dirname "$X")` is a write through X too: its target is under X's folder.
+_QUOTES = r"""(?:\\?["']){0,4}"""
+_DIRNAME = r"(?:\$\(dirname[ \t]+(?:--[ \t]+)?(?=" + _QUOTES + r"\$\{?[A-Za-z_]\w*\}?" + _QUOTES + r"\))" + _QUOTES + ")?"
+_VAR = _QUOTES + _DIRNAME + r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
 _VAR_ARG = re.compile(_VAR)
 _VAR_REDIRECT = re.compile(r">[>|&]?[ \t]*" + _VAR)
 # Where one command ends. Text is cut twice, once at every one of these and once only at those outside quotes, and the

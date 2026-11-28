@@ -136,7 +136,7 @@ DIR = "marker=$HOME/.cache/x/f\n"
 each("10. $(dirname) of a mapped name is a write target, quoted or not", "writes", [
     'mkdir -p "$(dirname "$marker")"', "mkdir -p $(dirname $marker)", 'mkdir -p "$(dirname "${marker}")"',
     'mkdir -p -- "$(dirname -- "$marker")"', 'sh -c "mkdir -p \\"$(dirname \\"$marker\\")\\""',
-    'echo > "$(dirname "$marker")/g"', 'cp t "$(dirname "$marker")/"',
+    'echo > "$(dirname "$marker")/g"', 'cp t "$(dirname "$marker")/"', 'rm -rf "$(dirname "$marker")"',
 ], run=lambda c: one(DIR + c + "\n"))
 each("10. reading $(dirname) of it, or the dirname of an unmapped name, is not a write", "mentions", [
     'ls "$(dirname "$marker")"', 'cp "$(dirname "$marker")/g" ./here', 'mkdir -p "$(dirname "$other")"',
