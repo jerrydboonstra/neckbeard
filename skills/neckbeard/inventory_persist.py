@@ -4,6 +4,7 @@ about what counts as a write, and what a file merely names, lives here. Each fil
 is found in its text (evidence, not proof that it runs), "mentions" when it only names a home path. Moved out of
 inventory_hooks.py, which was at the size cap; inventory_hooks imports each name back, so `inventory.<name>` still resolves. Stdlib only.
 """
+import itertools
 import os
 import re
 
@@ -103,8 +104,12 @@ _VALUE = re.compile(r"""(?:"[^"]*"?|'[^']*'?|\$\{[^}]*\}?|\$\([^)]*\)?|[^\s;&|()
 _VAR = r"\"?\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
 _VAR_ARG = re.compile(_VAR)
 _VAR_REDIRECT = re.compile(r">[>|&]?[ \t]*" + _VAR)
-# A command is cut here, quotes not tracked: that can cut a quoted argument, which over-states rather than hides.
-_PIECE = re.compile(r"\n|;|\|\||&&|(?<![<>])&(?!>)|(?<!>)\|")
+# Where one command ends. Text is cut twice, once at every one of these and once only at those outside quotes, and the
+# targets of both are kept. Cutting inside quotes hides the target after `cp "a;b"`; trusting quotes hides the commands
+# between two apostrophes in prose. Together they over-state rather than hide.
+_CUT = r"\n|;|\|\||&&|(?<![<>])&(?!>)|(?<!>)\|"
+_PIECE = re.compile(_CUT)
+_QUOTED_OR_CUT = re.compile(r"""("[^"\n]*"|'[^'\n]*')|""" + _CUT)
 _TARGET_CMD = re.compile(r"\b(mkdir|touch|tee|rm|cp|mv)\b")
 _ARG = re.compile(r"""(?:"[^"]*"|'[^']*'|[^\s"'])+|["']""")
 _REDIR_WORD = re.compile(r"[0-9]*(?:&?>>?[|&]?|<<?<?)")
@@ -132,13 +137,23 @@ def _home_variables(text):
     return names
 
 
+def _pieces_outside_quotes(text):
+    start = 0
+    for m in _QUOTED_OR_CUT.finditer(text):
+        if m.group(1) is None:
+            yield text[start:m.start()]
+            start = m.end()
+    yield text[start:]
+
+
 def _variables_written_through(text):
     """The names of the variables this shell text writes through: a redirect's target, every argument of mkdir,
     touch, tee and rm, and the last argument of cp and mv, where it begins $NAME or ${NAME}. Linear in the text."""
     if "$" not in text:
         return set()
     names = {m.group(1) or m.group(2) for m in _VAR_REDIRECT.finditer(text)}
-    for piece in _PIECE.split(text.replace("\\\n", " ")):
+    joined = text.replace("\\\n", " ")
+    for piece in itertools.chain(_PIECE.split(joined), _pieces_outside_quotes(joined)):
         cmd = "$" in piece and _TARGET_CMD.search(piece)
         if not cmd:
             continue
