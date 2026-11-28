@@ -113,7 +113,7 @@ _PIECE = re.compile(_CUT)
 _QUOTED_OR_CUT = re.compile(r"""("[^"\n]*"|'[^'\n]*')|""" + _CUT)
 _TARGET_CMD = re.compile(r"\b(mkdir|touch|tee|rm|cp|mv)\b")
 _ARG = re.compile(r"""(?:"[^"]*"|'[^']*'|[^\s"'])+|["']""")
-_CLOSERS = "'\")`}\\"   # a word of only these closes a wrapper (`sh -c '...'`, `( ... )`, `$( ... )`), and is no argument
+_CLOSERS = "'\")`}\\"   # a word of only these closes a wrapper (`sh -c '...'`, `$( ... )`, `\\;`): no argument
 _REDIR_WORD = re.compile(r"[0-9]*(?:&?>>?[|&]?|<<?<?)")
 _SHELL_SHEBANG = re.compile(r"#!.*\b(?:ba|z)?sh\b")
 
