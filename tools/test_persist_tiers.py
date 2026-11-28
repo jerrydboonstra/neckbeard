@@ -85,9 +85,17 @@ each("5. every write target through the variable", "writes", [
     '# mkdir "$STATE"', 'sudo mkdir -p "$STATE"', 'if mkdir "$STATE"; then', 'cp "a;b" $STATE/f', 'cp "a|b && c" "$STATE"',
     "mkdir 'x;y' $STATE", "echo don't; cp a $STATE; echo 'b'",
 ], run=through)
+each("5. a closing quote or bracket around cp and mv does not hide the target", "writes", [
+    "sh -c 'cp template \"$STATE/settings.json\"'", '( cp template "$STATE/settings.json" )', 'x=$( mv a "$STATE/f" )',
+    'echo "$( cp a "$STATE/f" )"', "sh -c 'cp t $STATE/f' sh", "echo $(cp t $STATE) done", 'x=` mv a "$STATE/f" `',
+    '{ cp a "$STATE/f" }', 'ssh h "cp a $STATE/f"',
+], run=through)
+each("5. a redirect continued onto the next line keeps its target", "writes", [
+    'cat template > \\\n  "$STATE/settings.json"', 'cat template >> \\\n  "$STATE/settings.json"', "cat t >\\\n$STATE/f",
+], run=through)
 each("5. reading through the variable is not a write", None, [
     'cat "$STATE/f"', 'cp "$STATE/f" /dev/null', 'mv "$STATE/f" ./here', "ls $STATE; rm ./x", "grep x < $STATE/f",
-    "mkdir -p ./d && ls $STATE", 'tee ./log < "$STATE/f"',
+    "mkdir -p ./d && ls $STATE", 'tee ./log < "$STATE/f"', '( cp "$STATE/f" ./here )', 'x=$( mv "$STATE/f" ./y )',
 ], run=through)
 
 
