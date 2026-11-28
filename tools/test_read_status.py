@@ -196,20 +196,34 @@ def gen_late_write():
     return ok and listed, info
 
 
-def gen_hostile_scan():
-    """A 2,000,000-character one-line file built to backtrack (many cp/mv/tee or open( words, no $HOME) scans in under 10 s of CPU time (not wall time, which a loaded host stretches; a backtracking blow-up takes minutes)."""
+# PS6's bound guards against a backtracking blow-up, which takes minutes, not against the machine: a linear scan of one of
+# these bodies is about 1.5 s of CPU, and a loaded 12-core host has charged it 12.6 s. 30 s is over twice that worst reading
+# and still far under a blow-up.
+HOSTILE_BOUND = 30.0
+
+
+def gen_hostile_scan(run=None, cpu=None):
+    """A 2,000,000-character one-line file built to backtrack (many cp/mv/tee or open( words, no $HOME) scans in under HOSTILE_BOUND s of CPU time (not wall time, which a loaded host stretches). RUN scans a tree and CPU reads the CPU seconds spent so far; both are stubbed only to check this check."""
     import resource
     def child_cpu():   # CPU seconds of every finished child: a loaded host stretches wall time, not this
         u = resource.getrusage(resource.RUSAGE_CHILDREN)
         return u.ru_utime + u.ru_stime
-    worst = 0.0
-    for body in ("var a=cp b;" * 181_819, "rm a;" * 400_000, "tee " * 500_000, "open(" * 400_000, "$HOME rm a;" * 181_819,
-                 "X=$HOME/a;" * 100_000 + "tee $X " * 140_000, "X=$HOME/a;" * 100_000 + "cp $X;" * 160_000, 'a="' * 600_000):
+    run, cpu = run or dossier, cpu or child_cpu
+    bodies = {"cp words": "var a=cp b;" * 181_819, "rm words": "rm a;" * 400_000, "tee words": "tee " * 500_000,
+              "open( words": "open(" * 400_000, "$HOME rm words": "$HOME rm a;" * 181_819,
+              "variable map, tee": "X=$HOME/a;" * 100_000 + "tee $X " * 140_000,
+              "variable map, cp": "X=$HOME/a;" * 100_000 + "cp $X;" * 160_000, "unclosed quotes": 'a="' * 600_000}
+    seconds = {}
+    for label, body in bodies.items():
         d = tmp_tree({"scripts/h.sh": "#!/bin/sh\n" + body + "\n"})
-        c0 = child_cpu()
-        dossier(d)
-        worst = max(worst, child_cpu() - c0)
-    return worst < 10, f"slowest hostile scan {worst:.1f}s of CPU (bound 10s)"
+        c0 = cpu()
+        run(d)
+        seconds[label] = cpu() - c0
+    slowest = max(seconds, key=seconds.get)
+    each = ", ".join(f"{label} {s:.1f}s" for label, s in seconds.items())
+    print(f"     PS6 CPU seconds by body: {each}")
+    return seconds[slowest] < HOSTILE_BOUND, (f"slowest hostile scan: {slowest} {seconds[slowest]:.1f}s of CPU "
+                                              f"(bound {HOSTILE_BOUND:.0f}s)")
 
 
 def gen_continued_write():
