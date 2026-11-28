@@ -203,7 +203,8 @@ def gen_hostile_scan():
         u = resource.getrusage(resource.RUSAGE_CHILDREN)
         return u.ru_utime + u.ru_stime
     worst = 0.0
-    for body in ("var a=cp b;" * 181_819, "rm a;" * 400_000, "tee " * 500_000, "open(" * 400_000, "$HOME rm a;" * 181_819):
+    for body in ("var a=cp b;" * 181_819, "rm a;" * 400_000, "tee " * 500_000, "open(" * 400_000, "$HOME rm a;" * 181_819,
+                 "X=$HOME/a;" * 100_000 + "tee $X " * 140_000, "X=$HOME/a;" * 100_000 + "cp $X;" * 160_000, 'a="' * 600_000):
         d = tmp_tree({"scripts/h.sh": "#!/bin/sh\n" + body + "\n"})
         c0 = child_cpu()
         dossier(d)

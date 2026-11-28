@@ -48,6 +48,12 @@
     "persistence_candidates": [
       "hooks/session-start.sh"
     ],
+    "persistence_detail": [
+      {
+        "path": "hooks/session-start.sh",
+        "tier": "mentions"
+      }
+    ],
     "read_status": {
       "agents": {
         "notes": [],

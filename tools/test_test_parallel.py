@@ -299,6 +299,9 @@ check("skills/neckbeard/inventory_parts.py selects the modules inventory.py's ro
 check("skills/neckbeard/inventory_hooks.py selects test_part1 and test_read_status, and the modules inventory.py's row selects",
       {"test_part1", "test_read_status"} | set(rows.get("skills/neckbeard/inventory.py", [])) <= set(rows.get("skills/neckbeard/inventory_hooks.py", [])),
       repr(rows.get("skills/neckbeard/inventory_hooks.py")))
+check("skills/neckbeard/inventory_persist.py selects the modules inventory_hooks.py's row selects, test_persist_scan and test_persist_tiers",
+      bool(rows.get("skills/neckbeard/inventory_hooks.py")) and (set(rows.get("skills/neckbeard/inventory_hooks.py", [])) | {"test_persist_scan", "test_persist_tiers"}) <= set(rows.get("skills/neckbeard/inventory_persist.py", [])),
+      repr(rows.get("skills/neckbeard/inventory_persist.py")))
 check("skills/neckbeard/inventory_core.py selects test_selfcheck, and the modules inventory.py's row selects",
       "test_selfcheck" in rows.get("skills/neckbeard/inventory_core.py", []) and set(rows.get("skills/neckbeard/inventory.py", [])) <= set(rows.get("skills/neckbeard/inventory_core.py", [])),
       repr(rows.get("skills/neckbeard/inventory_core.py")))

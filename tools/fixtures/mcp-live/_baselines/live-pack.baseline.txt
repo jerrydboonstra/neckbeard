@@ -57,6 +57,7 @@
     },
     "path": "<ROOT>",
     "persistence_candidates": [],
+    "persistence_detail": [],
     "read_status": {
       "agents": {
         "notes": [],
